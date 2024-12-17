@@ -1,5 +1,6 @@
 import { App, Modal, Setting } from "obsidian";
 import { BudgetItem } from "./BudgetItem";
+import { FrequencyString } from "./FrequencyString";
 
 export class CreateBudgetItemModal extends Modal {
 	constructor(app: App, onSubmit: (item: BudgetItem) => Promise<void>) {
@@ -65,7 +66,7 @@ export class CreateBudgetItemModal extends Modal {
 							amount,
 							category,
 							nextDate,
-							frequency
+							new FrequencyString(frequency)
 						)
 					);
 				})

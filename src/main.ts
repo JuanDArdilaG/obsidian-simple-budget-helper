@@ -15,11 +15,11 @@ import { ListBudgetItemView } from "./ListBudgetItemView";
 
 // Remember to rename these classes and interfaces!
 interface SimpleBudgetHelperSettings {
-	mySetting: string;
+	rootFolder: string;
 }
 
 const DEFAULT_SETTINGS: SimpleBudgetHelperSettings = {
-	mySetting: "default",
+	rootFolder: "Budget",
 };
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
@@ -29,7 +29,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		await this.loadSettings();
 
 		try {
-			await this.app.vault.createFolder(PLUGIN_INFO.rootFolder);
+			await this.app.vault.createFolder(this.settings.rootFolder);
 		} catch (error) {
 			console.error(error);
 		}
@@ -46,9 +46,9 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		// Perform additional things with the ribbon
 		ribbonIconEl.addClass("my-plugin-ribbon-class");
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText("Status Bar Text");
+		// // This adds a status bar item to the bottom of the app. Does not work on mobile apps.
+		// const statusBarItemEl = this.addStatusBarItem();
+		// statusBarItemEl.setText("Status Bar Text");
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
@@ -109,7 +109,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 				new CreateBudgetItemModal(this.app, async (item) => {
 					console.log(item);
 					await this.app.vault.create(
-						`${PLUGIN_INFO.rootFolder}/${item.name}.md`,
+						`${this.settings.rootFolder}/${item.name}.md`,
 						item.toMarkdown()
 					);
 					this.app.workspace.trigger("simple-budget-helper:refresh");
@@ -119,7 +119,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 
 		this.registerView(
 			LIST_BUDGET_ITEMS_VIEW.type,
-			(leaf) => new ListBudgetItemView(leaf)
+			(leaf) => new ListBudgetItemView(leaf, this.settings.rootFolder)
 		);
 
 		this.addRibbonIcon("dice", "Activate view", async () => {
@@ -190,14 +190,14 @@ class SampleSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Setting #1")
-			.setDesc("It's a secret")
+			.setName("Root folder")
+			.setDesc("The path to the root folder to store budget items")
 			.addText((text) =>
 				text
-					.setPlaceholder("Enter your secret")
-					.setValue(this.plugin.settings.mySetting)
+					.setPlaceholder("Root Folder Path")
+					.setValue(this.plugin.settings.rootFolder)
 					.onChange(async (value) => {
-						this.plugin.settings.mySetting = value;
+						this.plugin.settings.rootFolder = value;
 						await this.plugin.saveSettings();
 					})
 			);

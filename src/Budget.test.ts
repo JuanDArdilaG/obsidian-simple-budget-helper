@@ -1,14 +1,33 @@
 import { Budget } from "./Budget";
 import { BudgetItem } from "./BudgetItem";
+import { FrequencyString } from "./FrequencyString";
 
 describe("Budget", () => {
 	it("should calculate total to TODAY date correctly", () => {
 		const now = new Date("2024-01-01");
 		const today = new Date("2024-01-01");
 		const budget = new Budget([
-			new BudgetItem("Item 1", 100, "Category 1", today, "1d"),
-			new BudgetItem("Item 2", 200, "Category 2", today, "2d"),
-			new BudgetItem("Item 3", 300, "Category 3", today, "3d"),
+			new BudgetItem(
+				"Item 1",
+				100,
+				"Category 1",
+				today,
+				new FrequencyString("1d")
+			),
+			new BudgetItem(
+				"Item 2",
+				200,
+				"Category 2",
+				today,
+				new FrequencyString("2d")
+			),
+			new BudgetItem(
+				"Item 3",
+				300,
+				"Category 3",
+				today,
+				new FrequencyString("3d")
+			),
 		]);
 
 		const total = budget.getTotalToDate(today, now);
@@ -20,9 +39,27 @@ describe("Budget", () => {
 		const now = new Date("2024-01-01");
 		const tomorrow = new Date("2024-01-02");
 		const budget = new Budget([
-			new BudgetItem("Item 1", 100, "Category 1", tomorrow, "1d"),
-			new BudgetItem("Item 2", 200, "Category 2", tomorrow, "2d"),
-			new BudgetItem("Item 3", 300, "Category 3", tomorrow, "3d"),
+			new BudgetItem(
+				"Item 1",
+				100,
+				"Category 1",
+				tomorrow,
+				new FrequencyString("1d")
+			),
+			new BudgetItem(
+				"Item 2",
+				200,
+				"Category 2",
+				tomorrow,
+				new FrequencyString("2d")
+			),
+			new BudgetItem(
+				"Item 3",
+				300,
+				"Category 3",
+				tomorrow,
+				new FrequencyString("3d")
+			),
 		]);
 
 		const total = budget.getTotalToDate(tomorrow, now);
@@ -34,9 +71,27 @@ describe("Budget", () => {
 		const now = new Date("2024-01-01");
 		const yesterday = new Date("2023-12-31");
 		const budget = new Budget([
-			new BudgetItem("Item 1", 100, "Category 1", yesterday, "1d"),
-			new BudgetItem("Item 2", 200, "Category 2", yesterday, "2d"),
-			new BudgetItem("Item 3", 300, "Category 3", yesterday, "3d"),
+			new BudgetItem(
+				"Item 1",
+				100,
+				"Category 1",
+				yesterday,
+				new FrequencyString("1d")
+			),
+			new BudgetItem(
+				"Item 2",
+				200,
+				"Category 2",
+				yesterday,
+				new FrequencyString("2d")
+			),
+			new BudgetItem(
+				"Item 3",
+				300,
+				"Category 3",
+				yesterday,
+				new FrequencyString("3d")
+			),
 		]);
 
 		const total = budget.getTotalToDate(yesterday, now);
@@ -48,9 +103,27 @@ describe("Budget", () => {
 		const now = new Date("2024-01-01");
 		const aMonth = new Date("2024-02-01");
 		const budget = new Budget([
-			new BudgetItem("Item 1", 100, "Category 1", aMonth, "1d"),
-			new BudgetItem("Item 2", 200, "Category 2", aMonth, "2d"),
-			new BudgetItem("Item 3", 300, "Category 3", aMonth, "3d"),
+			new BudgetItem(
+				"Item 1",
+				100,
+				"Category 1",
+				aMonth,
+				new FrequencyString("1d")
+			),
+			new BudgetItem(
+				"Item 2",
+				200,
+				"Category 2",
+				aMonth,
+				new FrequencyString("2d")
+			),
+			new BudgetItem(
+				"Item 3",
+				300,
+				"Category 3",
+				aMonth,
+				new FrequencyString("3d")
+			),
 		]);
 
 		const total = budget.getTotalToDate(aMonth, now);
@@ -62,9 +135,27 @@ describe("Budget", () => {
 		const now = new Date("2024-04-01");
 		const aMonth = new Date("2024-05-01");
 		const budget = new Budget([
-			new BudgetItem("Item 1", 100, "Category 1", aMonth, "1d"),
-			new BudgetItem("Item 2", 200, "Category 2", aMonth, "2d"),
-			new BudgetItem("Item 3", 300, "Category 3", aMonth, "3d"),
+			new BudgetItem(
+				"Item 1",
+				100,
+				"Category 1",
+				aMonth,
+				new FrequencyString("1d")
+			),
+			new BudgetItem(
+				"Item 2",
+				200,
+				"Category 2",
+				aMonth,
+				new FrequencyString("2d")
+			),
+			new BudgetItem(
+				"Item 3",
+				300,
+				"Category 3",
+				aMonth,
+				new FrequencyString("3d")
+			),
 		]);
 
 		const total = budget.getTotalToDate(aMonth, now);

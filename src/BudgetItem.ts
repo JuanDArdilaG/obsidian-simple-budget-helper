@@ -1,4 +1,5 @@
 import { DATE_RELATIONS } from "./constants";
+import { FrequencyString } from "./FrequencyString";
 
 export class BudgetItem {
 	constructor(
@@ -6,7 +7,7 @@ export class BudgetItem {
 		private _amount: number,
 		private _category: string,
 		private _nextDate: Date,
-		private _frequency: string
+		private _frequency: FrequencyString
 	) {}
 
 	get name(): string {
@@ -15,6 +16,10 @@ export class BudgetItem {
 
 	get amount(): number {
 		return this._amount;
+	}
+
+	get category(): string {
+		return this._category;
 	}
 
 	get perMonthAmount(): number {
@@ -36,34 +41,10 @@ export class BudgetItem {
 			(date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
 		);
 		if (daysToDate <= 0) return 0;
-		const frequencyDays = this._frequencyToDays(this._frequency);
+		const frequencyDays = this._frequency.toDaysNumber();
 		const relationBetweenDateAndFrequency = daysToDate / frequencyDays;
 
-		console.log({
-			name: this._name,
-			date,
-			daysToDate,
-			frequency: this._frequency,
-			frequencyDays,
-			relationBetweenDateAndFrequency,
-		});
-
 		return this._amount * relationBetweenDateAndFrequency;
-	}
-
-	private _frequencyToDays(frequency: string): number {
-		const regex =
-			/(?:(\d*)y)?(?:(\d*)mo)?(?:(\d*)w)?(?:(\d*)d)?(?:(\d*)h)?(?:(\d*)m)?(?:(\d*)s)?/;
-		const match = regex.exec(frequency);
-		if (!match) return 0;
-		const years = Number(match[1] || 0) * 365;
-		const months = Number(match[2] || 0) * 30;
-		const weeks = Number(match[3] || 0) * 7;
-		const days = Number(match[4] || 0);
-		const hours = Number(match[5] || 0) * 24;
-		const minutes = Number(match[6] || 0) * 60;
-		const seconds = Number(match[7] || 0) * 60;
-		return years + months + weeks + days + hours + minutes + seconds;
 	}
 
 	toMarkdown(): string {
@@ -87,7 +68,7 @@ frequency: ${this._frequency}
 			parseInt(match[2]),
 			match[3],
 			new Date(match[4]),
-			match[5]
+			new FrequencyString(match[5])
 		);
 	}
 }
