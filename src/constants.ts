@@ -6,6 +6,7 @@ export const PLUGIN_INFO = {
 export const LIST_BUDGET_ITEMS_VIEW = {
 	type: "list-budget-items-view",
 	title: "Budget Items",
+	icon: "circle-dollar-sign",
 };
 
 export const DATE_RELATIONS = {

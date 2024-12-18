@@ -19,56 +19,88 @@ export class ListBudgetItemView extends ItemView {
 		return LIST_BUDGET_ITEMS_VIEW.title;
 	}
 
+	getIcon(): string {
+		return LIST_BUDGET_ITEMS_VIEW.icon;
+	}
+
 	async onOpen() {
 		const listBtn = this.containerEl.createEl("button", {
 			text: "Items",
 		});
-		const perCategoryBtn = this.containerEl.createEl("button", {
-			text: "Per Category",
-		});
 		listBtn.onclick = () => {
 			this.listItemsPage();
 		};
+
+		const perCategoryBtn = this.containerEl.createEl("button", {
+			text: "Per Category",
+		});
 		perCategoryBtn.onclick = () => {
 			this.perCategoryPage();
 		};
-		await this.listItemsPage();
+
+		const calendar = this.containerEl.createEl("button", {
+			text: "Calendar",
+		});
+		calendar.onclick = () => {
+			this.calendar();
+		};
+
+		await this.calendar();
 	}
 
-	async listItemsPage() {
+	private async _getBudgetItems(config?: { until: Date }): Promise<Budget> {
 		const { vault } = this.app;
-		const container = this.containerEl.children[1];
-
-		container.empty();
-		container.createEl("h3", { text: "Budget Items" });
-
 		const folder = vault.getFolderByPath(this._rootFolder);
-		if (!folder) return;
+		if (!folder) return new Budget([]);
 		const budget = new Budget([]);
 		for (const file of folder.children) {
 			if (file instanceof TFile) {
 				const fileContent = await vault.cachedRead(file);
-				console.log({
-					fileName: file.name,
-					fileContent,
-					bi: BudgetItem.fromRawMarkdown(fileContent),
-				});
 				const budgetItem = BudgetItem.fromRawMarkdown(fileContent);
+				if (config?.until) {
+					const d1 = new Date(budgetItem.nextDate);
+					d1.setHours(0, 0, 0, 0);
+					const d2 = new Date(config.until);
+					d2.setHours(0, 0, 0, 0);
+					if (d1.getTime() > d2.getTime()) {
+						continue;
+					}
+				}
 				budget.addItem(budgetItem);
 			}
 		}
 
-		const total = budget.getTotalPerMonth();
+		return budget;
+	}
+
+	private _listBudget(budget: Budget, calendarView = false) {
+		const container = this.containerEl.children[1];
+		const total = !calendarView
+			? budget.getTotalPerMonth()
+			: budget.getTotal();
+		if (calendarView)
+			budget = new Budget(budget.getItemsOrderedByNextDate());
 		for (const item of budget.items) {
 			const listEl = container.createEl("ul");
 			const perMonth = item.perMonthAmount;
 			const liEl = listEl.createEl("li");
-			liEl.innerHTML = `<b>Item:</b> ${item.name}.<br/><b>Category:</b> ${
-				item.category
-			}.<br/><b>Per month:</b> ${PriceValueObject.fromString(
+			const rd = item.remainingDays;
+			liEl.style.width = "100%";
+			liEl.innerHTML = `<span>${item.name}<br/> ${
+				calendarView ? `${new Date(item.nextDate).toDateString()}` : ""
+			}</span><br/>
+			${
+				!calendarView
+					? `<b>Category:</b> ${item.category}.<br/>
+			<b>Per month:</b> ${PriceValueObject.fromString(
 				perMonth.toString()
-			).toString()} (${((perMonth / total) * 100).toFixed(2)}%)`;
-			container.createEl("hr");
+			).toString()} (${((perMonth / total) * 100).toFixed(2)}%)`
+					: `	<span style="text-align: right">${PriceValueObject.fromString(
+							item.amount.toString()
+					  )}<span><br/><span style="color: ${
+							rd.color
+					  }; font-size:0.9em; margin-left: 8px">${rd.str}</span>`
+			}`;
 		}
 
 		container.createEl("h5", {
@@ -76,6 +108,17 @@ export class ListBudgetItemView extends ItemView {
 				total.toString()
 			).toString()}`,
 		});
+	}
+
+	async listItemsPage() {
+		const container = this.containerEl.children[1];
+
+		container.empty();
+		container.createEl("h3", { text: "Budget Items" });
+
+		const budget = await this._getBudgetItems();
+
+		this._listBudget(budget);
 	}
 
 	async perCategoryPage() {
@@ -101,7 +144,7 @@ export class ListBudgetItemView extends ItemView {
 			}
 		}
 
-		let total = budget.getTotalPerMonth();
+		const total = budget.getTotalPerMonth();
 		for (const category in perCategory) {
 			const perCategoryBudget = perCategory[category];
 			const perCategoryTotal = perCategoryBudget.getTotalPerMonth();
@@ -114,7 +157,7 @@ export class ListBudgetItemView extends ItemView {
 			const listEl = container.createEl("ul");
 			for (const item of perCategoryBudget.items) {
 				const liEl = listEl.createEl("li");
-				liEl.innerHTML = `<b>Item:</b> ${
+				liEl.innerHTML = `${
 					item.name
 				}.<br/><b>Per month:</b> ${PriceValueObject.fromString(
 					item.perMonthAmount.toString()
@@ -128,7 +171,6 @@ export class ListBudgetItemView extends ItemView {
 					perCategoryTotal.toString()
 				).toString()}`,
 			});
-			container.createEl("hr");
 		}
 
 		container.createEl("h4", {
@@ -136,6 +178,56 @@ export class ListBudgetItemView extends ItemView {
 				total.toString()
 			).toString()}`,
 		});
+	}
+
+	async calendar(timeframe: "month" | "2weeks" | "week" | "3days" = "3days") {
+		const container = this.containerEl.children[1];
+
+		container.empty();
+
+		const timeframeButtonBuilder = (
+			text: string,
+			tf: "month" | "2weeks" | "week" | "3days"
+		) => {
+			const timeframeBtn = container.createEl("button", { text });
+			timeframeBtn.onclick = async () => {
+				await this.calendar(tf);
+			};
+			if (timeframe === tf) timeframeBtn.disabled = true;
+		};
+
+		timeframeButtonBuilder("3d", "3days");
+		timeframeButtonBuilder("1w", "week");
+		timeframeButtonBuilder("2w", "2weeks");
+		timeframeButtonBuilder("1mo", "month");
+
+		container.createEl("h3", {
+			text: `Upcoming Next ${
+				timeframe === "month"
+					? "Month"
+					: timeframe === "2weeks"
+					? "2 Weeks"
+					: timeframe === "week"
+					? "Week"
+					: "3 Days"
+			}`,
+		});
+
+		const days =
+			timeframe === "month"
+				? 30
+				: timeframe === "2weeks"
+				? 14
+				: timeframe === "week"
+				? 7
+				: 3;
+		const until = new Date(
+			new Date().getTime() + days * 24 * 60 * 60 * 1000
+		);
+
+		const budget = await this._getBudgetItems({ until });
+
+		this._listBudget(budget, true);
 	}
 
 	async onClose() {

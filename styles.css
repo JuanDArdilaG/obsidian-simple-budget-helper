@@ -1,8 +1,21 @@
-/*
+ul {
+	list-style-type: none; /* Remove default bullet points */
+	padding: 0;
+	margin: 0;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+li {
+	display: flex; /* Use flexbox for alignment */
+	justify-content: space-between; /* Spread items to edges */
+	padding: 20px 0; /* Add some spacing */
+	border-bottom: 1px solid #898989; /* Optional: add a border for clarity */
+	line-height: 2em;
+}
 
-If your plugin does not need CSS, delete this file.
+.left {
+	font-weight: bold; /* Example styling for the left part */
+}
 
-*/
+.right {
+	color: gray; /* Example styling for the right part */
+}

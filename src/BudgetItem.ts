@@ -1,3 +1,4 @@
+import { BudgetItemNextDate } from "./BudgetItemNextDate";
 import { DATE_RELATIONS } from "./constants";
 import { FrequencyString } from "./FrequencyString";
 
@@ -6,7 +7,7 @@ export class BudgetItem {
 		private _name: string,
 		private _amount: number,
 		private _category: string,
-		private _nextDate: Date,
+		private _nextDate: BudgetItemNextDate,
 		private _frequency: FrequencyString
 	) {}
 
@@ -20,6 +21,20 @@ export class BudgetItem {
 
 	get category(): string {
 		return this._category;
+	}
+
+	get nextDate(): BudgetItemNextDate {
+		return this._nextDate;
+	}
+
+	get remainingDays(): { str: string; color: string } {
+		const rd = this.nextDate.remainingDays;
+		const str = rd === 1 || rd === -1 ? `${rd} day` : `${rd} days`;
+		const absRd = Math.abs(rd);
+		return {
+			str,
+			color: rd < -7 ? "tomato" : absRd <= 7 ? "yellow" : "greenyellow",
+		};
 	}
 
 	get perMonthAmount(): number {
@@ -52,7 +67,7 @@ export class BudgetItem {
 name: ${this._name}
 amount: ${this._amount}
 category: ${this._category}
-nextDate: ${this._nextDate}
+nextDate: ${this._nextDate.toISOString()}
 frequency: ${this._frequency}
 ---`;
 	}
@@ -67,7 +82,7 @@ frequency: ${this._frequency}
 			match[1],
 			parseInt(match[2]),
 			match[3],
-			new Date(match[4]),
+			new BudgetItemNextDate(new Date(match[4])),
 			new FrequencyString(match[5])
 		);
 	}
