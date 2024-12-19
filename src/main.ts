@@ -1,5 +1,5 @@
 import { Plugin, TFile, WorkspaceLeaf } from "obsidian";
-import { LIST_BUDGET_ITEMS_VIEW } from "./constants";
+import { views } from "./constants";
 import { CreateBudgetItemModal } from "./CreateBudgetItemModal";
 import { ListBudgetItemView } from "./ListBudgetItemView";
 import { Budget } from "./Budget";
@@ -9,6 +9,7 @@ import {
 	SettingTab,
 	SimpleBudgetHelperSettings,
 } from "./SettingTab";
+import { RightSidebarReactViewRoot } from "./views/RightSidebarReactView/RightSidebarReactViewRoot";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
@@ -61,16 +62,21 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		});
 
 		this.registerView(
-			LIST_BUDGET_ITEMS_VIEW.type,
+			views.LIST_BUDGET_ITEMS.type,
 			(leaf) => new ListBudgetItemView(leaf, this.settings.rootFolder)
+		);
+		this.registerView(
+			views.LIST_BUDGET_ITEMS_REACT.type,
+			(leaf) =>
+				new RightSidebarReactViewRoot(leaf, this.settings.rootFolder)
 		);
 
 		this.addRibbonIcon(
-			LIST_BUDGET_ITEMS_VIEW.icon,
-			"Simple Budget Helper",
+			views.LIST_BUDGET_ITEMS.icon,
+			views.LIST_BUDGET_ITEMS.title,
 			async () => {
 				const leafs = this.app.workspace.getLeavesOfType(
-					LIST_BUDGET_ITEMS_VIEW.type
+					views.LIST_BUDGET_ITEMS.type
 				);
 				let leaf: WorkspaceLeaf | undefined;
 				if (leafs.length === 0) {
@@ -78,7 +84,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 						this.app.workspace.getRightLeaf(false) ??
 						this.app.workspace.getLeaf();
 					await leaf.setViewState({
-						type: LIST_BUDGET_ITEMS_VIEW.type,
+						type: views.LIST_BUDGET_ITEMS.type,
 					});
 				} else {
 					leaf = leafs.first();
@@ -88,6 +94,35 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 				await this.app.workspace.revealLeaf(leaf);
 				leaf.trigger("refresh");
 				this.app.workspace.trigger("simple-budget-helper:refresh");
+			}
+		);
+
+		this.addRibbonIcon(
+			views.LIST_BUDGET_ITEMS_REACT.icon,
+			views.LIST_BUDGET_ITEMS_REACT.title,
+			async () => {
+				const leafs = this.app.workspace.getLeavesOfType(
+					views.LIST_BUDGET_ITEMS_REACT.type
+				);
+				let leaf: WorkspaceLeaf | undefined;
+				if (leafs.length === 0) {
+					leaf =
+						this.app.workspace.getRightLeaf(false) ??
+						this.app.workspace.getLeaf();
+					await leaf.setViewState({
+						type: views.LIST_BUDGET_ITEMS_REACT.type,
+					});
+				} else {
+					leaf = leafs.first();
+				}
+				if (!leaf || !(leaf.view instanceof RightSidebarReactViewRoot))
+					return;
+
+				await this.app.workspace.revealLeaf(leaf);
+				leaf.trigger("refresh");
+				this.app.workspace.trigger(
+					`${views.LIST_BUDGET_ITEMS_REACT.type}:refresh`
+				);
 			}
 		);
 	}

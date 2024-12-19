@@ -1,5 +1,5 @@
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
-import { LIST_BUDGET_ITEMS_VIEW } from "./constants";
+import { views } from "./constants";
 import { BudgetItem } from "./BudgetItem";
 import { PriceValueObject } from "@juandardilag/value-objects/dist/PriceValueObject";
 import { Budget } from "./Budget";
@@ -12,15 +12,15 @@ export class ListBudgetItemView extends ItemView {
 	}
 
 	getViewType() {
-		return LIST_BUDGET_ITEMS_VIEW.type;
+		return views.LIST_BUDGET_ITEMS.type;
 	}
 
 	getDisplayText() {
-		return LIST_BUDGET_ITEMS_VIEW.title;
+		return views.LIST_BUDGET_ITEMS.title;
 	}
 
 	getIcon(): string {
-		return LIST_BUDGET_ITEMS_VIEW.icon;
+		return views.LIST_BUDGET_ITEMS.icon;
 	}
 
 	async onOpen() {
@@ -78,8 +78,7 @@ export class ListBudgetItemView extends ItemView {
 		const total = !calendarView
 			? budget.getTotalPerMonth()
 			: budget.getTotal();
-		if (calendarView)
-			budget = new Budget(budget.getItemsOrderedByNextDate());
+		if (calendarView) budget = budget.orderByNextDate();
 		for (const item of budget.items) {
 			const listEl = container.createEl("ul");
 			const perMonth = item.perMonthAmount;

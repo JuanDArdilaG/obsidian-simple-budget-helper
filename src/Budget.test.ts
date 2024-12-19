@@ -1,11 +1,12 @@
 import { Budget } from "./Budget";
 import { BudgetItem } from "./BudgetItem";
+import { BudgetItemNextDate } from "./BudgetItemNextDate";
 import { FrequencyString } from "./FrequencyString";
 
 describe("Budget", () => {
 	it("should calculate total to TODAY date correctly", () => {
 		const now = new Date("2024-01-01");
-		const today = new Date("2024-01-01");
+		const today = new BudgetItemNextDate(new Date("2024-01-01"));
 		const budget = new Budget([
 			new BudgetItem(
 				"Item 1",
@@ -37,7 +38,7 @@ describe("Budget", () => {
 
 	it("should calculate total to TOMORROW date correctly", () => {
 		const now = new Date("2024-01-01");
-		const tomorrow = new Date("2024-01-02");
+		const tomorrow = new BudgetItemNextDate(new Date("2024-01-02"));
 		const budget = new Budget([
 			new BudgetItem(
 				"Item 1",
@@ -69,7 +70,7 @@ describe("Budget", () => {
 
 	it("should calculate total to YESTERDAY date correctly", () => {
 		const now = new Date("2024-01-01");
-		const yesterday = new Date("2023-12-31");
+		const yesterday = new BudgetItemNextDate(new Date("2023-12-31"));
 		const budget = new Budget([
 			new BudgetItem(
 				"Item 1",
@@ -101,7 +102,7 @@ describe("Budget", () => {
 
 	it("should calculate total to A 31 DAYS MONTH date correctly", () => {
 		const now = new Date("2024-01-01");
-		const aMonth = new Date("2024-02-01");
+		const aMonth = new BudgetItemNextDate(new Date("2024-02-01"));
 		const budget = new Budget([
 			new BudgetItem(
 				"Item 1",
@@ -133,7 +134,7 @@ describe("Budget", () => {
 
 	it("should calculate total to A 30 DAYS MONTH date correctly", () => {
 		const now = new Date("2024-04-01");
-		const aMonth = new Date("2024-05-01");
+		const aMonth = new BudgetItemNextDate(new Date("2024-05-01"));
 		const budget = new Budget([
 			new BudgetItem(
 				"Item 1",

@@ -3,11 +3,18 @@ export const PLUGIN_INFO = {
 	defaultRootFolder: "~simple-budget-helper",
 };
 
-export const LIST_BUDGET_ITEMS_VIEW = {
-	type: "list-budget-items-view",
-	title: "Budget Items",
-	icon: "circle-dollar-sign",
-};
+export const views = {
+	LIST_BUDGET_ITEMS: {
+		type: "list-budget-items-view",
+		title: "Budget Items",
+		icon: "circle-dollar-sign",
+	},
+	LIST_BUDGET_ITEMS_REACT: {
+		type: "list-budget-items-react-view",
+		title: "Simple Budget Helper",
+		icon: "dice",
+	},
+} as const;
 
 export const DATE_RELATIONS = {
 	MONTH_DAYS: 30.4167,

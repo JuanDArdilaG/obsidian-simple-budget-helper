@@ -39,9 +39,17 @@ export class Budget {
 		}, 0);
 	}
 
-	getItemsOrderedByNextDate(): BudgetItem[] {
-		return this._items.sort((a, b) => {
-			return a.nextDate.getTime() - b.nextDate.getTime();
+	orderByNextDate(): Budget {
+		return new Budget(
+			this._items.sort((a, b) => {
+				return a.nextDate.getTime() - b.nextDate.getTime();
+			})
+		);
+	}
+
+	getNDaysItems(n: number): BudgetItem[] {
+		return this._items.filter((item) => {
+			return item.nextDate.remainingDays <= n;
 		});
 	}
 }

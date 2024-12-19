@@ -1,21 +1,23 @@
 ul {
-	list-style-type: none; /* Remove default bullet points */
+	list-style-type: none;
 	padding: 0;
 	margin: 0;
 }
 
 li {
-	display: flex; /* Use flexbox for alignment */
-	justify-content: space-between; /* Spread items to edges */
-	padding: 20px 0; /* Add some spacing */
-	border-bottom: 1px solid #898989; /* Optional: add a border for clarity */
+	display: flex;
+	justify-content: space-between;
+	padding: 20px 0;
+	border-bottom: 1px solid #898989;
 	line-height: 2em;
 }
 
-.left {
-	font-weight: bold; /* Example styling for the left part */
+.section-buttons {
+	width: 100%;
+	display: flex;
+	justify-content: center;
 }
 
-.right {
-	color: gray; /* Example styling for the right part */
+.active-section-button {
+	cursor: none;
 }
