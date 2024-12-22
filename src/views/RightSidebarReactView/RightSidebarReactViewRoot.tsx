@@ -3,8 +3,8 @@ import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import { Root, createRoot } from "react-dom/client";
 import { RightSidebarReactView } from "./RightSidebarReactView";
 import { views } from "src/constants";
-import { Budget } from "src/Budget";
-import { BudgetItem } from "src/BudgetItem";
+import { Budget } from "src/budget/Budget";
+import { BudgetItem } from "src/budget/BudgetItem";
 
 export class RightSidebarReactViewRoot extends ItemView {
 	root: Root | null = null;
@@ -27,14 +27,32 @@ export class RightSidebarReactViewRoot extends ItemView {
 
 	async onOpen() {
 		this.root = createRoot(this.containerEl.children[1]);
-		this.root.render(
+		this.refresh();
+	}
+
+	async refresh() {
+		this.root?.render(
 			<StrictMode>
 				<RightSidebarReactView
 					rootFolder={this._rootFolder}
 					budget={await this._getBudgetItems()}
+					onRecord={(item) => this._updateFileOnRecord(item)}
+					refresh={() => this.refresh()}
 				/>
 			</StrictMode>
 		);
+	}
+
+	private async _updateFileOnRecord(newItem: BudgetItem) {
+		const { vault } = this.app;
+		const file = vault.getFileByPath(
+			`${this._rootFolder}/${newItem.name}.md`
+		);
+		if (!file) return;
+
+		await vault.modify(file, newItem.toMarkdown());
+
+		this.refresh();
 	}
 
 	private async _getBudgetItems(): Promise<Budget> {

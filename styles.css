@@ -21,3 +21,11 @@ li {
 .active-section-button {
 	cursor: none;
 }
+
+.create-budget-item-modal {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 70%;
+	margin: auto;
+}

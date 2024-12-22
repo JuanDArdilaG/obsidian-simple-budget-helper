@@ -1,15 +1,15 @@
 import { Plugin, TFile, WorkspaceLeaf } from "obsidian";
 import { views } from "./constants";
-import { CreateBudgetItemModal } from "./CreateBudgetItemModal";
-import { ListBudgetItemView } from "./ListBudgetItemView";
-import { Budget } from "./Budget";
-import { BudgetItem } from "./BudgetItem";
+import { Budget } from "./budget/Budget";
+import { BudgetItem } from "./budget/BudgetItem";
 import {
 	DEFAULT_SETTINGS,
 	SettingTab,
 	SimpleBudgetHelperSettings,
 } from "./SettingTab";
 import { RightSidebarReactViewRoot } from "./views/RightSidebarReactView/RightSidebarReactViewRoot";
+import { CreateBudgetItemModalRoot } from "./modals/CreateBudgetItemModalRoot";
+import { ListBudgetItemView } from "./views/ListBudgetItemView";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
@@ -48,7 +48,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 			id: "display-create-budget-item-modal",
 			name: "Create budget item",
 			callback: () => {
-				new CreateBudgetItemModal(
+				new CreateBudgetItemModalRoot(
 					this.app,
 					[...this._categories, "-- create new --"].sort(),
 					async (item) => {

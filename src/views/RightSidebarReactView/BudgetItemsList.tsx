@@ -1,12 +1,16 @@
-import { PriceValueObject } from "@juandardilag/value-objects/dist/PriceValueObject";
+import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { Forward } from "lucide-react";
-import { Budget } from "src/Budget";
-import { BudgetItem } from "src/BudgetItem";
+import { Budget } from "src/budget/Budget";
+import { BudgetItem } from "src/budget/BudgetItem";
 
 export const BudgetItemsList = ({
 	budgetItems,
+	onRecord,
+	totalPerMonth,
 }: {
 	budgetItems: BudgetItem[];
+	onRecord: (item: BudgetItem) => void;
+	totalPerMonth?: boolean;
 }) => {
 	return (
 		<div>
@@ -34,9 +38,18 @@ export const BudgetItemsList = ({
 									}}
 									size={19}
 									color="mediumspringgreen"
-									onClick={() => {}}
+									onClick={() => {
+										item.record();
+										onRecord(item);
+									}}
 								/>
 							</span>
+							{totalPerMonth ? <br /> : ""}
+							{totalPerMonth
+								? `Per month ≈ ${new PriceValueObject(
+										item.perMonthAmount
+								  )}`
+								: ""}
 							<br />
 							<span
 								style={{
@@ -54,7 +67,9 @@ export const BudgetItemsList = ({
 			<h3>
 				Total:{" "}
 				{new PriceValueObject(
-					new Budget(budgetItems).getTotal()
+					totalPerMonth
+						? new Budget(budgetItems).getTotalPerMonth()
+						: new Budget(budgetItems).getTotal()
 				).toString()}
 			</h3>
 		</div>

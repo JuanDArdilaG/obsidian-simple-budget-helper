@@ -1,33 +1,42 @@
+import { RefreshCcw } from "lucide-react";
+
 export type SectionSelection = "calendar" | "list" | "perCategory";
 
 export const SectionButtons = ({
 	selected,
 	setSelected,
+	refresh,
 }: {
 	selected: SectionSelection;
 	setSelected: (selected: SectionSelection) => void;
+	refresh: () => void;
 }) => {
 	return (
-		<div className="section-buttons">
-			<SectionButton
-				type="calendar"
-				label="Calendar"
-				selected={selected}
-				onClick={() => setSelected("calendar")}
-			/>
-			<SectionButton
-				type="list"
-				label="All Items"
-				selected={selected}
-				onClick={() => setSelected("list")}
-			/>
-			<SectionButton
-				type="perCategory"
-				label="Per Category"
-				selected={selected}
-				onClick={() => setSelected("perCategory")}
-			/>
-		</div>
+		<>
+			<button style={{ float: "left" }} onClick={refresh}>
+				<RefreshCcw size={16} />
+			</button>
+			<div className="section-buttons">
+				<SectionButton
+					type="calendar"
+					label="Calendar"
+					selected={selected}
+					onClick={() => setSelected("calendar")}
+				/>
+				<SectionButton
+					type="list"
+					label="All Items"
+					selected={selected}
+					onClick={() => setSelected("list")}
+				/>
+				<SectionButton
+					type="perCategory"
+					label="Per Category"
+					selected={selected}
+					onClick={() => setSelected("perCategory")}
+				/>
+			</div>
+		</>
 	);
 };
 
