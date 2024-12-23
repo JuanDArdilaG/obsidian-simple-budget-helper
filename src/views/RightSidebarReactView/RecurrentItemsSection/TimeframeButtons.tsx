@@ -1,4 +1,4 @@
-import { SectionButton } from "./SectionButtons";
+import { SectionButton } from "./RecurrentItemsSectionButtons";
 
 export type CalendarTimeframe = "month" | "2weeks" | "week" | "3days";
 

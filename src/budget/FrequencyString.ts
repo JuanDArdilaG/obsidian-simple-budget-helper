@@ -1,4 +1,4 @@
-import { DATE_RELATIONS } from "src/constants";
+import { DATE_RELATIONS } from "config";
 
 export class FrequencyString extends String {
 	toObject(): FrequencyObject | undefined {

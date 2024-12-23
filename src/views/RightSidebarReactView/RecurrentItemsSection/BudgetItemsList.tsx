@@ -1,22 +1,26 @@
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { Forward } from "lucide-react";
-import { Budget } from "src/budget/Budget";
-import { BudgetItem } from "src/budget/BudgetItem";
+import { Budget } from "budget/Budget";
+import { BudgetItem } from "budget/BudgetItem";
+import { RecordBudgetItemModalRoot } from "./RecordBudgetItemModalRoot";
+import { App } from "obsidian";
 
 export const BudgetItemsList = ({
 	budgetItems,
 	onRecord,
 	totalPerMonth,
+	app,
 }: {
 	budgetItems: BudgetItem[];
 	onRecord: (item: BudgetItem) => void;
 	totalPerMonth?: boolean;
+	app: App;
 }) => {
 	return (
 		<div>
 			<ul>
 				{budgetItems.map((item, index) => (
-					<li key={index}>
+					<li key={index} className="two-columns-list">
 						<span>
 							{item.name}
 							<br />
@@ -39,14 +43,18 @@ export const BudgetItemsList = ({
 									size={19}
 									color="mediumspringgreen"
 									onClick={() => {
-										item.record();
-										onRecord(item);
+										// item.record();
+										new RecordBudgetItemModalRoot(
+											app,
+											item,
+											onRecord
+										).open();
 									}}
 								/>
 							</span>
 							{totalPerMonth ? <br /> : ""}
 							{totalPerMonth
-								? `Per month ≈ ${new PriceValueObject(
+								? `Per Month ≈ ${new PriceValueObject(
 										item.perMonthAmount
 								  )}`
 								: ""}

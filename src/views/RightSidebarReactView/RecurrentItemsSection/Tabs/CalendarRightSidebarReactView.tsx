@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
-import { RightSidebarReactTab } from "./RightSidebarReactTab";
-import {
-	CalendarTimeframe,
-	TimeframeButtons,
-} from "../components/TimeframeButtons";
-import { BudgetItem } from "../../../budget/BudgetItem";
-import { Budget } from "../../../budget/Budget";
+import { RightSidebarReactTab } from "../../RightSidebarReactTab";
+import { Budget } from "budget/Budget";
+import { BudgetItem } from "budget/BudgetItem";
 import { BudgetItemsList } from "../BudgetItemsList";
+import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
+import { App } from "obsidian";
 
 export const CalendarRightSidebarReactTab = ({
 	budget,
 	onRecord,
+	app,
 }: {
 	budget: Budget;
 	onRecord: (item: BudgetItem) => void;
+	app: App;
 }) => {
 	const [timeframe, setTimeframe] = useState<CalendarTimeframe>("3days");
 	const [budgetItems, setBudgetItems] = useState<BudgetItem[]>(
@@ -68,6 +68,7 @@ export const CalendarRightSidebarReactTab = ({
 				<BudgetItemsList
 					budgetItems={budgetItems}
 					onRecord={onRecord}
+					app={app}
 				/>
 			</RightSidebarReactTab>
 		</>

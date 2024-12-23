@@ -1,8 +1,8 @@
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { useEffect, useState } from "react";
-import { BudgetItem } from "src/budget/BudgetItem";
-import { BudgetItemNextDate } from "src/budget/BudgetItemNextDate";
-import { FrequencyString } from "src/budget/FrequencyString";
+import { BudgetItem } from "budget/BudgetItem";
+import { BudgetItemNextDate } from "budget/BudgetItemNextDate";
+import { FrequencyString } from "budget/FrequencyString";
 
 export const CreateBudgetItemModal = ({
 	categories,
@@ -17,6 +17,8 @@ export const CreateBudgetItemModal = ({
 	const [amount, setAmount] = useState(0);
 	const [frequency, setFrequency] = useState("");
 	const [category, setCategory] = useState("-- create new --");
+	const [type, setType] = useState("income");
+	const [newCategory, setNewCategory] = useState("");
 	const [nextDate, setNextDate] = useState(new Date());
 
 	useEffect(() => {
@@ -49,6 +51,11 @@ export const CreateBudgetItemModal = ({
 				placeholder="Frequency"
 				onChange={(e) => setFrequency(e.target.value)}
 			/>
+			<select onChange={(e) => setType(e.target.value)}>
+				<option value="income">Income</option>
+				<option value="expense">Expense</option>
+			</select>
+
 			<div style={{ display: "flex", justifyContent: "space-between" }}>
 				<select onChange={(e) => setCategory(e.target.value)}>
 					{categories.map((category, index) => (
@@ -60,7 +67,7 @@ export const CreateBudgetItemModal = ({
 				{category === "-- create new --" && (
 					<input
 						type="text"
-						onChange={(e) => setCategory(e.target.value)}
+						onChange={(e) => setNewCategory(e.target.value)}
 					/>
 				)}
 			</div>
@@ -77,7 +84,10 @@ export const CreateBudgetItemModal = ({
 						new BudgetItem(
 							name,
 							amount,
-							category,
+							category === "-- create new --"
+								? newCategory
+								: category,
+							type as "income" | "expense",
 							new BudgetItemNextDate(nextDate),
 							new FrequencyString(frequency)
 						)

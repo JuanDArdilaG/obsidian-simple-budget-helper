@@ -4,10 +4,17 @@ ul {
 	margin: 0;
 }
 
-li {
+.accounting-list li {
+	margin: 5px 0;
+	border-bottom: 1px solid #cfcfcf;
 	display: flex;
 	justify-content: space-between;
+}
+
+.two-columns-list {
 	padding: 20px 0;
+	display: flex;
+	justify-content: space-between;
 	border-bottom: 1px solid #898989;
 	line-height: 2em;
 }
@@ -28,4 +35,18 @@ li {
 	gap: 20px;
 	width: 70%;
 	margin: auto;
+}
+
+.record-budget-item-modal {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 70%;
+	margin: auto;
+}
+
+.section-buttons-container {
+	padding: 10px 0 10px 0;
+	margin: 0 0 10px 0;
+	border-bottom: 1px solid #cfcfcf;
 }

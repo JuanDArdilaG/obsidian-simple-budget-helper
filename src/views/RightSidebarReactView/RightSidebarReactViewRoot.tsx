@@ -2,9 +2,9 @@ import { StrictMode } from "react";
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import { Root, createRoot } from "react-dom/client";
 import { RightSidebarReactView } from "./RightSidebarReactView";
-import { views } from "src/constants";
-import { Budget } from "src/budget/Budget";
-import { BudgetItem } from "src/budget/BudgetItem";
+import { views } from "config";
+import { Budget } from "budget/Budget";
+import { BudgetItem } from "budget/BudgetItem";
 
 export class RightSidebarReactViewRoot extends ItemView {
 	root: Root | null = null;
@@ -34,10 +34,10 @@ export class RightSidebarReactViewRoot extends ItemView {
 		this.root?.render(
 			<StrictMode>
 				<RightSidebarReactView
-					rootFolder={this._rootFolder}
 					budget={await this._getBudgetItems()}
 					onRecord={(item) => this._updateFileOnRecord(item)}
 					refresh={() => this.refresh()}
+					app={this.app}
 				/>
 			</StrictMode>
 		);
@@ -48,6 +48,11 @@ export class RightSidebarReactViewRoot extends ItemView {
 		const file = vault.getFileByPath(
 			`${this._rootFolder}/${newItem.name}.md`
 		);
+		console.log({
+			newItem,
+			path: `${this._rootFolder}/${newItem.name}.md`,
+			file,
+		});
 		if (!file) return;
 
 		await vault.modify(file, newItem.toMarkdown());

@@ -25,8 +25,6 @@ export class BudgetItemNextDate extends Date {
 		nextDate.setMonth(nextDate.getMonth() + frequencyObject.months);
 		nextDate.setDate(nextDate.getDate() + frequencyObject.days);
 
-		nextDate;
-
 		return new BudgetItemNextDate(nextDate);
 	}
 }

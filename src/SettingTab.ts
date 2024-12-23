@@ -1,13 +1,14 @@
 import { PluginSettingTab, App, Setting } from "obsidian";
 import SimpleBudgetHelperPlugin from "./main";
 
-// Remember to rename these classes and interfaces!
 export interface SimpleBudgetHelperSettings {
 	rootFolder: string;
+	initialBudget: number;
 }
 
 export const DEFAULT_SETTINGS: SimpleBudgetHelperSettings = {
 	rootFolder: "Budget",
+	initialBudget: 0,
 };
 
 export class SettingTab extends PluginSettingTab {
@@ -32,6 +33,22 @@ export class SettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.rootFolder)
 					.onChange(async (value) => {
 						this.plugin.settings.rootFolder = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Initial budget")
+			.setDesc("The initial budget amount")
+			.addText((text) =>
+				text
+					.setPlaceholder("Initial Budget")
+					.setValue(this.plugin.settings.initialBudget.toString())
+					.onChange(async (value) => {
+						const val = parseInt(value);
+						this.plugin.settings.initialBudget = !isNaN(val)
+							? val
+							: 0;
 						await this.plugin.saveSettings();
 					})
 			);

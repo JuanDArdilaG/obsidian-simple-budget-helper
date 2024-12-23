@@ -1,23 +1,24 @@
 import { useState } from "react";
-import { SectionButtons, SectionSelection } from "./components/SectionButtons";
-import { CalendarRightSidebarReactTab } from "./Tabs/CalendarRightSidebarReactView";
-import { Budget } from "src/budget/Budget";
-import { BudgetItem } from "src/budget/BudgetItem";
-import { AllItemsRightSidebarReactTab } from "./Tabs/AllItemsRightSidebarReactView";
+import { Budget } from "budget/Budget";
+import { BudgetItem } from "budget/BudgetItem";
+import { SectionButtons, SidebarSections } from "./SectionButtons";
+import { RecurrentItemsSection } from "./RecurrentItemsSection/RecurrentItemsSection";
+import { AccountingSection } from "./AccountingSection/AccountingSection";
+import { App } from "obsidian";
 
 export const RightSidebarReactView = ({
-	rootFolder,
 	budget,
 	onRecord,
 	refresh,
+	app,
 }: {
-	rootFolder: string;
 	budget: Budget;
 	onRecord: (item: BudgetItem) => void;
 	refresh: () => void;
+	app: App;
 }) => {
 	const [sectionSelection, setSectionSelection] =
-		useState<SectionSelection>("calendar");
+		useState<SidebarSections>("recurrentItems");
 
 	return (
 		<>
@@ -27,17 +28,16 @@ export const RightSidebarReactView = ({
 				refresh={refresh}
 			/>
 
-			{sectionSelection === "calendar" && (
-				<CalendarRightSidebarReactTab
-					budget={budget.orderByNextDate()}
+			{sectionSelection === "recurrentItems" && (
+				<RecurrentItemsSection
+					refresh={refresh}
+					budget={budget}
 					onRecord={onRecord}
+					app={app}
 				/>
 			)}
-			{sectionSelection === "list" && (
-				<AllItemsRightSidebarReactTab
-					budget={budget.orderByNextDate()}
-					onRecord={onRecord}
-				/>
+			{sectionSelection === "accounting" && (
+				<AccountingSection budget={budget.orderByNextDate()} />
 			)}
 		</>
 	);

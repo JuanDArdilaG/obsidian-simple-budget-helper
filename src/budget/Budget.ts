@@ -1,4 +1,5 @@
 import { BudgetItem } from "./BudgetItem";
+import { BudgetItemRecord } from "./BudgetItemRecord";
 
 export class Budget {
 	constructor(private _items: BudgetItem[]) {}
@@ -51,5 +52,11 @@ export class Budget {
 		return this._items.filter((item) => {
 			return item.nextDate.remainingDays <= n;
 		});
+	}
+
+	getAllHistory(): BudgetItemRecord[] {
+		return this._items.reduce((total, item) => {
+			return total.concat(item.history);
+		}, new Array<BudgetItemRecord>());
 	}
 }

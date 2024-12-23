@@ -1,14 +1,17 @@
-import { BudgetItem } from "src/budget/BudgetItem";
+import { BudgetItem } from "budget/BudgetItem";
+import { RightSidebarReactTab } from "../../RightSidebarReactTab";
+import { Budget } from "budget/Budget";
 import { BudgetItemsList } from "../BudgetItemsList";
-import { RightSidebarReactTab } from "./RightSidebarReactTab";
-import { Budget } from "src/budget/Budget";
+import { App } from "obsidian";
 
 export const AllItemsRightSidebarReactTab = ({
 	budget,
 	onRecord,
+	app,
 }: {
 	budget: Budget;
 	onRecord: (item: BudgetItem) => void;
+	app: App;
 }) => {
 	return (
 		<>
@@ -16,6 +19,7 @@ export const AllItemsRightSidebarReactTab = ({
 				<BudgetItemsList
 					budgetItems={budget.items}
 					onRecord={onRecord}
+					app={app}
 					totalPerMonth
 				/>
 			</RightSidebarReactTab>

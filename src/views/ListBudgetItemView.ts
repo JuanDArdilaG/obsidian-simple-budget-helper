@@ -1,8 +1,8 @@
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { Budget } from "src/budget/Budget";
-import { BudgetItem } from "src/budget/BudgetItem";
-import { views } from "src/constants";
+import { Budget } from "budget/Budget";
+import { BudgetItem } from "budget/BudgetItem";
+import { views } from "constants";
 
 export class ListBudgetItemView extends ItemView {
 	private _rootFolder: string;

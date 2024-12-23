@@ -1,21 +1,14 @@
-import { RefreshCcw } from "lucide-react";
-
 export type SectionSelection = "calendar" | "list" | "perCategory";
 
-export const SectionButtons = ({
+export const RecurrentItemsSectionButtons = ({
 	selected,
 	setSelected,
-	refresh,
 }: {
 	selected: SectionSelection;
 	setSelected: (selected: SectionSelection) => void;
-	refresh: () => void;
 }) => {
 	return (
 		<>
-			<button style={{ float: "left" }} onClick={refresh}>
-				<RefreshCcw size={16} />
-			</button>
 			<div className="section-buttons">
 				<SectionButton
 					type="calendar"

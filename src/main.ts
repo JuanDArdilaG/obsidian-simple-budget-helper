@@ -1,5 +1,5 @@
 import { Plugin, TFile, WorkspaceLeaf } from "obsidian";
-import { views } from "./constants";
+import { views } from "./config";
 import { Budget } from "./budget/Budget";
 import { BudgetItem } from "./budget/BudgetItem";
 import {
@@ -8,7 +8,7 @@ import {
 	SimpleBudgetHelperSettings,
 } from "./SettingTab";
 import { RightSidebarReactViewRoot } from "./views/RightSidebarReactView/RightSidebarReactViewRoot";
-import { CreateBudgetItemModalRoot } from "./modals/CreateBudgetItemModalRoot";
+import { CreateBudgetItemModalRoot } from "./modals/CreateBudgetItemModal/CreateBudgetItemModalRoot";
 import { ListBudgetItemView } from "./views/ListBudgetItemView";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
