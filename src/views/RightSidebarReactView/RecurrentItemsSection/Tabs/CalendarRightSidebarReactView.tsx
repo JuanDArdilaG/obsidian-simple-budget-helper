@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
-import { Budget } from "budget/Budget";
-import { BudgetItem } from "budget/BudgetItem";
+import { Budget } from "budget/Budget/Budget";
+import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { BudgetItemsList } from "../BudgetItemsList";
 import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
 import { App } from "obsidian";

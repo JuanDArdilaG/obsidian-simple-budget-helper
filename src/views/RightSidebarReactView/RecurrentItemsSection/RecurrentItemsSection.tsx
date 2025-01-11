@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Budget } from "budget/Budget";
-import { BudgetItem } from "budget/BudgetItem";
+import { Budget } from "budget/Budget/Budget";
+import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import {
 	SectionSelection,
 	RecurrentItemsSectionButtons,

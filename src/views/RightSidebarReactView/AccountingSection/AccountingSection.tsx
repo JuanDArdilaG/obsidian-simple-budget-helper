@@ -1,5 +1,5 @@
 import { AccountingList } from "./AccountingList";
-import { Budget } from "budget/Budget";
+import { Budget } from "budget/Budget/Budget";
 
 export const AccountingSection = ({ budget }: { budget: Budget }) => {
 	return (

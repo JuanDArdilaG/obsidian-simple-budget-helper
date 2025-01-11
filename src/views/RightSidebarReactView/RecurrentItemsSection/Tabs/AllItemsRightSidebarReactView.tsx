@@ -1,6 +1,6 @@
-import { BudgetItem } from "budget/BudgetItem";
+import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
-import { Budget } from "budget/Budget";
+import { Budget } from "budget/Budget/Budget";
 import { BudgetItemsList } from "../BudgetItemsList";
 import { App } from "obsidian";
 

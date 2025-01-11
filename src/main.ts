@@ -1,130 +1,100 @@
-import { Plugin, TFile, WorkspaceLeaf } from "obsidian";
+import { App, Plugin, TFile } from "obsidian";
 import { views } from "./config";
-import { Budget } from "./budget/Budget";
-import { BudgetItem } from "./budget/BudgetItem";
 import {
 	DEFAULT_SETTINGS,
 	SettingTab,
 	SimpleBudgetHelperSettings,
 } from "./SettingTab";
 import { RightSidebarReactViewRoot } from "./views/RightSidebarReactView/RightSidebarReactViewRoot";
-import { CreateBudgetItemModalRoot } from "./modals/CreateBudgetItemModal/CreateBudgetItemModalRoot";
-import { ListBudgetItemView } from "./views/ListBudgetItemView";
+import { Commands } from "commands";
+import { LeftMenuItems } from "ribbonIcon";
+import { Budget } from "budget/Budget/Budget";
+import { BudgetItemMDFormatter } from "budget/BudgetItem/BudgetItemMDFormatter";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
-	private _categories: string[] = [];
+
+	async initFoldersAndFiles() {
+		const safeCreateFolder = async (path: string) => {
+			try {
+				await this.app.vault.createFolder(path);
+			} catch (error) {
+				console.log({ error, path });
+			}
+		};
+		const safeCreateFile = async (path: string, content: string) => {
+			try {
+				await this.app.vault.create(path, content);
+			} catch (error) {
+				console.log({ error, path, content });
+			}
+		};
+
+		await safeCreateFolder(this.settings.rootFolder);
+		await safeCreateFolder(`${this.settings.rootFolder}/Recurrent`);
+		await safeCreateFile(`${this.settings.rootFolder}/Simple.md`, "");
+		return this.app.vault.getFileByPath(
+			`${this.settings.rootFolder}/Simple.md`
+		);
+	}
 
 	async onload() {
 		await this.loadSettings();
+		const simpleTransactionsFile = await this.initFoldersAndFiles();
+		if (!simpleTransactionsFile) throw new Error("Failed to create file.");
 
-		try {
-			await this.app.vault.createFolder(this.settings.rootFolder);
-		} catch (error) {
-			const folder = this.app.vault.getFolderByPath(
-				this.settings.rootFolder
-			);
-			if (!folder) return;
-			const budget = new Budget([]);
-			for (const file of folder.children) {
-				if (file instanceof TFile) {
-					const fileContent = await this.app.vault.cachedRead(file);
-					const budgetItem = BudgetItem.fromRawMarkdown(fileContent);
-					budget.addItem(budgetItem);
-				}
-			}
-			this._categories = budget.categories;
-		}
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SettingTab(this.app, this));
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		// this.registerInterval(
-		// 	window.setInterval(() => console.log("setInterval"), 5 * 60 * 1000)
-		// );
-
-		this.addCommand({
-			id: "display-create-budget-item-modal",
-			name: "Create budget item",
-			callback: () => {
-				new CreateBudgetItemModalRoot(
-					this.app,
-					[...this._categories, "-- create new --"].sort(),
-					async (item) => {
-						await this.app.vault.create(
-							`${this.settings.rootFolder}/${item.name}.md`,
-							item.toMarkdown()
-						);
-					}
-				).open();
-			},
-		});
-
-		this.registerView(
-			views.LIST_BUDGET_ITEMS.type,
-			(leaf) => new ListBudgetItemView(leaf, this.settings.rootFolder)
+		const budget = await this._getBudget(
+			this.app,
+			this.settings.rootFolder
 		);
+
 		this.registerView(
 			views.LIST_BUDGET_ITEMS_REACT.type,
 			(leaf) =>
-				new RightSidebarReactViewRoot(leaf, this.settings.rootFolder)
+				new RightSidebarReactViewRoot(
+					leaf,
+					this.app,
+					this.settings,
+					this._getBudget
+				)
 		);
 
-		this.addRibbonIcon(
-			views.LIST_BUDGET_ITEMS.icon,
-			views.LIST_BUDGET_ITEMS.title,
-			async () => {
-				const leafs = this.app.workspace.getLeavesOfType(
-					views.LIST_BUDGET_ITEMS.type
-				);
-				let leaf: WorkspaceLeaf | undefined;
-				if (leafs.length === 0) {
-					leaf =
-						this.app.workspace.getRightLeaf(false) ??
-						this.app.workspace.getLeaf();
-					await leaf.setViewState({
-						type: views.LIST_BUDGET_ITEMS.type,
-					});
-				} else {
-					leaf = leafs.first();
+		this.addSettingTab(new SettingTab(this.app, this));
+		Commands.CreateBudgetItemModal(this, budget.getCategories());
+		LeftMenuItems.RightSidebarPanel(this);
+	}
+
+	private async _getBudget(app: App, rootFolder: string): Promise<Budget> {
+		const { vault } = app;
+		const getBudgetItemsByPath = async (
+			path: string,
+			budget: Budget
+		): Promise<Budget> => {
+			const folder = vault.getFolderByPath(path);
+			if (!folder) return budget;
+			for (const file of folder.children) {
+				if (file instanceof TFile) {
+					const fileContent = await vault.cachedRead(file);
+					budget.addItems(
+						BudgetItemMDFormatter.fromRawMarkdown(
+							file.path,
+							fileContent
+						)
+					);
 				}
-				if (!leaf || !(leaf.view instanceof ListBudgetItemView)) return;
-
-				await this.app.workspace.revealLeaf(leaf);
-				leaf.trigger("refresh");
-				this.app.workspace.trigger("simple-budget-helper:refresh");
 			}
-		);
 
-		this.addRibbonIcon(
-			views.LIST_BUDGET_ITEMS_REACT.icon,
-			views.LIST_BUDGET_ITEMS_REACT.title,
-			async () => {
-				const leafs = this.app.workspace.getLeavesOfType(
-					views.LIST_BUDGET_ITEMS_REACT.type
-				);
-				let leaf: WorkspaceLeaf | undefined;
-				if (leafs.length === 0) {
-					leaf =
-						this.app.workspace.getRightLeaf(false) ??
-						this.app.workspace.getLeaf();
-					await leaf.setViewState({
-						type: views.LIST_BUDGET_ITEMS_REACT.type,
-					});
-				} else {
-					leaf = leafs.first();
-				}
-				if (!leaf || !(leaf.view instanceof RightSidebarReactViewRoot))
-					return;
-
-				await this.app.workspace.revealLeaf(leaf);
-				leaf.trigger("refresh");
-				this.app.workspace.trigger(
-					`${views.LIST_BUDGET_ITEMS_REACT.type}:refresh`
-				);
-			}
+			return budget;
+		};
+		let budget = new Budget([]);
+		budget = await getBudgetItemsByPath(`${rootFolder}/Recurrent`, budget);
+		const simpleBudget = await Budget.loadSimpleTransactions(
+			vault,
+			rootFolder
 		);
+		budget.addItems(...simpleBudget.items);
+
+		return budget;
 	}
 
 	onunload() {}

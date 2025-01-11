@@ -1,9 +1,11 @@
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { Forward } from "lucide-react";
-import { Budget } from "budget/Budget";
-import { BudgetItem } from "budget/BudgetItem";
+import { Budget } from "budget/Budget/Budget";
+import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { RecordBudgetItemModalRoot } from "./RecordBudgetItemModalRoot";
 import { App } from "obsidian";
+import { useContext } from "react";
+import { SettingsContext } from "../RightSidebarReactView";
 
 export const BudgetItemsList = ({
 	budgetItems,
@@ -16,11 +18,26 @@ export const BudgetItemsList = ({
 	totalPerMonth?: boolean;
 	app: App;
 }) => {
+	const settings = useContext(SettingsContext);
+
 	return (
 		<div>
 			<ul>
 				{budgetItems.map((item, index) => (
-					<li key={index} className="two-columns-list">
+					<li
+						key={index}
+						className="two-columns-list"
+						onClick={async () => {
+							if (item.path) {
+								const leaf = app.workspace.getLeaf(
+									settings.openInNewTab
+								);
+								const file = app.vault.getFileByPath(item.path);
+								if (!file) return;
+								await leaf.openFile(file);
+							}
+						}}
+					>
 						<span>
 							{item.name}
 							<br />

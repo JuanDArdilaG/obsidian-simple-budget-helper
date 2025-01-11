@@ -1,5 +1,4 @@
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { dateStringToDate } from "utils/date";
 
 export class BudgetItemRecord {
 	constructor(
@@ -30,18 +29,18 @@ export class BudgetItemRecord {
 		type: "expense" | "income"
 	): BudgetItemRecord {
 		const match = /name: (.*)\. date: (.*)\. amount: (.*)/.exec(str);
-		if (!match) throw new Error("Invalid raw markdown");
+		if (!match) throw new Error("Invalid raw markdown.");
 		return new BudgetItemRecord(
 			match[1],
 			type,
-			new Date(dateStringToDate(match[2])),
+			new Date(match[2]),
 			PriceValueObject.fromString(match[3]).valueOf()
 		);
 	}
 
 	toString(): string {
 		return `- name: ${this._name}. date: ${
-			new Date(this._date).toISOString().split("T")[0]
+			this._date.toString().split(" GMT")[0]
 		}. amount: ${new PriceValueObject(this._amount)}`;
 	}
 }

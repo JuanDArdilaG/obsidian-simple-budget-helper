@@ -1,5 +1,5 @@
 import { App, Modal } from "obsidian";
-import { BudgetItem } from "budget/BudgetItem";
+import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { createRoot, Root } from "react-dom/client";
 import { StrictMode } from "react";
 import { CreateBudgetItemModal } from "./CreateBudgetItemModal";

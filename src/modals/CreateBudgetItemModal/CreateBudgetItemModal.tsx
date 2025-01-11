@@ -1,8 +1,8 @@
-import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { useEffect, useState } from "react";
-import { BudgetItem } from "budget/BudgetItem";
-import { BudgetItemNextDate } from "budget/BudgetItemNextDate";
-import { FrequencyString } from "budget/FrequencyString";
+import { useState } from "react";
+import { BudgetItem } from "budget/BudgetItem/BudgetItem";
+import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
+import { FrequencyString } from "budget/BudgetItem/FrequencyString";
+import { ReactMoneyInput } from "react-input-price";
 
 export const CreateBudgetItemModal = ({
 	categories,
@@ -15,22 +15,15 @@ export const CreateBudgetItemModal = ({
 }) => {
 	const [name, setName] = useState("");
 	const [amount, setAmount] = useState(0);
+	const [isRecurrent, setIsRecurrent] = useState(false);
 	const [frequency, setFrequency] = useState("");
 	const [category, setCategory] = useState("-- create new --");
 	const [type, setType] = useState("income");
 	const [newCategory, setNewCategory] = useState("");
 	const [nextDate, setNextDate] = useState(new Date());
-
-	useEffect(() => {
-		const amountInput = document.getElementById(
-			"amount-input"
-		) as HTMLInputElement;
-		if (amountInput) {
-			PriceValueObject.parseInput(amountInput, (price) => {
-				setAmount(PriceValueObject.fromString(price).toNumber());
-			});
-		}
-	}, []);
+	const [time, setTime] = useState(
+		new Date().toTimeString().split(" ")[0].split(":").slice(0, 2).join(":")
+	);
 
 	return (
 		<div className="create-budget-item-modal">
@@ -40,22 +33,15 @@ export const CreateBudgetItemModal = ({
 				placeholder="Name"
 				onChange={(e) => setName(e.target.value)}
 			/>
-			<input
-				id="amount-input"
-				type="text"
-				placeholder="Amount"
-				onChange={(e) => setAmount(Number(e.target.value))}
-			/>
-			<input
-				type="text"
-				placeholder="Frequency"
-				onChange={(e) => setFrequency(e.target.value)}
+			<ReactMoneyInput
+				id="amount-input-react"
+				value={0}
+				onValueChange={(priceVO) => setAmount(priceVO.toNumber())}
 			/>
 			<select onChange={(e) => setType(e.target.value)}>
 				<option value="income">Income</option>
 				<option value="expense">Expense</option>
 			</select>
-
 			<div style={{ display: "flex", justifyContent: "space-between" }}>
 				<select onChange={(e) => setCategory(e.target.value)}>
 					{categories.map((category, index) => (
@@ -71,27 +57,71 @@ export const CreateBudgetItemModal = ({
 					/>
 				)}
 			</div>
-			<input
-				type="date"
-				onChange={(e) =>
-					setNextDate(new Date(`${e.target.value}T00:00:00`))
-				}
-			/>
+			<div>
+				<input
+					type="date"
+					defaultValue={new Intl.DateTimeFormat("en-CA", {
+						year: "numeric",
+						month: "2-digit",
+						day: "2-digit",
+					}).format(nextDate)}
+					onChange={(e) =>
+						setNextDate(new Date(`${e.target.value}T00:00:00`))
+					}
+				/>
+				<input
+					type="time"
+					defaultValue={time}
+					onChange={(e) => setTime(e.target.value)}
+				/>
+			</div>
+			<div>
+				<input
+					id="isRecurrent"
+					type="checkbox"
+					onChange={(e) => setIsRecurrent(e.target.checked)}
+				/>
+				<label htmlFor="isRecurrent">Recurrent</label>
+			</div>
+			{isRecurrent && (
+				<input
+					type="text"
+					placeholder="Frequency"
+					onChange={(e) => setFrequency(e.target.value)}
+				/>
+			)}
 			<button
 				onClick={() => {
-					close();
+					const isRecurrent = frequency !== "";
+					nextDate.setHours(parseInt(time.split(":")[0]));
+					nextDate.setMinutes(parseInt(time.split(":")[1]));
+					nextDate.setSeconds(0);
+					const date = new BudgetItemNextDate(nextDate, isRecurrent);
+					const cat =
+						category === "-- create new --"
+							? newCategory
+							: category;
+
 					onSubmit(
-						new BudgetItem(
-							name,
-							amount,
-							category === "-- create new --"
-								? newCategory
-								: category,
-							type as "income" | "expense",
-							new BudgetItemNextDate(nextDate),
-							new FrequencyString(frequency)
-						)
+						isRecurrent
+							? BudgetItem.createRecurrent(
+									name,
+									amount,
+									cat,
+									type as "income" | "expense",
+									date,
+									new FrequencyString(frequency),
+									""
+							  )
+							: BudgetItem.createSimple(
+									name,
+									amount,
+									cat,
+									type as "income" | "expense",
+									date
+							  )
 					);
+					close();
 				}}
 			>
 				Create

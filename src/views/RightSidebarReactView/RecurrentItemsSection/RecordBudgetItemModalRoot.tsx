@@ -2,7 +2,7 @@ import { App, Modal } from "obsidian";
 import { createRoot, Root } from "react-dom/client";
 import { StrictMode } from "react";
 import { RecordBudgetItemModal } from "./RecordBudgetItemModal";
-import { BudgetItem } from "budget/BudgetItem";
+import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 
 export class RecordBudgetItemModalRoot extends Modal {
 	root: Root | null = null;

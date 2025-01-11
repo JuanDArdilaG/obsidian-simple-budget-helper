@@ -1,8 +1,8 @@
 import { FrequencyString } from "./FrequencyString";
 
 export class BudgetItemNextDate extends Date {
-	constructor(date: Date) {
-		date.setHours(0, 0, 0, 0);
+	constructor(date: Date, removeTime = true) {
+		if (removeTime) date.setHours(0, 0, 0, 0);
 		super(date);
 	}
 

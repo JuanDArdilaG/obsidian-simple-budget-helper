@@ -1,15 +1,22 @@
 import { StrictMode } from "react";
-import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
+import { App, ItemView, WorkspaceLeaf } from "obsidian";
 import { Root, createRoot } from "react-dom/client";
 import { RightSidebarReactView } from "./RightSidebarReactView";
 import { views } from "config";
-import { Budget } from "budget/Budget";
-import { BudgetItem } from "budget/BudgetItem";
+import { Budget } from "budget/Budget/Budget";
+import { BudgetItem } from "budget/BudgetItem/BudgetItem";
+import { SimpleBudgetHelperSettings } from "SettingTab";
+import { BudgetItemMDFormatter } from "budget/BudgetItem/BudgetItemMDFormatter";
 
 export class RightSidebarReactViewRoot extends ItemView {
 	root: Root | null = null;
 
-	constructor(leaf: WorkspaceLeaf, private _rootFolder: string) {
+	constructor(
+		leaf: WorkspaceLeaf,
+		private _app: App,
+		private _settings: SimpleBudgetHelperSettings,
+		private _getBudget: (app: App, rootFolder: string) => Promise<Budget>
+	) {
 		super(leaf);
 	}
 
@@ -31,13 +38,18 @@ export class RightSidebarReactViewRoot extends ItemView {
 	}
 
 	async refresh() {
+		const budget = await this._getBudget(
+			this._app,
+			this._settings.rootFolder
+		);
 		this.root?.render(
 			<StrictMode>
 				<RightSidebarReactView
-					budget={await this._getBudgetItems()}
+					budget={budget}
 					onRecord={(item) => this._updateFileOnRecord(item)}
 					refresh={() => this.refresh()}
 					app={this.app}
+					settings={this._settings}
 				/>
 			</StrictMode>
 		);
@@ -46,33 +58,16 @@ export class RightSidebarReactViewRoot extends ItemView {
 	private async _updateFileOnRecord(newItem: BudgetItem) {
 		const { vault } = this.app;
 		const file = vault.getFileByPath(
-			`${this._rootFolder}/${newItem.name}.md`
+			`${this._settings.rootFolder}/${newItem.filePath}`
 		);
-		console.log({
-			newItem,
-			path: `${this._rootFolder}/${newItem.name}.md`,
-			file,
-		});
 		if (!file) return;
 
-		await vault.modify(file, newItem.toMarkdown());
+		await vault.modify(
+			file,
+			new BudgetItemMDFormatter(newItem).toMarkdown()
+		);
 
 		this.refresh();
-	}
-
-	private async _getBudgetItems(): Promise<Budget> {
-		const { vault } = this.app;
-		const folder = vault.getFolderByPath(this._rootFolder);
-		if (!folder) return new Budget([]);
-		const budget = new Budget([]);
-		for (const file of folder.children) {
-			if (file instanceof TFile) {
-				const fileContent = await vault.cachedRead(file);
-				budget.addItem(BudgetItem.fromRawMarkdown(fileContent));
-			}
-		}
-
-		return budget;
 	}
 
 	async onClose() {

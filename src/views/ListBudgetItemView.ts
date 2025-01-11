@@ -1,8 +1,8 @@
 import { ItemView, TFile, WorkspaceLeaf } from "obsidian";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { Budget } from "budget/Budget";
-import { BudgetItem } from "budget/BudgetItem";
-import { views } from "constants";
+import { Budget } from "budget/Budget/Budget";
+import { BudgetItem } from "budget/BudgetItem/BudgetItem";
+import { views } from "config";
 
 export class ListBudgetItemView extends ItemView {
 	private _rootFolder: string;
@@ -50,13 +50,16 @@ export class ListBudgetItemView extends ItemView {
 
 	private async _getBudgetItems(config?: { until: Date }): Promise<Budget> {
 		const { vault } = this.app;
-		const folder = vault.getFolderByPath(this._rootFolder);
+		const folder = vault.getFolderByPath(`${this._rootFolder}/Recurrent`);
 		if (!folder) return new Budget([]);
 		const budget = new Budget([]);
 		for (const file of folder.children) {
 			if (file instanceof TFile) {
 				const fileContent = await vault.cachedRead(file);
-				const budgetItem = BudgetItem.fromRawMarkdown(fileContent);
+				const budgetItem = BudgetItem.fromRawMarkdown(
+					file.path,
+					fileContent
+				);
 				if (config?.until) {
 					const d1 = new Date(budgetItem.nextDate);
 					d1.setHours(0, 0, 0, 0);
@@ -66,7 +69,7 @@ export class ListBudgetItemView extends ItemView {
 						continue;
 					}
 				}
-				budget.addItem(budgetItem);
+				budget.addItems(budgetItem);
 			}
 		}
 
@@ -127,19 +130,22 @@ export class ListBudgetItemView extends ItemView {
 		container.empty();
 		container.createEl("h3", { text: "Per Category Budget Items" });
 
-		const folder = vault.getFolderByPath(this._rootFolder);
+		const folder = vault.getFolderByPath(`${this._rootFolder}/Recurrent`);
 		if (!folder) return;
 		const budget = new Budget([]);
 		const perCategory: Record<string, Budget> = {};
 		for (const file of folder.children) {
 			if (file instanceof TFile) {
 				const fileContent = await vault.cachedRead(file);
-				const budgetItem = BudgetItem.fromRawMarkdown(fileContent);
+				const budgetItem = BudgetItem.fromRawMarkdown(
+					file.path,
+					fileContent
+				);
 				if (!perCategory[budgetItem.category]) {
 					perCategory[budgetItem.category] = new Budget([]);
 				}
-				perCategory[budgetItem.category].addItem(budgetItem);
-				budget.addItem(budgetItem);
+				perCategory[budgetItem.category].addItems(budgetItem);
+				budget.addItems(budgetItem);
 			}
 		}
 
