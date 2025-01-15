@@ -15,7 +15,11 @@ export class RightSidebarReactViewRoot extends ItemView {
 		leaf: WorkspaceLeaf,
 		private _app: App,
 		private _settings: SimpleBudgetHelperSettings,
-		private _getBudget: (app: App, rootFolder: string) => Promise<Budget>
+		private _getBudget: (app: App, rootFolder: string) => Promise<Budget>,
+		private _updateItemInFile: (
+			item: BudgetItem,
+			operation: "add" | "remove"
+		) => Promise<void>
 	) {
 		super(leaf);
 	}
@@ -47,7 +51,8 @@ export class RightSidebarReactViewRoot extends ItemView {
 				<RightSidebarReactView
 					budget={budget}
 					onRecord={(item) => this._updateFileOnRecord(item)}
-					refresh={() => this.refresh()}
+					updateItemFile={this._updateItemInFile}
+					refresh={async () => await this.refresh()}
 					app={this.app}
 					settings={this._settings}
 				/>

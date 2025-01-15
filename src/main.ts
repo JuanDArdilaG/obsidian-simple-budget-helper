@@ -10,6 +10,7 @@ import { Commands } from "commands";
 import { LeftMenuItems } from "ribbonIcon";
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItemMDFormatter } from "budget/BudgetItem/BudgetItemMDFormatter";
+import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
@@ -55,13 +56,80 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 					leaf,
 					this.app,
 					this.settings,
-					this._getBudget
+					this._getBudget,
+					(item) => this._updateItemInFile(item, "remove")
 				)
 		);
 
 		this.addSettingTab(new SettingTab(this.app, this));
-		Commands.CreateBudgetItemModal(this, budget.getCategories());
+		Commands.CreateBudgetItemModal(
+			this,
+			budget.getCategories(),
+			async () => {
+				const budget = await this._getBudget(
+					this.app,
+					this.settings.rootFolder
+				);
+				const newID = budget.getNextID();
+				console.log({ items: budget.items, newID });
+				return newID;
+			},
+			(item, operation) => this._updateItemInFile(item, operation)
+		);
 		LeftMenuItems.RightSidebarPanel(this);
+	}
+
+	private async _updateItemInFile(
+		item: BudgetItem,
+		operation: "add" | "remove"
+	) {
+		if (operation === "add") {
+			if (item.isRecurrent) {
+				await this.app.vault.create(
+					`${this.settings.rootFolder}/${item.filePath}`,
+					new BudgetItemMDFormatter(item).toMarkdown()
+				);
+				return;
+			}
+			const simpleBudget = await Budget.loadSimpleTransactions(
+				(
+					await this._getBudget(this.app, this.settings.rootFolder)
+				).onlyRecurrent().items.length,
+				this.app.vault,
+				this.settings.rootFolder
+			);
+
+			simpleBudget.addItems(item);
+
+			await simpleBudget.saveSimpleTransactions(
+				this.app.vault,
+				this.settings.rootFolder
+			);
+		} else {
+			if (item.isRecurrent) {
+				const file = this.app.vault.getAbstractFileByPath(
+					`${this.settings.rootFolder}/${item.filePath}`
+				);
+				if (!file || !(file instanceof TFile)) return;
+				await this.app.vault.modify(
+					file,
+					new BudgetItemMDFormatter(item).toMarkdown()
+				);
+				return;
+			}
+			const simpleBudget = await Budget.loadSimpleTransactions(
+				(
+					await this._getBudget(this.app, this.settings.rootFolder)
+				).onlyRecurrent().items.length,
+				this.app.vault,
+				this.settings.rootFolder
+			);
+			simpleBudget.removeItemByID(item.id);
+			await simpleBudget.saveSimpleTransactions(
+				this.app.vault,
+				this.settings.rootFolder
+			);
+		}
 	}
 
 	private async _getBudget(app: App, rootFolder: string): Promise<Budget> {
@@ -72,15 +140,18 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		): Promise<Budget> => {
 			const folder = vault.getFolderByPath(path);
 			if (!folder) return budget;
+			let id = 0;
 			for (const file of folder.children) {
 				if (file instanceof TFile) {
 					const fileContent = await vault.cachedRead(file);
 					budget.addItems(
 						BudgetItemMDFormatter.fromRawMarkdown(
+							id,
 							file.path,
 							fileContent
 						)
 					);
+					id++;
 				}
 			}
 
@@ -89,6 +160,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		let budget = new Budget([]);
 		budget = await getBudgetItemsByPath(`${rootFolder}/Recurrent`, budget);
 		const simpleBudget = await Budget.loadSimpleTransactions(
+			budget.items.length,
 			vault,
 			rootFolder
 		);

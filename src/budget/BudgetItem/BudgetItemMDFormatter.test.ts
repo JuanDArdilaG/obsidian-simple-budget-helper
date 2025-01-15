@@ -6,6 +6,7 @@ import { BudgetItemMDFormatter } from "./BudgetItemMDFormatter";
 describe("toMarkdown", () => {
 	it("should generate markdown correctly for simple item", () => {
 		const item = BudgetItem.createSimple(
+			0,
 			"test",
 			100,
 			"test",
@@ -30,6 +31,7 @@ nextDate: Sat Dec 31 2022
 
 	it("should generate markdown correctly for recurrent item", () => {
 		const item = BudgetItem.createRecurrent(
+			0,
 			"test",
 			100,
 			"test",
@@ -56,6 +58,7 @@ frequency: 1y
 
 	it("should generate markdown correctly for recurrent item with history", () => {
 		const item = BudgetItem.createRecurrent(
+			0,
 			"test",
 			100,
 			"test",

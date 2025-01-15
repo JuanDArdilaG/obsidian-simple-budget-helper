@@ -7,9 +7,11 @@ import { CreateBudgetItemModal } from "./CreateBudgetItemModal";
 export class CreateBudgetItemModalRoot extends Modal {
 	root: Root | null = null;
 	constructor(
+		id: number,
 		app: App,
 		categories: string[],
-		onSubmit: (item: BudgetItem) => Promise<void>
+		onSubmit: (item: BudgetItem) => Promise<void>,
+		toEdit?: BudgetItem
 	) {
 		super(app);
 
@@ -18,11 +20,13 @@ export class CreateBudgetItemModalRoot extends Modal {
 		this.root?.render(
 			<StrictMode>
 				<CreateBudgetItemModal
+					id={id}
 					categories={categories}
 					onSubmit={onSubmit}
 					close={() => {
 						this.close();
 					}}
+					toEdit={toEdit}
 				/>
 			</StrictMode>
 		);

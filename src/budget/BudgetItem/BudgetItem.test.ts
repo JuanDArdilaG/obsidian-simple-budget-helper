@@ -8,6 +8,7 @@ describe("remainingDays", () => {
 			new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 		);
 		const item = BudgetItem.createSimple(
+			0,
 			"test",
 			100,
 			"test",
@@ -27,6 +28,7 @@ describe("remainingDays", () => {
 			new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 		);
 		const item = BudgetItem.createSimple(
+			0,
 			"test",
 			100,
 			"test",
@@ -46,6 +48,7 @@ describe("remainingDays", () => {
 			new Date(now.getTime() + 24 * 60 * 60 * 1000)
 		);
 		const item = BudgetItem.createSimple(
+			0,
 			"test",
 			100,
 			"test",
@@ -65,6 +68,7 @@ describe("remainingDays", () => {
 			new Date(now.getTime() - 24 * 60 * 60 * 1000)
 		);
 		const item = BudgetItem.createSimple(
+			0,
 			"test",
 			100,
 			"test",

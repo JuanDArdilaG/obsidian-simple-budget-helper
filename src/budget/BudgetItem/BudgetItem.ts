@@ -4,6 +4,7 @@ import { BudgetItemRecord } from "./BudgetItemRecord";
 
 export class BudgetItem {
 	constructor(
+		private _id: number,
 		private _name: string,
 		private _amount: number,
 		private _category: string,
@@ -15,6 +16,7 @@ export class BudgetItem {
 	) {}
 
 	static createRecurrent(
+		id: number,
 		name: string,
 		amount: number,
 		category: string,
@@ -24,6 +26,7 @@ export class BudgetItem {
 		path: string
 	): BudgetItem {
 		return new BudgetItem(
+			id,
 			name,
 			amount,
 			category,
@@ -36,13 +39,18 @@ export class BudgetItem {
 	}
 
 	static createSimple(
+		id: number,
 		name: string,
 		amount: number,
 		category: string,
 		type: "income" | "expense",
 		nextDate: BudgetItemNextDate
 	): BudgetItem {
-		return new BudgetItem(name, amount, category, type, nextDate);
+		return new BudgetItem(id, name, amount, category, type, nextDate);
+	}
+
+	get id(): number {
+		return this._id;
 	}
 
 	get name(): string {
@@ -86,6 +94,8 @@ export class BudgetItem {
 			? this._history || []
 			: [
 					new BudgetItemRecord(
+						0,
+						this._id,
 						this.name,
 						this._type,
 						this.nextDate,
@@ -147,8 +157,22 @@ export class BudgetItem {
 
 		if (this._history) {
 			this._history.push(
-				new BudgetItemRecord(this._name, this._type, date, nextAmount)
+				new BudgetItemRecord(
+					this._history.length,
+					this._id,
+					this._name,
+					this._type,
+					date,
+					nextAmount
+				)
 			);
 		}
+	}
+
+	removeHistoryRecord(id: number) {
+		if (!this._history) return;
+		console.log({ before: [...this._history] });
+		this._history = this._history.filter((r) => r.id !== id);
+		console.log({ after: this._history });
 	}
 }

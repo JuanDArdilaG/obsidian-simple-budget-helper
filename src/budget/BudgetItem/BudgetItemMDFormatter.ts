@@ -6,7 +6,11 @@ import { BudgetItem } from "./BudgetItem";
 export class BudgetItemMDFormatter {
 	constructor(private _item: BudgetItem) {}
 
-	static fromRawMarkdown(path: string, rawMarkdown: string): BudgetItem {
+	static fromRawMarkdown(
+		id: number,
+		path: string,
+		rawMarkdown: string
+	): BudgetItem {
 		const propertiesRegex =
 			/name: (.*)\namount: (.*)\ncategory: (.*)\ntype: (.*)\nnextDate: (.*)(?:\nfrequency: (.*))?/;
 		const match = propertiesRegex.exec(rawMarkdown);
@@ -18,6 +22,7 @@ export class BudgetItemMDFormatter {
 		}
 
 		return new BudgetItem(
+			id,
 			match[1],
 			parseInt(match[2]),
 			match[3],
@@ -27,8 +32,10 @@ export class BudgetItemMDFormatter {
 			match[6] ? new FrequencyString(match[6]) : undefined,
 			history
 				?.filter((r) => !!r)
-				.map((r) =>
+				.map((r, i) =>
 					BudgetItemRecord.fromString(
+						i,
+						id,
 						r,
 						match[4] as "income" | "expense"
 					)

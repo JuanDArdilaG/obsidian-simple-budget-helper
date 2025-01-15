@@ -8,6 +8,7 @@ describe("getBalance", () => {
 	it("should return the correct balance for one simple item", () => {
 		const budget = new Budget([]);
 		const item = BudgetItem.createSimple(
+			0,
 			"test",
 			100,
 			"test",
@@ -25,6 +26,7 @@ describe("getBalance", () => {
 	it("should return the correct balance for one recurrent item", () => {
 		const budget = new Budget([]);
 		const item = BudgetItem.createRecurrent(
+			0,
 			"test",
 			100,
 			"test",
@@ -45,6 +47,7 @@ describe("getBalance", () => {
 	it("should return the correct balance for multiple items", () => {
 		const budget = new Budget([]);
 		const item1 = BudgetItem.createSimple(
+			0,
 			"test",
 			100,
 			"test",
@@ -52,6 +55,7 @@ describe("getBalance", () => {
 			new BudgetItemNextDate(new Date("2024-01-01"))
 		);
 		const item2 = BudgetItem.createRecurrent(
+			0,
 			"test",
 			70,
 			"test",
@@ -72,6 +76,7 @@ describe("getBalance", () => {
 	it("should return the correct balance for multiple items with negative amount", () => {
 		const budget = new Budget([]);
 		const item1 = BudgetItem.createSimple(
+			0,
 			"test",
 			100,
 			"test",
@@ -79,6 +84,7 @@ describe("getBalance", () => {
 			new BudgetItemNextDate(new Date("2024-01-01"))
 		);
 		const item2 = BudgetItem.createRecurrent(
+			0,
 			"test",
 			70,
 			"test",
@@ -99,6 +105,7 @@ describe("getBalance", () => {
 	it("should return the correct balance for multiple items with negative amount but positive initial balance", () => {
 		const budget = new Budget([]);
 		const item1 = BudgetItem.createSimple(
+			0,
 			"test",
 			100,
 			"test",
@@ -106,6 +113,7 @@ describe("getBalance", () => {
 			new BudgetItemNextDate(new Date("2024-01-01"))
 		);
 		const item2 = BudgetItem.createRecurrent(
+			0,
 			"test",
 			70,
 			"test",
@@ -127,6 +135,7 @@ describe("getBalance", () => {
 	it("should return the correct balance for one simple item with until date", () => {
 		const budget = new Budget([]);
 		const item1 = BudgetItem.createSimple(
+			0,
 			"test",
 			100,
 			"test",
@@ -134,6 +143,7 @@ describe("getBalance", () => {
 			new BudgetItemNextDate(new Date("2024-01-01"))
 		);
 		const item2 = BudgetItem.createRecurrent(
+			0,
 			"test",
 			70,
 			"test",
@@ -154,6 +164,7 @@ describe("getBalance", () => {
 	it("should return the correct balance for one recurrent item with until date", () => {
 		const budget = new Budget([]);
 		const item1 = BudgetItem.createSimple(
+			0,
 			"test",
 			100,
 			"test",
@@ -161,6 +172,7 @@ describe("getBalance", () => {
 			new BudgetItemNextDate(new Date("2024-01-02"))
 		);
 		const item2 = BudgetItem.createRecurrent(
+			0,
 			"test",
 			70,
 			"test",

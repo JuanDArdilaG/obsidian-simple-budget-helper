@@ -26,13 +26,6 @@ export const RecordBudgetItemModal = ({
 	return (
 		<div className="record-budget-item-modal">
 			<h1>Record Budget Item</h1>
-			{/* <input
-				type="date"
-				defaultValue={date.toISOString().split("T")[0]}
-				onChange={(e) => {
-					setDate(dateStringToDate(e.target.value));
-				}}
-			/> */}
 			<div>
 				<input
 					type="date"

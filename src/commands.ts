@@ -1,41 +1,30 @@
-import { Budget } from "budget/Budget/Budget";
-import { BudgetItemMDFormatter } from "budget/BudgetItem/BudgetItemMDFormatter";
+import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import SimpleBudgetHelperPlugin from "main";
 import { CreateBudgetItemModalRoot } from "modals/CreateBudgetItemModal/CreateBudgetItemModalRoot";
 
 export class Commands {
 	static CreateBudgetItemModal(
 		plugin: SimpleBudgetHelperPlugin,
-		categories: string[]
+		categories: string[],
+		getNewItemID: () => Promise<number>,
+		updateFiles: (
+			item: BudgetItem,
+			operation: "add" | "remove"
+		) => Promise<void>,
+		toEdit?: BudgetItem
 	) {
 		plugin.addCommand({
 			id: "display-create-budget-item-modal",
 			name: "Create budget item",
-			callback: () => {
+			callback: async () => {
 				new CreateBudgetItemModalRoot(
+					await getNewItemID(),
 					plugin.app,
 					[...categories, "-- create new --"].sort(),
 					async (item) => {
-						if (item.isRecurrent) {
-							await plugin.app.vault.create(
-								`${plugin.settings.rootFolder}/${item.filePath}`,
-								new BudgetItemMDFormatter(item).toMarkdown()
-							);
-							return;
-						}
-						const simpleBudget =
-							await Budget.loadSimpleTransactions(
-								plugin.app.vault,
-								plugin.settings.rootFolder
-							);
-
-						simpleBudget.addItems(item);
-
-						await simpleBudget.saveSimpleTransactions(
-							plugin.app.vault,
-							plugin.settings.rootFolder
-						);
-					}
+						await updateFiles(item, "add");
+					},
+					toEdit
 				).open();
 			},
 		});

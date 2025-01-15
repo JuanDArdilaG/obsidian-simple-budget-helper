@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
 import { FrequencyString } from "budget/BudgetItem/FrequencyString";
 import { ReactMoneyInput } from "react-input-price";
 
 export const CreateBudgetItemModal = ({
+	id,
 	categories,
 	onSubmit,
 	close,
+	toEdit,
 }: {
+	id: number;
 	categories: string[];
 	onSubmit: (item: BudgetItem) => Promise<void>;
 	close: () => void;
+	toEdit?: BudgetItem;
 }) => {
 	const [name, setName] = useState("");
 	const [amount, setAmount] = useState(0);
@@ -24,6 +28,26 @@ export const CreateBudgetItemModal = ({
 	const [time, setTime] = useState(
 		new Date().toTimeString().split(" ")[0].split(":").slice(0, 2).join(":")
 	);
+
+	useEffect(() => {
+		if (toEdit) {
+			setName(toEdit.name);
+			setAmount(toEdit.amount);
+			setIsRecurrent(toEdit.isRecurrent);
+			setFrequency(toEdit.frequency?.toString() || "");
+			setCategory(toEdit.category);
+			setType(toEdit.type);
+			setNextDate(toEdit.nextDate);
+			setTime(
+				toEdit.nextDate
+					.toTimeString()
+					.split(" ")[0]
+					.split(":")
+					.slice(0, 2)
+					.join(":")
+			);
+		}
+	}, [toEdit]);
 
 	return (
 		<div className="create-budget-item-modal">
@@ -105,6 +129,7 @@ export const CreateBudgetItemModal = ({
 					onSubmit(
 						isRecurrent
 							? BudgetItem.createRecurrent(
+									id,
 									name,
 									amount,
 									cat,
@@ -114,6 +139,7 @@ export const CreateBudgetItemModal = ({
 									""
 							  )
 							: BudgetItem.createSimple(
+									id,
 									name,
 									amount,
 									cat,

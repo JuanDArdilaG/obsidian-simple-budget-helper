@@ -1,11 +1,17 @@
 import { AccountingList } from "./AccountingList";
 import { Budget } from "budget/Budget/Budget";
 
-export const AccountingSection = ({ budget }: { budget: Budget }) => {
+export const AccountingSection = ({
+	budget,
+	refresh,
+}: {
+	budget: Budget;
+	refresh: () => void;
+}) => {
 	return (
 		<>
 			<h1>Accounting</h1>
-			<AccountingList budget={budget} />
+			<AccountingList refresh={refresh} budget={budget} />
 		</>
 	);
 };

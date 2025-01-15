@@ -26,6 +26,20 @@ export class Budget {
 		this._items = this._items.concat(items);
 	}
 
+	getItemByID(id: number): BudgetItem | undefined {
+		return this._items.find((item) => item.id === id);
+	}
+
+	getNextID(): number {
+		return this._items.sort((a, b) => b.id - a.id)[0].id + 1;
+	}
+
+	removeItemByID(id: number) {
+		console.log({ id, before: [...this._items] });
+		this._items = this._items.filter((item) => item.id !== id);
+		console.log({ after: [...this._items] });
+	}
+
 	getTotalPerMonth(): number {
 		return this._items.reduce((total, item) => {
 			return total + item.perMonthAmount;
@@ -41,6 +55,7 @@ export class Budget {
 	}
 
 	orderByNextDate(order: "desc" | "asc" = "asc"): Budget {
+		console.log({ items: this._items });
 		return new Budget(
 			this._items.sort((a, b) =>
 				order === "asc"
@@ -111,19 +126,23 @@ export class Budget {
 	): Promise<Budget> {
 		const budget = new Budget([]);
 
+		let id = 0;
 		for (const file of files) {
 			const fileContent = await fileReader(file);
 			const budgetItem = BudgetItemMDFormatter.fromRawMarkdown(
+				id,
 				file.path,
 				fileContent
 			);
 			budget.addItems(budgetItem);
+			id++;
 		}
 
 		return budget;
 	}
 
 	static async loadSimpleTransactions(
+		initialID: number,
 		vault: Vault,
 		rootFolder: string
 	): Promise<Budget> {
@@ -133,20 +152,28 @@ export class Budget {
 		if (file) {
 			const fileContent = await vault.cachedRead(file);
 			budget.addItems(
-				...Budget.fromSimpleTransactionsTableMarkdown(fileContent).items
+				...Budget.fromSimpleTransactionsTableMarkdown(
+					initialID,
+					fileContent
+				).items
 			);
 		}
 
 		return budget;
 	}
 
-	static fromSimpleTransactionsTableMarkdown(markdown: string): Budget {
+	static fromSimpleTransactionsTableMarkdown(
+		intialID: number,
+		markdown: string
+	): Budget {
 		const lines = markdown.split("\n").filter((line) => !!line);
 		const budget = new Budget([]);
+		let id = intialID;
 		for (let i = 2; i < lines.length; i++) {
 			const line = lines[i].split("|");
 			budget.addItems(
 				BudgetItem.createSimple(
+					id,
 					line[1].trim(),
 					PriceValueObject.fromString(line[5].trim()).valueOf(),
 					line[3].trim(),
@@ -154,6 +181,7 @@ export class Budget {
 					new BudgetItemNextDate(new Date(line[4].trim()), false)
 				)
 			);
+			id++;
 		}
 		return budget;
 	}
