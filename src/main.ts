@@ -71,7 +71,6 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 					this.settings.rootFolder
 				);
 				const newID = budget.getNextID();
-				console.log({ items: budget.items, newID });
 				return newID;
 			},
 			(item, operation) => this._updateItemInFile(item, operation)
