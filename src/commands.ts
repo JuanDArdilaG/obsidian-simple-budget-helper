@@ -20,7 +20,7 @@ export class Commands {
 				new CreateBudgetItemModalRoot(
 					await getNewItemID(),
 					plugin.app,
-					[...categories, "-- create new --"].sort(),
+					categories,
 					async (item) => {
 						await updateFiles(item, "add");
 					},

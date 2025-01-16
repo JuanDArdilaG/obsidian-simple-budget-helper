@@ -48,6 +48,10 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 			this.app,
 			this.settings.rootFolder
 		);
+		const categories = [
+			...budget.getCategories(),
+			"-- create new --",
+		].sort();
 
 		this.registerView(
 			views.LIST_BUDGET_ITEMS_REACT.type,
@@ -56,6 +60,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 					leaf,
 					this.app,
 					this.settings,
+					categories,
 					this._getBudget,
 					(item, operation) => this._updateItemInFile(item, operation)
 				)
@@ -64,7 +69,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		this.addSettingTab(new SettingTab(this.app, this));
 		Commands.CreateBudgetItemModal(
 			this,
-			budget.getCategories(),
+			categories,
 			async () => {
 				const budget = await this._getBudget(
 					this.app,

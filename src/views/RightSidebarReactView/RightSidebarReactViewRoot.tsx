@@ -15,6 +15,7 @@ export class RightSidebarReactViewRoot extends ItemView {
 		leaf: WorkspaceLeaf,
 		private _app: App,
 		private _settings: SimpleBudgetHelperSettings,
+		private _categories: string[],
 		private _getBudget: (app: App, rootFolder: string) => Promise<Budget>,
 		private _updateItemInFile: (
 			item: BudgetItem,
@@ -55,6 +56,7 @@ export class RightSidebarReactViewRoot extends ItemView {
 					refresh={async () => await this.refresh()}
 					app={this.app}
 					settings={this._settings}
+					categories={this._categories}
 				/>
 			</StrictMode>
 		);

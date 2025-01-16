@@ -11,7 +11,8 @@ export const useContextMenu = () => {
 
 			if (
 				e.target?.localName !== "li" &&
-				e.target?.parentElement.localName !== "li"
+				e.target?.parentElement?.localName !== "li" &&
+				e.target?.parentElement?.parentElement?.localName !== "li"
 			)
 				return;
 

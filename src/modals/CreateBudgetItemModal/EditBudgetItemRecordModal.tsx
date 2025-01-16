@@ -7,17 +7,24 @@ import { ReactMoneyInput } from "react-input-price";
 export const EditBudgetItemRecordModal = ({
 	budget,
 	record,
+	categories,
 	onUpdate,
 	close,
 }: {
 	budget: Budget;
 	record: BudgetItemRecord;
+	categories: string[];
 	onUpdate: (item: BudgetItem) => Promise<void>;
 	close: () => void;
 }) => {
+	const item = budget.getItemByID(record.itemID);
+	console.log({ item });
+
 	const [name, setName] = useState(record.name);
 	const [amount, setAmount] = useState(record.amount);
 	const [type, setType] = useState(record.type);
+	const [category, setCategory] = useState(item?.category || "");
+	const [newCategory, setNewCategory] = useState("");
 	const [date, setDate] = useState(record.date);
 	const [time, setTime] = useState(
 		record.date
@@ -27,23 +34,6 @@ export const EditBudgetItemRecordModal = ({
 			.slice(0, 2)
 			.join(":")
 	);
-
-	// useEffect(() => {
-	// 	if (record) {
-	// 		setName(record.name);
-	// 		setAmount(record.amount);
-	// 		setType(record.type);
-	// 		setDate(record.date);
-	// 		setTime(
-	// 			record.date
-	// 				.toTimeString()
-	// 				.split(" ")[0]
-	// 				.split(":")
-	// 				.slice(0, 2)
-	// 				.join(":")
-	// 		);
-	// 	}
-	// }, [record]);
 
 	return (
 		<div className="create-budget-item-modal">
@@ -59,17 +49,25 @@ export const EditBudgetItemRecordModal = ({
 				value={amount}
 				onValueChange={(priceVO) => setAmount(priceVO.toNumber())}
 			/>
-			<select
-				defaultValue={type}
-				onChange={(e) =>
-					setType(e.target.value as "income" | "expense")
-				}
-			>
-				<option value="income">Income</option>
-				<option value="expense">Expense</option>
-			</select>
-			{/* <div style={{ display: "flex", justifyContent: "space-between" }}>
-					<select onChange={(e) => setCategory(e.target.value)}>
+			{!item?.isRecurrent && (
+				<select
+					defaultValue={type}
+					onChange={(e) =>
+						setType(e.target.value as "income" | "expense")
+					}
+				>
+					<option value="income">Income</option>
+					<option value="expense">Expense</option>
+				</select>
+			)}
+			{!item?.isRecurrent && (
+				<div
+					style={{ display: "flex", justifyContent: "space-between" }}
+				>
+					<select
+						defaultValue={category}
+						onChange={(e) => setCategory(e.target.value)}
+					>
 						{categories.map((category, index) => (
 							<option value={category} key={index}>
 								{category}
@@ -82,7 +80,8 @@ export const EditBudgetItemRecordModal = ({
 							onChange={(e) => setNewCategory(e.target.value)}
 						/>
 					)}
-				</div> */}
+				</div>
+			)}
 			<div>
 				<input
 					type="date"
@@ -107,7 +106,10 @@ export const EditBudgetItemRecordModal = ({
 					date.setMinutes(parseInt(time.split(":")[1]));
 					date.setSeconds(0);
 
-					const item = budget.getItemByID(record.itemID);
+					const cat =
+						category === "-- create new --"
+							? newCategory
+							: category;
 
 					console.log({
 						item,
@@ -123,7 +125,8 @@ export const EditBudgetItemRecordModal = ({
 						name,
 						date,
 						type,
-						amount
+						amount,
+						cat
 					);
 
 					await onUpdate(item);

@@ -25,8 +25,10 @@ export const RightSidebarReactView = ({
 	refresh,
 	app,
 	settings,
+	categories,
 }: {
 	budget: Budget;
+	categories: string[];
 	onRecord: (item: BudgetItem) => void;
 	updateItemFile: (
 		item: BudgetItem,
@@ -63,7 +65,8 @@ export const RightSidebarReactView = ({
 								app,
 								budget,
 								async (item) =>
-									await updateItemFile(item, "modify")
+									await updateItemFile(item, "modify"),
+								categories
 							)
 						}
 						budget={budget.orderByNextDate()}

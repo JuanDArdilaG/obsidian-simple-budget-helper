@@ -318,9 +318,29 @@ export function AccountingList({
 																						"0px 7px",
 																				}}
 																			>
-																				{
-																					record.name
-																				}{" "}
+																				<div>
+																					{
+																						record.name
+																					}
+																				</div>
+																				<div
+																					style={{
+																						fontSize:
+																							"0.7em",
+																						padding:
+																							"5px 5px 5px 0px",
+																						fontWeight:
+																							"lighter",
+																					}}
+																				>
+																					Category:{" "}
+																					{
+																						budget.getItemByID(
+																							record.itemID
+																						)
+																							?.category
+																					}
+																				</div>
 																			</span>
 																			<span
 																				style={{

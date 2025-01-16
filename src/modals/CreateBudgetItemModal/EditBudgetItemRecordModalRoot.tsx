@@ -13,7 +13,8 @@ export class EditBudgetItemRecordModalRoot extends Modal {
 	constructor(
 		app: App,
 		private _budget: Budget,
-		private _onUpdate: (item: BudgetItem) => Promise<void>
+		private _onUpdate: (item: BudgetItem) => Promise<void>,
+		private _categories: string[]
 	) {
 		super(app);
 	}
@@ -27,6 +28,7 @@ export class EditBudgetItemRecordModalRoot extends Modal {
 		this.root?.render(
 			<StrictMode>
 				<EditBudgetItemRecordModal
+					categories={this._categories}
 					budget={this._budget}
 					onUpdate={this._onUpdate}
 					close={() => {

@@ -174,7 +174,8 @@ export class BudgetItem {
 		name: string,
 		date: Date,
 		type: "income" | "expense",
-		amount: number
+		amount: number,
+		category: string
 	) {
 		console.log("updating");
 		console.log({ isRecurrent: this.isRecurrent });
@@ -187,6 +188,7 @@ export class BudgetItem {
 			this._nextDate = new BudgetItemNextDate(date, false);
 			this._type = type;
 			this._amount = amount;
+			this._category = category;
 		}
 	}
 
