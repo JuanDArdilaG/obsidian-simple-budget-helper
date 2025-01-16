@@ -27,9 +27,11 @@ type GroupByYearMonthDay = {
 export function AccountingList({
 	budget,
 	editModal,
+	statusBarAddText,
 }: {
 	budget: Budget;
 	editModal: EditBudgetItemRecordModalRoot;
+	statusBarAddText: (val: string | DocumentFragment) => void;
 }) {
 	const settings = useContext(SettingsContext);
 	const fileOperations = useContext(FileOperationsContext);
@@ -39,6 +41,42 @@ export function AccountingList({
 	);
 	const [allHistory, setAllHistory] = useState<GroupByYearMonthDay>([]);
 	const [selectedRecord, setSelectedRecord] = useState<BudgetItemRecord>();
+
+	const [selectionActive, setSelectionActive] = useState(false);
+	const [selection, setSelection] = useState<BudgetItemRecord[]>([]);
+
+	useEffect(() => {
+		window.addEventListener("keydown", (e) => {
+			if (e.shiftKey) setSelectionActive(true);
+		});
+		window.addEventListener("keyup", (e) => {
+			if (!e.shiftKey) setSelectionActive(false);
+		});
+
+		return () => {
+			window.removeEventListener("keydown", (e) => {
+				if (e.shiftKey) setSelectionActive(true);
+			});
+			window.removeEventListener("keyup", (e) => {
+				if (!e.shiftKey) setSelectionActive(false);
+			});
+		};
+	}, []);
+
+	useEffect(() => {
+		statusBarAddText(
+			`Selected ${
+				selection.length
+			} records. Balance: ${new PriceValueObject(
+				selection.reduce(
+					(total, record) =>
+						total +
+						record.amount * (record.type === "income" ? 1 : -1),
+					0
+				)
+			).toString()}`
+		);
+	}, [selectionActive, selection]);
 
 	useEffect(() => {
 		setBudgetHistory(new BudgetHistory(budget, settings.initialBudget));
@@ -70,6 +108,7 @@ export function AccountingList({
 		<div>
 			{selectedRecord && (
 				<ContextMenu
+					// setSelectionActive={setSelectionActive}
 					menu={
 						<Menu
 							record={selectedRecord}
@@ -306,11 +345,33 @@ export function AccountingList({
 																			key={
 																				index
 																			}
+																			onClick={() =>
+																				selectionActive
+																					? setSelection(
+																							(
+																								selection
+																							) => [
+																								...selection,
+																								record,
+																							]
+																					  )
+																					: setSelection(
+																							[]
+																					  )
+																			}
 																			onContextMenu={() =>
 																				setSelectedRecord(
 																					record
 																				)
 																			}
+																			style={{
+																				backgroundColor:
+																					selection.includes(
+																						record
+																					)
+																						? "gray"
+																						: "",
+																			}}
 																		>
 																			<span
 																				style={{

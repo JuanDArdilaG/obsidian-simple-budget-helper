@@ -16,10 +16,6 @@ export const useContextMenu = () => {
 			)
 				return;
 
-			const x = Math.min(e.layerX, e.clientX - 100);
-			const y = Math.min(e.layerY, e.clientY - 100);
-			// setXPos(`${x}px`);
-			// setYPos(`${y}px`);
 			setXPos(`${e.layerX}px`);
 			setYPos(`${e.layerY}px`);
 			setShowMenu(true);
@@ -27,9 +23,12 @@ export const useContextMenu = () => {
 		[setXPos, setYPos]
 	);
 
-	const handleClick = useCallback(() => {
-		showMenu && setShowMenu(false);
-	}, [showMenu]);
+	const handleClick = useCallback(
+		(e: MouseEvent) => {
+			if (showMenu) setShowMenu(false);
+		},
+		[showMenu]
+	);
 
 	useEffect(() => {
 		document.addEventListener("click", handleClick);

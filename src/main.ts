@@ -53,6 +53,8 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 			"-- create new --",
 		].sort();
 
+		const statusBarItem = this.addStatusBarItem();
+
 		this.registerView(
 			views.LIST_BUDGET_ITEMS_REACT.type,
 			(leaf) =>
@@ -62,7 +64,9 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 					this.settings,
 					categories,
 					this._getBudget,
-					(item, operation) => this._updateItemInFile(item, operation)
+					(item, operation) =>
+						this._updateItemInFile(item, operation),
+					(text) => statusBarItem.setText(text)
 				)
 		);
 

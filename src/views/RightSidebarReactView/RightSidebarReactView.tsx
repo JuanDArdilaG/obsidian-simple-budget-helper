@@ -26,6 +26,7 @@ export const RightSidebarReactView = ({
 	app,
 	settings,
 	categories,
+	statusBarAddText,
 }: {
 	budget: Budget;
 	categories: string[];
@@ -37,6 +38,7 @@ export const RightSidebarReactView = ({
 	refresh: () => Promise<void>;
 	app: App;
 	settings: SimpleBudgetHelperSettings;
+	statusBarAddText: (val: string | DocumentFragment) => void;
 }) => {
 	const [sectionSelection, setSectionSelection] =
 		useState<SidebarSections>("accounting");
@@ -60,6 +62,7 @@ export const RightSidebarReactView = ({
 				)}
 				{sectionSelection === "accounting" && (
 					<AccountingSection
+						statusBarAddText={statusBarAddText}
 						editModal={
 							new EditBudgetItemRecordModalRoot(
 								app,

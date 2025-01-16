@@ -5,14 +5,20 @@ import { EditBudgetItemRecordModalRoot } from "modals/CreateBudgetItemModal/Edit
 export const AccountingSection = ({
 	budget,
 	editModal,
+	statusBarAddText,
 }: {
 	budget: Budget;
 	editModal: EditBudgetItemRecordModalRoot;
+	statusBarAddText: (val: string | DocumentFragment) => void;
 }) => {
 	return (
 		<>
 			<h1>Accounting</h1>
-			<AccountingList editModal={editModal} budget={budget} />
+			<AccountingList
+				editModal={editModal}
+				budget={budget}
+				statusBarAddText={statusBarAddText}
+			/>
 		</>
 	);
 };

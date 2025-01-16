@@ -20,7 +20,8 @@ export class RightSidebarReactViewRoot extends ItemView {
 		private _updateItemInFile: (
 			item: BudgetItem,
 			operation: "add" | "modify" | "remove"
-		) => Promise<void>
+		) => Promise<void>,
+		private _statusBarAddText: (val: string | DocumentFragment) => void
 	) {
 		super(leaf);
 	}
@@ -57,6 +58,7 @@ export class RightSidebarReactViewRoot extends ItemView {
 					app={this.app}
 					settings={this._settings}
 					categories={this._categories}
+					statusBarAddText={(text) => this._statusBarAddText(text)}
 				/>
 			</StrictMode>
 		);
