@@ -34,6 +34,18 @@ export class BudgetItemRecord {
 		return this._amount;
 	}
 
+	update(
+		name: string,
+		date: Date,
+		type: "income" | "expense",
+		amount: number
+	) {
+		this._name = name;
+		this._date = date;
+		this._type = type;
+		this._amount = amount;
+	}
+
 	static fromString(
 		id: number,
 		itemID: number,

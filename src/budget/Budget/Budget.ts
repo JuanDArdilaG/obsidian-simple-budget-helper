@@ -40,6 +40,12 @@ export class Budget {
 		console.log({ after: [...this._items] });
 	}
 
+	updateItemByID(id: number, item: BudgetItem) {
+		console.log({ id, before: [...this._items] });
+		this._items = this._items.map((i) => (i.id === id ? item : i));
+		console.log({ after: [...this._items] });
+	}
+
 	getTotalPerMonth(): number {
 		return this._items.reduce((total, item) => {
 			return total + item.perMonthAmount;

@@ -18,7 +18,7 @@ export class RightSidebarReactViewRoot extends ItemView {
 		private _getBudget: (app: App, rootFolder: string) => Promise<Budget>,
 		private _updateItemInFile: (
 			item: BudgetItem,
-			operation: "add" | "remove"
+			operation: "add" | "modify" | "remove"
 		) => Promise<void>
 	) {
 		super(leaf);

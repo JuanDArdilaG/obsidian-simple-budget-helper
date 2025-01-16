@@ -1,11 +1,18 @@
 import { AccountingList } from "./AccountingList";
 import { Budget } from "budget/Budget/Budget";
+import { EditBudgetItemRecordModalRoot } from "modals/CreateBudgetItemModal/EditBudgetItemRecordModalRoot";
 
-export const AccountingSection = ({ budget }: { budget: Budget }) => {
+export const AccountingSection = ({
+	budget,
+	editModal,
+}: {
+	budget: Budget;
+	editModal: EditBudgetItemRecordModalRoot;
+}) => {
 	return (
 		<>
 			<h1>Accounting</h1>
-			<AccountingList budget={budget} />
+			<AccountingList editModal={editModal} budget={budget} />
 		</>
 	);
 };

@@ -7,10 +7,14 @@ import { AccountingSection } from "./AccountingSection/AccountingSection";
 import { App } from "obsidian";
 import { DEFAULT_SETTINGS } from "SettingTab";
 import { SimpleBudgetHelperSettings } from "../../SettingTab";
+import { EditBudgetItemRecordModalRoot } from "modals/CreateBudgetItemModal/EditBudgetItemRecordModalRoot";
 
 export const SettingsContext = createContext(DEFAULT_SETTINGS);
 export const FileOperationsContext = createContext({
-	updateItemFile: async (item: BudgetItem, operation: "add" | "remove") => {},
+	updateItemFile: async (
+		item: BudgetItem,
+		operation: "add" | "modify" | "remove"
+	) => {},
 	refresh: async () => {},
 });
 
@@ -26,7 +30,7 @@ export const RightSidebarReactView = ({
 	onRecord: (item: BudgetItem) => void;
 	updateItemFile: (
 		item: BudgetItem,
-		operation: "add" | "remove"
+		operation: "add" | "modify" | "remove"
 	) => Promise<void>;
 	refresh: () => Promise<void>;
 	app: App;
@@ -53,7 +57,17 @@ export const RightSidebarReactView = ({
 					/>
 				)}
 				{sectionSelection === "accounting" && (
-					<AccountingSection budget={budget.orderByNextDate()} />
+					<AccountingSection
+						editModal={
+							new EditBudgetItemRecordModalRoot(
+								app,
+								budget,
+								async (item) =>
+									await updateItemFile(item, "modify")
+							)
+						}
+						budget={budget.orderByNextDate()}
+					/>
 				)}
 			</FileOperationsContext.Provider>
 		</SettingsContext.Provider>

@@ -14,6 +14,7 @@ import {
 } from "utils/date";
 import { ContextMenu } from "./AccountingListMenuContext";
 import { Menu } from "./Menu";
+import { EditBudgetItemRecordModalRoot } from "modals/CreateBudgetItemModal/EditBudgetItemRecordModalRoot";
 
 type GroupByYearMonthDay = {
 	[year: number]: {
@@ -23,7 +24,13 @@ type GroupByYearMonthDay = {
 	};
 };
 
-export function AccountingList({ budget }: { budget: Budget }) {
+export function AccountingList({
+	budget,
+	editModal,
+}: {
+	budget: Budget;
+	editModal: EditBudgetItemRecordModalRoot;
+}) {
 	const settings = useContext(SettingsContext);
 	const fileOperations = useContext(FileOperationsContext);
 
@@ -66,6 +73,10 @@ export function AccountingList({ budget }: { budget: Budget }) {
 					menu={
 						<Menu
 							record={selectedRecord}
+							onEdit={async (record) => {
+								editModal.setRecord(record);
+								editModal.open();
+							}}
 							onDelete={async (record) => {
 								const item = budget.getItemByID(record.itemID);
 								if (!item) return;

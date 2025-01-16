@@ -23,8 +23,8 @@ export const CreateBudgetItemModal = ({
 	const [frequency, setFrequency] = useState("");
 	const [category, setCategory] = useState("-- create new --");
 	const [type, setType] = useState("income");
-	const [newCategory, setNewCategory] = useState("");
 	const [nextDate, setNextDate] = useState(new Date());
+	const [newCategory, setNewCategory] = useState("");
 	const [time, setTime] = useState(
 		new Date().toTimeString().split(" ")[0].split(":").slice(0, 2).join(":")
 	);

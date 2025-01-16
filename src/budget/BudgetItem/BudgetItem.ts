@@ -169,6 +169,27 @@ export class BudgetItem {
 		}
 	}
 
+	updateHistoryRecord(
+		id: number,
+		name: string,
+		date: Date,
+		type: "income" | "expense",
+		amount: number
+	) {
+		console.log("updating");
+		console.log({ isRecurrent: this.isRecurrent });
+		if (this.isRecurrent) {
+			const record = this.history.find((r) => r.id === id);
+			if (!record) return;
+			record.update(name, date, type, amount);
+		} else {
+			this._name = name;
+			this._nextDate = new BudgetItemNextDate(date, false);
+			this._type = type;
+			this._amount = amount;
+		}
+	}
+
 	removeHistoryRecord(id: number) {
 		if (!this._history) return;
 		console.log({ before: [...this._history] });
