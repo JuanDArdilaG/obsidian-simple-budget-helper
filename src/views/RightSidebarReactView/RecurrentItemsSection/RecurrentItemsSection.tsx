@@ -8,6 +8,7 @@ import {
 import { AllItemsRightSidebarReactTab } from "./Tabs/AllItemsRightSidebarReactView";
 import { CalendarRightSidebarReactTab } from "./Tabs/CalendarRightSidebarReactView";
 import { App } from "obsidian";
+import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 
 export const RecurrentItemsSection = ({
 	budget,
@@ -15,7 +16,7 @@ export const RecurrentItemsSection = ({
 	refresh,
 	app,
 }: {
-	budget: Budget;
+	budget: Budget<BudgetItemRecurrent>;
 	onRecord: (item: BudgetItem) => void;
 	refresh: () => void;
 	app: App;

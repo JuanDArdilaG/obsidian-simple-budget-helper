@@ -1,8 +1,10 @@
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { BudgetItemRecord } from "budget/BudgetItem/BudgetItemRecord";
+import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
 import { useState } from "react";
 import { ReactMoneyInput } from "react-input-price";
+import { BudgetItemRecordType } from "../../budget/BudgetItem/BudgetItemRecord";
 
 export const EditBudgetItemRecordModal = ({
 	budget,
@@ -11,20 +13,24 @@ export const EditBudgetItemRecordModal = ({
 	onUpdate,
 	close,
 }: {
-	budget: Budget;
+	budget: Budget<BudgetItem>;
 	record: BudgetItemRecord;
 	categories: string[];
 	onUpdate: (item: BudgetItem) => Promise<void>;
 	close: () => void;
 }) => {
 	const item = budget.getItemByID(record.itemID);
-	console.log({ item });
 
 	const [name, setName] = useState(record.name);
 	const [amount, setAmount] = useState(record.amount);
 	const [type, setType] = useState(record.type);
+
 	const [category, setCategory] = useState(item?.category || "");
 	const [newCategory, setNewCategory] = useState("");
+
+	const [account, setAccount] = useState(record.account);
+	const [newAccount, setNewAccount] = useState("");
+
 	const [date, setDate] = useState(record.date);
 	const [time, setTime] = useState(
 		record.date
@@ -49,18 +55,19 @@ export const EditBudgetItemRecordModal = ({
 				value={amount}
 				onValueChange={(priceVO) => setAmount(priceVO.toNumber())}
 			/>
-			{!item?.isRecurrent && (
+			{item instanceof BudgetItemSimple && (
 				<select
 					defaultValue={type}
 					onChange={(e) =>
-						setType(e.target.value as "income" | "expense")
+						setType(e.target.value as BudgetItemRecordType)
 					}
 				>
 					<option value="income">Income</option>
 					<option value="expense">Expense</option>
+					<option value="transfer">Transfer</option>
 				</select>
 			)}
-			{!item?.isRecurrent && (
+			{item instanceof BudgetItemSimple && (
 				<div
 					style={{ display: "flex", justifyContent: "space-between" }}
 				>
@@ -82,6 +89,26 @@ export const EditBudgetItemRecordModal = ({
 					)}
 				</div>
 			)}
+			<div style={{ display: "flex", justifyContent: "space-between" }}>
+				<select
+					defaultValue={account}
+					onChange={(e) => setAccount(e.target.value)}
+				>
+					{[...budget.getAccounts(), "-- create new --"]
+						.sort()
+						.map((account, index) => (
+							<option value={account} key={index}>
+								{account}
+							</option>
+						))}
+				</select>
+				{account === "-- create new --" && (
+					<input
+						type="text"
+						onChange={(e) => setNewAccount(e.target.value)}
+					/>
+				)}
+			</div>
 			<div>
 				<input
 					type="date"
@@ -111,18 +138,14 @@ export const EditBudgetItemRecordModal = ({
 							? newCategory
 							: category;
 
-					console.log({
-						item,
-						name,
-						amount,
-						type,
-						date,
-					});
+					const acc =
+						account === "-- create new --" ? newAccount : account;
 
 					if (!item) return;
 					item.updateHistoryRecord(
 						record.id,
 						name,
+						acc,
 						date,
 						type,
 						amount,
@@ -130,7 +153,6 @@ export const EditBudgetItemRecordModal = ({
 					);
 
 					await onUpdate(item);
-					// await updateItemFile(item, "modify");
 
 					close();
 				}}

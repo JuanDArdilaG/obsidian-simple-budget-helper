@@ -6,7 +6,8 @@ import { views } from "config";
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { SimpleBudgetHelperSettings } from "SettingTab";
-import { BudgetItemMDFormatter } from "budget/BudgetItem/BudgetItemMDFormatter";
+import { BudgetItemRecurrentMDFormatter } from "budget/BudgetItem/BudgetItemMDFormatter";
+import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 
 export class RightSidebarReactViewRoot extends ItemView {
 	root: Root | null = null;
@@ -15,8 +16,10 @@ export class RightSidebarReactViewRoot extends ItemView {
 		leaf: WorkspaceLeaf,
 		private _app: App,
 		private _settings: SimpleBudgetHelperSettings,
-		private _categories: string[],
-		private _getBudget: (app: App, rootFolder: string) => Promise<Budget>,
+		private _getBudget: (
+			app: App,
+			rootFolder: string
+		) => Promise<Budget<BudgetItem>>,
 		private _updateItemInFile: (
 			item: BudgetItem,
 			operation: "add" | "modify" | "remove"
@@ -48,16 +51,20 @@ export class RightSidebarReactViewRoot extends ItemView {
 			this._app,
 			this._settings.rootFolder
 		);
+		console.log({ refreshed: budget });
 		this.root?.render(
 			<StrictMode>
 				<RightSidebarReactView
 					budget={budget}
+					getBudget={(app, rootFolder) =>
+						this._getBudget(app, rootFolder)
+					}
 					onRecord={(item) => this._updateFileOnRecord(item)}
 					updateItemFile={this._updateItemInFile}
 					refresh={async () => await this.refresh()}
 					app={this.app}
 					settings={this._settings}
-					categories={this._categories}
+					categories={budget.getCategories()}
 					statusBarAddText={(text) => this._statusBarAddText(text)}
 				/>
 			</StrictMode>
@@ -73,7 +80,9 @@ export class RightSidebarReactViewRoot extends ItemView {
 
 		await vault.modify(
 			file,
-			new BudgetItemMDFormatter(newItem).toMarkdown()
+			new BudgetItemRecurrentMDFormatter(
+				newItem as BudgetItemRecurrent
+			).toMarkdown()
 		);
 
 		this.refresh();

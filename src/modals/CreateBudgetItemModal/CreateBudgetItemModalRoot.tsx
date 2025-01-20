@@ -3,13 +3,14 @@ import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { createRoot, Root } from "react-dom/client";
 import { StrictMode } from "react";
 import { CreateBudgetItemModal } from "./CreateBudgetItemModal";
+import { Budget } from "budget/Budget/Budget";
 
 export class CreateBudgetItemModalRoot extends Modal {
 	root: Root | null = null;
 	constructor(
-		id: number,
 		app: App,
-		categories: string[],
+		budget: Budget<BudgetItem>,
+		accounts: string[],
 		onSubmit: (item: BudgetItem) => Promise<void>,
 		toEdit?: BudgetItem
 	) {
@@ -20,8 +21,9 @@ export class CreateBudgetItemModalRoot extends Modal {
 		this.root?.render(
 			<StrictMode>
 				<CreateBudgetItemModal
-					id={id}
-					categories={categories}
+					app={app}
+					budget={budget}
+					accounts={[...accounts, "-- create new --"].sort()}
 					onSubmit={onSubmit}
 					close={() => {
 						this.close();

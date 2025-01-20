@@ -17,9 +17,14 @@ export const FileOperationsContext = createContext({
 	) => {},
 	refresh: async () => {},
 });
+export const BudgetContext = createContext({
+	budget: new Budget<BudgetItem>([]),
+	updateBudget: async () => {},
+});
 
 export const RightSidebarReactView = ({
 	budget,
+	getBudget,
 	onRecord,
 	updateItemFile,
 	refresh,
@@ -28,7 +33,8 @@ export const RightSidebarReactView = ({
 	categories,
 	statusBarAddText,
 }: {
-	budget: Budget;
+	getBudget: (app: App, rootFolder: string) => Promise<Budget<BudgetItem>>;
+	budget: Budget<BudgetItem>;
 	categories: string[];
 	onRecord: (item: BudgetItem) => void;
 	updateItemFile: (
@@ -43,38 +49,48 @@ export const RightSidebarReactView = ({
 	const [sectionSelection, setSectionSelection] =
 		useState<SidebarSections>("accounting");
 
+	const [innerBudget, setInnerBudget] = useState(budget);
+
+	const updateBudget = async () => {
+		setInnerBudget(await getBudget(app, settings.rootFolder));
+	};
+
 	return (
 		<SettingsContext.Provider value={settings}>
 			<FileOperationsContext.Provider value={{ updateItemFile, refresh }}>
-				<SectionButtons
-					selected={sectionSelection}
-					setSelected={setSectionSelection}
-					refresh={refresh}
-				/>
-
-				{sectionSelection === "recurrentItems" && (
-					<RecurrentItemsSection
+				<BudgetContext.Provider
+					value={{ budget: innerBudget, updateBudget }}
+				>
+					<SectionButtons
+						selected={sectionSelection}
+						setSelected={setSectionSelection}
 						refresh={refresh}
-						budget={budget.onlyRecurrent()}
-						onRecord={onRecord}
-						app={app}
 					/>
-				)}
-				{sectionSelection === "accounting" && (
-					<AccountingSection
-						statusBarAddText={statusBarAddText}
-						editModal={
-							new EditBudgetItemRecordModalRoot(
-								app,
-								budget,
-								async (item) =>
-									await updateItemFile(item, "modify"),
-								categories
-							)
-						}
-						budget={budget.orderByNextDate()}
-					/>
-				)}
+
+					{sectionSelection === "recurrentItems" && (
+						<RecurrentItemsSection
+							refresh={refresh}
+							budget={budget.onlyRecurrent()}
+							onRecord={onRecord}
+							app={app}
+						/>
+					)}
+					{sectionSelection === "accounting" && (
+						<AccountingSection
+							statusBarAddText={statusBarAddText}
+							editModal={
+								new EditBudgetItemRecordModalRoot(
+									app,
+									budget,
+									async (item) =>
+										await updateItemFile(item, "modify"),
+									categories
+								)
+							}
+							budget={budget.orderByNextDate()}
+						/>
+					)}
+				</BudgetContext.Provider>
 			</FileOperationsContext.Provider>
 		</SettingsContext.Provider>
 	);

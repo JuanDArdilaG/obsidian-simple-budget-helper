@@ -1,18 +1,17 @@
 import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
 import { BudgetItemRecord } from "budget/BudgetItem/BudgetItemRecord";
 import { FrequencyString } from "budget/BudgetItem/FrequencyString";
-import { BudgetItem } from "./BudgetItem";
+import { BudgetItemRecurrent } from "./BudgetItemRecurrent";
 
-export class BudgetItemMDFormatter {
-	constructor(private _item: BudgetItem) {}
+export class BudgetItemRecurrentMDFormatter {
+	constructor(private _item: BudgetItemRecurrent) {}
 
 	static fromRawMarkdown(
-		id: number,
 		path: string,
 		rawMarkdown: string
-	): BudgetItem {
+	): BudgetItemRecurrent {
 		const propertiesRegex =
-			/name: (.*)\namount: (.*)\ncategory: (.*)\ntype: (.*)\nnextDate: (.*)(?:\nfrequency: (.*))?/;
+			/id: (.*)\nname: (.*)\namount: (.*)\ncategory: (.*)\ntype: (.*)\nnextDate: (.*)(?:\nfrequency: (.*))?(?:\nto account: (.*))?/;
 		const match = propertiesRegex.exec(rawMarkdown);
 		if (!match) throw new Error("Invalid raw markdown.");
 		const historyStr = rawMarkdown.split("# History\n");
@@ -21,30 +20,31 @@ export class BudgetItemMDFormatter {
 			history = historyStr[1].split("\n");
 		}
 
-		return new BudgetItem(
-			id,
+		return new BudgetItemRecurrent(
 			match[1],
-			parseInt(match[2]),
-			match[3],
-			match[4] as "expense" | "income",
-			new BudgetItemNextDate(new Date(match[5])),
+			match[2],
+			parseInt(match[3]),
+			match[4],
+			match[5] as "expense" | "income",
+			new BudgetItemNextDate(new Date(match[6])),
 			path,
-			match[6] ? new FrequencyString(match[6]) : undefined,
+			new FrequencyString(match[7]),
 			history
 				?.filter((r) => !!r)
-				.map((r, i) =>
-					BudgetItemRecord.fromString(
-						i,
-						id,
+				.map((r, i) => {
+					return BudgetItemRecord.fromString(
+						match[1],
 						r,
-						match[4] as "income" | "expense"
-					)
-				) || (match[6] ? [] : undefined)
+						match[5] as "income" | "expense",
+						match[8] ? match[8] : undefined
+					);
+				}) || []
 		);
 	}
 
 	toMarkdown(): string {
 		return `---
+id: ${this._item.id}
 name: ${this._item.name}
 amount: ${this._item.amount}
 category: ${this._item.category}
@@ -52,14 +52,8 @@ type: ${this._item.type}
 nextDate: ${this._item.nextDate
 			.toString()
 			.split(" GMT")[0]
-			.replace(" 00:00:00", "")}${
-			this._item.frequency ? `\nfrequency: ${this._item.frequency}` : ""
-		}
----${!this._item.frequency ? "" : "\n# History"}
-${
-	this._item.frequency
-		? this._item.history.map((r) => r.toString()).join("\n")
-		: ""
-}`;
+			.replace(" 00:00:00", "")}${`\nfrequency: ${this._item.frequency}`}
+---\n# History
+${this._item.history.map((r) => r.toString()).join("\n")}`;
 	}
 }

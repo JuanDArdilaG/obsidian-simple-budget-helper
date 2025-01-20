@@ -1,46 +1,52 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { BudgetItemRecord } from "budget/BudgetItem/BudgetItemRecord";
 import { Budget } from "budget/Budget/Budget";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { BudgetHistory } from "budget/Budget/BudgetHistory";
 import {
+	BudgetHistory,
+	GroupByYearMonthDay,
+} from "budget/Budget/BudgetHistory";
+import {
+	BudgetContext,
 	FileOperationsContext,
 	SettingsContext,
 } from "../RightSidebarReactView";
-import {
-	getLastDayOfMonth,
-	monthAbbrToIndex,
-	monthIndexToAbbr,
-} from "utils/date";
+import { getLastDayOfMonth, monthAbbrToIndex } from "utils/date";
 import { ContextMenu } from "./AccountingListMenuContext";
 import { Menu } from "./Menu";
 import { EditBudgetItemRecordModalRoot } from "modals/CreateBudgetItemModal/EditBudgetItemRecordModalRoot";
-
-type GroupByYearMonthDay = {
-	[year: number]: {
-		[month: string]: {
-			[day: number]: BudgetItemRecord[];
-		};
-	};
-};
+import { BudgetItem } from "budget/BudgetItem/BudgetItem";
+import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 
 export function AccountingList({
-	budget,
 	editModal,
 	statusBarAddText,
 }: {
-	budget: Budget;
+	budget: Budget<BudgetItem>;
 	editModal: EditBudgetItemRecordModalRoot;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) {
+	const { budget } = useContext(BudgetContext);
 	const settings = useContext(SettingsContext);
 	const fileOperations = useContext(FileOperationsContext);
 
 	const [budgetHistory, setBudgetHistory] = useState(
-		new BudgetHistory(budget, settings.initialBudget)
+		new BudgetHistory([], settings.initialBudget)
 	);
 	const [allHistory, setAllHistory] = useState<GroupByYearMonthDay>([]);
+	const [filteredHistory, setFilteredHistory] = useState<GroupByYearMonthDay>(
+		[]
+	);
 	const [selectedRecord, setSelectedRecord] = useState<BudgetItemRecord>();
+
+	const [accountFilter, setAccountFilter] = useState("");
+	useEffect(() => {
+		setFilteredHistory(
+			budgetHistory.getGroupedByYearMonthDay({
+				account: accountFilter,
+			})
+		);
+	}, [accountFilter, budgetHistory]);
 
 	const [selectionActive, setSelectionActive] = useState(false);
 	const [selection, setSelection] = useState<BudgetItemRecord[]>([]);
@@ -65,50 +71,55 @@ export function AccountingList({
 
 	useEffect(() => {
 		statusBarAddText(
-			`Selected ${
-				selection.length
-			} records. Balance: ${new PriceValueObject(
-				selection.reduce(
-					(total, record) =>
-						total +
-						record.amount * (record.type === "income" ? 1 : -1),
-					0
-				)
-			).toString()}`
+			selection.length > 0
+				? `Selected ${
+						selection.length
+				  } records. Balance: ${new PriceValueObject(
+						selection.reduce(
+							(total, record) =>
+								total +
+								record.amount *
+									(record.type === "income" ? 1 : -1),
+							0
+						)
+				  ).toString()}`
+				: ""
 		);
 	}, [selectionActive, selection]);
 
 	useEffect(() => {
-		setBudgetHistory(new BudgetHistory(budget, settings.initialBudget));
-	}, [budget, settings.initialBudget]);
-
-	const groupRecordsByYearMonth = useCallback(
-		(records: BudgetItemRecord[]) => {
-			return records.reduce((grouped, record) => {
-				const year = record.date.getFullYear();
-				const month = monthIndexToAbbr(record.date.getMonth());
-
-				if (!grouped[year]) grouped[year] = {};
-				if (!grouped[year][month]) grouped[year][month] = {};
-				if (!grouped[year][month][record.date.getDate()])
-					grouped[year][month][record.date.getDate()] = [];
-
-				grouped[year][month][record.date.getDate()].push(record);
-				return grouped;
-			}, {} as GroupByYearMonthDay);
-		},
-		[budget]
-	);
+		if (!selectionActive) {
+			setSelection([]);
+		}
+	}, [selectionActive]);
 
 	useEffect(() => {
-		setAllHistory(groupRecordsByYearMonth(budget.getAllHistory()));
-	}, [budget]);
+		console.log("updating history");
+		setBudgetHistory(
+			BudgetHistory.fromBudget(budget, settings.initialBudget)
+		);
+	}, [budget, settings.initialBudget]);
+
+	useEffect(() => {
+		setAllHistory(budgetHistory.getGroupedByYearMonthDay());
+	}, [budgetHistory]);
 
 	return (
 		<div>
+			<select
+				name="account"
+				id="account-filter"
+				onChange={(e) => setAccountFilter(e.target.value)}
+			>
+				<option value="">All accounts</option>
+				{budget.getAccounts().map((account) => (
+					<option value={account} key={account}>
+						{account}
+					</option>
+				))}
+			</select>
 			{selectedRecord && (
 				<ContextMenu
-					// setSelectionActive={setSelectionActive}
 					menu={
 						<Menu
 							record={selectedRecord}
@@ -119,7 +130,7 @@ export function AccountingList({
 							onDelete={async (record) => {
 								const item = budget.getItemByID(record.itemID);
 								if (!item) return;
-								if (item.isRecurrent) {
+								if (item instanceof BudgetItemRecurrent) {
 									item.removeHistoryRecord(record.id);
 								}
 								await fileOperations.updateItemFile(
@@ -132,11 +143,7 @@ export function AccountingList({
 					}
 				/>
 			)}
-			<div>
-				Balance:{" "}
-				{new PriceValueObject(budgetHistory.getBalance()).toString()}
-			</div>
-			{Object.keys(allHistory)
+			{Object.keys(filteredHistory)
 				.sort((a, b) => Number(b) - Number(a))
 				.map((year) => Number(year))
 				.map((year) => (
@@ -162,8 +169,12 @@ export function AccountingList({
 									{new PriceValueObject(
 										budgetHistory.getBalance({
 											type: "income",
-											since: new Date(Number(year), 0, 1),
-											until: new Date(
+											sinceDate: new Date(
+												Number(year),
+												0,
+												1
+											),
+											untilDate: new Date(
 												Number(year),
 												11,
 												31
@@ -182,8 +193,12 @@ export function AccountingList({
 									{new PriceValueObject(
 										budgetHistory.getBalance({
 											type: "expense",
-											since: new Date(Number(year), 0, 1),
-											until: new Date(
+											sinceDate: new Date(
+												Number(year),
+												0,
+												1
+											),
+											untilDate: new Date(
 												Number(year),
 												11,
 												31
@@ -200,7 +215,7 @@ export function AccountingList({
 									Balance:{" "}
 									{new PriceValueObject(
 										budgetHistory.getBalance({
-											until: new Date(
+											untilDate: new Date(
 												Number(year),
 												11,
 												31
@@ -210,7 +225,7 @@ export function AccountingList({
 								</span>
 							</span>
 						</h3>
-						{Object.keys(allHistory[year])
+						{Object.keys(filteredHistory[year])
 							.sort()
 							.map((month) => {
 								const since = new Date(
@@ -255,8 +270,10 @@ export function AccountingList({
 													{new PriceValueObject(
 														budgetHistory.getBalance(
 															{
-																since,
-																until,
+																sinceDate:
+																	since,
+																untilDate:
+																	until,
 																type: "income",
 															}
 														)
@@ -274,8 +291,10 @@ export function AccountingList({
 														budgetHistory.getBalance(
 															{
 																type: "expense",
-																since,
-																until,
+																sinceDate:
+																	since,
+																untilDate:
+																	until,
 															}
 														)
 													).toString()}
@@ -290,7 +309,8 @@ export function AccountingList({
 													{new PriceValueObject(
 														budgetHistory.getBalance(
 															{
-																until,
+																untilDate:
+																	until,
 															}
 														)
 													).toString()}
@@ -299,7 +319,7 @@ export function AccountingList({
 										</h4>
 										<ul className="accounting-list">
 											{Object.keys(
-												allHistory[year][month]
+												filteredHistory[year][month]
 											)
 												.map((day) => Number(day))
 												.sort((a, b) => b - a)
@@ -325,9 +345,9 @@ export function AccountingList({
 															>
 																<b>{day}</b>
 															</span>
-															{allHistory[year][
-																month
-															][day]
+															{filteredHistory[
+																year
+															][month][day]
 																.sort(
 																	(
 																		a: BudgetItemRecord,
@@ -340,123 +360,201 @@ export function AccountingList({
 																	(
 																		record: BudgetItemRecord,
 																		index: number
-																	) => (
-																		<li
-																			key={
-																				index
-																			}
-																			onClick={() =>
-																				selectionActive
-																					? setSelection(
-																							(
-																								selection
-																							) => [
-																								...selection,
-																								record,
-																							]
-																					  )
-																					: setSelection(
-																							[]
-																					  )
-																			}
-																			onContextMenu={() =>
-																				setSelectedRecord(
-																					record
-																				)
-																			}
-																			style={{
-																				backgroundColor:
-																					selection.includes(
-																						record
-																					)
-																						? "gray"
-																						: "",
-																			}}
-																		>
-																			<span
-																				style={{
-																					padding:
-																						"0px 7px",
-																				}}
-																			>
-																				<div>
-																					{
-																						record.name
-																					}
-																				</div>
-																				<div
-																					style={{
-																						fontSize:
-																							"0.7em",
-																						padding:
-																							"5px 5px 5px 0px",
-																						fontWeight:
-																							"lighter",
-																					}}
-																				>
-																					Category:{" "}
-																					{
-																						budget.getItemByID(
-																							record.itemID
-																						)
-																							?.category
-																					}
-																				</div>
-																			</span>
-																			<span
-																				style={{
-																					display:
-																						"flex",
-																					flexDirection:
-																						"column",
-																				}}
-																			>
+																	) => {
+																		return (
+																			<>
 																				{record.type ===
-																				"income"
-																					? "+"
-																					: "-"}
-																				{new PriceValueObject(
-																					record.amount
-																				).toString()}
-																				<span
-																					style={{
-																						fontSize:
-																							"0.7em",
-																						fontWeight:
-																							"lighter",
-																						alignSelf:
-																							"flex-end",
-																					}}
-																				>
-																					{new PriceValueObject(
-																						budgetHistory.getBalance(
-																							{
-																								until: record.date,
-																							}
-																						)
-																					).toString()}
-																				</span>
-																			</span>
-																		</li>
-																	)
+																					"transfer" && (
+																					<AccountingListRow
+																						isTransfer
+																						index={
+																							record.id +
+																							"transfer"
+																						}
+																						record={
+																							record
+																						}
+																						budget={
+																							budget
+																						}
+																						budgetHistory={
+																							budgetHistory
+																						}
+																						selection={
+																							selection
+																						}
+																						selectionActive={
+																							selectionActive
+																						}
+																						setSelection={
+																							setSelection
+																						}
+																						setSelectedRecord={
+																							setSelectedRecord
+																						}
+																					/>
+																				)}
+																				<AccountingListRow
+																					index={
+																						record.id
+																					}
+																					record={
+																						record
+																					}
+																					budget={
+																						budget
+																					}
+																					budgetHistory={
+																						budgetHistory
+																					}
+																					selection={
+																						selection
+																					}
+																					selectionActive={
+																						selectionActive
+																					}
+																					setSelection={
+																						setSelection
+																					}
+																					setSelectedRecord={
+																						setSelectedRecord
+																					}
+																				/>
+																			</>
+																		);
+																	}
 																)}
 														</div>
 													)
 												)}
-											<li style={{ textAlign: "right" }}>
-												<span>
-													Initial balance:{" "}
-													{new PriceValueObject(
-														settings.initialBudget
-													).toString()}
-												</span>
-											</li>
 										</ul>
 									</div>
 								);
 							})}
+
+						<div className="align-right">
+							<span>
+								Initial balance:{" "}
+								{new PriceValueObject(
+									settings.initialBudget
+								).toString()}
+							</span>
+						</div>
 					</div>
 				))}
 		</div>
 	);
 }
+
+const AccountingListRow = ({
+	index,
+	record,
+	budget,
+	budgetHistory,
+	selectionActive,
+	selection,
+	setSelection,
+	setSelectedRecord,
+	isTransfer,
+}: {
+	index: string;
+	isTransfer?: boolean;
+	record: BudgetItemRecord;
+	budget: Budget<BudgetItem>;
+	budgetHistory: BudgetHistory;
+	selectionActive: boolean;
+	selection: BudgetItemRecord[];
+	setSelection: React.Dispatch<React.SetStateAction<BudgetItemRecord[]>>;
+	setSelectedRecord: React.Dispatch<React.SetStateAction<BudgetItemRecord>>;
+}) => {
+	const [modifiedRecord, setModifiedRecord] = useState(record);
+	useEffect(() => {
+		if (!isTransfer) return;
+		setModifiedRecord(
+			new BudgetItemRecord(
+				record.id,
+				record.itemID,
+				record.account,
+				record.toAccount,
+				record.name,
+				record.type,
+				record.date,
+				record.amount * -1
+			)
+		);
+	}, [record]);
+
+	return (
+		<li
+			key={index}
+			onClick={() => {
+				if (selectionActive)
+					setSelection((selection) => {
+						if (selection.includes(modifiedRecord))
+							return selection.filter(
+								(item) => item !== modifiedRecord
+							);
+						return [
+							...new Set<BudgetItemRecord>([
+								...selection,
+								modifiedRecord,
+							]),
+						];
+					});
+			}}
+			onContextMenu={() => setSelectedRecord(modifiedRecord)}
+			className="accounting-list-item"
+			style={{
+				backgroundColor: selection.includes(modifiedRecord)
+					? "gray"
+					: "",
+			}}
+		>
+			<span className="first-row">
+				<div>{modifiedRecord.name}</div>
+				<div>
+					{modifiedRecord.type === "expense" ||
+					(!isTransfer && modifiedRecord.type === "transfer")
+						? "-"
+						: "+"}
+					{new PriceValueObject(
+						!isTransfer
+							? modifiedRecord.amount
+							: modifiedRecord.amount * -1
+					).toString()}
+				</div>
+			</span>
+			<span className="second-row">
+				<div className="category">
+					Category:{" "}
+					{budget.getItemByID(modifiedRecord.itemID)?.category}
+				</div>
+				<span className="light-text align-right">
+					{isTransfer
+						? modifiedRecord.toAccount
+						: modifiedRecord.account}
+				</span>
+			</span>
+			<span className="third-row light-text">
+				{new PriceValueObject(
+					budgetHistory.getBalance({
+						account: isTransfer
+							? modifiedRecord.toAccount
+							: modifiedRecord.account,
+						untilID: modifiedRecord.id,
+						dropLast: true,
+					})
+				).toString()}{" "}
+				{" -> "}
+				{new PriceValueObject(
+					budgetHistory.getBalance({
+						account: isTransfer
+							? modifiedRecord.toAccount
+							: modifiedRecord.account,
+						untilID: modifiedRecord.id,
+					})
+				).toString()}
+			</span>
+		</li>
+	);
+};

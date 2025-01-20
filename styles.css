@@ -50,3 +50,44 @@ ul {
 	margin: 0 0 10px 0;
 	border-bottom: 1px solid #cfcfcf;
 }
+
+/* Accounting Section */
+.accounting-list-item {
+	display: flex;
+	flex-direction: column;
+}
+
+.accounting-list-item .first-row {
+	display: flex;
+	justify-content: space-between;
+	gap: 20px;
+	padding: 0px 7px;
+}
+
+.accounting-list-item .category {
+	font-size: 0.7em;
+	font-weight: lighter;
+}
+
+.accounting-list-item .second-row {
+	display: flex;
+	justify-content: space-between;
+	gap: 15px;
+	padding: 5px;
+}
+
+.align-right {
+	text-align: right;
+	align-self: flex-end;
+}
+
+.accounting-list-item .third-row {
+	display: flex;
+	padding: 0px 5px 5px 0px;
+}
+
+.light-text {
+	font-size: 0.7em;
+	font-weight: lighter;
+	align-self: flex-end;
+}

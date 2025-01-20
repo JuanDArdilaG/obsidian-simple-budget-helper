@@ -1,20 +1,24 @@
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 
+export type BudgetItemRecordType = "income" | "expense" | "transfer";
+
 export class BudgetItemRecord {
 	constructor(
-		private _id: number,
-		private _itemID: number,
+		private _id: string,
+		private _itemID: string,
+		private _account: string,
+		private _toAccount: string,
 		private _name: string,
-		private _type: "income" | "expense",
+		private _type: BudgetItemRecordType,
 		private _date: Date,
 		private _amount: number
 	) {}
 
-	get id(): number {
+	get id(): string {
 		return this._id;
 	}
 
-	get itemID(): number {
+	get itemID(): string {
 		return this._itemID;
 	}
 
@@ -22,7 +26,15 @@ export class BudgetItemRecord {
 		return this._name;
 	}
 
-	get type(): "income" | "expense" {
+	get account(): string {
+		return this._account;
+	}
+
+	get toAccount(): string {
+		return this._toAccount;
+	}
+
+	get type(): BudgetItemRecordType {
 		return this._type;
 	}
 
@@ -36,36 +48,45 @@ export class BudgetItemRecord {
 
 	update(
 		name: string,
+		account: string,
 		date: Date,
 		type: "income" | "expense",
 		amount: number
 	) {
 		this._name = name;
+		this._account = account;
 		this._date = date;
 		this._type = type;
 		this._amount = amount;
 	}
 
 	static fromString(
-		id: number,
-		itemID: number,
+		itemID: string,
 		str: string,
-		type: "expense" | "income"
+		type: BudgetItemRecordType,
+		toAccount?: string
 	): BudgetItemRecord {
-		const match = /name: (.*)\. date: (.*)\. amount: (.*)/.exec(str);
+		const match =
+			/id: (.*)\. name: (.*)\. account: (.*)\. date: (.*)\. amount: (.*)/.exec(
+				str
+			);
 		if (!match) throw new Error("Invalid raw markdown.");
 		return new BudgetItemRecord(
-			id,
-			itemID,
 			match[1],
+			itemID,
+			match[3],
+			toAccount || "",
+			match[2],
 			type,
-			new Date(match[2]),
-			PriceValueObject.fromString(match[3]).valueOf()
+			new Date(match[4]),
+			PriceValueObject.fromString(match[5]).valueOf()
 		);
 	}
 
 	toString(): string {
-		return `- name: ${this._name}. date: ${
+		return `- id: ${this._id}. name: ${this._name}. account: ${
+			this._account
+		}. date: ${
 			this._date.toString().split(" GMT")[0]
 		}. amount: ${new PriceValueObject(this._amount)}`;
 	}

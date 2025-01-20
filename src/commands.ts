@@ -1,3 +1,4 @@
+import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import SimpleBudgetHelperPlugin from "main";
 import { CreateBudgetItemModalRoot } from "modals/CreateBudgetItemModal/CreateBudgetItemModalRoot";
@@ -5,8 +6,8 @@ import { CreateBudgetItemModalRoot } from "modals/CreateBudgetItemModal/CreateBu
 export class Commands {
 	static CreateBudgetItemModal(
 		plugin: SimpleBudgetHelperPlugin,
-		categories: string[],
-		getNewItemID: () => Promise<number>,
+		budget: Budget<BudgetItem>,
+		accounts: string[],
 		updateFiles: (
 			item: BudgetItem,
 			operation: "add" | "remove"
@@ -18,9 +19,9 @@ export class Commands {
 			name: "Create budget item",
 			callback: async () => {
 				new CreateBudgetItemModalRoot(
-					await getNewItemID(),
 					plugin.app,
-					categories,
+					budget,
+					accounts,
 					async (item) => {
 						await updateFiles(item, "add");
 					},

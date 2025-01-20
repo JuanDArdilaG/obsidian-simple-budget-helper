@@ -1,6 +1,7 @@
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { ReactMoneyInput } from "react-input-price";
+import { BudgetContext } from "../RightSidebarReactView";
 
 export const RecordBudgetItemModal = ({
 	item,
@@ -11,7 +12,10 @@ export const RecordBudgetItemModal = ({
 	onRecord: (item: BudgetItem) => void;
 	onClose: () => void;
 }) => {
+	const { budget } = useContext(BudgetContext);
 	const [date, setDate] = useState(new Date(item.nextDate));
+	const [account, setAccount] = useState("");
+	const [newAccount, setNewAccount] = useState("");
 	const [time, setTime] = useState(
 		new Date(item.nextDate)
 			.toTimeString()
@@ -26,6 +30,21 @@ export const RecordBudgetItemModal = ({
 	return (
 		<div className="record-budget-item-modal">
 			<h1>Record Budget Item</h1>
+			<div style={{ display: "flex", justifyContent: "space-between" }}>
+				<select onChange={(e) => setAccount(e.target.value)}>
+					{budget.getAccounts().map((account, index) => (
+						<option value={account} key={index}>
+							{account}
+						</option>
+					))}
+				</select>
+				{account === "-- create new --" && (
+					<input
+						type="text"
+						onChange={(e) => setNewAccount(e.target.value)}
+					/>
+				)}
+			</div>
 			<div>
 				<input
 					type="date"
@@ -65,7 +84,9 @@ export const RecordBudgetItemModal = ({
 					date.setHours(parseInt(time.split(":")[0]));
 					date.setMinutes(parseInt(time.split(":")[1]));
 					date.setSeconds(0);
-					item.record(date, amount, isPermanent);
+					const acc =
+						account === "-- create new --" ? newAccount : account;
+					item.record(date, acc, amount, isPermanent);
 					onRecord(item);
 					onClose();
 				}}

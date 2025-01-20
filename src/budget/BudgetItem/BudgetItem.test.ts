@@ -1,5 +1,5 @@
 import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
-import { BudgetItem } from "./BudgetItem";
+import { BudgetItemSimple } from "./BudgetItemSimple";
 
 describe("remainingDays", () => {
 	it("should calculate remaining future 7 days correctly", () => {
@@ -7,8 +7,8 @@ describe("remainingDays", () => {
 		const itemDate = new BudgetItemNextDate(
 			new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 		);
-		const item = BudgetItem.createSimple(
-			0,
+		const item = BudgetItemSimple.create(
+			"account",
 			"test",
 			100,
 			"test",
@@ -27,8 +27,8 @@ describe("remainingDays", () => {
 		const itemDate = new BudgetItemNextDate(
 			new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 		);
-		const item = BudgetItem.createSimple(
-			0,
+		const item = BudgetItemSimple.create(
+			"account",
 			"test",
 			100,
 			"test",
@@ -47,8 +47,8 @@ describe("remainingDays", () => {
 		const itemDate = new BudgetItemNextDate(
 			new Date(now.getTime() + 24 * 60 * 60 * 1000)
 		);
-		const item = BudgetItem.createSimple(
-			0,
+		const item = BudgetItemSimple.create(
+			"account",
 			"test",
 			100,
 			"test",
@@ -67,8 +67,8 @@ describe("remainingDays", () => {
 		const itemDate = new BudgetItemNextDate(
 			new Date(now.getTime() - 24 * 60 * 60 * 1000)
 		);
-		const item = BudgetItem.createSimple(
-			0,
+		const item = BudgetItemSimple.create(
+			"account",
 			"test",
 			100,
 			"test",

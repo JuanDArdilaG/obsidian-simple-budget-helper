@@ -1,4 +1,6 @@
 import { RefreshCcw } from "lucide-react";
+import { useContext } from "react";
+import { BudgetContext } from "./RightSidebarReactView";
 
 export type SidebarSections = "recurrentItems" | "accounting";
 
@@ -11,9 +13,17 @@ export const SectionButtons = ({
 	setSelected: (selected: SidebarSections) => void;
 	refresh: () => void;
 }) => {
+	const { updateBudget } = useContext(BudgetContext);
+
 	return (
 		<div className="section-buttons-container">
-			<button style={{ float: "left" }} onClick={refresh}>
+			<button
+				style={{ float: "left" }}
+				onClick={async () => {
+					refresh();
+					await updateBudget();
+				}}
+			>
 				<RefreshCcw size={16} />
 			</button>
 			<div className="section-buttons">
