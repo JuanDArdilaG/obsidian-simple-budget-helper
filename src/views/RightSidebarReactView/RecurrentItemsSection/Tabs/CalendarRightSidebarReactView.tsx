@@ -5,20 +5,21 @@ import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { BudgetItemsList } from "../BudgetItemsList";
 import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
 import { App } from "obsidian";
+import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 
 export const CalendarRightSidebarReactTab = ({
 	budget,
 	onRecord,
 	app,
 }: {
-	budget: Budget;
+	budget: Budget<BudgetItem>;
 	onRecord: (item: BudgetItem) => void;
 	app: App;
 }) => {
 	const [timeframe, setTimeframe] = useState<CalendarTimeframe>("3days");
-	const [budgetItems, setBudgetItems] = useState<BudgetItem[]>(
-		budget.getNDaysItems(3)
-	);
+	const [budgetItems, setBudgetItems] = useState<
+		{ item: BudgetItemRecurrent; dates: Date[] }[]
+	>([]);
 
 	useEffect(() => {
 		setBudgetItems(
@@ -32,21 +33,7 @@ export const CalendarRightSidebarReactTab = ({
 					: 3
 			)
 		);
-	}, [budget]);
-
-	useEffect(() => {
-		setBudgetItems(
-			budget.getNDaysItems(
-				timeframe === "month"
-					? 30
-					: timeframe === "2weeks"
-					? 14
-					: timeframe === "week"
-					? 7
-					: 3
-			)
-		);
-	}, [timeframe]);
+	}, [budget, timeframe]);
 
 	return (
 		<>

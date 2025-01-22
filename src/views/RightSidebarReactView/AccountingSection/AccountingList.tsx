@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { BudgetItemRecord } from "budget/BudgetItem/BudgetItemRecord";
+import { BudgetItemRecord } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { Budget } from "budget/Budget/Budget";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import {
@@ -78,7 +78,7 @@ export function AccountingList({
 						selection.reduce(
 							(total, record) =>
 								total +
-								record.amount *
+								record.amount.toNumber() *
 									(record.type === "income" ? 1 : -1),
 							0
 						)
@@ -96,7 +96,11 @@ export function AccountingList({
 	useEffect(() => {
 		console.log("updating history");
 		setBudgetHistory(
-			BudgetHistory.fromBudget(budget, settings.initialBudget)
+			BudgetHistory.fromBudget(
+				budget,
+				settings.initialBudget,
+				accountFilter ?? undefined
+			)
 		);
 	}, [budget, settings.initialBudget]);
 
@@ -479,7 +483,7 @@ const AccountingListRow = ({
 				record.name,
 				record.type,
 				record.date,
-				record.amount * -1
+				record.amount.negate()
 			)
 		);
 	}, [record]);
@@ -517,10 +521,9 @@ const AccountingListRow = ({
 					(!isTransfer && modifiedRecord.type === "transfer")
 						? "-"
 						: "+"}
-					{new PriceValueObject(
-						!isTransfer
-							? modifiedRecord.amount
-							: modifiedRecord.amount * -1
+					{(!isTransfer
+						? modifiedRecord.amount
+						: modifiedRecord.amount.negate()
 					).toString()}
 				</div>
 			</span>

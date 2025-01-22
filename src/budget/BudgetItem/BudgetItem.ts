@@ -1,5 +1,8 @@
 import { BudgetItemNextDate } from "./BudgetItemNextDate";
-import { BudgetItemRecord, BudgetItemRecordType } from "./BudgetItemRecord";
+import {
+	BudgetItemRecord,
+	BudgetItemRecordType,
+} from "./BugetItemRecord/BudgetItemRecord";
 
 export abstract class BudgetItem {
 	constructor(
@@ -9,8 +12,7 @@ export abstract class BudgetItem {
 		protected _category: string,
 		protected _type: BudgetItemRecordType,
 		protected _nextDate: BudgetItemNextDate,
-		protected _toAccount?: string,
-		protected _path?: string
+		protected _toAccount?: string
 	) {}
 
 	get id(): string {
@@ -31,14 +33,6 @@ export abstract class BudgetItem {
 
 	get amount(): number {
 		return this._amount;
-	}
-
-	set path(path: string | undefined) {
-		this._path = path;
-	}
-
-	get path(): string | undefined {
-		return this._path;
 	}
 
 	get category(): string {

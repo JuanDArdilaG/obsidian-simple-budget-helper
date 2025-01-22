@@ -9,7 +9,7 @@ export const AllItemsRightSidebarReactTab = ({
 	onRecord,
 	app,
 }: {
-	budget: Budget;
+	budget: Budget<BudgetItem>;
 	onRecord: (item: BudgetItem) => void;
 	app: App;
 }) => {
@@ -17,7 +17,10 @@ export const AllItemsRightSidebarReactTab = ({
 		<>
 			<RightSidebarReactTab title="All Items">
 				<BudgetItemsList
-					budgetItems={budget.items}
+					budgetItems={budget.onlyRecurrent().items.map((item) => ({
+						item,
+						dates: [item.nextDate],
+					}))}
 					onRecord={onRecord}
 					app={app}
 					totalPerMonth

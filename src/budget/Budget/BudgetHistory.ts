@@ -3,7 +3,7 @@ import { Budget } from "./Budget";
 import {
 	BudgetItemRecord,
 	BudgetItemRecordType,
-} from "budget/BudgetItem/BudgetItemRecord";
+} from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { monthIndexToAbbr } from "utils/date";
 
 type HistoryConfig = {
@@ -31,16 +31,15 @@ export class BudgetHistory {
 		const ids = this._history.map((item) => item.id);
 		if (ids.length !== new Set(ids).size) {
 			throw new Error("Duplicate id found in history.");
-		} else {
-			console.log("No duplicate id found in history");
 		}
 	}
 
 	static fromBudget(
 		budget: Budget<BudgetItem>,
-		initialBalance: number
+		initialBalance: number,
+		account?: string
 	): BudgetHistory {
-		return new BudgetHistory(
+		let history = new BudgetHistory(
 			budget.items
 				.map((item) => item.history)
 				.flat()
@@ -49,6 +48,14 @@ export class BudgetHistory {
 				}),
 			initialBalance
 		);
+
+		if (account)
+			history = new BudgetHistory(
+				history.filterByAccount(account),
+				initialBalance
+			);
+
+		return history;
 	}
 
 	get history(): BudgetItemRecord[] {
@@ -136,7 +143,7 @@ export class BudgetHistory {
 			.reduce((total, item) => {
 				return (
 					total +
-					item.amount *
+					item.amount.toNumber() *
 						(item.type === "expense"
 							? -1
 							: item.type === "income"

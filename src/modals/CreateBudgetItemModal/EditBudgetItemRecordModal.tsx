@@ -1,10 +1,10 @@
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
-import { BudgetItemRecord } from "budget/BudgetItem/BudgetItemRecord";
+import { BudgetItemRecord } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
 import { useState } from "react";
 import { ReactMoneyInput } from "react-input-price";
-import { BudgetItemRecordType } from "../../budget/BudgetItem/BudgetItemRecord";
+import { BudgetItemRecordType } from "../../budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 
 export const EditBudgetItemRecordModal = ({
 	budget,
@@ -22,7 +22,7 @@ export const EditBudgetItemRecordModal = ({
 	const item = budget.getItemByID(record.itemID);
 
 	const [name, setName] = useState(record.name);
-	const [amount, setAmount] = useState(record.amount);
+	const [amount, setAmount] = useState(record.amount.toNumber());
 	const [type, setType] = useState(record.type);
 
 	const [category, setCategory] = useState(item?.category || "");
@@ -52,7 +52,7 @@ export const EditBudgetItemRecordModal = ({
 			/>
 			<ReactMoneyInput
 				id="amount-input-react"
-				value={amount}
+				initialValue={amount}
 				onValueChange={(priceVO) => setAmount(priceVO.toNumber())}
 			/>
 			{item instanceof BudgetItemSimple && (

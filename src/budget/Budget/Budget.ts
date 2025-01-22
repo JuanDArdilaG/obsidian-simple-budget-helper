@@ -6,7 +6,7 @@ import { BudgetItemRecurrentMDFormatter } from "budget/BudgetItem/BudgetItemMDFo
 import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 import { BudgetHistory } from "./BudgetHistory";
-import { BudgetItemRecordType } from "budget/BudgetItem/BudgetItemRecord";
+import { BudgetItemRecordType } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 
 export class Budget<T extends BudgetItem> {
 	constructor(private _items: T[]) {}
@@ -83,10 +83,16 @@ export class Budget<T extends BudgetItem> {
 		);
 	}
 
-	getNDaysItems(n: number): BudgetItem[] {
-		return this._items.filter((item) => {
-			return item.nextDate.remainingDays <= n;
+	getNDaysItems(n: number): { item: BudgetItemRecurrent; dates: Date[] }[] {
+		const items: { item: BudgetItemRecurrent; dates: Date[] }[] = [];
+		this.onlyRecurrent().items.forEach((item) => {
+			const a = item.getRecurrenceDatesForNDays(n);
+			if (a.length > 0) {
+				items.push({ item, dates: a });
+			}
 		});
+
+		return items;
 	}
 
 	onlyRecurrent(): Budget<BudgetItemRecurrent> {

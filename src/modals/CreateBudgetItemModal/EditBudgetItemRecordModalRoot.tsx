@@ -2,7 +2,7 @@ import { App, Modal } from "obsidian";
 import { createRoot, Root } from "react-dom/client";
 import { StrictMode } from "react";
 import { EditBudgetItemRecordModal } from "./EditBudgetItemRecordModal";
-import { BudgetItemRecord } from "budget/BudgetItem/BudgetItemRecord";
+import { BudgetItemRecord } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 

@@ -1,5 +1,5 @@
 import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
-import { BudgetItemRecord } from "budget/BudgetItem/BudgetItemRecord";
+import { BudgetItemRecord } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { FrequencyString } from "budget/BudgetItem/FrequencyString";
 import { BudgetItemRecurrent } from "./BudgetItemRecurrent";
 

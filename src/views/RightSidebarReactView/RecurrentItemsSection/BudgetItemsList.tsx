@@ -4,8 +4,10 @@ import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { RecordBudgetItemModalRoot } from "./RecordBudgetItemModalRoot";
 import { App } from "obsidian";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { SettingsContext } from "../RightSidebarReactView";
+import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
+import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 
 export const BudgetItemsList = ({
 	budgetItems,
@@ -13,17 +15,41 @@ export const BudgetItemsList = ({
 	totalPerMonth,
 	app,
 }: {
-	budgetItems: BudgetItem[];
+	budgetItems: { item: BudgetItemRecurrent; dates: Date[] }[];
 	onRecord: (item: BudgetItem) => void;
 	totalPerMonth?: boolean;
 	app: App;
 }) => {
 	const settings = useContext(SettingsContext);
+	const [itemsInList, setItemsInList] = useState<BudgetItemRecurrent[]>([]);
+	useEffect(() => {
+		setItemsInList(
+			new Budget(
+				budgetItems
+					.map(({ item, dates }) => {
+						return dates.map((date) => {
+							return new BudgetItemRecurrent(
+								item.id,
+								item.name,
+								item.amount,
+								item.category,
+								item.type,
+								new BudgetItemNextDate(date),
+								item.path,
+								item.frequency,
+								item.history
+							);
+						});
+					})
+					.flat()
+			).orderByNextDate().items
+		);
+	}, [budgetItems]);
 
 	return (
 		<div>
 			<ul>
-				{budgetItems.map((item, index) => (
+				{itemsInList.map((item, index) => (
 					<li
 						key={index}
 						className="two-columns-list"
@@ -93,8 +119,8 @@ export const BudgetItemsList = ({
 				Total:{" "}
 				{new PriceValueObject(
 					totalPerMonth
-						? new Budget(budgetItems).getTotalPerMonth()
-						: new Budget(budgetItems).getTotal()
+						? new Budget(itemsInList).getTotalPerMonth()
+						: new Budget(itemsInList).getTotal()
 				).toString()}
 			</h3>
 		</div>

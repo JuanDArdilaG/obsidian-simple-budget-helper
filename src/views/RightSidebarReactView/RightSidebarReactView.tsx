@@ -47,7 +47,7 @@ export const RightSidebarReactView = ({
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) => {
 	const [sectionSelection, setSectionSelection] =
-		useState<SidebarSections>("accounting");
+		useState<SidebarSections>("recurrentItems");
 
 	const [innerBudget, setInnerBudget] = useState(budget);
 

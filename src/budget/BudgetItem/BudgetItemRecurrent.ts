@@ -1,8 +1,12 @@
 import { BudgetItemNextDate } from "./BudgetItemNextDate";
 import { FrequencyString } from "./FrequencyString";
-import { BudgetItemRecord, BudgetItemRecordType } from "./BudgetItemRecord";
+import {
+	BudgetItemRecord,
+	BudgetItemRecordType,
+} from "./BugetItemRecord/BudgetItemRecord";
 import { BudgetItem } from "./BudgetItem";
 import { nanoid } from "nanoid";
+import { BudgetItemRecordAmount } from "./BugetItemRecord/BudgetItemRecordAmount";
 
 export class BudgetItemRecurrent extends BudgetItem {
 	constructor(
@@ -12,7 +16,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 		category: string,
 		type: BudgetItemRecordType,
 		nextDate: BudgetItemNextDate,
-		path: string,
+		private _path: string,
 		private _frequency: FrequencyString,
 		private _history: BudgetItemRecord[],
 		toAccount?: string
@@ -24,8 +28,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 			category,
 			type,
 			nextDate,
-			type === "transfer" ? toAccount : undefined,
-			path
+			type === "transfer" ? toAccount : undefined
 		);
 	}
 
@@ -33,12 +36,16 @@ export class BudgetItemRecurrent extends BudgetItem {
 		return this._frequency;
 	}
 
+	get path(): string {
+		return this._path;
+	}
+
 	static create(
 		name: string,
 		amount: number,
 		category: string,
 		type: BudgetItemRecordType,
-		nextDate: BudgetItemNextDate,
+		nextDate: Date,
 		frequency: FrequencyString,
 		path: string,
 		toAccount?: string
@@ -49,7 +56,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 			amount,
 			category,
 			type,
-			nextDate,
+			new BudgetItemNextDate(nextDate, true),
 			path,
 			frequency,
 			[],
@@ -90,6 +97,20 @@ export class BudgetItemRecurrent extends BudgetItem {
 		return this._amount * relationBetweenDateAndFrequency;
 	}
 
+	getRecurrenceDatesForNDays(days: number): Date[] {
+		const now = new Date();
+		now.setHours(0, 0, 0, 0);
+
+		const finalDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+		let initialDate = this.nextDate;
+		const dates = [];
+		while (initialDate.getTime() <= finalDate.getTime()) {
+			dates.push(new Date(initialDate.getTime()));
+			initialDate = initialDate.nextDate(this._frequency);
+		}
+		return dates;
+	}
+
 	record(
 		date: Date,
 		account: string,
@@ -113,7 +134,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 				this._name,
 				this._type,
 				date,
-				nextAmount
+				new BudgetItemRecordAmount(nextAmount)
 			)
 		);
 	}
@@ -135,5 +156,20 @@ export class BudgetItemRecurrent extends BudgetItem {
 		console.log({ before: [...this._history] });
 		this._history = this._history.filter((r) => r.id !== id);
 		console.log({ after: this._history });
+	}
+
+	toJSON() {
+		return {
+			id: this._id,
+			name: this._name,
+			amount: this._amount,
+			category: this._category,
+			type: this._type.toString(),
+			nextDate: this._nextDate.toDate(),
+			toAccount: this._toAccount,
+			path: this._path ?? "",
+			frequency: this._frequency.toString(),
+			history: this._history.toString(),
+		};
 	}
 }

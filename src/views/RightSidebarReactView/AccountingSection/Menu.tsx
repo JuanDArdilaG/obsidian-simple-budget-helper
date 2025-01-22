@@ -1,4 +1,4 @@
-import { BudgetItemRecord } from "budget/BudgetItem/BudgetItemRecord";
+import { BudgetItemRecord } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 
 export const Menu = ({
 	record,

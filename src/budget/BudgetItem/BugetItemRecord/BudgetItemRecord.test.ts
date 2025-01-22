@@ -1,4 +1,6 @@
+import { describe, expect, it } from "vitest";
 import { BudgetItemRecord } from "./BudgetItemRecord";
+import { BudgetItemRecordAmount } from "./BudgetItemRecordAmount";
 
 describe("toString", () => {
 	it("should return a string representation of the BudgetItemRecord", () => {
@@ -10,7 +12,7 @@ describe("toString", () => {
 			"Test",
 			"expense",
 			new Date(2024, 0, 1, 15, 35),
-			100
+			new BudgetItemRecordAmount(100)
 		);
 
 		const str = record.toString();

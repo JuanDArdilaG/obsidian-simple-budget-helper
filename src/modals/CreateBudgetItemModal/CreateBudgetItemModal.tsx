@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
-import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
 import { FrequencyString } from "budget/BudgetItem/FrequencyString";
 import { ReactMoneyInput } from "react-input-price";
 import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
-import { BudgetItemRecordType } from "budget/BudgetItem/BudgetItemRecord";
+import { BudgetItemRecordType } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { App, Notice, SuggestModal } from "obsidian";
 import { Budget } from "budget/Budget/Budget";
 
@@ -127,7 +126,7 @@ export const CreateBudgetItemModal = ({
 			</div>
 			<ReactMoneyInput
 				id="amount-input-react"
-				value={amount}
+				initialValue={amount}
 				onValueChange={(priceVO) => setAmount(priceVO.toNumber())}
 			/>
 			<select
@@ -223,7 +222,7 @@ export const CreateBudgetItemModal = ({
 					nextDate.setHours(parseInt(time.split(":")[0]));
 					nextDate.setMinutes(parseInt(time.split(":")[1]));
 					nextDate.setSeconds(0);
-					const date = new BudgetItemNextDate(nextDate, isRecurrent);
+					const date = nextDate;
 					const cat =
 						category === "-- create new --"
 							? newCategory

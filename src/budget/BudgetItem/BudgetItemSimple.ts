@@ -1,7 +1,11 @@
 import { BudgetItemNextDate } from "./BudgetItemNextDate";
-import { BudgetItemRecord, BudgetItemRecordType } from "./BudgetItemRecord";
+import {
+	BudgetItemRecord,
+	BudgetItemRecordType,
+} from "./BugetItemRecord/BudgetItemRecord";
 import { BudgetItem } from "./BudgetItem";
 import { nanoid } from "nanoid";
+import { BudgetItemRecordAmount } from "./BugetItemRecord/BudgetItemRecordAmount";
 
 export class BudgetItemSimple extends BudgetItem {
 	constructor(
@@ -27,7 +31,7 @@ export class BudgetItemSimple extends BudgetItem {
 		amount: number,
 		category: string,
 		type: BudgetItemRecordType,
-		nextDate: BudgetItemNextDate,
+		nextDate: Date,
 		toAccount?: string
 	): BudgetItemSimple {
 		return new BudgetItemSimple(
@@ -37,7 +41,7 @@ export class BudgetItemSimple extends BudgetItem {
 			amount,
 			category,
 			type,
-			nextDate,
+			new BudgetItemNextDate(nextDate),
 			toAccount
 		);
 	}
@@ -55,8 +59,8 @@ export class BudgetItemSimple extends BudgetItem {
 				this._toAccount || "",
 				this.name,
 				this._type,
-				this.nextDate,
-				this.amount
+				new Date(this.nextDate.getTime()),
+				new BudgetItemRecordAmount(this.amount)
 			),
 		];
 	}
@@ -91,7 +95,6 @@ export class BudgetItemSimple extends BudgetItem {
 		amount: number,
 		category: string
 	) {
-		console.log("updating");
 		this._name = name;
 		this._account = account;
 		this._nextDate = new BudgetItemNextDate(date, false);
