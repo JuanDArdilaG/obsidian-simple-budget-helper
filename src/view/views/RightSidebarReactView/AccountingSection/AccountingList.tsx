@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { BudgetItemRecord } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { Budget } from "budget/Budget/Budget";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
@@ -17,36 +17,31 @@ import { Menu } from "./Menu";
 import { EditBudgetItemRecordModalRoot } from "modals/CreateBudgetItemModal/EditBudgetItemRecordModalRoot";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
+import { App } from "obsidian";
 
 export function AccountingList({
 	editModal,
+	app,
 	statusBarAddText,
 }: {
-	budget: Budget<BudgetItem>;
+	app: App;
 	editModal: EditBudgetItemRecordModalRoot;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) {
 	const { budget } = useContext(BudgetContext);
-	const settings = useContext(SettingsContext);
 	const fileOperations = useContext(FileOperationsContext);
-
-	const [budgetHistory, setBudgetHistory] = useState(
-		new BudgetHistory([], settings.initialBudget)
-	);
-	const [allHistory, setAllHistory] = useState<GroupByYearMonthDay>([]);
-	const [filteredHistory, setFilteredHistory] = useState<GroupByYearMonthDay>(
-		[]
-	);
 	const [selectedRecord, setSelectedRecord] = useState<BudgetItemRecord>();
 
 	const [accountFilter, setAccountFilter] = useState("");
-	useEffect(() => {
-		setFilteredHistory(
-			budgetHistory.getGroupedByYearMonthDay({
-				account: accountFilter,
-			})
-		);
-	}, [accountFilter, budgetHistory]);
+
+	const budgetHistory = useMemo(
+		() => BudgetHistory.fromBudget(budget, accountFilter ?? undefined),
+		[budget, accountFilter]
+	);
+	const filteredHistory = useMemo(
+		() => budgetHistory.getGroupedByYearMonthDay(),
+		[budgetHistory]
+	);
 
 	const [selectionActive, setSelectionActive] = useState(false);
 	const [selection, setSelection] = useState<BudgetItemRecord[]>([]);
@@ -93,21 +88,6 @@ export function AccountingList({
 		}
 	}, [selectionActive]);
 
-	useEffect(() => {
-		console.log("updating history");
-		setBudgetHistory(
-			BudgetHistory.fromBudget(
-				budget,
-				settings.initialBudget,
-				accountFilter ?? undefined
-			)
-		);
-	}, [budget, settings.initialBudget]);
-
-	useEffect(() => {
-		setAllHistory(budgetHistory.getGroupedByYearMonthDay());
-	}, [budgetHistory]);
-
 	return (
 		<div>
 			<select
@@ -126,6 +106,7 @@ export function AccountingList({
 				<ContextMenu
 					menu={
 						<Menu
+							app={app}
 							record={selectedRecord}
 							onEdit={async (record) => {
 								editModal.setRecord(record);
@@ -435,15 +416,6 @@ export function AccountingList({
 									</div>
 								);
 							})}
-
-						<div className="align-right">
-							<span>
-								Initial balance:{" "}
-								{new PriceValueObject(
-									settings.initialBudget
-								).toString()}
-							</span>
-						</div>
 					</div>
 				))}
 		</div>

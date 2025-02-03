@@ -5,7 +5,7 @@ import {
 	SettingTab,
 	SimpleBudgetHelperSettings,
 } from "./SettingTab";
-import { RightSidebarReactViewRoot } from "./views/RightSidebarReactView/RightSidebarReactViewRoot";
+import { RightSidebarReactViewRoot } from "./view/views/RightSidebarReactView/RightSidebarReactViewRoot";
 import { Commands } from "commands";
 import { LeftMenuItems } from "ribbonIcon";
 import { Budget } from "budget/Budget/Budget";
@@ -68,11 +68,8 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		);
 
 		this.addSettingTab(new SettingTab(this.app, this));
-		Commands.CreateBudgetItemModal(
-			this,
-			budget,
-			budget.getAccounts(),
-			(item, operation) => this._updateItemInFile(item, operation)
+		Commands.CreateBudgetItemModal(this, budget, (item, operation) =>
+			this._updateItemInFile(item, operation)
 		);
 		LeftMenuItems.RightSidebarPanel(this);
 	}

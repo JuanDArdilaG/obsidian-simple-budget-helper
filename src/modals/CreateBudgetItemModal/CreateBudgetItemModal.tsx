@@ -1,261 +1,216 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
-import { FrequencyString } from "budget/BudgetItem/FrequencyString";
-import { ReactMoneyInput } from "react-input-price";
 import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 import { BudgetItemRecordType } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
-import { App, Notice, SuggestModal } from "obsidian";
 import { Budget } from "budget/Budget/Budget";
+import { FileOperationsContext } from "view/views/RightSidebarReactView/RightSidebarReactView";
+import { Input } from "view/components/Input";
+import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
+import { SelectWithCreation } from "view/components/SelectWithCreation";
+import { Select } from "view/components/Select";
+import { Checkbox, FormControlLabel } from "@mui/material";
 
 export const CreateBudgetItemModal = ({
-	app,
 	budget,
-	accounts,
 	onSubmit,
 	close,
 	toEdit,
 }: {
-	app: App;
 	budget: Budget<BudgetItem>;
-	accounts: string[];
 	onSubmit: (item: BudgetItem) => Promise<void>;
 	close: () => void;
 	toEdit?: BudgetItem;
 }) => {
+	const items = useMemo(
+		() =>
+			budget.items
+				.filter((item, index, self) => {
+					return (
+						index === self.findIndex((o) => o.name === item.name)
+					);
+				})
+				.sort((a, b) => a.name.localeCompare(b.name)),
+		[budget]
+	);
+	// const history = useMemo(() => budget.getHistory(), [budget]);
+	const accounts = useMemo(() => [...budget.getAccounts()].sort(), [budget]);
+	const categories = useMemo(
+		() => [...budget.getCategories()].sort(),
+		[budget]
+	);
+	const { refresh } = useContext(FileOperationsContext);
 	const [selectedItem, setSelectedItem] = useState<BudgetItem | undefined>(
 		undefined
 	);
 
-	const [account, setAccount] = useState("-- create new --");
-	const [newAccount, setNewAccount] = useState("");
-
-	const [toAccount, setToAccount] = useState("-- create new --");
-	const [newToAccount, setNewToAccount] = useState("");
-
-	const [name, setName] = useState("");
-	const [amount, setAmount] = useState(0);
+	const [item, setItem] = useState<BudgetItem>(BudgetItemSimple.empty());
+	const names = useMemo(() => items.map((item) => item.name), [items]);
 	const [isRecurrent, setIsRecurrent] = useState(false);
-	const [frequency, setFrequency] = useState("");
-	const [category, setCategory] = useState("-- create new --");
-	const [newCategory, setNewCategory] = useState("");
-	const [type, setType] = useState("income" as BudgetItemRecordType);
-	const [nextDate, setNextDate] = useState(new Date());
-	const [time, setTime] = useState(
-		new Date().toTimeString().split(" ")[0].split(":").slice(0, 2).join(":")
-	);
 
 	useEffect(() => {
 		if (selectedItem) {
-			loadFromItem(selectedItem);
+			console.log({ selectedItem });
+			setItem(selectedItem);
 		}
 	}, [selectedItem]);
 
-	const [suggestionsModal, setSuggestionsModal] = useState(
-		new ItemsSuggestionModal(app, budget.items, setSelectedItem)
-	);
-
 	useEffect(() => {
-		setSuggestionsModal(
-			new ItemsSuggestionModal(app, budget.items, setSelectedItem)
-		);
-	}, [budget.items]);
+		update({});
+	}, [isRecurrent]);
 
-	const loadFromItem = (item: BudgetItem) => {
-		setName(item.name);
-		setAccount(
-			item instanceof BudgetItemSimple ? item.account : "-- create new --"
+	const update = (newValues: {
+		name?: string;
+		account?: string;
+		date?: Date;
+		type?: BudgetItemRecordType;
+		amount?: number;
+		frequency?: string;
+		category?: string;
+		toAccount?: string;
+	}) => {
+		const toUpdate = item.toJSON();
+		console.log({ toUpdate });
+		if (newValues.name) toUpdate.name = newValues.name;
+		if (newValues.date) toUpdate.nextDate = newValues.date;
+		if (newValues.type) toUpdate.type = newValues.type;
+		if (newValues.amount) toUpdate.amount = newValues.amount;
+		if (newValues.category) toUpdate.category = newValues.category;
+		if (newValues.toAccount) toUpdate.toAccount = newValues.toAccount;
+		if (newValues.frequency) toUpdate.frequency = newValues.frequency;
+
+		if (newValues.account) toUpdate.account = newValues.account;
+
+		setItem(
+			isRecurrent
+				? BudgetItemRecurrent.fromJSON(toUpdate)
+				: BudgetItemSimple.fromJSON(toUpdate)
 		);
-		setIsRecurrent(item instanceof BudgetItemRecurrent);
-		setFrequency(
-			item instanceof BudgetItemRecurrent ? item.frequency.toString() : ""
-		);
-		setAmount(item.amount);
-		setCategory(item.category);
-		setType(item.type);
-		// setNextDate(item.nextDate);
-		// setTime(
-		// 	item.nextDate
-		// 		.toTimeString()
-		// 		.split(" ")[0]
-		// 		.split(":")
-		// 		.slice(0, 2)
-		// 		.join(":")
-		// );
 	};
 
 	useEffect(() => {
-		if (toEdit) {
-			loadFromItem(toEdit);
-		}
+		if (toEdit) setItem(toEdit);
 	}, [toEdit]);
 
 	return (
 		<div className="create-budget-item-modal">
 			<h1>Create Budget Item</h1>
-			<button
-				onClick={() => {
-					suggestionsModal.open();
+			<SelectWithCreation<string>
+				id="name"
+				label="Name"
+				item={item.name}
+				items={names}
+				getLabel={(name) => {
+					if (!name) return "";
+					const item = items.find((i) => i.name === name);
+					if (!item) return "";
+					return `${name}${
+						item instanceof BudgetItemSimple &&
+						!item.amount.isZero()
+							? " - " + item.account
+							: ""
+					}${
+						item.type === "transfer"
+							? ` -> ${item.toAccount} - `
+							: ""
+					}${
+						item.amount.isZero() ? "" : " " + item.amount.toString()
+					}`;
+				}}
+				onChange={(name) => {
+					setSelectedItem(items.find((i) => i.name === name));
+					update({ name });
+				}}
+			/>
+			<SelectWithCreation
+				id="category"
+				label="Category"
+				item={item.category}
+				items={categories}
+				onChange={(category) => update({ category })}
+			/>
+			<Input<PriceValueObject>
+				id="amount"
+				label="Amount"
+				value={item.amount}
+				onChange={(amount) => update({ amount: amount.toNumber() })}
+			/>
+			<Select<BudgetItemRecordType>
+				id="type"
+				label="Type"
+				value={item.type}
+				values={["income", "expense", "transfer"]}
+				onChange={(type) => update({ type })}
+			/>
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					gap: "10px",
 				}}
 			>
-				From Item
-			</button>
-			<input
-				type="text"
-				placeholder="Name"
-				defaultValue={name}
-				onChange={(e) => setName(e.target.value)}
-			/>
-			<div style={{ display: "flex", justifyContent: "space-between" }}>
-				<select
-					value={account}
-					onChange={(e) => setAccount(e.target.value)}
-				>
-					{accounts.map((account, index) => (
-						<option value={account} key={index}>
-							{account}
-						</option>
-					))}
-				</select>
-				{account === "-- create new --" && (
-					<input
-						type="text"
-						onChange={(e) => setNewAccount(e.target.value)}
+				<SelectWithCreation
+					id="account"
+					label="Account: From"
+					item={item.account}
+					items={accounts}
+					onChange={(value) => update({ account: value })}
+					style={{
+						flexGrow: 1,
+					}}
+				/>
+				{item.type === "transfer" && (
+					<SelectWithCreation
+						id="toAccount"
+						label="Account: To"
+						item={item.toAccount}
+						items={accounts}
+						onChange={(value) => update({ toAccount: value })}
+						style={{
+							flexGrow: 1,
+						}}
 					/>
 				)}
 			</div>
-			<ReactMoneyInput
-				id="amount-input-react"
-				initialValue={amount}
-				onValueChange={(priceVO) => setAmount(priceVO.toNumber())}
+			<Input<Date>
+				id="date"
+				label="Date"
+				value={item.nextDate.toDate()}
+				onChange={(nextDate) => update({ date: nextDate })}
 			/>
-			<select
-				value={type}
-				onChange={(e) =>
-					setType(e.target.value as BudgetItemRecordType)
-				}
-			>
-				<option value="income">Income</option>
-				<option value="expense">Expense</option>
-				<option value="transfer">Transfer</option>
-			</select>
-			{type === "transfer" && (
-				<div
-					style={{ display: "flex", justifyContent: "space-between" }}
-				>
-					<select
-						value={toAccount}
-						onChange={(e) => setToAccount(e.target.value)}
-					>
-						{accounts.map((account, index) => (
-							<option value={account} key={index}>
-								{account}
-							</option>
-						))}
-					</select>
-					{toAccount === "-- create new --" && (
-						<input
-							type="text"
-							onChange={(e) => setNewToAccount(e.target.value)}
+			<div style={{ display: "flex", alignItems: "center" }}>
+				<FormControlLabel
+					control={
+						<Checkbox
+							checked={isRecurrent}
+							onChange={(e) => setIsRecurrent(e.target.checked)}
 						/>
-					)}
-				</div>
-			)}
-			<div style={{ display: "flex", justifyContent: "space-between" }}>
-				<select
-					value={category}
-					onChange={(e) => setCategory(e.target.value)}
-				>
-					{[...budget.getCategories(), "-- create new --"]
-						.sort()
-						.map((category, index) => (
-							<option value={category} key={index}>
-								{category}
-							</option>
-						))}
-				</select>
-				{category === "-- create new --" && (
-					<input
-						type="text"
-						onChange={(e) => setNewCategory(e.target.value)}
+					}
+					label="Recurrent"
+				/>
+				{isRecurrent && (
+					<Input<string>
+						id="frequency"
+						label="Frequency"
+						value={
+							item instanceof BudgetItemRecurrent
+								? item.frequency.toString()
+								: ""
+						}
+						onChange={(frequency) => update({ frequency })}
 					/>
 				)}
 			</div>
-			<div>
-				<input
-					type="date"
-					value={new Intl.DateTimeFormat("en-CA", {
-						year: "numeric",
-						month: "2-digit",
-						day: "2-digit",
-					}).format(nextDate)}
-					onChange={(e) =>
-						setNextDate(new Date(`${e.target.value}T00:00:00`))
-					}
-				/>
-				<input
-					type="time"
-					value={time}
-					onChange={(e) => setTime(e.target.value)}
-				/>
-			</div>
-			<div>
-				<input
-					id="isRecurrent"
-					type="checkbox"
-					checked={isRecurrent}
-					onChange={(e) => setIsRecurrent(e.target.checked)}
-				/>
-				<label htmlFor="isRecurrent">Recurrent</label>
-			</div>
-			{isRecurrent && (
-				<input
-					type="text"
-					placeholder="Frequency"
-					value={frequency}
-					onChange={(e) => setFrequency(e.target.value)}
-				/>
-			)}
 			<button
-				onClick={() => {
-					const isRecurrent = frequency !== "";
-					nextDate.setHours(parseInt(time.split(":")[0]));
-					nextDate.setMinutes(parseInt(time.split(":")[1]));
+				onClick={async () => {
+					const nextDate = new Date(item.nextDate);
 					nextDate.setSeconds(0);
-					const date = nextDate;
-					const cat =
-						category === "-- create new --"
-							? newCategory
-							: category;
-					const acc =
-						account === "-- create new --" ? newAccount : account;
-					const toAcc =
-						toAccount === "-- create new --"
-							? newToAccount
-							: toAccount;
-
-					onSubmit(
-						isRecurrent
-							? BudgetItemRecurrent.create(
-									name,
-									amount,
-									cat,
-									type,
-									date,
-									new FrequencyString(frequency),
-									"",
-									toAcc
-							  )
-							: BudgetItemSimple.create(
-									acc,
-									name,
-									amount,
-									cat,
-									type,
-									date,
-									toAcc
-							  )
-					);
+					console.log({ nextDate });
+					console.log({
+						item,
+					});
+					await onSubmit(item);
+					await refresh();
 					close();
 				}}
 			>
@@ -264,35 +219,3 @@ export const CreateBudgetItemModal = ({
 		</div>
 	);
 };
-
-class ItemsSuggestionModal extends SuggestModal<BudgetItem> {
-	constructor(
-		app: App,
-		private _items: BudgetItem[],
-		private _setSelection: React.Dispatch<
-			React.SetStateAction<BudgetItem | undefined>
-		>
-	) {
-		super(app);
-		this._items = this._items.sort((a, b) => a.name.localeCompare(b.name));
-	}
-
-	// Returns all available suggestions.
-	getSuggestions(query: string): BudgetItem[] {
-		return this._items.filter((item) =>
-			item.name.toLowerCase().includes(query.toLowerCase())
-		);
-	}
-
-	// Renders each suggestion item.
-	renderSuggestion(item: BudgetItem, el: HTMLElement) {
-		el.createEl("div", { text: item.name });
-		//   el.createEl('small', { text: book.author });
-	}
-
-	// Perform action on the selected suggestion.
-	onChooseSuggestion(item: BudgetItem, evt: MouseEvent | KeyboardEvent) {
-		new Notice(`Selected ${item.name}`);
-		this._setSelection(item);
-	}
-}

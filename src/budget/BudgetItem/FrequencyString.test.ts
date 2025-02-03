@@ -11,7 +11,7 @@ describe("toDaysNumber", () => {
 	});
 
 	it("should return the correct number of days for a complex frequency", () => {
-		const frequency = new FrequencyString("1y2mo3w4d5h6m7s");
+		const frequency = new FrequencyString("1y2mo3w4d");
 
 		const freqObj = frequency.toObject();
 

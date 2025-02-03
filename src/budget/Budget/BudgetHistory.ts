@@ -24,10 +24,7 @@ export type GroupByYearMonthDay = {
 };
 
 export class BudgetHistory {
-	constructor(
-		private _history: BudgetItemRecord[],
-		private _initialBalance: number
-	) {
+	constructor(private _history: BudgetItemRecord[]) {
 		const ids = this._history.map((item) => item.id);
 		if (ids.length !== new Set(ids).size) {
 			throw new Error("Duplicate id found in history.");
@@ -36,7 +33,6 @@ export class BudgetHistory {
 
 	static fromBudget(
 		budget: Budget<BudgetItem>,
-		initialBalance: number,
 		account?: string
 	): BudgetHistory {
 		let history = new BudgetHistory(
@@ -45,21 +41,29 @@ export class BudgetHistory {
 				.flat()
 				.sort((a, b) => {
 					return a.date.getTime() - b.date.getTime();
-				}),
-			initialBalance
+				})
 		);
 
 		if (account)
-			history = new BudgetHistory(
-				history.filterByAccount(account),
-				initialBalance
-			);
+			history = new BudgetHistory(history.filterByAccount(account));
 
 		return history;
 	}
 
 	get history(): BudgetItemRecord[] {
 		return this._history;
+	}
+
+	static fromGroupByYearMonthDay(groupedByYearMonthDay: GroupByYearMonthDay) {
+		return new BudgetHistory(
+			(
+				Object.values(
+					Object.values(groupedByYearMonthDay) as object[]
+				) as BudgetItemRecord[]
+			)
+				.flat()
+				.flat()
+		);
 	}
 
 	getGroupedByYearMonthDay(config?: HistoryConfig): GroupByYearMonthDay {
@@ -97,7 +101,7 @@ export class BudgetHistory {
 	}
 
 	getBalance(config?: HistoryConfig): number {
-		return this._initialBalance + this._getTotalHistory(config);
+		return this._getTotalHistory(config);
 	}
 
 	getAllByAccount(): Record<string, BudgetHistory> {
@@ -105,10 +109,7 @@ export class BudgetHistory {
 		const result: Record<string, BudgetHistory> = {};
 
 		for (const account of accounts) {
-			result[account] = new BudgetHistory(
-				this.filterByAccount(account),
-				0
-			);
+			result[account] = new BudgetHistory(this.filterByAccount(account));
 		}
 		return result;
 	}

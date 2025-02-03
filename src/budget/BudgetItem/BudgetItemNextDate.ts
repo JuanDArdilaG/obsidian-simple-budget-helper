@@ -31,4 +31,7 @@ export class BudgetItemNextDate extends Date {
 	toDate(): Date {
 		return this;
 	}
+	static empty(): BudgetItemNextDate {
+		return new BudgetItemNextDate(new Date());
+	}
 }

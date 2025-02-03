@@ -8,12 +8,15 @@ import {
 } from "./AccountingSectionButtons";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { AccountsList } from "./AccountsList";
+import { App } from "obsidian";
 
 export const AccountingSection = ({
+	app,
 	budget,
 	editModal,
 	statusBarAddText,
 }: {
+	app: App;
 	budget: Budget<BudgetItem>;
 	editModal: EditBudgetItemRecordModalRoot;
 	statusBarAddText: (val: string | DocumentFragment) => void;
@@ -32,8 +35,8 @@ export const AccountingSection = ({
 
 			{sectionSelection === "movements" && (
 				<AccountingList
+					app={app}
 					editModal={editModal}
-					budget={budget}
 					statusBarAddText={statusBarAddText}
 				/>
 			)}

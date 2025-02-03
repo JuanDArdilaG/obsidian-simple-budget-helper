@@ -3,14 +3,14 @@ import {
 	BudgetItemRecord,
 	BudgetItemRecordType,
 } from "./BugetItemRecord/BudgetItemRecord";
-import { BudgetItem } from "./BudgetItem";
+import { BudgetItem, TBudgetItem } from "./BudgetItem";
 import { nanoid } from "nanoid";
 import { BudgetItemRecordAmount } from "./BugetItemRecord/BudgetItemRecordAmount";
 
 export class BudgetItemSimple extends BudgetItem {
 	constructor(
 		id: string,
-		private _account: string,
+		account: string,
 		name: string,
 		amount: number,
 		category: string,
@@ -18,7 +18,7 @@ export class BudgetItemSimple extends BudgetItem {
 		nextDate: BudgetItemNextDate,
 		toAccount?: string
 	) {
-		super(id, name, amount, category, type, nextDate, toAccount);
+		super(id, name, amount, category, type, nextDate, account, toAccount);
 	}
 
 	get account(): string {
@@ -41,8 +41,21 @@ export class BudgetItemSimple extends BudgetItem {
 			amount,
 			category,
 			type,
-			new BudgetItemNextDate(nextDate),
+			new BudgetItemNextDate(nextDate, false),
 			toAccount
+		);
+	}
+
+	static copyFrom(item: BudgetItem): BudgetItemSimple {
+		return new BudgetItemSimple(
+			item.id,
+			this.IsSimple(item) ? item.account : "",
+			item.name,
+			item.amount.toNumber(),
+			item.category,
+			item.type,
+			item.nextDate,
+			item.toAccount
 		);
 	}
 
@@ -60,23 +73,13 @@ export class BudgetItemSimple extends BudgetItem {
 				this.name,
 				this._type,
 				new Date(this.nextDate.getTime()),
-				new BudgetItemRecordAmount(this.amount)
+				new BudgetItemRecordAmount(this.amount.toNumber())
 			),
 		];
 	}
 
 	get folderPath(): string {
 		return "Simple";
-	}
-
-	get remainingDays(): { str: string; color: string } {
-		const rd = this.nextDate.remainingDays;
-		const str = rd === 1 || rd === -1 ? `${rd} day` : `${rd} days.`;
-		const absRd = Math.abs(rd);
-		return {
-			str,
-			color: rd < -7 ? "tomato" : absRd <= 7 ? "gold" : "greenyellow",
-		};
 	}
 
 	record(date: Date, account: string, amount?: number): void {
@@ -91,9 +94,10 @@ export class BudgetItemSimple extends BudgetItem {
 		name: string,
 		account: string,
 		date: Date,
-		type: "income" | "expense",
+		type: BudgetItemRecordType,
 		amount: number,
-		category: string
+		category: string,
+		toAccount?: string
 	) {
 		this._name = name;
 		this._account = account;
@@ -101,9 +105,62 @@ export class BudgetItemSimple extends BudgetItem {
 		this._type = type;
 		this._amount = amount;
 		this._category = category;
+		this._toAccount = toAccount;
 	}
 
 	removeHistoryRecord(id: string) {
 		return;
 	}
+
+	toJSON(): TBudgetItem {
+		return {
+			id: this._id,
+			account: this._account,
+			name: this._name,
+			amount: this._amount,
+			category: this._category,
+			type: this._type,
+			nextDate: this._nextDate,
+			toAccount: this._toAccount,
+			path: this.folderPath,
+			history: this.history.toString(),
+			frequency: "",
+		};
+	}
+
+	static fromJSON(json: TBudgetItem): BudgetItemSimple {
+		return new BudgetItemSimple(
+			json.id,
+			json.account,
+			json.name,
+			json.amount,
+			json.category,
+			json.type,
+			new BudgetItemNextDate(json.nextDate, false),
+			json.toAccount
+		);
+	}
+
+	static empty(): BudgetItemSimple {
+		return new BudgetItemSimple(
+			"",
+			"",
+			"",
+			0,
+			"",
+			"expense",
+			BudgetItemNextDate.empty()
+		);
+	}
 }
+
+export type TBudgetItemSimple = {
+	id: string;
+	account: string;
+	name: string;
+	amount: number;
+	category: string;
+	type: BudgetItemRecordType;
+	nextDate: Date;
+	toAccount?: string;
+};

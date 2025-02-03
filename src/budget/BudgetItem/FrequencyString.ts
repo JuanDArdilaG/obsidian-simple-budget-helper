@@ -21,6 +21,10 @@ export class FrequencyString extends String {
 			frequencyObject.days
 		);
 	}
+
+	static empty(): FrequencyString {
+		return new FrequencyString("");
+	}
 }
 
 export type FrequencyObject = {

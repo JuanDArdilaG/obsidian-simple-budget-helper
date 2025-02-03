@@ -10,9 +10,10 @@ export const useContextMenu = () => {
 			e.preventDefault();
 
 			if (
-				e.target?.localName !== "li" &&
-				e.target?.parentElement?.localName !== "li" &&
-				e.target?.parentElement?.parentElement?.localName !== "li"
+				(e.target as HTMLElement)?.localName !== "li" &&
+				(e.target as HTMLElement)?.parentElement?.localName !== "li" &&
+				(e.target as HTMLElement)?.parentElement?.parentElement
+					?.localName !== "li"
 			)
 				return;
 

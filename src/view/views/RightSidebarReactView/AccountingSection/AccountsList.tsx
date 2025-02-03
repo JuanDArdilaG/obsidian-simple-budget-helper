@@ -9,7 +9,7 @@ export const AccountsList = ({ budget }: { budget: Budget<BudgetItem> }) => {
 		{}
 	);
 	useEffect(() => {
-		setByAccount(BudgetHistory.fromBudget(budget, 0).getAllByAccount());
+		setByAccount(BudgetHistory.fromBudget(budget).getAllByAccount());
 	}, [budget]);
 
 	return (
@@ -26,6 +26,14 @@ export const AccountsList = ({ budget }: { budget: Budget<BudgetItem> }) => {
 					).toString()}
 				</div>
 			))}
+			<div style={{ textAlign: "right" }}>
+				Total:{" "}
+				{new PriceValueObject(
+					budget.getHistory().getBalance({
+						untilDate: new Date(),
+					})
+				).toString()}
+			</div>
 		</>
 	);
 };

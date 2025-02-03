@@ -7,7 +7,6 @@ export class Commands {
 	static CreateBudgetItemModal(
 		plugin: SimpleBudgetHelperPlugin,
 		budget: Budget<BudgetItem>,
-		accounts: string[],
 		updateFiles: (
 			item: BudgetItem,
 			operation: "add" | "remove"
@@ -21,7 +20,6 @@ export class Commands {
 				new CreateBudgetItemModalRoot(
 					plugin.app,
 					budget,
-					accounts,
 					async (item) => {
 						await updateFiles(item, "add");
 					},

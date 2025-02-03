@@ -36,7 +36,7 @@ export class Budget<T extends BudgetItem> {
 	}
 
 	getAccounts(): string[] {
-		return BudgetHistory.fromBudget(this, 0).getAccounts();
+		return BudgetHistory.fromBudget(this).getAccounts();
 	}
 
 	addItems(...items: T[]) {
@@ -69,7 +69,10 @@ export class Budget<T extends BudgetItem> {
 		return this._items
 			.filter((item) => !config?.until || item.nextDate <= config.until)
 			.reduce((total, item) => {
-				return total + item.amount * (item.type === "expense" ? -1 : 1);
+				return (
+					total +
+					item.amount.toNumber() * (item.type === "expense" ? -1 : 1)
+				);
 			}, 0);
 	}
 
@@ -109,6 +112,10 @@ export class Budget<T extends BudgetItem> {
 		return new Budget<BudgetItemSimple>(items);
 	}
 
+	getHistory(): BudgetHistory {
+		return new BudgetHistory(this.items.map((item) => item.history).flat());
+	}
+
 	async saveSimpleTransactions(vault: Vault, rootFolder: string) {
 		const file = vault.getFileByPath(`${rootFolder}/Simple.md`);
 		if (!file)
@@ -144,7 +151,7 @@ export class Budget<T extends BudgetItem> {
 							: `${item.account} - ${item.toAccount}`
 					} | ${
 						item.nextDate.toString().split(" GMT")[0]
-					} | ${new PriceValueObject(item.amount).toString()} |`;
+					} | ${item.amount.toString()} |`;
 				})
 				.join("\n")
 		);

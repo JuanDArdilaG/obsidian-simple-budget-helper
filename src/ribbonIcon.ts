@@ -1,7 +1,7 @@
 import { views } from "config";
 import SimpleBudgetHelperPlugin from "main";
 import { WorkspaceLeaf } from "obsidian";
-import { RightSidebarReactViewRoot } from "views/RightSidebarReactView/RightSidebarReactViewRoot";
+import { RightSidebarReactViewRoot } from "view/views/RightSidebarReactView/RightSidebarReactViewRoot";
 
 export class LeftMenuItems {
 	static RightSidebarPanel(plugin: SimpleBudgetHelperPlugin) {

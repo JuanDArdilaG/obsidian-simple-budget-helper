@@ -31,7 +31,8 @@ export const BudgetItemsList = ({
 							return new BudgetItemRecurrent(
 								item.id,
 								item.name,
-								item.amount,
+								item.account,
+								item.amount.toNumber(),
 								item.category,
 								item.type,
 								new BudgetItemNextDate(date),
@@ -82,9 +83,10 @@ export const BudgetItemsList = ({
 								<Forward
 									style={{
 										cursor: "pointer",
+										color: "var(--color-green)",
 									}}
 									size={19}
-									color="mediumspringgreen"
+									// color="mediumspringgreen"
 									onClick={() => {
 										// item.record();
 										new RecordBudgetItemModalRoot(
@@ -104,7 +106,13 @@ export const BudgetItemsList = ({
 							<br />
 							<span
 								style={{
-									color: item.remainingDays.color,
+									color:
+										item.remainingDays.color === "red"
+											? "var(--color-red)"
+											: item.remainingDays.color ===
+											  "yellow"
+											? "var(--color-yellow)"
+											: "var(--color-green)",
 									fontSize: "0.9em",
 									marginLeft: "8px",
 								}}

@@ -10,7 +10,7 @@ describe("getBalance", () => {
 	it("should return the correct balance for one simple item", () => {
 		const { budget } = getTestBudget({ simple: 1 });
 		const expectedBalance = -100;
-		const budgetHistory = BudgetHistory.fromBudget(budget, 0);
+		const budgetHistory = BudgetHistory.fromBudget(budget);
 
 		const balance = budgetHistory.getBalance();
 
@@ -20,7 +20,7 @@ describe("getBalance", () => {
 	it("should return the correct balance for one recurrent item", () => {
 		const { budget } = getTestBudget({ recurrent: [{}] });
 		const expectedBalance = 300;
-		const budgetHistory = BudgetHistory.fromBudget(budget, 0);
+		const budgetHistory = BudgetHistory.fromBudget(budget);
 
 		const balance = budgetHistory.getBalance();
 
@@ -30,7 +30,7 @@ describe("getBalance", () => {
 	it("should return the correct balance for multiple items", () => {
 		const { budget } = getTestBudget({ simple: 3, recurrent: [{}, {}] });
 		const expectedBalance = 300;
-		const budgetHistory = BudgetHistory.fromBudget(budget, 0);
+		const budgetHistory = BudgetHistory.fromBudget(budget);
 
 		const balance = budgetHistory.getBalance();
 
@@ -40,7 +40,7 @@ describe("getBalance", () => {
 	it("should return the correct balance for one simple item with until date", () => {
 		const { budget } = getTestBudget({ simple: 1 });
 		const untilDate = new Date(2024, 0, 1);
-		const budgetHistory = BudgetHistory.fromBudget(budget, 0);
+		const budgetHistory = BudgetHistory.fromBudget(budget);
 
 		const balance = budgetHistory.getBalance({ untilDate: untilDate });
 
@@ -51,7 +51,7 @@ describe("getBalance", () => {
 describe("getGroupedByYearMonthDay", () => {
 	it("should group items by year, month, and day - 1 day", () => {
 		const { budget, simple } = getTestBudget({ simple: 1 });
-		const budgetHistory = BudgetHistory.fromBudget(budget, 0);
+		const budgetHistory = BudgetHistory.fromBudget(budget);
 
 		const grouped = budgetHistory.getGroupedByYearMonthDay();
 
@@ -69,7 +69,7 @@ describe("getGroupedByYearMonthDay", () => {
 			simple: 2,
 			recurrent: [{}],
 		});
-		const budgetHistory = BudgetHistory.fromBudget(budget, 0);
+		const budgetHistory = BudgetHistory.fromBudget(budget);
 
 		const grouped = budgetHistory.getGroupedByYearMonthDay();
 
@@ -127,9 +127,21 @@ export const getTestBudget = (config?: TestBudgetConfig) => {
 				new FrequencyString(itemConfig.frequency ?? "1mo"),
 				"test"
 			);
-			item.record(new Date(2024, 0, 1), "account", item.amount);
-			item.record(new Date(2024, 0, 2), "account", item.amount);
-			item.record(new Date(2024, 0, 3), "account", item.amount);
+			item.record(
+				new Date(2024, 0, 1),
+				"account",
+				item.amount.toNumber()
+			);
+			item.record(
+				new Date(2024, 0, 2),
+				"account",
+				item.amount.toNumber()
+			);
+			item.record(
+				new Date(2024, 0, 3),
+				"account",
+				item.amount.toNumber()
+			);
 			recurrentItems.push(item);
 		}
 	}

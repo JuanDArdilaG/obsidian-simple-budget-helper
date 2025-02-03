@@ -4,7 +4,7 @@ import {
 	BudgetItemRecord,
 	BudgetItemRecordType,
 } from "./BugetItemRecord/BudgetItemRecord";
-import { BudgetItem } from "./BudgetItem";
+import { BudgetItem, TBudgetItem } from "./BudgetItem";
 import { nanoid } from "nanoid";
 import { BudgetItemRecordAmount } from "./BugetItemRecord/BudgetItemRecordAmount";
 
@@ -12,6 +12,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 	constructor(
 		id: string,
 		name: string,
+		account: string,
 		amount: number,
 		category: string,
 		type: BudgetItemRecordType,
@@ -28,6 +29,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 			category,
 			type,
 			nextDate,
+			account,
 			type === "transfer" ? toAccount : undefined
 		);
 	}
@@ -42,6 +44,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 
 	static create(
 		name: string,
+		account: string,
 		amount: number,
 		category: string,
 		type: BudgetItemRecordType,
@@ -53,6 +56,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 		return new BudgetItemRecurrent(
 			nanoid(),
 			name,
+			account,
 			amount,
 			category,
 			type,
@@ -158,13 +162,14 @@ export class BudgetItemRecurrent extends BudgetItem {
 		console.log({ after: this._history });
 	}
 
-	toJSON() {
+	toJSON(): TBudgetItem {
 		return {
 			id: this._id,
 			name: this._name,
 			amount: this._amount,
+			account: "",
 			category: this._category,
-			type: this._type.toString(),
+			type: this._type,
 			nextDate: this._nextDate.toDate(),
 			toAccount: this._toAccount,
 			path: this._path ?? "",
@@ -172,4 +177,49 @@ export class BudgetItemRecurrent extends BudgetItem {
 			history: this._history.toString(),
 		};
 	}
+
+	static fromJSON(json: TBudgetItem): BudgetItemRecurrent {
+		return new BudgetItemRecurrent(
+			json.id,
+			json.name,
+			json.account,
+			json.amount,
+			json.category,
+			json.type as BudgetItemRecordType,
+			new BudgetItemNextDate(json.nextDate, false),
+			json.path,
+			new FrequencyString(json.frequency),
+			[],
+			json.toAccount
+		);
+	}
+
+	static empty(): BudgetItemRecurrent {
+		return new BudgetItemRecurrent(
+			"",
+			"",
+			"",
+			0,
+			"",
+			"expense",
+			BudgetItemNextDate.empty(),
+			"",
+			FrequencyString.empty(),
+			[]
+		);
+	}
 }
+
+export type TBudgetItemRecurrent = {
+	id: string;
+	name: string;
+	amount: number;
+	account: string;
+	category: string;
+	type: BudgetItemRecordType;
+	nextDate: Date;
+	toAccount?: string;
+	path: string;
+	frequency: string;
+	history: string;
+};

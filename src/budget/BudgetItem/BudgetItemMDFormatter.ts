@@ -11,7 +11,7 @@ export class BudgetItemRecurrentMDFormatter {
 		rawMarkdown: string
 	): BudgetItemRecurrent {
 		const propertiesRegex =
-			/id: (.*)\nname: (.*)\namount: (.*)\ncategory: (.*)\ntype: (.*)\nnextDate: (.*)(?:\nfrequency: (.*))?(?:\nto account: (.*))?/;
+			/id: (.*)\nname: (.*)\namount: (.*)\ncategory: (.*)\ntype: (.*)\nnextDate: (.*)\nfrequency: (.*)\naccount: (.*)(?:\nto account: (.*))?/;
 		const match = propertiesRegex.exec(rawMarkdown);
 		if (!match) throw new Error("Invalid raw markdown.");
 		const historyStr = rawMarkdown.split("# History\n");
@@ -23,6 +23,7 @@ export class BudgetItemRecurrentMDFormatter {
 		return new BudgetItemRecurrent(
 			match[1],
 			match[2],
+			match[8],
 			parseInt(match[3]),
 			match[4],
 			match[5] as "expense" | "income",
@@ -46,13 +47,16 @@ export class BudgetItemRecurrentMDFormatter {
 		return `---
 id: ${this._item.id}
 name: ${this._item.name}
-amount: ${this._item.amount}
+amount: ${this._item.amount.toNumber()}
 category: ${this._item.category}
 type: ${this._item.type}
 nextDate: ${this._item.nextDate
 			.toString()
 			.split(" GMT")[0]
-			.replace(" 00:00:00", "")}${`\nfrequency: ${this._item.frequency}`}
+			.replace(
+				" 00:00:00",
+				""
+			)}${`\nfrequency: ${this._item.frequency}`}${`\naccount: ${this._item.account}`}
 ---\n# History
 ${this._item.history.map((r) => r.toString()).join("\n")}`;
 	}

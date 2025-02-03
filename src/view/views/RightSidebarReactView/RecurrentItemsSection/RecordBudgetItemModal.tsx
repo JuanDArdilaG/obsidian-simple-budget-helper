@@ -65,7 +65,7 @@ export const RecordBudgetItemModal = ({
 			</div>
 			<ReactMoneyInput
 				id="amount-input-react"
-				value={item.amount}
+				initialValue={item.amount.toNumber()}
 				onValueChange={(priceVO) => setAmount(priceVO.toNumber())}
 			/>
 			<div style={{ display: "flex", alignItems: "center" }}>

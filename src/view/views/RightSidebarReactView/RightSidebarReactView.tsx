@@ -6,8 +6,10 @@ import { RecurrentItemsSection } from "./RecurrentItemsSection/RecurrentItemsSec
 import { AccountingSection } from "./AccountingSection/AccountingSection";
 import { App } from "obsidian";
 import { DEFAULT_SETTINGS } from "SettingTab";
-import { SimpleBudgetHelperSettings } from "../../SettingTab";
+import { SimpleBudgetHelperSettings } from "../../../SettingTab";
 import { EditBudgetItemRecordModalRoot } from "modals/CreateBudgetItemModal/EditBudgetItemRecordModalRoot";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 export const SettingsContext = createContext(DEFAULT_SETTINGS);
 export const FileOperationsContext = createContext({
@@ -56,42 +58,50 @@ export const RightSidebarReactView = ({
 	};
 
 	return (
-		<SettingsContext.Provider value={settings}>
-			<FileOperationsContext.Provider value={{ updateItemFile, refresh }}>
-				<BudgetContext.Provider
-					value={{ budget: innerBudget, updateBudget }}
+		<LocalizationProvider dateAdapter={AdapterDayjs}>
+			<SettingsContext.Provider value={settings}>
+				<FileOperationsContext.Provider
+					value={{ updateItemFile, refresh }}
 				>
-					<SectionButtons
-						selected={sectionSelection}
-						setSelected={setSectionSelection}
-						refresh={refresh}
-					/>
-
-					{sectionSelection === "recurrentItems" && (
-						<RecurrentItemsSection
+					<BudgetContext.Provider
+						value={{ budget: innerBudget, updateBudget }}
+					>
+						<SectionButtons
+							selected={sectionSelection}
+							setSelected={setSectionSelection}
 							refresh={refresh}
-							budget={budget.onlyRecurrent()}
-							onRecord={onRecord}
-							app={app}
 						/>
-					)}
-					{sectionSelection === "accounting" && (
-						<AccountingSection
-							statusBarAddText={statusBarAddText}
-							editModal={
-								new EditBudgetItemRecordModalRoot(
-									app,
-									budget,
-									async (item) =>
-										await updateItemFile(item, "modify"),
-									categories
-								)
-							}
-							budget={budget.orderByNextDate()}
-						/>
-					)}
-				</BudgetContext.Provider>
-			</FileOperationsContext.Provider>
-		</SettingsContext.Provider>
+
+						{sectionSelection === "recurrentItems" && (
+							<RecurrentItemsSection
+								refresh={refresh}
+								budget={budget.onlyRecurrent()}
+								onRecord={onRecord}
+								app={app}
+							/>
+						)}
+						{sectionSelection === "accounting" && (
+							<AccountingSection
+								app={app}
+								statusBarAddText={statusBarAddText}
+								editModal={
+									new EditBudgetItemRecordModalRoot(
+										app,
+										budget,
+										async (item) =>
+											await updateItemFile(
+												item,
+												"modify"
+											),
+										categories
+									)
+								}
+								budget={budget.orderByNextDate()}
+							/>
+						)}
+					</BudgetContext.Provider>
+				</FileOperationsContext.Provider>
+			</SettingsContext.Provider>
+		</LocalizationProvider>
 	);
 };

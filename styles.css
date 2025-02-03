@@ -29,14 +29,6 @@ ul {
 	cursor: none;
 }
 
-.create-budget-item-modal {
-	display: flex;
-	flex-direction: column;
-	gap: 20px;
-	width: 70%;
-	margin: auto;
-}
-
 .record-budget-item-modal {
 	display: flex;
 	flex-direction: column;
@@ -90,4 +82,44 @@ ul {
 	font-size: 0.7em;
 	font-weight: lighter;
 	align-self: flex-end;
+}
+
+/* Budget Section */
+
+/*/* Create Budget Modal */
+.create-budget-item-modal {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 70%;
+	margin: auto;
+}
+
+/*/* Edit Budget Modal */
+.edit-budget-item-modal {
+	display: flex;
+	flex-direction: column;
+	width: 70%;
+	margin: auto;
+}
+
+.horizontal-input {
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	font-size: 0.8em;
+}
+
+.horizontal-input label {
+	width: 40%;
+	text-align: center;
+}
+
+.select-with-creation {
+	color: var(--mono-rgb-100);
+	background-color: var(--mono-rgb-100);
+}
+
+input {
+	padding: 5px;
 }

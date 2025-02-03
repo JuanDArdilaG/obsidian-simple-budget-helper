@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { Budget } from "./Budget";
 import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
 import { getTestBudget } from "./BudgetHistory.test";
-import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 
 describe("get names", () => {
 	it("should return unique names", () => {

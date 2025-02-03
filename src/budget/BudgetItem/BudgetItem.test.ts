@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
 import { BudgetItemSimple } from "./BudgetItemSimple";
 
 describe("remainingDays", () => {
@@ -17,8 +16,8 @@ describe("remainingDays", () => {
 
 		const { color, str } = item.remainingDays;
 
-		expect(color).toBe("gold");
-		expect(str).toBe("7 days.");
+		expect(color).toBe("green");
+		expect(str).toBe("7 days");
 	});
 
 	it("should calculate remaining previous 7 days correctly", () => {
@@ -35,8 +34,8 @@ describe("remainingDays", () => {
 
 		const { color, str } = item.remainingDays;
 
-		expect(color).toBe("gold");
-		expect(str).toBe("-7 days.");
+		expect(color).toBe("red");
+		expect(str).toBe("-7 days");
 	});
 
 	it("should calculate remaining 1 day correctly", () => {
@@ -53,7 +52,7 @@ describe("remainingDays", () => {
 
 		const { color, str } = item.remainingDays;
 
-		expect(color).toBe("gold");
+		expect(color).toBe("yellow");
 		expect(str).toBe("1 day");
 	});
 
@@ -71,7 +70,7 @@ describe("remainingDays", () => {
 
 		const { color, str } = item.remainingDays;
 
-		expect(color).toBe("gold");
+		expect(color).toBe("yellow");
 		expect(str).toBe("-1 day");
 	});
 });
