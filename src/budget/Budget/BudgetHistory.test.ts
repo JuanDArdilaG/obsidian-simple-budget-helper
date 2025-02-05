@@ -120,6 +120,7 @@ export const getTestBudget = (config?: TestBudgetConfig) => {
 		for (let itemConfig of recurrent) {
 			const item = BudgetItemRecurrent.create(
 				"test",
+				"test",
 				100,
 				"test",
 				"income",

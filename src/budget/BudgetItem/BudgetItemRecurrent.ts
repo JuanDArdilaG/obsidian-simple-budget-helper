@@ -167,7 +167,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 			id: this._id,
 			name: this._name,
 			amount: this._amount,
-			account: "",
+			account: this._account,
 			category: this._category,
 			type: this._type,
 			nextDate: this._nextDate.toDate(),

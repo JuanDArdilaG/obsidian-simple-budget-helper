@@ -44,20 +44,25 @@ export const CreateBudgetItemModal = ({
 		undefined
 	);
 
+	const [name, setName] = useState("");
 	const [item, setItem] = useState<BudgetItem>(BudgetItemSimple.empty());
 	const names = useMemo(() => items.map((item) => item.name), [items]);
 	const [isRecurrent, setIsRecurrent] = useState(false);
 
 	useEffect(() => {
+		console.log({ selectedItem });
 		if (selectedItem) {
-			console.log({ selectedItem });
+			setName(selectedItem.name);
 			setItem(selectedItem);
+			setIsRecurrent(!BudgetItemSimple.IsSimple(selectedItem));
 		}
 	}, [selectedItem]);
 
 	useEffect(() => {
 		update({});
 	}, [isRecurrent]);
+
+	useEffect(() => console.log({ item }), [item]);
 
 	const update = (newValues: {
 		name?: string;
@@ -70,8 +75,11 @@ export const CreateBudgetItemModal = ({
 		toAccount?: string;
 	}) => {
 		const toUpdate = item.toJSON();
-		console.log({ toUpdate });
-		if (newValues.name) toUpdate.name = newValues.name;
+		console.log({ toUpdate: { ...toUpdate }, newValues });
+		if (newValues.name) {
+			toUpdate.name = newValues.name;
+			setName(newValues.name);
+		}
 		if (newValues.date) toUpdate.nextDate = newValues.date;
 		if (newValues.type) toUpdate.type = newValues.type;
 		if (newValues.amount) toUpdate.amount = newValues.amount;
@@ -80,6 +88,14 @@ export const CreateBudgetItemModal = ({
 		if (newValues.frequency) toUpdate.frequency = newValues.frequency;
 
 		if (newValues.account) toUpdate.account = newValues.account;
+
+		console.log({
+			toUpdate,
+			isRecurrent,
+			item: isRecurrent
+				? BudgetItemRecurrent.fromJSON(toUpdate)
+				: BudgetItemSimple.fromJSON(toUpdate),
+		});
 
 		setItem(
 			isRecurrent
@@ -95,10 +111,10 @@ export const CreateBudgetItemModal = ({
 	return (
 		<div className="create-budget-item-modal">
 			<h1>Create Budget Item</h1>
-			<SelectWithCreation<string>
+			<SelectWithCreation
 				id="name"
 				label="Name"
-				item={item.name}
+				item={name}
 				items={names}
 				getLabel={(name) => {
 					if (!name) return "";
@@ -117,18 +133,30 @@ export const CreateBudgetItemModal = ({
 						item.amount.isZero() ? "" : " " + item.amount.toString()
 					}`;
 				}}
+				onCreationChange={(name) => update({ name })}
 				onChange={(name) => {
-					setSelectedItem(items.find((i) => i.name === name));
-					update({ name });
+					const item = items.find(
+						(i) => i.name === name.split(" $")[0]
+					);
+					console.log({
+						onChangeName: name.split(" $")[0],
+						items,
+						item,
+					});
+					if (item) {
+						setSelectedItem(item);
+					} else {
+						update({ name: name.split(" $")[0] });
+					}
 				}}
 			/>
-			<SelectWithCreation
+			{/* <SelectWithCreation
 				id="category"
 				label="Category"
 				item={item.category}
 				items={categories}
 				onChange={(category) => update({ category })}
-			/>
+			/> */}
 			<Input<PriceValueObject>
 				id="amount"
 				label="Amount"
@@ -142,7 +170,7 @@ export const CreateBudgetItemModal = ({
 				values={["income", "expense", "transfer"]}
 				onChange={(type) => update({ type })}
 			/>
-			<div
+			{/* <div
 				style={{
 					display: "flex",
 					justifyContent: "space-between",
@@ -163,7 +191,7 @@ export const CreateBudgetItemModal = ({
 					<SelectWithCreation
 						id="toAccount"
 						label="Account: To"
-						item={item.toAccount}
+						item={item.toAccount ?? ""}
 						items={accounts}
 						onChange={(value) => update({ toAccount: value })}
 						style={{
@@ -171,7 +199,7 @@ export const CreateBudgetItemModal = ({
 						}}
 					/>
 				)}
-			</div>
+			</div> */}
 			<Input<Date>
 				id="date"
 				label="Date"
@@ -209,7 +237,7 @@ export const CreateBudgetItemModal = ({
 					console.log({
 						item,
 					});
-					await onSubmit(item);
+					// await onSubmit(item);
 					await refresh();
 					close();
 				}}

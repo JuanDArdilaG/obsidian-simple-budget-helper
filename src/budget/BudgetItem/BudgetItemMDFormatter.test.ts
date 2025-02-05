@@ -8,6 +8,7 @@ describe("toMarkdown", () => {
 	it("should generate markdown correctly for recurrent item", () => {
 		const item = BudgetItemRecurrent.create(
 			"test",
+			"test",
 			100,
 			"test",
 			"income",
@@ -26,6 +27,7 @@ category: test
 type: income
 nextDate: Sat Dec 31 2022
 frequency: 1y
+account: test
 ---
 # History
 `
@@ -34,6 +36,7 @@ frequency: 1y
 
 	it("should generate markdown correctly for recurrent item with history", () => {
 		const item = BudgetItemRecurrent.create(
+			"test",
 			"test",
 			100,
 			"test",
@@ -57,6 +60,7 @@ category: test
 type: income
 nextDate: Sat Dec 31 2022
 frequency: 1y
+account: test
 ---
 # History
 - id: ${item.id}-0. name: test. account: account. date: Sun Jan 01 2023 13:35:00. amount: $150

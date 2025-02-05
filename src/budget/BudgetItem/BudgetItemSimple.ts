@@ -108,7 +108,7 @@ export class BudgetItemSimple extends BudgetItem {
 		this._toAccount = toAccount;
 	}
 
-	removeHistoryRecord(id: string) {
+	removeHistoryRecord(_: string) {
 		return;
 	}
 
