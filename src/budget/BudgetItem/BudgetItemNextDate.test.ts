@@ -4,8 +4,11 @@ import { FrequencyString } from "./FrequencyString";
 
 describe("BudgetItemNextDate", () => {
 	it("should calculate next date 1 day later correctly", () => {
-		const prevDate = new BudgetItemNextDate(new Date("2024-01-01"));
-		const expectedDate = new BudgetItemNextDate(new Date("2024-01-02"));
+		const prevDate = new BudgetItemNextDate(new Date("2024-01-01"), true);
+		const expectedDate = new BudgetItemNextDate(
+			new Date("2024-01-02"),
+			true
+		);
 
 		const nextDate = prevDate.nextDate(new FrequencyString("1d"));
 
@@ -13,8 +16,11 @@ describe("BudgetItemNextDate", () => {
 	});
 
 	it("should calculate next date 1 week later correctly", () => {
-		const prevDate = new BudgetItemNextDate(new Date("2024-01-01"));
-		const expectedDate = new BudgetItemNextDate(new Date("2024-01-08"));
+		const prevDate = new BudgetItemNextDate(new Date("2024-01-01"), true);
+		const expectedDate = new BudgetItemNextDate(
+			new Date("2024-01-08"),
+			true
+		);
 
 		const nextDate = prevDate.nextDate(new FrequencyString("1w"));
 
@@ -22,8 +28,11 @@ describe("BudgetItemNextDate", () => {
 	});
 
 	it("should calculate next date 1 month later correctly", () => {
-		const prevDate = new BudgetItemNextDate(new Date("2024-01-01"));
-		const expectedDate = new BudgetItemNextDate(new Date("2024-02-01"));
+		const prevDate = new BudgetItemNextDate(new Date("2024-01-01"), true);
+		const expectedDate = new BudgetItemNextDate(
+			new Date("2024-02-01"),
+			true
+		);
 
 		const nextDate = prevDate.nextDate(new FrequencyString("1mo"));
 

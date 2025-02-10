@@ -217,7 +217,7 @@ export class Budget<T extends BudgetItem> {
 					PriceValueObject.fromString(line[7].trim()).valueOf(),
 					line[4].trim(),
 					type,
-					new BudgetItemNextDate(new Date(line[6].trim()), false),
+					new BudgetItemNextDate(new Date(line[6].trim())),
 					toAccount
 				)
 			);

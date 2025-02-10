@@ -227,7 +227,7 @@ export function AccountingList({
 								);
 								return (
 									<div
-										key={month}
+										key={`${year}-${month}`}
 										style={{ marginBottom: "40px" }}
 									>
 										<h4

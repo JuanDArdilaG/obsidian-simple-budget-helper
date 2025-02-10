@@ -186,7 +186,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 			json.amount,
 			json.category,
 			json.type as BudgetItemRecordType,
-			new BudgetItemNextDate(json.nextDate, false),
+			new BudgetItemNextDate(json.nextDate),
 			json.path,
 			new FrequencyString(json.frequency),
 			[],

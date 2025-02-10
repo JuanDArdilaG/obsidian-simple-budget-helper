@@ -1,9 +1,7 @@
 import { ReactMoneyInput } from "react-input-price";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { useEffect, useState } from "react";
-import { TextField } from "@mui/material";
-import { DatePicker, TimePicker } from "@mui/x-date-pickers";
-import dayjs, { Dayjs } from "dayjs";
+import { LockField } from "./LockField";
 
 type InputValue = PriceValueObject | string | number | Date;
 export const Input = <T extends NonNullable<InputValue>>({
@@ -12,62 +10,106 @@ export const Input = <T extends NonNullable<InputValue>>({
 	value,
 	onChange,
 	error,
+	datalist,
+	isLocked,
+	setIsLocked,
+	style,
 }: {
 	id: string;
 	label: string;
 	value?: T;
 	onChange: (value: T) => void;
 	error?: "required";
+	datalist?: string;
+	isLocked?: boolean;
+	setIsLocked?: (value: boolean) => void;
+	style?: React.CSSProperties;
 }) => {
-	const [date, setDate] = useState<Dayjs>(dayjs());
+	const [date, setDate] = useState<Date>(new Date());
 	useEffect(() => {
 		if (value instanceof Date) {
-			setDate(dayjs(value));
+			setDate(value);
 		}
-	}, []);
+	}, [value]);
 
 	return (
-		<div>
+		<div style={style}>
 			{value instanceof PriceValueObject ? (
 				<div style={error ? { border: "1px solid red" } : {}}>
 					<ReactMoneyInput
 						id={`${id}-input-react`}
 						initialValue={value?.toNumber() ?? undefined}
 						onValueChange={(priceVO) => onChange(priceVO as T)}
-						CustomInput={TextField}
-						CustomInputProps={{
-							fullWidth: true,
-							placeholder: label,
-							variant: "standard",
-						}}
 					/>
+					{isLocked !== undefined && (
+						<LockField
+							setIsLocked={setIsLocked}
+							isLocked={isLocked}
+						/>
+					)}
 				</div>
 			) : value instanceof Date ? (
 				<div style={{ display: "flex", gap: "20px" }}>
-					<DatePicker
-						label={label}
-						value={dayjs(date)}
-						onChange={(daysjsDate) => {
-							if (daysjsDate) setDate(daysjsDate);
+					<input
+						type="date"
+						value={new Intl.DateTimeFormat("en-CA", {
+							year: "numeric",
+							month: "2-digit",
+							day: "2-digit",
+						}).format(date)}
+						onChange={(e) => {
+							console.log({ dateValue: e.target.value });
+							const [year, month, day] =
+								e.target.value.split("-");
+							const date = new Date(
+								parseInt(year),
+								parseInt(month) - 1,
+								parseInt(day)
+							);
+							setDate(date);
+							onChange(date as T);
 						}}
 					/>
-					<TimePicker
-						value={date}
-						onChange={(daysjsTime) => {
-							if (daysjsTime) setDate(daysjsTime);
+					<input
+						type="time"
+						value={date.toTimeString().split(".")[0].split(" ")[0]}
+						onChange={(e) => {
+							const dateWithTime = new Date(date.getTime());
+							const [hour, minute] = e.target.value.split(":");
+							dateWithTime.setHours(
+								parseInt(hour),
+								parseInt(minute),
+								0,
+								0
+							);
+							console.log({
+								timeValue: e.target.value,
+								date: dateWithTime,
+							});
+							setDate(date);
+							onChange(dateWithTime as T);
 						}}
 					/>
+					{isLocked !== undefined && (
+						<LockField
+							setIsLocked={setIsLocked}
+							isLocked={isLocked}
+						/>
+					)}
 				</div>
 			) : (
-				<TextField
+				<input
 					id={`${id}-input`}
 					placeholder={label}
 					type={"text"}
 					value={value}
 					onChange={(e) => onChange(e.target.value as T)}
-					style={error ? { border: "1px solid red" } : {}}
-					fullWidth
-					variant="standard"
+					style={
+						error
+							? { border: "1px solid red", width: "100%" }
+							: { width: "100%" }
+					}
+					list={datalist}
 				/>
 			)}
 		</div>

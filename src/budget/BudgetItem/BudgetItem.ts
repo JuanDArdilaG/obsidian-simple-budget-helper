@@ -6,6 +6,7 @@ import {
 } from "./BugetItemRecord/BudgetItemRecord";
 import { TBudgetItemRecurrent } from "./BudgetItemRecurrent";
 import { TBudgetItemSimple } from "./BudgetItemSimple";
+import { nanoid } from "nanoid";
 
 export abstract class BudgetItem {
 	constructor(
@@ -23,6 +24,10 @@ export abstract class BudgetItem {
 		return this._id;
 	}
 
+	setRandomId() {
+		this._id = nanoid();
+	}
+
 	get name(): string {
 		return this._name;
 	}
@@ -31,8 +36,8 @@ export abstract class BudgetItem {
 		return this._type;
 	}
 
-	get toAccount(): string | undefined {
-		return this._toAccount;
+	get toAccount(): string {
+		return this._toAccount || "";
 	}
 
 	get amount(): PriceValueObject {

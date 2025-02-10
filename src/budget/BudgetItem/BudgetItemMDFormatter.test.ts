@@ -12,7 +12,7 @@ describe("toMarkdown", () => {
 			100,
 			"test",
 			"income",
-			new BudgetItemNextDate(new Date("2023-01-01")),
+			new BudgetItemNextDate(new Date("2023-01-01"), true),
 			new FrequencyString("1y"),
 			""
 		);
@@ -41,7 +41,7 @@ account: test
 			100,
 			"test",
 			"income",
-			new BudgetItemNextDate(new Date("2023-01-01")),
+			new BudgetItemNextDate(new Date("2023-01-01"), true),
 			new FrequencyString("1y"),
 			""
 		);

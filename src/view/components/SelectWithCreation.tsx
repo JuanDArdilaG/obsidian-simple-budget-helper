@@ -1,12 +1,6 @@
-import { Autocomplete, createFilterOptions, TextField } from "@mui/material";
-
-interface SelectOptionType<T extends Object> {
-	inputValue?: string;
-	value: T | string;
-}
-
-const createFilter = <T extends Object>() =>
-	createFilterOptions<SelectOptionType<T>>();
+import { useEffect, useState } from "react";
+import { Input } from "./Input";
+import { LockField } from "./LockField";
 
 export const SelectWithCreation = <T extends Object>({
 	id,
@@ -15,98 +9,89 @@ export const SelectWithCreation = <T extends Object>({
 	item,
 	items,
 	getLabel,
+	getKey,
 	onChange,
-	onCreationChange,
 	setSelectedItem,
 	error,
+	isLocked,
+	setIsLocked,
 }: {
 	id: string;
 	style?: React.CSSProperties;
 	label: string;
-	item?: T;
+	item: T;
 	items: T[];
 	getLabel?: (_: T) => string;
-	onChange: (value: string) => void;
-	onCreationChange: (value: string) => void;
+	getKey?: (_: T) => string;
+	onChange: (value?: string) => void;
 	setSelectedItem?: (value: T) => void;
 	error?: string;
+	isLocked?: boolean;
+	setIsLocked?: (value: boolean) => void;
 }) => {
-	if (typeof item !== "string" && !getLabel)
+	if (typeof item !== "string" && !getKey)
 		throw new Error(
-			"getLabel is required for items that are not strings. id: " + id
+			"getKey is required for items that are not strings. id: " + id
 		);
 
+	const [input, setInput] = useState("");
+	console.log({
+		item,
+		inputFromItem: getKey ? getKey(item) : String(item),
+		id,
+	});
+
+	useEffect(() => {
+		setInput(getKey ? getKey(item) : String(item));
+	}, [item]);
+
+	useEffect(() => {
+		onChange(input);
+	}, [input]);
+
 	return (
-		<div className="horizontal-input">
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-around",
-					gap: "5px",
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "column",
-					}}
-				>
-					<label htmlFor={`${id}-input`} style={{ margin: "5px" }}>
-						{label}
-					</label>
-					<select
-						style={{ maxWidth: "100%" }}
-						value={getLabel && item ? getLabel(item) : undefined}
-						onChange={(e) => onChange(e.target.value)}
+		<div
+			style={{
+				display: "flex",
+				justifyContent: "space-around",
+				...style,
+			}}
+		>
+			<datalist id={"options-" + id}>
+				{items.map((item) => (
+					<option
+						key={getKey ? getKey(item) : String(item)}
+						value={getKey ? getKey(item) : String(item)}
 					>
-						{[
-							...new Set([
-								...items.map((item) =>
-									getLabel ? getLabel(item) : ""
-								),
-								"-- create new --",
-							]),
-						]
-							.sort()
-							.map((item, index) => (
-								<option value={item} key={index}>
-									{item}
-								</option>
-							))}
-					</select>
-				</div>
-				{getLabel && item
-					? getLabel(item) === "-- create new --" && (
-							<div
-								style={{
-									display: "flex",
-									flexDirection: "column",
-									alignItems: "center",
-								}}
-							>
-								<label
-									htmlFor={`create-${id}-input`}
-									style={error ? { color: "red" } : {}}
-								>
-									{`New: ${label}`}
-								</label>
-								<input
-									id={`create-${id}-input`}
-									type="text"
-									style={
-										error ? { border: "1px solid red" } : {}
-									}
-									onChange={(e) =>
-										onCreationChange(e.target.value)
-									}
-								/>
-								{error && (
-									<div style={{ color: "red" }}>Required</div>
-								)}
-							</div>
-					  )
-					: ""}
-			</div>
+						{getLabel
+							? getLabel(item)
+							: getKey
+							? getKey(item)
+							: String(item)}
+					</option>
+				))}
+			</datalist>
+			<Input
+				id={id}
+				label={label}
+				value={input}
+				onChange={(value) => {
+					const item = items.find(
+						(item) =>
+							(getKey ? getKey(item) : String(item)) === value
+					);
+					console.log({ value, item });
+					if (item) {
+						setSelectedItem?.(item);
+					}
+					setInput(value);
+				}}
+				datalist={"options-" + id}
+				style={{ width: "80%" }}
+			/>
+			{isLocked !== undefined && (
+				<LockField setIsLocked={setIsLocked} isLocked={isLocked} />
+			)}
 		</div>
 	);
 };

@@ -2,12 +2,12 @@ import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { Forward } from "lucide-react";
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
-import { RecordBudgetItemModalRoot } from "./RecordBudgetItemModalRoot";
 import { App } from "obsidian";
 import { useContext, useEffect, useState } from "react";
 import { SettingsContext } from "../RightSidebarReactView";
 import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
+import { RecordBudgetItemPanel } from "./RecordBudgetItemPanel";
 
 export const BudgetItemsList = ({
 	budgetItems,
@@ -21,7 +21,12 @@ export const BudgetItemsList = ({
 	app: App;
 }) => {
 	const settings = useContext(SettingsContext);
+
+	const [showRecordPanel, setShowRecordPanel] =
+		useState<BudgetItemRecurrent>();
+
 	const [itemsInList, setItemsInList] = useState<BudgetItemRecurrent[]>([]);
+
 	useEffect(() => {
 		setItemsInList(
 			new Budget(
@@ -53,9 +58,8 @@ export const BudgetItemsList = ({
 				{itemsInList.map((item, index) => (
 					<li
 						key={index}
-						className="two-columns-list"
 						onClick={async () => {
-							if (item.path) {
+							if (item.path && !showRecordPanel) {
 								const leaf = app.workspace.getLeaf(
 									settings.openInNewTab
 								);
@@ -65,61 +69,72 @@ export const BudgetItemsList = ({
 							}
 						}}
 					>
-						<span>
-							{item.name}
-							<br />
-							{new Date(item.nextDate).toDateString()}
-						</span>
-						<span style={{ textAlign: "right" }}>
-							{PriceValueObject.fromString(
-								item.amount.toString()
-							).toString()}
-							<span
-								style={{
-									marginLeft: "8px",
-									paddingTop: "20px",
-								}}
-							>
-								<Forward
+						<div className="two-columns-list">
+							<span>
+								{item.name}
+								<br />
+								{new Date(item.nextDate).toDateString()}
+							</span>
+							<span style={{ textAlign: "right" }}>
+								{PriceValueObject.fromString(
+									item.amount.toString()
+								).toString()}
+								<span
 									style={{
-										cursor: "pointer",
-										color: "var(--color-green)",
+										marginLeft: "8px",
+										paddingTop: "20px",
 									}}
-									size={19}
-									// color="mediumspringgreen"
-									onClick={() => {
-										// item.record();
-										new RecordBudgetItemModalRoot(
-											app,
-											item,
-											onRecord
-										).open();
+								>
+									<Forward
+										style={{
+											cursor: "pointer",
+											color: "var(--color-green)",
+										}}
+										size={19}
+										// color="mediumspringgreen"
+										onClick={() => {
+											// item.record();
+											// new RecordBudgetItemModalRoot(
+											// 	app,
+											// 	item,
+											// 	onRecord
+											// ).open();
+
+											setShowRecordPanel(item);
+										}}
+									/>
+								</span>
+								{totalPerMonth ? <br /> : ""}
+								{totalPerMonth
+									? `Per Month ≈ ${new PriceValueObject(
+											item.perMonthAmount
+									  )}`
+									: ""}
+								<br />
+								<span
+									style={{
+										color:
+											item.remainingDays.color === "red"
+												? "var(--color-red)"
+												: item.remainingDays.color ===
+												  "yellow"
+												? "var(--color-yellow)"
+												: "var(--color-green)",
+										fontSize: "0.9em",
+										marginLeft: "8px",
 									}}
-								/>
+								>
+									{item.remainingDays.str}
+								</span>
 							</span>
-							{totalPerMonth ? <br /> : ""}
-							{totalPerMonth
-								? `Per Month ≈ ${new PriceValueObject(
-										item.perMonthAmount
-								  )}`
-								: ""}
-							<br />
-							<span
-								style={{
-									color:
-										item.remainingDays.color === "red"
-											? "var(--color-red)"
-											: item.remainingDays.color ===
-											  "yellow"
-											? "var(--color-yellow)"
-											: "var(--color-green)",
-									fontSize: "0.9em",
-									marginLeft: "8px",
-								}}
-							>
-								{item.remainingDays.str}
-							</span>
-						</span>
+						</div>
+						{showRecordPanel && item === showRecordPanel && (
+							<RecordBudgetItemPanel
+								item={item}
+								onRecord={onRecord}
+								onClose={() => setShowRecordPanel(undefined)}
+							/>
+						)}
 					</li>
 				))}
 			</ul>

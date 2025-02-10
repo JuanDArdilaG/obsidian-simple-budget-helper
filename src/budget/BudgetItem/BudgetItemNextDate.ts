@@ -1,7 +1,7 @@
 import { FrequencyString } from "./FrequencyString";
 
 export class BudgetItemNextDate extends Date {
-	constructor(date: Date, removeTime = true) {
+	constructor(date: Date, removeTime = false) {
 		if (removeTime) date.setHours(0, 0, 0, 0);
 		super(date);
 	}
@@ -25,13 +25,13 @@ export class BudgetItemNextDate extends Date {
 		nextDate.setMonth(nextDate.getMonth() + frequencyObject.months);
 		nextDate.setDate(nextDate.getDate() + frequencyObject.days);
 
-		return new BudgetItemNextDate(nextDate);
+		return new BudgetItemNextDate(nextDate, true);
 	}
 
 	toDate(): Date {
 		return this;
 	}
 	static empty(): BudgetItemNextDate {
-		return new BudgetItemNextDate(new Date());
+		return new BudgetItemNextDate(new Date(), true);
 	}
 }

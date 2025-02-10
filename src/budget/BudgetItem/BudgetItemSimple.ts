@@ -41,7 +41,7 @@ export class BudgetItemSimple extends BudgetItem {
 			amount,
 			category,
 			type,
-			new BudgetItemNextDate(nextDate, false),
+			new BudgetItemNextDate(nextDate),
 			toAccount
 		);
 	}
@@ -83,7 +83,7 @@ export class BudgetItemSimple extends BudgetItem {
 	}
 
 	record(date: Date, account: string, amount?: number): void {
-		const nextDate = new BudgetItemNextDate(new Date(date));
+		const nextDate = new BudgetItemNextDate(new Date(date), true);
 		this._account = account;
 		this._nextDate = nextDate;
 		if (amount) this._amount = amount;
@@ -101,7 +101,7 @@ export class BudgetItemSimple extends BudgetItem {
 	) {
 		this._name = name;
 		this._account = account;
-		this._nextDate = new BudgetItemNextDate(date, false);
+		this._nextDate = new BudgetItemNextDate(date);
 		this._type = type;
 		this._amount = amount;
 		this._category = category;
@@ -136,21 +136,16 @@ export class BudgetItemSimple extends BudgetItem {
 			json.amount,
 			json.category,
 			json.type,
-			new BudgetItemNextDate(json.nextDate, false),
+			new BudgetItemNextDate(json.nextDate),
 			json.toAccount
 		);
 	}
 
 	static empty(): BudgetItemSimple {
-		return new BudgetItemSimple(
-			"",
-			"",
-			"",
-			0,
-			"",
-			"expense",
-			BudgetItemNextDate.empty()
-		);
+		const date = BudgetItemNextDate.empty();
+		const now = new Date();
+		date.setHours(now.getHours(), now.getMinutes(), 0);
+		return new BudgetItemSimple("", "", "", 0, "", "expense", date);
 	}
 }
 

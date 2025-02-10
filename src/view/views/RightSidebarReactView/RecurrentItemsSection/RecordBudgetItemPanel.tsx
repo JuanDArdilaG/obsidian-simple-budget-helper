@@ -2,8 +2,9 @@ import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { useContext, useState, useMemo } from "react";
 import { ReactMoneyInput } from "react-input-price";
 import { BudgetContext } from "../RightSidebarReactView";
+import { SelectWithCreation } from "view/components/SelectWithCreation";
 
-export const RecordBudgetItemModal = ({
+export const RecordBudgetItemPanel = ({
 	item,
 	onRecord,
 	onClose,
@@ -12,11 +13,12 @@ export const RecordBudgetItemModal = ({
 	onRecord: (item: BudgetItem) => void;
 	onClose: () => void;
 }) => {
+	console.group({ itemToRecord: item });
 	const { budget } = useContext(BudgetContext);
 	const accounts = useMemo(() => [...budget.getAccounts()], [budget]);
+
 	const [date, setDate] = useState(new Date(item.nextDate));
-	const [account, setAccount] = useState("");
-	const [newAccount, setNewAccount] = useState("");
+	const [account, setAccount] = useState(item.account);
 	const [time, setTime] = useState(
 		new Date(item.nextDate)
 			.toTimeString()
@@ -30,22 +32,14 @@ export const RecordBudgetItemModal = ({
 
 	return (
 		<div className="record-budget-item-modal">
-			<h1>Record Budget Item</h1>
-			<div style={{ display: "flex", justifyContent: "space-between" }}>
-				<select onChange={(e) => setAccount(e.target.value)}>
-					{accounts.map((account, index) => (
-						<option value={account} key={index}>
-							{account}
-						</option>
-					))}
-				</select>
-				{account === "-- create new --" && (
-					<input
-						type="text"
-						onChange={(e) => setNewAccount(e.target.value)}
-					/>
-				)}
-			</div>
+			<h3>Record:</h3>
+			<SelectWithCreation
+				id="account-select"
+				item={account}
+				items={accounts}
+				label="Account"
+				onChange={(account) => setAccount(account ?? "")}
+			/>
 			<div>
 				<input
 					type="date"
@@ -85,9 +79,7 @@ export const RecordBudgetItemModal = ({
 					date.setHours(parseInt(time.split(":")[0]));
 					date.setMinutes(parseInt(time.split(":")[1]));
 					date.setSeconds(0);
-					const acc =
-						account === "-- create new --" ? newAccount : account;
-					item.record(date, acc, amount, isPermanent);
+					item.record(date, account, amount, isPermanent);
 					onRecord(item);
 					onClose();
 				}}

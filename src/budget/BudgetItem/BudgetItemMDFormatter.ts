@@ -27,7 +27,7 @@ export class BudgetItemRecurrentMDFormatter {
 			parseInt(match[3]),
 			match[4],
 			match[5] as "expense" | "income",
-			new BudgetItemNextDate(new Date(match[6])),
+			new BudgetItemNextDate(new Date(match[6]), true),
 			path,
 			new FrequencyString(match[7]),
 			history

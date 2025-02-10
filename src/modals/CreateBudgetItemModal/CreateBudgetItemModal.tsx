@@ -1,15 +1,16 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
-import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 import { BudgetItemRecordType } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
-import { Budget } from "budget/Budget/Budget";
+import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 import { FileOperationsContext } from "view/views/RightSidebarReactView/RightSidebarReactView";
+import { Budget } from "budget/Budget/Budget";
 import { Input } from "view/components/Input";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { SelectWithCreation } from "view/components/SelectWithCreation";
 import { Select } from "view/components/Select";
 import { Checkbox, FormControlLabel } from "@mui/material";
+import { TBudgetItem } from "../../budget/BudgetItem/BudgetItem";
 
 export const CreateBudgetItemModal = ({
 	budget,
@@ -33,7 +34,6 @@ export const CreateBudgetItemModal = ({
 				.sort((a, b) => a.name.localeCompare(b.name)),
 		[budget]
 	);
-	// const history = useMemo(() => budget.getHistory(), [budget]);
 	const accounts = useMemo(() => [...budget.getAccounts()].sort(), [budget]);
 	const categories = useMemo(
 		() => [...budget.getCategories()].sort(),
@@ -44,25 +44,47 @@ export const CreateBudgetItemModal = ({
 		undefined
 	);
 
-	const [name, setName] = useState("");
 	const [item, setItem] = useState<BudgetItem>(BudgetItemSimple.empty());
-	const names = useMemo(() => items.map((item) => item.name), [items]);
+	const [locks, setLocks] = useState<
+		Omit<
+			{
+				[K in keyof TBudgetItem]: boolean;
+			},
+			"history" | "id" | "path"
+		>
+	>({
+		account: false,
+		name: false,
+		amount: false,
+		category: false,
+		frequency: false,
+		nextDate: false,
+		toAccount: false,
+		type: false,
+	});
+	const updateLock = (key: keyof TBudgetItem, value: boolean) => {
+		setLocks({
+			...locks,
+			[key]: value,
+		});
+	};
 	const [isRecurrent, setIsRecurrent] = useState(false);
 
 	useEffect(() => {
 		console.log({ selectedItem });
 		if (selectedItem) {
-			setName(selectedItem.name);
-			setItem(selectedItem);
+			update({
+				...selectedItem.toJSON(),
+			});
 			setIsRecurrent(!BudgetItemSimple.IsSimple(selectedItem));
 		}
 	}, [selectedItem]);
 
 	useEffect(() => {
-		update({});
+		update({ ...item.toJSON() });
 	}, [isRecurrent]);
 
-	useEffect(() => console.log({ item }), [item]);
+	useEffect(() => console.log({ itemChanged: item }), [item]);
 
 	const update = (newValues: {
 		name?: string;
@@ -76,32 +98,32 @@ export const CreateBudgetItemModal = ({
 	}) => {
 		const toUpdate = item.toJSON();
 		console.log({ toUpdate: { ...toUpdate }, newValues });
-		if (newValues.name) {
-			toUpdate.name = newValues.name;
-			setName(newValues.name);
-		}
-		if (newValues.date) toUpdate.nextDate = newValues.date;
-		if (newValues.type) toUpdate.type = newValues.type;
-		if (newValues.amount) toUpdate.amount = newValues.amount;
-		if (newValues.category) toUpdate.category = newValues.category;
+		if (newValues.name !== undefined) toUpdate.name = newValues.name;
+		if (newValues.date !== undefined) toUpdate.nextDate = newValues.date;
+		if (newValues.type !== undefined) toUpdate.type = newValues.type;
+		if (newValues.amount !== undefined) toUpdate.amount = newValues.amount;
+		if (newValues.category !== undefined)
+			toUpdate.category = newValues.category;
 		if (newValues.toAccount) toUpdate.toAccount = newValues.toAccount;
-		if (newValues.frequency) toUpdate.frequency = newValues.frequency;
+		if (newValues.frequency !== undefined)
+			toUpdate.frequency = newValues.frequency;
 
-		if (newValues.account) toUpdate.account = newValues.account;
+		if (newValues.account !== undefined)
+			toUpdate.account = newValues.account;
+
+		const newItem = isRecurrent
+			? BudgetItemRecurrent.fromJSON(toUpdate)
+			: BudgetItemSimple.fromJSON(toUpdate);
+
+		newItem.setRandomId();
 
 		console.log({
 			toUpdate,
 			isRecurrent,
-			item: isRecurrent
-				? BudgetItemRecurrent.fromJSON(toUpdate)
-				: BudgetItemSimple.fromJSON(toUpdate),
+			item: newItem,
 		});
 
-		setItem(
-			isRecurrent
-				? BudgetItemRecurrent.fromJSON(toUpdate)
-				: BudgetItemSimple.fromJSON(toUpdate)
-		);
+		setItem(newItem);
 	};
 
 	useEffect(() => {
@@ -111,19 +133,17 @@ export const CreateBudgetItemModal = ({
 	return (
 		<div className="create-budget-item-modal">
 			<h1>Create Budget Item</h1>
-			<SelectWithCreation
+			<SelectWithCreation<BudgetItem>
 				id="name"
 				label="Name"
-				item={name}
-				items={names}
-				getLabel={(name) => {
-					if (!name) return "";
-					const item = items.find((i) => i.name === name);
+				item={item}
+				items={items}
+				getLabel={(item) => {
 					if (!item) return "";
-					return `${name}${
+					const label = `${
 						item instanceof BudgetItemSimple &&
 						!item.amount.isZero()
-							? " - " + item.account
+							? item.account
 							: ""
 					}${
 						item.type === "transfer"
@@ -132,45 +152,51 @@ export const CreateBudgetItemModal = ({
 					}${
 						item.amount.isZero() ? "" : " " + item.amount.toString()
 					}`;
+					return label.length > 40
+						? label.slice(0, 40) + "..."
+						: label;
 				}}
-				onCreationChange={(name) => update({ name })}
+				getKey={(item) => item.name}
+				setSelectedItem={setSelectedItem}
 				onChange={(name) => {
-					const item = items.find(
-						(i) => i.name === name.split(" $")[0]
-					);
-					console.log({
-						onChangeName: name.split(" $")[0],
-						items,
-						item,
-					});
-					if (item) {
-						setSelectedItem(item);
-					} else {
-						update({ name: name.split(" $")[0] });
-					}
+					update({ name });
 				}}
+				isLocked={locks.name}
+				setIsLocked={(value) => updateLock("name", value)}
 			/>
-			{/* <SelectWithCreation
+			<SelectWithCreation
 				id="category"
 				label="Category"
 				item={item.category}
 				items={categories}
 				onChange={(category) => update({ category })}
-			/> */}
-			<Input<PriceValueObject>
-				id="amount"
-				label="Amount"
-				value={item.amount}
-				onChange={(amount) => update({ amount: amount.toNumber() })}
+				isLocked={locks.category}
+				setIsLocked={(value) => updateLock("category", value)}
 			/>
-			<Select<BudgetItemRecordType>
-				id="type"
-				label="Type"
-				value={item.type}
-				values={["income", "expense", "transfer"]}
-				onChange={(type) => update({ type })}
-			/>
-			{/* <div
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "space-around",
+					alignItems: "center",
+				}}
+			>
+				<Select<BudgetItemRecordType>
+					id="type"
+					label="Type"
+					value={item.type}
+					values={["income", "expense", "transfer"]}
+					onChange={(type) => update({ type })}
+				/>
+				<Input<PriceValueObject>
+					id="amount"
+					label="Amount"
+					value={item.amount}
+					onChange={(amount) => update({ amount: amount.toNumber() })}
+					isLocked={locks.amount}
+					setIsLocked={(value) => updateLock("amount", value)}
+				/>
+			</div>
+			<div
 				style={{
 					display: "flex",
 					justifyContent: "space-between",
@@ -186,25 +212,31 @@ export const CreateBudgetItemModal = ({
 					style={{
 						flexGrow: 1,
 					}}
+					isLocked={locks.account}
+					setIsLocked={(value) => updateLock("account", value)}
 				/>
 				{item.type === "transfer" && (
 					<SelectWithCreation
 						id="toAccount"
 						label="Account: To"
-						item={item.toAccount ?? ""}
+						item={item.toAccount}
 						items={accounts}
 						onChange={(value) => update({ toAccount: value })}
 						style={{
 							flexGrow: 1,
 						}}
+						isLocked={locks.toAccount}
+						setIsLocked={(value) => updateLock("toAccount", value)}
 					/>
 				)}
-			</div> */}
+			</div>
 			<Input<Date>
 				id="date"
 				label="Date"
 				value={item.nextDate.toDate()}
 				onChange={(nextDate) => update({ date: nextDate })}
+				isLocked={locks.nextDate}
+				setIsLocked={(value) => updateLock("nextDate", value)}
 			/>
 			<div style={{ display: "flex", alignItems: "center" }}>
 				<FormControlLabel
@@ -235,9 +267,33 @@ export const CreateBudgetItemModal = ({
 					nextDate.setSeconds(0);
 					console.log({ nextDate });
 					console.log({
-						item,
+						itemToCreate: item,
 					});
-					// await onSubmit(item);
+					await onSubmit(item);
+					await refresh();
+					setSelectedItem(
+						BudgetItemSimple.create(
+							locks.account ? item.account : "",
+							locks.name ? item.name : "",
+							locks.amount ? item.amount.toNumber() : 0,
+							locks.category ? item.category : "",
+							locks.type ? item.type : "expense",
+							locks.nextDate ? item.nextDate : nextDate
+						)
+					);
+				}}
+			>
+				Save & Create Another
+			</button>
+			<button
+				onClick={async () => {
+					const nextDate = new Date(item.nextDate);
+					nextDate.setSeconds(0);
+					console.log({ nextDate });
+					console.log({
+						itemToCreate: item,
+					});
+					await onSubmit(item);
 					await refresh();
 					close();
 				}}

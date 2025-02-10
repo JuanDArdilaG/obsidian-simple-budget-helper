@@ -29,23 +29,12 @@ export const EditBudgetItemRecordModal = ({
 	const [type, setType] = useState(record.type);
 
 	const [category, setCategory] = useState(item?.category || "");
-	const [newCategory, setNewCategory] = useState("");
 
 	const [account, setAccount] = useState(record.account);
-	const [newAccount, setNewAccount] = useState("");
 
-	const [toAccount, setToAccount] = useState("-- create new --");
-	const [newToAccount, setNewToAccount] = useState("");
+	const [toAccount, setToAccount] = useState(record.toAccount || "");
 
 	const [date, setDate] = useState(record.date);
-	const [time, setTime] = useState(
-		record.date
-			.toTimeString()
-			.split(" ")[0]
-			.split(":")
-			.slice(0, 2)
-			.join(":")
-	);
 	const [validation, setValidation] = useState<
 		Record<string, boolean> | undefined
 	>(undefined);
@@ -53,15 +42,9 @@ export const EditBudgetItemRecordModal = ({
 		name: name.length > 0,
 		amount: amount.toNumber() > 0,
 		account: account.length > 0,
-		newAccount: account !== "-- create new --" || newAccount.length > 0,
 		date: date.toString() !== "Invalid Date",
-		time: time.length > 0,
 		category: category.length > 0,
 		toAccount: type !== "transfer" || toAccount.length > 0,
-		newToAccount:
-			type !== "transfer" ||
-			toAccount !== "-- create new --" ||
-			newToAccount.length > 0,
 	});
 
 	return (
@@ -99,8 +82,7 @@ export const EditBudgetItemRecordModal = ({
 				label="From"
 				item={account}
 				items={budget.getAccounts()}
-				onChange={(account) => setAccount(account)}
-				// onCreationChange={(account) => setNewAccount(account)}
+				onChange={(account) => setAccount(account ?? "")}
 				// error={
 				// 	!validation || validation.account ? undefined : "required"
 				// }
@@ -111,8 +93,7 @@ export const EditBudgetItemRecordModal = ({
 					label="To"
 					item={toAccount}
 					items={budget.getAccounts()}
-					onChange={(account) => setToAccount(account)}
-					// onCreationChange={(account) => setNewToAccount(account)}
+					onChange={(account) => setToAccount(account ?? "")}
 					// error={
 					// 	!validation || validation.toAccount
 					// 		? undefined
@@ -125,73 +106,48 @@ export const EditBudgetItemRecordModal = ({
 				label="Category"
 				item={category}
 				items={categories}
-				onChange={(category) => setCategory(category)}
-				// onCreationChange={(category) => setNewCategory(category)}
+				onChange={(category) => setCategory(category ?? "")}
 				// error={
 				// 	!validation || validation.category ? undefined : "required"
 				// }
 			/>
-			<div className="horizontal-input">
-				<input
-					type="date"
-					defaultValue={new Intl.DateTimeFormat("en-CA", {
-						year: "numeric",
-						month: "2-digit",
-						day: "2-digit",
-					}).format(date)}
-					onChange={(e) =>
-						setDate(new Date(`${e.target.value}T00:00:00`))
-					}
-				/>
-				<input
-					type="time"
-					defaultValue={time}
-					onChange={(e) => setTime(e.target.value)}
-				/>
-			</div>
+			<Input<Date>
+				id="date"
+				label="Date"
+				value={date}
+				onChange={setDate}
+				error={!validation || validation.date ? undefined : "required"}
+			/>
 			<button
 				onClick={async () => {
 					const validation = validateOnUpdate();
 					setValidation(validation);
 					if (!Object.values(validation).every((value) => value))
 						return;
-					date.setHours(parseInt(time.split(":")[0]));
-					date.setMinutes(parseInt(time.split(":")[1]));
+
 					date.setSeconds(0);
-
-					const cat =
-						category === "-- create new --"
-							? newCategory
-							: category;
-
-					const acc =
-						account === "-- create new --" ? newAccount : account;
 
 					if (!item) return;
 					if (item instanceof BudgetItemSimple) {
 						item.updateHistoryRecord(
 							record.id,
 							name,
-							acc,
+							account,
 							date,
 							type,
 							amount.toNumber(),
-							cat,
-							type === "transfer"
-								? toAccount === "-- create new --"
-									? newToAccount
-									: toAccount
-								: undefined
+							category,
+							type === "transfer" ? toAccount : undefined
 						);
 					} else {
 						item.updateHistoryRecord(
 							record.id,
 							name,
-							acc,
+							account,
 							date,
 							type,
 							amount.toNumber(),
-							cat
+							category
 						);
 					}
 
