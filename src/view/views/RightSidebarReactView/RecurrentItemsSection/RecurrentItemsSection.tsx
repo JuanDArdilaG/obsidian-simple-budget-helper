@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import {
@@ -13,16 +13,16 @@ import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 export const RecurrentItemsSection = ({
 	budget,
 	onRecord,
-	refresh,
 	app,
 }: {
 	budget: Budget<BudgetItemRecurrent>;
 	onRecord: (item: BudgetItem) => void;
-	refresh: () => void;
 	app: App;
 }) => {
 	const [sectionSelection, setSectionSelection] =
 		useState<SectionSelection>("calendar");
+
+	const orderedBudget = useMemo(() => budget.orderByNextDate(), [budget]);
 
 	return (
 		<>
@@ -34,14 +34,14 @@ export const RecurrentItemsSection = ({
 
 			{sectionSelection === "calendar" && (
 				<CalendarRightSidebarReactTab
-					budget={budget.orderByNextDate()}
+					budget={orderedBudget}
 					onRecord={onRecord}
 					app={app}
 				/>
 			)}
 			{sectionSelection === "list" && (
 				<AllItemsRightSidebarReactTab
-					budget={budget.orderByNextDate()}
+					budget={orderedBudget}
 					onRecord={onRecord}
 					app={app}
 				/>

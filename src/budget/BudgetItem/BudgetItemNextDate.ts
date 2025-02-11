@@ -28,9 +28,22 @@ export class BudgetItemNextDate extends Date {
 		return new BudgetItemNextDate(nextDate, true);
 	}
 
+	compare(other: BudgetItemNextDate, removeTime = false): number {
+		let a = new Date(this.getTime());
+		let b = new Date(other.getTime());
+		if (removeTime) {
+			a = new Date(a.getTime());
+			a.setHours(0, 0, 0, 0);
+			b = new Date(b.getTime());
+			b.setHours(0, 0, 0, 0);
+		}
+		return a.getTime() - b.getTime();
+	}
+
 	toDate(): Date {
 		return this;
 	}
+
 	static empty(): BudgetItemNextDate {
 		return new BudgetItemNextDate(new Date(), true);
 	}

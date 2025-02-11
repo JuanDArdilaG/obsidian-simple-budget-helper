@@ -1,6 +1,14 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useContext } from "react";
 
-export const useContextMenu = () => {
+export type useContextMenuProps = {
+	lock?: boolean;
+	invalidClickChecker?: (e: MouseEvent) => boolean;
+};
+
+export const useContextMenu = ({
+	lock,
+	invalidClickChecker,
+}: useContextMenuProps) => {
 	const [xPos, setXPos] = useState("0px");
 	const [yPos, setYPos] = useState("0px");
 	const [showMenu, setShowMenu] = useState(false);
@@ -26,7 +34,8 @@ export const useContextMenu = () => {
 
 	const handleClick = useCallback(
 		(e: MouseEvent) => {
-			if (showMenu) setShowMenu(false);
+			if (invalidClickChecker && invalidClickChecker(e)) return;
+			if (showMenu && !lock) setShowMenu(false);
 		},
 		[showMenu]
 	);

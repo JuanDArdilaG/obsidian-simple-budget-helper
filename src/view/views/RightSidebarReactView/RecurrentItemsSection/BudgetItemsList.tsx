@@ -3,53 +3,56 @@ import { Forward } from "lucide-react";
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { App } from "obsidian";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { SettingsContext } from "../RightSidebarReactView";
 import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 import { RecordBudgetItemPanel } from "./RecordBudgetItemPanel";
+import { BudgetItemsListContextMenu } from "./BudgetItemsListContextMenu";
 
 export const BudgetItemsList = ({
 	budgetItems,
 	onRecord,
 	totalPerMonth,
 	app,
+	selectedItem,
+	setSelectedItem,
 }: {
 	budgetItems: { item: BudgetItemRecurrent; dates: Date[] }[];
 	onRecord: (item: BudgetItem) => void;
 	totalPerMonth?: boolean;
 	app: App;
+	selectedItem?: BudgetItemRecurrent;
+	setSelectedItem: (item: BudgetItemRecurrent) => void;
 }) => {
-	const settings = useContext(SettingsContext);
-
 	const [showRecordPanel, setShowRecordPanel] =
 		useState<BudgetItemRecurrent>();
 
-	const [itemsInList, setItemsInList] = useState<BudgetItemRecurrent[]>([]);
-
 	useEffect(() => {
-		setItemsInList(
-			new Budget(
-				budgetItems
-					.map(({ item, dates }) => {
-						return dates.map((date) => {
-							return new BudgetItemRecurrent(
-								item.id,
-								item.name,
-								item.account,
-								item.amount.toNumber(),
-								item.category,
-								item.type,
-								new BudgetItemNextDate(date),
-								item.path,
-								item.frequency,
-								item.history
-							);
-						});
-					})
-					.flat()
-			).orderByNextDate().items
-		);
+		console.log({ showRecordPanelChange: showRecordPanel });
+	}, [showRecordPanel]);
+
+	const itemsInList = useMemo(() => {
+		return new Budget(
+			budgetItems
+				.map(({ item, dates }) => {
+					return dates.map((date) => {
+						return new BudgetItemRecurrent(
+							item.id,
+							item.name,
+							item.account,
+							item.amount.toNumber(),
+							item.category,
+							item.type,
+							new BudgetItemNextDate(date),
+							item.path,
+							item.frequency,
+							item.history
+						);
+					});
+				})
+				.flat()
+		).orderByNextDate().items;
 	}, [budgetItems]);
 
 	return (
@@ -58,15 +61,9 @@ export const BudgetItemsList = ({
 				{itemsInList.map((item, index) => (
 					<li
 						key={index}
-						onClick={async () => {
-							if (item.path && !showRecordPanel) {
-								const leaf = app.workspace.getLeaf(
-									settings.openInNewTab
-								);
-								const file = app.vault.getFileByPath(item.path);
-								if (!file) return;
-								await leaf.openFile(file);
-							}
+						onContextMenu={(e) => {
+							e.preventDefault();
+							setSelectedItem(item);
 						}}
 					>
 						<div className="two-columns-list">
@@ -91,17 +88,7 @@ export const BudgetItemsList = ({
 											color: "var(--color-green)",
 										}}
 										size={19}
-										// color="mediumspringgreen"
-										onClick={() => {
-											// item.record();
-											// new RecordBudgetItemModalRoot(
-											// 	app,
-											// 	item,
-											// 	onRecord
-											// ).open();
-
-											setShowRecordPanel(item);
-										}}
+										onClick={() => setShowRecordPanel(item)}
 									/>
 								</span>
 								{totalPerMonth ? <br /> : ""}

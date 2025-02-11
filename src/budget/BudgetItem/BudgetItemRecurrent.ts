@@ -7,6 +7,7 @@ import {
 import { BudgetItem, TBudgetItem } from "./BudgetItem";
 import { nanoid } from "nanoid";
 import { BudgetItemRecordAmount } from "./BugetItemRecord/BudgetItemRecordAmount";
+import { Logger } from "utils/logger";
 
 export class BudgetItemRecurrent extends BudgetItem {
 	constructor(
@@ -121,17 +122,42 @@ export class BudgetItemRecurrent extends BudgetItem {
 		amount?: number,
 		isPermanent?: boolean
 	): void {
-		let nextDate = new BudgetItemNextDate(new Date(date));
-		nextDate = this._nextDate.nextDate(this._frequency);
+		let recordDate = new BudgetItemNextDate(date);
 		const nextAmount = amount || this._amount;
+		const nextDate = this._nextDate.nextDate(this._frequency);
+
+		Logger.debug("calculating next date", {
+			frequency: this._frequency,
+			prev: this._nextDate,
+			next: nextDate,
+		});
+
+		Logger.debug("checking permanent changes", {
+			isPermanent,
+			amount: {
+				change: !!amount,
+				from: this._amount,
+				to: amount,
+			},
+			recordDate: {
+				change: recordDate.compare(this._nextDate, true) !== 0,
+				from: this._nextDate,
+				to: recordDate.nextDate(this._frequency),
+			},
+		});
 
 		if (isPermanent) {
-			this._nextDate = nextDate;
 			if (amount) this._amount = amount;
+			if (recordDate.compare(this._nextDate, true) !== 0) {
+				this._nextDate = recordDate.nextDate(this._frequency);
+			}
+		} else {
+			this._nextDate = nextDate;
 		}
+
 		this._history.push(
 			new BudgetItemRecord(
-				`${this._id}-${this._history.length}`,
+				nanoid(),
 				this._id,
 				account,
 				this.toAccount || "",
@@ -141,6 +167,22 @@ export class BudgetItemRecurrent extends BudgetItem {
 				new BudgetItemRecordAmount(nextAmount)
 			)
 		);
+	}
+
+	validate(): { [K in keyof TBudgetItem]: boolean } {
+		return {
+			id: true,
+			name: this._name.length > 0,
+			account: this._account.length > 0,
+			amount: this._amount > 0,
+			nextDate: this._nextDate.toString() !== "Invalid Date",
+			category: this._category.length > 0,
+			toAccount: this._type !== "transfer" || !!this._toAccount?.length,
+			frequency: true,
+			path: true,
+			history: true,
+			type: true,
+		};
 	}
 
 	updateHistoryRecord(

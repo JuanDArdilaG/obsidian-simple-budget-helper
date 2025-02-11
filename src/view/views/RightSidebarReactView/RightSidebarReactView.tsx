@@ -1,4 +1,4 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useMemo } from "react";
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { SectionButtons, SidebarSections } from "./SectionButtons";
@@ -7,13 +7,12 @@ import { AccountingSection } from "./AccountingSection/AccountingSection";
 import { App } from "obsidian";
 import { DEFAULT_SETTINGS } from "SettingTab";
 import { SimpleBudgetHelperSettings } from "../../../SettingTab";
-import { EditBudgetItemRecordModalRoot } from "modals/CreateBudgetItemModal/EditBudgetItemRecordModalRoot";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 export const SettingsContext = createContext(DEFAULT_SETTINGS);
 export const FileOperationsContext = createContext({
-	updateItemFile: async (
+	itemOperations: async (
 		item: BudgetItem,
 		operation: "add" | "modify" | "remove"
 	) => {},
@@ -32,12 +31,10 @@ export const RightSidebarReactView = ({
 	refresh,
 	app,
 	settings,
-	categories,
 	statusBarAddText,
 }: {
 	getBudget: (app: App, rootFolder: string) => Promise<Budget<BudgetItem>>;
 	budget: Budget<BudgetItem>;
-	categories: string[];
 	onRecord: (item: BudgetItem) => void;
 	updateItemFile: (
 		item: BudgetItem,
@@ -57,11 +54,20 @@ export const RightSidebarReactView = ({
 		setInnerBudget(await getBudget(app, settings.rootFolder));
 	};
 
+	const onlyRecurrent = useMemo(
+		() => innerBudget.onlyRecurrent(),
+		[innerBudget]
+	);
+	const orderedBudget = useMemo(
+		() => innerBudget.orderByNextDate(),
+		[innerBudget]
+	);
+
 	return (
 		<LocalizationProvider dateAdapter={AdapterDayjs}>
 			<SettingsContext.Provider value={settings}>
 				<FileOperationsContext.Provider
-					value={{ updateItemFile, refresh }}
+					value={{ itemOperations: updateItemFile, refresh }}
 				>
 					<BudgetContext.Provider
 						value={{ budget: innerBudget, updateBudget }}
@@ -74,8 +80,7 @@ export const RightSidebarReactView = ({
 
 						{sectionSelection === "recurrentItems" && (
 							<RecurrentItemsSection
-								refresh={refresh}
-								budget={budget.onlyRecurrent()}
+								budget={onlyRecurrent}
 								onRecord={onRecord}
 								app={app}
 							/>
@@ -84,19 +89,7 @@ export const RightSidebarReactView = ({
 							<AccountingSection
 								app={app}
 								statusBarAddText={statusBarAddText}
-								editModal={
-									new EditBudgetItemRecordModalRoot(
-										app,
-										budget,
-										async (item) =>
-											await updateItemFile(
-												item,
-												"modify"
-											),
-										categories
-									)
-								}
-								budget={budget.orderByNextDate()}
+								budget={orderedBudget}
 							/>
 						)}
 					</BudgetContext.Provider>

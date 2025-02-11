@@ -2,65 +2,66 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { BudgetItemRecord } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { Budget } from "budget/Budget/Budget";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import {
-	BudgetHistory,
-	GroupByYearMonthDay,
-} from "budget/Budget/BudgetHistory";
-import {
-	BudgetContext,
-	FileOperationsContext,
-	SettingsContext,
-} from "../RightSidebarReactView";
+import { BudgetHistory } from "budget/Budget/BudgetHistory";
+import { BudgetContext, FileOperationsContext } from "../RightSidebarReactView";
 import { getLastDayOfMonth, monthAbbrToIndex } from "utils/date";
-import { ContextMenu } from "./AccountingListMenuContext";
-import { Menu } from "./Menu";
-import { EditBudgetItemRecordModalRoot } from "modals/CreateBudgetItemModal/EditBudgetItemRecordModalRoot";
+import { AccountingListContextMenu } from "./AccountingListContextMenu";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 import { App } from "obsidian";
+import { Logger } from "utils/logger";
+import { EditBudgetItemRecordPanel } from "modals/CreateBudgetItemModal/EditBudgetItemRecordPanel";
 
 export function AccountingList({
-	editModal,
 	app,
 	statusBarAddText,
 }: {
 	app: App;
-	editModal: EditBudgetItemRecordModalRoot;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) {
-	const { budget } = useContext(BudgetContext);
 	const fileOperations = useContext(FileOperationsContext);
-	const [selectedRecord, setSelectedRecord] = useState<BudgetItemRecord>();
+	const { budget } = useContext(BudgetContext);
+	const accounts = useMemo(() => budget.getAccounts(), [budget]);
 
 	const [accountFilter, setAccountFilter] = useState("");
 
-	const budgetHistory = useMemo(
-		() => BudgetHistory.fromBudget(budget, accountFilter ?? undefined),
-		[budget, accountFilter]
-	);
-	const filteredHistory = useMemo(
-		() => budgetHistory.getGroupedByYearMonthDay(),
-		[budgetHistory]
-	);
+	const budgetHistory = useMemo(() => {
+		const history = BudgetHistory.fromBudget(
+			budget,
+			accountFilter ?? undefined
+		);
+		Logger.debug("history with filter", {
+			filter: accountFilter,
+			history,
+		});
+		return history;
+	}, [budget, accountFilter]);
+	const filteredHistory = useMemo(() => {
+		const history = budgetHistory.getGroupedByYearMonthDay();
+		Logger.debug("grouped filtered history", { history });
+		return history;
+	}, [budgetHistory]);
+
+	const [selectedRecord, setSelectedRecord] = useState<BudgetItemRecord>();
+	const [action, setAction] = useState("");
 
 	const [selectionActive, setSelectionActive] = useState(false);
 	const [selection, setSelection] = useState<BudgetItemRecord[]>([]);
 
 	useEffect(() => {
-		window.addEventListener("keydown", (e) => {
+		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.shiftKey) setSelectionActive(true);
-		});
-		window.addEventListener("keyup", (e) => {
+		};
+		const handleKeyUp = (e: KeyboardEvent) => {
 			if (!e.shiftKey) setSelectionActive(false);
-		});
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("keyup", handleKeyUp);
 
 		return () => {
-			window.removeEventListener("keydown", (e) => {
-				if (e.shiftKey) setSelectionActive(true);
-			});
-			window.removeEventListener("keyup", (e) => {
-				if (!e.shiftKey) setSelectionActive(false);
-			});
+			window.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("keyup", handleKeyUp);
 		};
 	}, []);
 
@@ -80,7 +81,7 @@ export function AccountingList({
 				  ).toString()}`
 				: ""
 		);
-	}, [selectionActive, selection]);
+	}, [selection]);
 
 	useEffect(() => {
 		if (!selectionActive) {
@@ -96,36 +97,29 @@ export function AccountingList({
 				onChange={(e) => setAccountFilter(e.target.value)}
 			>
 				<option value="">All accounts</option>
-				{budget.getAccounts().map((account) => (
+				{accounts.map((account) => (
 					<option value={account} key={account}>
 						{account}
 					</option>
 				))}
 			</select>
 			{selectedRecord && (
-				<ContextMenu
-					menu={
-						<Menu
-							app={app}
-							record={selectedRecord}
-							onEdit={async (record) => {
-								editModal.setRecord(record);
-								editModal.open();
-							}}
-							onDelete={async (record) => {
-								const item = budget.getItemByID(record.itemID);
-								if (!item) return;
-								if (item instanceof BudgetItemRecurrent) {
-									item.removeHistoryRecord(record.id);
-								}
-								await fileOperations.updateItemFile(
-									item,
-									"remove"
-								);
-								await fileOperations.refresh();
-							}}
-						/>
-					}
+				<AccountingListContextMenu
+					app={app}
+					record={selectedRecord}
+					onEdit={async () => {
+						setAction("edit");
+					}}
+					onDelete={async (record) => {
+						const item = budget.getItemByID(record.itemID);
+						if (!item) return;
+						if (item instanceof BudgetItemRecurrent) {
+							item.removeHistoryRecord(record.id);
+						}
+						await fileOperations.itemOperations(item, "remove");
+						await fileOperations.refresh();
+					}}
+					refresh={async () => await fileOperations.refresh()}
 				/>
 			)}
 			{Object.keys(filteredHistory)
@@ -147,7 +141,7 @@ export function AccountingList({
 									style={{
 										float: "right",
 										fontSize: "0.6em",
-										color: "greenyellow",
+										color: "var(--color-green)",
 									}}
 								>
 									Incomes:{" "}
@@ -171,7 +165,7 @@ export function AccountingList({
 									style={{
 										float: "right",
 										fontSize: "0.6em",
-										color: "tomato",
+										color: "var(--color-red)",
 									}}
 								>
 									Expenses:{" "}
@@ -248,7 +242,7 @@ export function AccountingList({
 												<span
 													style={{
 														fontSize: "0.5em",
-														color: "greenyellow",
+														color: "var(--color-green)",
 													}}
 												>
 													Incomes:{" "}
@@ -268,7 +262,7 @@ export function AccountingList({
 													style={{
 														float: "right",
 														fontSize: "0.5em",
-														color: "tomato",
+														color: "var(--color-red)",
 													}}
 												>
 													Expenses:{" "}
@@ -308,80 +302,58 @@ export function AccountingList({
 											)
 												.map((day) => Number(day))
 												.sort((a, b) => b - a)
-												.map(
-													(
-														day: number,
-														index: number
-													) => (
-														<div
-															key={index}
+												.map((day: number) => (
+													<div
+														key={day}
+														style={{
+															marginTop: "15px",
+														}}
+													>
+														<span
 															style={{
-																marginTop:
+																paddingRight:
+																	"7px",
+																marginRight:
 																	"15px",
 															}}
 														>
-															<span
-																style={{
-																	paddingRight:
-																		"7px",
-																	marginRight:
-																		"15px",
-																}}
-															>
-																<b>{day}</b>
-															</span>
-															{filteredHistory[
-																year
-															][month][day]
-																.sort(
-																	(
-																		a: BudgetItemRecord,
-																		b: BudgetItemRecord
-																	) =>
-																		b.date.getTime() -
-																		a.date.getTime()
-																)
-																.map(
-																	(
-																		record: BudgetItemRecord,
-																		index: number
-																	) => {
-																		return (
-																			<>
-																				{record.type ===
-																					"transfer" && (
-																					<AccountingListRow
-																						isTransfer
-																						index={
-																							record.id +
-																							"transfer"
-																						}
-																						record={
-																							record
-																						}
-																						budget={
-																							budget
-																						}
-																						budgetHistory={
-																							budgetHistory
-																						}
-																						selection={
-																							selection
-																						}
-																						selectionActive={
-																							selectionActive
-																						}
-																						setSelection={
-																							setSelection
-																						}
-																						setSelectedRecord={
-																							setSelectedRecord
-																						}
-																					/>
-																				)}
+															<b>
+																{day} / {month}{" "}
+																/ {year}
+															</b>
+														</span>
+														{filteredHistory[year][
+															month
+														][day]
+															.sort(
+																(
+																	a: BudgetItemRecord,
+																	b: BudgetItemRecord
+																) =>
+																	b.date.getTime() -
+																	a.date.getTime()
+															)
+															.map(
+																(
+																	record: BudgetItemRecord,
+																	index: number
+																) => {
+																	return (
+																		<div
+																			key={
+																				index
+																			}
+																		>
+																			{record.type ===
+																				"transfer" && (
 																				<AccountingListRow
+																					isTransfer
 																					index={
-																						record.id
+																						record.id +
+																						"transfer"
+																					}
+																					setAction={
+																						setAction
 																					}
 																					record={
 																						record
@@ -405,13 +377,60 @@ export function AccountingList({
 																						setSelectedRecord
 																					}
 																				/>
-																			</>
-																		);
-																	}
-																)}
-														</div>
-													)
-												)}
+																			)}
+																			<AccountingListRow
+																				index={
+																					record.id
+																				}
+																				setAction={
+																					setAction
+																				}
+																				record={
+																					record
+																				}
+																				budget={
+																					budget
+																				}
+																				budgetHistory={
+																					budgetHistory
+																				}
+																				selection={
+																					selection
+																				}
+																				selectionActive={
+																					selectionActive
+																				}
+																				setSelection={
+																					setSelection
+																				}
+																				setSelectedRecord={
+																					setSelectedRecord
+																				}
+																			/>
+																			{action ===
+																				"edit" &&
+																				record ===
+																					selectedRecord && (
+																					<EditBudgetItemRecordPanel
+																						onUpdate={(
+																							item
+																						) =>
+																							fileOperations.itemOperations(
+																								item,
+																								"modify"
+																							)
+																						}
+																						record={
+																							record
+																						}
+																					/>
+																				)}
+																		</div>
+																	);
+																}
+															)}
+													</div>
+												))}
 										</ul>
 									</div>
 								);
@@ -432,6 +451,7 @@ const AccountingListRow = ({
 	setSelection,
 	setSelectedRecord,
 	isTransfer,
+	setAction,
 }: {
 	index: string;
 	isTransfer?: boolean;
@@ -442,43 +462,39 @@ const AccountingListRow = ({
 	selection: BudgetItemRecord[];
 	setSelection: React.Dispatch<React.SetStateAction<BudgetItemRecord[]>>;
 	setSelectedRecord: React.Dispatch<React.SetStateAction<BudgetItemRecord>>;
+	setAction: React.Dispatch<React.SetStateAction<string>>;
 }) => {
-	const [modifiedRecord, setModifiedRecord] = useState(record);
-	useEffect(() => {
-		if (!isTransfer) return;
-		setModifiedRecord(
-			new BudgetItemRecord(
-				record.id,
-				record.itemID,
-				record.account,
-				record.toAccount,
-				record.name,
-				record.type,
-				record.date,
-				record.amount.negate()
-			)
+	const modifiedRecord = useMemo(() => {
+		if (!isTransfer) return record;
+		return new BudgetItemRecord(
+			record.id,
+			record.itemID,
+			record.account,
+			record.toAccount,
+			record.name,
+			record.type,
+			record.date,
+			record.amount.negate()
 		);
-	}, [record]);
+	}, [record, isTransfer]);
 
 	return (
 		<li
 			key={index}
 			onClick={() => {
 				if (selectionActive)
-					setSelection((selection) => {
-						if (selection.includes(modifiedRecord))
-							return selection.filter(
-								(item) => item !== modifiedRecord
-							);
-						return [
-							...new Set<BudgetItemRecord>([
-								...selection,
-								modifiedRecord,
-							]),
-						];
-					});
+					setSelection((prevSelection) =>
+						prevSelection.includes(modifiedRecord)
+							? prevSelection.filter(
+									(item) => item !== modifiedRecord
+							  )
+							: [...prevSelection, modifiedRecord]
+					);
 			}}
-			onContextMenu={() => setSelectedRecord(modifiedRecord)}
+			onContextMenu={() => {
+				setAction("");
+				setSelectedRecord(modifiedRecord);
+			}}
 			className="accounting-list-item"
 			style={{
 				backgroundColor: selection.includes(modifiedRecord)
@@ -488,7 +504,16 @@ const AccountingListRow = ({
 		>
 			<span className="first-row">
 				<div>{modifiedRecord.name}</div>
-				<div>
+				<div
+					style={{
+						color:
+							modifiedRecord.type === "expense"
+								? "var(--color-red)"
+								: modifiedRecord.type === "transfer"
+								? "var(--color-blue)"
+								: "var(--color-green)",
+					}}
+				>
 					{modifiedRecord.type === "expense" ||
 					(!isTransfer && modifiedRecord.type === "transfer")
 						? "-"

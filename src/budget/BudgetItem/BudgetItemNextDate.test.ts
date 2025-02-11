@@ -40,8 +40,11 @@ describe("BudgetItemNextDate", () => {
 	});
 
 	it("should calculate next date 1 year later correctly", () => {
-		const prevDate = new BudgetItemNextDate(new Date("2024-01-01"));
-		const expectedDate = new BudgetItemNextDate(new Date("2025-01-01"));
+		const prevDate = new BudgetItemNextDate(new Date("2024-01-01"), true);
+		const expectedDate = new BudgetItemNextDate(
+			new Date("2025-01-01"),
+			true
+		);
 
 		const nextDate = prevDate.nextDate(new FrequencyString("1y"));
 
@@ -49,8 +52,11 @@ describe("BudgetItemNextDate", () => {
 	});
 
 	it("should calculate next date 4 years 2 months and 19 days later correctly", () => {
-		const prevDate = new BudgetItemNextDate(new Date("2024-01-01"));
-		const expectedDate = new BudgetItemNextDate(new Date("2028-03-22"));
+		const prevDate = new BudgetItemNextDate(new Date("2024-01-01"), true);
+		const expectedDate = new BudgetItemNextDate(
+			new Date("2028-03-22"),
+			true
+		);
 
 		const nextDate = prevDate.nextDate(new FrequencyString("4y2mo19d"));
 

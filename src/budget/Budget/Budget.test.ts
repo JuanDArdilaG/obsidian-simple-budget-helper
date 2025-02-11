@@ -52,7 +52,9 @@ describe("get accounts", () => {
 describe("getNDaysItems", () => {
 	it("should return recurrent items multiple times if applicable", () => {
 		const { budget, recurrent } = getTestBudget({
-			recurrent: [{ frequency: "2d", nextDate: new Date() }],
+			recurrent: [
+				{ frequency: "2d", nextDate: new Date(), withHistory: false },
+			],
 		});
 
 		const items = budget.getNDaysItems(7);

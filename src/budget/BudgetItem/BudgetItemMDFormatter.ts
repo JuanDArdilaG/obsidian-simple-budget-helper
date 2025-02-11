@@ -14,6 +14,18 @@ export class BudgetItemRecurrentMDFormatter {
 			/id: (.*)\nname: (.*)\namount: (.*)\ncategory: (.*)\ntype: (.*)\nnextDate: (.*)\nfrequency: (.*)\naccount: (.*)(?:\nto account: (.*))?/;
 		const match = propertiesRegex.exec(rawMarkdown);
 		if (!match) throw new Error("Invalid raw markdown.");
+		const [
+			,
+			id,
+			name,
+			amount,
+			category,
+			type,
+			nextDate,
+			frequency,
+			account,
+			toAccount,
+		] = match;
 		const historyStr = rawMarkdown.split("# History\n");
 		let history = undefined;
 		if (historyStr[1]) {
@@ -21,23 +33,23 @@ export class BudgetItemRecurrentMDFormatter {
 		}
 
 		return new BudgetItemRecurrent(
-			match[1],
-			match[2],
-			match[8],
-			parseInt(match[3]),
-			match[4],
-			match[5] as "expense" | "income",
-			new BudgetItemNextDate(new Date(match[6]), true),
+			id,
+			name,
+			account,
+			parseInt(amount),
+			category,
+			type as "expense" | "income",
+			new BudgetItemNextDate(new Date(nextDate), true),
 			path,
-			new FrequencyString(match[7]),
+			new FrequencyString(frequency),
 			history
 				?.filter((r) => !!r)
-				.map((r, i) => {
+				.map((r) => {
 					return BudgetItemRecord.fromString(
-						match[1],
+						id,
 						r,
-						match[5] as "income" | "expense",
-						match[8] ? match[8] : undefined
+						type as "income" | "expense",
+						toAccount
 					);
 				}) || []
 		);

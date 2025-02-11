@@ -19,7 +19,7 @@ export const Input = <T extends NonNullable<InputValue>>({
 	label: string;
 	value?: T;
 	onChange: (value: T) => void;
-	error?: "required";
+	error?: string;
 	datalist?: string;
 	isLocked?: boolean;
 	setIsLocked?: (value: boolean) => void;
@@ -35,12 +35,20 @@ export const Input = <T extends NonNullable<InputValue>>({
 	return (
 		<div style={style}>
 			{value instanceof PriceValueObject ? (
-				<div style={error ? { border: "1px solid red" } : {}}>
-					<ReactMoneyInput
-						id={`${id}-input-react`}
-						initialValue={value?.toNumber() ?? undefined}
-						onValueChange={(priceVO) => onChange(priceVO as T)}
-					/>
+				<div
+					style={{
+						display: "flex",
+						gap: "20px",
+						alignItems: "center",
+					}}
+				>
+					<div style={error ? { border: "1px solid red" } : {}}>
+						<ReactMoneyInput
+							id={`${id}-input-react`}
+							initialValue={value?.toNumber() ?? undefined}
+							onValueChange={(priceVO) => onChange(priceVO as T)}
+						/>
+					</div>
 					{isLocked !== undefined && (
 						<LockField
 							setIsLocked={setIsLocked}
@@ -49,7 +57,13 @@ export const Input = <T extends NonNullable<InputValue>>({
 					)}
 				</div>
 			) : value instanceof Date ? (
-				<div style={{ display: "flex", gap: "20px" }}>
+				<div
+					style={{
+						display: "flex",
+						gap: "20px",
+						alignItems: "center",
+					}}
+				>
 					<input
 						type="date"
 						value={new Intl.DateTimeFormat("en-CA", {

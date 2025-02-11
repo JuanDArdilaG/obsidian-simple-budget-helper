@@ -58,13 +58,13 @@ name: test
 amount: 100
 category: test
 type: income
-nextDate: Sat Dec 31 2022
+nextDate: Tue Dec 31 2024
 frequency: 1y
 account: test
 ---
 # History
-- id: ${item.id}-0. name: test. account: account. date: Sun Jan 01 2023 13:35:00. amount: $150
-- id: ${item.id}-1. name: test. account: account. date: Wed Jan 03 2024 19:12:00. amount: $100`
+- id: ${item.history[0].id}. name: test. account: account. date: Sun Jan 01 2023 13:35:00. amount: $150
+- id: ${item.history[1].id}. name: test. account: account. date: Wed Jan 03 2024 19:12:00. amount: $100`
 		);
 	});
 });

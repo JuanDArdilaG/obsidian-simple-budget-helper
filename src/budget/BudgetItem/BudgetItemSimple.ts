@@ -49,7 +49,7 @@ export class BudgetItemSimple extends BudgetItem {
 	static copyFrom(item: BudgetItem): BudgetItemSimple {
 		return new BudgetItemSimple(
 			item.id,
-			this.IsSimple(item) ? item.account : "",
+			item.account,
 			item.name,
 			item.amount.toNumber(),
 			item.category,

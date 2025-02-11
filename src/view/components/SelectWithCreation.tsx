@@ -23,7 +23,7 @@ export const SelectWithCreation = <T extends Object>({
 	items: T[];
 	getLabel?: (_: T) => string;
 	getKey?: (_: T) => string;
-	onChange: (value?: string) => void;
+	onChange: (value: string) => void;
 	setSelectedItem?: (value: T) => void;
 	error?: string;
 	isLocked?: boolean;
@@ -34,18 +34,14 @@ export const SelectWithCreation = <T extends Object>({
 			"getKey is required for items that are not strings. id: " + id
 		);
 
-	const [input, setInput] = useState("");
-	console.log({
-		item,
-		inputFromItem: getKey ? getKey(item) : String(item),
-		id,
-	});
+	const [input, setInput] = useState(getKey ? getKey(item) : String(item));
 
 	useEffect(() => {
 		setInput(getKey ? getKey(item) : String(item));
 	}, [item]);
 
 	useEffect(() => {
+		console.log({ title: "input changed", input });
 		onChange(input);
 	}, [input]);
 
@@ -88,6 +84,7 @@ export const SelectWithCreation = <T extends Object>({
 				}}
 				datalist={"options-" + id}
 				style={{ width: "80%" }}
+				error={error}
 			/>
 			{isLocked !== undefined && (
 				<LockField setIsLocked={setIsLocked} isLocked={isLocked} />

@@ -1,28 +1,24 @@
-import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { BudgetItemRecord } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
-import { useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { BudgetItemRecordType } from "../../budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { Input } from "view/components/Input";
 import { Select } from "view/components/Select";
 import { SelectWithCreation } from "view/components/SelectWithCreation";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
+import { BudgetContext } from "view/views/RightSidebarReactView/RightSidebarReactView";
 
-export const EditBudgetItemRecordModal = ({
-	budget,
+export const EditBudgetItemRecordPanel = ({
 	record,
-	categories,
 	onUpdate,
-	close,
 }: {
-	budget: Budget<BudgetItem>;
 	record: BudgetItemRecord;
-	categories: string[];
 	onUpdate: (item: BudgetItem) => Promise<void>;
-	close: () => void;
 }) => {
-	const item = budget.getItemByID(record.itemID);
+	const { budget } = useContext(BudgetContext);
+	const categories = useMemo(() => budget.getCategories(), [budget]);
+	const item = useMemo(() => budget.getItemByID(record.itemID), [budget]);
 
 	const [name, setName] = useState(record.name);
 	const [amount, setAmount] = useState(record.amount);
@@ -49,7 +45,7 @@ export const EditBudgetItemRecordModal = ({
 
 	return (
 		<div className="create-budget-item-modal">
-			<h1>Edit Budget Item: {record.name}</h1>
+			<h3>Edit Account Record</h3>
 			<Input
 				id="name"
 				label="Name"
@@ -71,7 +67,11 @@ export const EditBudgetItemRecordModal = ({
 					id="type"
 					label="Type"
 					value={type}
-					values={["Income", "Expense", "Transfer"]}
+					values={{
+						expense: "Expense",
+						transfer: "Transfer",
+						income: "Income",
+					}}
 					onChange={(type) =>
 						setType(type.toLowerCase() as BudgetItemRecordType)
 					}
@@ -83,9 +83,9 @@ export const EditBudgetItemRecordModal = ({
 				item={account}
 				items={budget.getAccounts()}
 				onChange={(account) => setAccount(account ?? "")}
-				// error={
-				// 	!validation || validation.account ? undefined : "required"
-				// }
+				error={
+					!validation || validation.account ? undefined : "required"
+				}
 			/>
 			{type === "transfer" && (
 				<SelectWithCreation
@@ -94,11 +94,11 @@ export const EditBudgetItemRecordModal = ({
 					item={toAccount}
 					items={budget.getAccounts()}
 					onChange={(account) => setToAccount(account ?? "")}
-					// error={
-					// 	!validation || validation.toAccount
-					// 		? undefined
-					// 		: "required"
-					// }
+					error={
+						!validation || validation.toAccount
+							? undefined
+							: "required"
+					}
 				/>
 			)}
 			<SelectWithCreation
@@ -107,9 +107,9 @@ export const EditBudgetItemRecordModal = ({
 				item={category}
 				items={categories}
 				onChange={(category) => setCategory(category ?? "")}
-				// error={
-				// 	!validation || validation.category ? undefined : "required"
-				// }
+				error={
+					!validation || validation.category ? undefined : "required"
+				}
 			/>
 			<Input<Date>
 				id="date"

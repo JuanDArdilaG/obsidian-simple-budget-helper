@@ -1,5 +1,5 @@
 import { useContext, useEffect, useMemo, useState } from "react";
-import { BudgetItem } from "budget/BudgetItem/BudgetItem";
+import { BudgetItem, BudgetItemValidator } from "budget/BudgetItem/BudgetItem";
 import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
 import { BudgetItemRecordType } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
@@ -8,9 +8,11 @@ import { Budget } from "budget/Budget/Budget";
 import { Input } from "view/components/Input";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { SelectWithCreation } from "view/components/SelectWithCreation";
-import { Select } from "view/components/Select";
 import { Checkbox, FormControlLabel } from "@mui/material";
 import { TBudgetItem } from "../../budget/BudgetItem/BudgetItem";
+import { useBITypeAndAccountsFormFields } from "./useBITypeAndAccountsFormFields";
+
+const validator = new BudgetItemValidator();
 
 export const CreateBudgetItemModal = ({
 	budget,
@@ -34,7 +36,6 @@ export const CreateBudgetItemModal = ({
 				.sort((a, b) => a.name.localeCompare(b.name)),
 		[budget]
 	);
-	const accounts = useMemo(() => [...budget.getAccounts()].sort(), [budget]);
 	const categories = useMemo(
 		() => [...budget.getCategories()].sort(),
 		[budget]
@@ -50,17 +51,14 @@ export const CreateBudgetItemModal = ({
 			{
 				[K in keyof TBudgetItem]: boolean;
 			},
-			"history" | "id" | "path"
+			"history" | "id" | "path" | "account" | "toAccount" | "type"
 		>
 	>({
-		account: false,
 		name: false,
 		amount: false,
 		category: false,
 		frequency: false,
 		nextDate: false,
-		toAccount: false,
-		type: false,
 	});
 	const updateLock = (key: keyof TBudgetItem, value: boolean) => {
 		setLocks({
@@ -70,12 +68,32 @@ export const CreateBudgetItemModal = ({
 	};
 	const [isRecurrent, setIsRecurrent] = useState(false);
 
+	const {
+		accountsInputs,
+		account,
+		toAccount,
+		type,
+		lockAccount,
+		lockToAccount,
+	} = useBITypeAndAccountsFormFields({
+		budget,
+		item,
+	});
+
 	useEffect(() => {
 		console.log({ selectedItem });
 		if (selectedItem) {
-			update({
-				...selectedItem.toJSON(),
-			});
+			const json = selectedItem.toJSON();
+			const toUpdate: Partial<TBudgetItem> = {};
+			if (!locks.name) toUpdate.name = json.name;
+			if (!locks.amount) toUpdate.amount = json.amount;
+			if (!locks.category) toUpdate.category = json.category;
+			if (!locks.nextDate) toUpdate.nextDate = json.nextDate;
+			if (!lockToAccount) toUpdate.toAccount = json.toAccount;
+			if (!lockAccount) toUpdate.account = json.account;
+			if (!locks.frequency) toUpdate.frequency = json.frequency;
+
+			update(toUpdate);
 			setIsRecurrent(!BudgetItemSimple.IsSimple(selectedItem));
 		}
 	}, [selectedItem]);
@@ -130,6 +148,8 @@ export const CreateBudgetItemModal = ({
 		if (toEdit) setItem(toEdit);
 	}, [toEdit]);
 
+	const [validation, setValidation] = useState(validator.getAllTrue());
+
 	return (
 		<div className="create-budget-item-modal">
 			<h1>Create Budget Item</h1>
@@ -163,6 +183,7 @@ export const CreateBudgetItemModal = ({
 				}}
 				isLocked={locks.name}
 				setIsLocked={(value) => updateLock("name", value)}
+				error={validation.check("name") ?? undefined}
 			/>
 			<SelectWithCreation
 				id="category"
@@ -172,6 +193,7 @@ export const CreateBudgetItemModal = ({
 				onChange={(category) => update({ category })}
 				isLocked={locks.category}
 				setIsLocked={(value) => updateLock("category", value)}
+				error={validation.check("category") ?? undefined}
 			/>
 			<div
 				style={{
@@ -180,13 +202,6 @@ export const CreateBudgetItemModal = ({
 					alignItems: "center",
 				}}
 			>
-				<Select<BudgetItemRecordType>
-					id="type"
-					label="Type"
-					value={item.type}
-					values={["income", "expense", "transfer"]}
-					onChange={(type) => update({ type })}
-				/>
 				<Input<PriceValueObject>
 					id="amount"
 					label="Amount"
@@ -194,42 +209,10 @@ export const CreateBudgetItemModal = ({
 					onChange={(amount) => update({ amount: amount.toNumber() })}
 					isLocked={locks.amount}
 					setIsLocked={(value) => updateLock("amount", value)}
+					error={validation.check("amount") ?? undefined}
 				/>
 			</div>
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					gap: "10px",
-				}}
-			>
-				<SelectWithCreation
-					id="account"
-					label="Account: From"
-					item={item.account}
-					items={accounts}
-					onChange={(value) => update({ account: value })}
-					style={{
-						flexGrow: 1,
-					}}
-					isLocked={locks.account}
-					setIsLocked={(value) => updateLock("account", value)}
-				/>
-				{item.type === "transfer" && (
-					<SelectWithCreation
-						id="toAccount"
-						label="Account: To"
-						item={item.toAccount}
-						items={accounts}
-						onChange={(value) => update({ toAccount: value })}
-						style={{
-							flexGrow: 1,
-						}}
-						isLocked={locks.toAccount}
-						setIsLocked={(value) => updateLock("toAccount", value)}
-					/>
-				)}
-			</div>
+			{accountsInputs}
 			<Input<Date>
 				id="date"
 				label="Date"
@@ -237,6 +220,7 @@ export const CreateBudgetItemModal = ({
 				onChange={(nextDate) => update({ date: nextDate })}
 				isLocked={locks.nextDate}
 				setIsLocked={(value) => updateLock("nextDate", value)}
+				error={validation.check("nextDate") ?? undefined}
 			/>
 			<div style={{ display: "flex", alignItems: "center" }}>
 				<FormControlLabel
@@ -258,6 +242,9 @@ export const CreateBudgetItemModal = ({
 								: ""
 						}
 						onChange={(frequency) => update({ frequency })}
+						isLocked={locks.frequency}
+						setIsLocked={(value) => updateLock("frequency", value)}
+						error={validation.check("frequency") ?? undefined}
 					/>
 				)}
 			</div>
@@ -269,15 +256,23 @@ export const CreateBudgetItemModal = ({
 					console.log({
 						itemToCreate: item,
 					});
+					item.update({
+						account,
+						toAccount,
+						type,
+					});
+					const result = validator.validate(item);
+					if (!result.validate()) return setValidation(result);
 					await onSubmit(item);
 					await refresh();
+
 					setSelectedItem(
 						BudgetItemSimple.create(
-							locks.account ? item.account : "",
+							lockAccount ? item.account : "",
 							locks.name ? item.name : "",
 							locks.amount ? item.amount.toNumber() : 0,
 							locks.category ? item.category : "",
-							locks.type ? item.type : "expense",
+							"expense",
 							locks.nextDate ? item.nextDate : nextDate
 						)
 					);
@@ -293,12 +288,14 @@ export const CreateBudgetItemModal = ({
 					console.log({
 						itemToCreate: item,
 					});
+					const result = validator.validate(item);
+					if (!result.validate()) return setValidation(result);
 					await onSubmit(item);
 					await refresh();
 					close();
 				}}
 			>
-				Create
+				Save & Finish
 			</button>
 		</div>
 	);

@@ -64,7 +64,6 @@ export class RightSidebarReactViewRoot extends ItemView {
 					refresh={async () => await this.refresh()}
 					app={this.app}
 					settings={this._settings}
-					categories={budget.getCategories()}
 					statusBarAddText={(text) => this._statusBarAddText(text)}
 				/>
 			</StrictMode>

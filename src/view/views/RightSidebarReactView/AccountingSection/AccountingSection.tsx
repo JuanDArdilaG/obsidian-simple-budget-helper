@@ -1,6 +1,5 @@
 import { AccountingList } from "./AccountingList";
 import { Budget } from "budget/Budget/Budget";
-import { EditBudgetItemRecordModalRoot } from "modals/CreateBudgetItemModal/EditBudgetItemRecordModalRoot";
 import { useState } from "react";
 import {
 	AccountingSectionButtons,
@@ -13,12 +12,10 @@ import { App } from "obsidian";
 export const AccountingSection = ({
 	app,
 	budget,
-	editModal,
 	statusBarAddText,
 }: {
 	app: App;
 	budget: Budget<BudgetItem>;
-	editModal: EditBudgetItemRecordModalRoot;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) => {
 	const [sectionSelection, setSectionSelection] =
@@ -34,11 +31,7 @@ export const AccountingSection = ({
 			/>
 
 			{sectionSelection === "movements" && (
-				<AccountingList
-					app={app}
-					editModal={editModal}
-					statusBarAddText={statusBarAddText}
-				/>
+				<AccountingList app={app} statusBarAddText={statusBarAddText} />
 			)}
 
 			{sectionSelection === "accounts" && (

@@ -103,6 +103,19 @@ export class BudgetItemRecord {
 			this._date.toString().split(" GMT")[0]
 		}. amount: ${this._amount.toString()}`;
 	}
+
+	validate(): { [K in keyof TBudgetItemRecord]: boolean } {
+		return {
+			id: true,
+			item: this._itemID.length > 0,
+			name: this._name.length > 0,
+			account: this._account.length > 0,
+			date: this._date.toString() !== "Invalid Date",
+			amount: this._amount.toNumber() > 0,
+			type: true,
+			toAccount: this._type !== "transfer" || !!this._toAccount?.length,
+		};
+	}
 }
 
 export type TBudgetItemRecord = {

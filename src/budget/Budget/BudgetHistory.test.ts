@@ -18,7 +18,9 @@ describe("getBalance", () => {
 	});
 
 	it("should return the correct balance for one recurrent item", () => {
-		const { budget } = getTestBudget({ recurrent: [{}] });
+		const { budget } = getTestBudget({
+			recurrent: [{ withHistory: true }],
+		});
 		const expectedBalance = 300;
 		const budgetHistory = BudgetHistory.fromBudget(budget);
 
@@ -28,7 +30,10 @@ describe("getBalance", () => {
 	});
 
 	it("should return the correct balance for multiple items", () => {
-		const { budget } = getTestBudget({ simple: 3, recurrent: [{}, {}] });
+		const { budget } = getTestBudget({
+			simple: 3,
+			recurrent: [{ withHistory: true }, { withHistory: true }],
+		});
 		const expectedBalance = 300;
 		const budgetHistory = BudgetHistory.fromBudget(budget);
 
@@ -67,7 +72,7 @@ describe("getGroupedByYearMonthDay", () => {
 	it("should group items by year, month, and day - multiple days", () => {
 		const { budget, simple, recurrent } = getTestBudget({
 			simple: 2,
-			recurrent: [{}],
+			recurrent: [{ withHistory: true }],
 		});
 		const budgetHistory = BudgetHistory.fromBudget(budget);
 
@@ -109,6 +114,7 @@ type TestBudgetConfig = {
 type TestBudgetRecurrentConfig = {
 	frequency?: string;
 	nextDate?: Date;
+	withHistory?: boolean;
 };
 
 export const getTestBudget = (config?: TestBudgetConfig) => {
@@ -128,21 +134,23 @@ export const getTestBudget = (config?: TestBudgetConfig) => {
 				new FrequencyString(itemConfig.frequency ?? "1mo"),
 				"test"
 			);
-			item.record(
-				new Date(2024, 0, 1),
-				"account",
-				item.amount.toNumber()
-			);
-			item.record(
-				new Date(2024, 0, 2),
-				"account",
-				item.amount.toNumber()
-			);
-			item.record(
-				new Date(2024, 0, 3),
-				"account",
-				item.amount.toNumber()
-			);
+			if (itemConfig.withHistory) {
+				item.record(
+					new Date(2024, 0, 1),
+					"account",
+					item.amount.toNumber()
+				);
+				item.record(
+					new Date(2024, 0, 2),
+					"account",
+					item.amount.toNumber()
+				);
+				item.record(
+					new Date(2024, 0, 3),
+					"account",
+					item.amount.toNumber()
+				);
+			}
 			recurrentItems.push(item);
 		}
 	}

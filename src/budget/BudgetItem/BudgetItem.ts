@@ -7,6 +7,7 @@ import {
 import { TBudgetItemRecurrent } from "./BudgetItemRecurrent";
 import { TBudgetItemSimple } from "./BudgetItemSimple";
 import { nanoid } from "nanoid";
+import { ValidationResult, Validator } from "./Validator";
 
 export abstract class BudgetItem {
 	constructor(
@@ -80,6 +81,7 @@ export abstract class BudgetItem {
 		category,
 		type,
 		nextDate,
+		account,
 		toAccount,
 	}: {
 		name?: string;
@@ -87,6 +89,7 @@ export abstract class BudgetItem {
 		category?: string;
 		type?: BudgetItemRecordType;
 		nextDate?: BudgetItemNextDate;
+		account?: string;
 		toAccount?: string;
 	}) {
 		if (name) this._name = name;
@@ -94,6 +97,7 @@ export abstract class BudgetItem {
 		if (category) this._category = category;
 		if (type) this._type = type;
 		if (nextDate) this._nextDate = nextDate;
+		if (account) this._account = account;
 		if (toAccount) this._toAccount = toAccount;
 	}
 
@@ -115,7 +119,41 @@ export abstract class BudgetItem {
 	): void;
 
 	abstract removeHistoryRecord(id: string): void;
+
 	abstract toJSON(): TBudgetItem;
 }
 
 export type TBudgetItem = TBudgetItemSimple & TBudgetItemRecurrent;
+
+export class BudgetItemValidator extends Validator<TBudgetItem, BudgetItem> {
+	constructor() {
+		super({
+			id: (value) => value.id !== "",
+			name: (value) => value.name !== "",
+			account: (value) => value.account !== "",
+			amount: (value) => !value.amount.isZero(),
+			nextDate: (value) => value.nextDate !== null,
+			category: (value) => value.category !== "",
+			toAccount: (value) => value.toAccount !== "",
+			path: (_) => true,
+			history: (_) => true,
+			type: (_) => true,
+			frequency: () => true,
+		});
+	}
+}
+
+// export type TBudgetItemValidation = { [K in keyof TBudgetItem]: boolean };
+// export const BudgetItemValidationAllTrue: TBudgetItemValidation = {
+// 	id: true,
+// 	name: true,
+// 	account: true,
+// 	amount: true,
+// 	nextDate: true,
+// 	category: true,
+// 	toAccount: true,
+// 	frequency: true,
+// 	path: true,
+// 	history: true,
+// 	type: true,
+// };
