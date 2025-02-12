@@ -14,16 +14,14 @@ import { useBITypeAndAccountsFormFields } from "./useBITypeAndAccountsFormFields
 
 const validator = new BudgetItemValidator();
 
-export const CreateBudgetItemModal = ({
+export const CreateBudgetItemPanel = ({
 	budget,
 	onSubmit,
 	close,
-	toEdit,
 }: {
 	budget: Budget<BudgetItem>;
 	onSubmit: (item: BudgetItem) => Promise<void>;
 	close: () => void;
-	toEdit?: BudgetItem;
 }) => {
 	const items = useMemo(
 		() =>
@@ -144,11 +142,37 @@ export const CreateBudgetItemModal = ({
 		setItem(newItem);
 	};
 
-	useEffect(() => {
-		if (toEdit) setItem(toEdit);
-	}, [toEdit]);
-
 	const [validation, setValidation] = useState(validator.getAllTrue());
+
+	const handleSubmit = (withClose: boolean) => async () => {
+		const nextDate = new Date(item.nextDate);
+		nextDate.setSeconds(0);
+		console.log({ nextDate });
+		console.log({
+			itemToCreate: item,
+		});
+		item.update({
+			account,
+			toAccount,
+			type,
+		});
+		const result = validator.validate(item);
+		if (!result.validate()) return setValidation(result);
+		await onSubmit(item);
+		await refresh();
+
+		if (withClose) close();
+		setSelectedItem(
+			BudgetItemSimple.create(
+				lockAccount ? item.account : "",
+				locks.name ? item.name : "",
+				locks.amount ? item.amount.toNumber() : 0,
+				locks.category ? item.category : "",
+				"expense",
+				locks.nextDate ? item.nextDate : nextDate
+			)
+		);
+	};
 
 	return (
 		<div className="create-budget-item-modal">
@@ -185,31 +209,32 @@ export const CreateBudgetItemModal = ({
 				setIsLocked={(value) => updateLock("name", value)}
 				error={validation.check("name") ?? undefined}
 			/>
-			<SelectWithCreation
-				id="category"
-				label="Category"
-				item={item.category}
-				items={categories}
-				onChange={(category) => update({ category })}
-				isLocked={locks.category}
-				setIsLocked={(value) => updateLock("category", value)}
-				error={validation.check("category") ?? undefined}
-			/>
 			<div
 				style={{
 					display: "flex",
-					justifyContent: "space-around",
-					alignItems: "center",
+					alignItems: "space-around",
 				}}
 			>
 				<Input<PriceValueObject>
 					id="amount"
 					label="Amount"
+					style={{ flexGrow: 1 }}
 					value={item.amount}
 					onChange={(amount) => update({ amount: amount.toNumber() })}
 					isLocked={locks.amount}
 					setIsLocked={(value) => updateLock("amount", value)}
 					error={validation.check("amount") ?? undefined}
+				/>
+				<SelectWithCreation
+					id="category"
+					label="Category"
+					style={{ flexGrow: 1 }}
+					item={item.category}
+					items={categories}
+					onChange={(category) => update({ category })}
+					isLocked={locks.category}
+					setIsLocked={(value) => updateLock("category", value)}
+					error={validation.check("category") ?? undefined}
 				/>
 			</div>
 			{accountsInputs}
@@ -248,55 +273,8 @@ export const CreateBudgetItemModal = ({
 					/>
 				)}
 			</div>
-			<button
-				onClick={async () => {
-					const nextDate = new Date(item.nextDate);
-					nextDate.setSeconds(0);
-					console.log({ nextDate });
-					console.log({
-						itemToCreate: item,
-					});
-					item.update({
-						account,
-						toAccount,
-						type,
-					});
-					const result = validator.validate(item);
-					if (!result.validate()) return setValidation(result);
-					await onSubmit(item);
-					await refresh();
-
-					setSelectedItem(
-						BudgetItemSimple.create(
-							lockAccount ? item.account : "",
-							locks.name ? item.name : "",
-							locks.amount ? item.amount.toNumber() : 0,
-							locks.category ? item.category : "",
-							"expense",
-							locks.nextDate ? item.nextDate : nextDate
-						)
-					);
-				}}
-			>
-				Save & Create Another
-			</button>
-			<button
-				onClick={async () => {
-					const nextDate = new Date(item.nextDate);
-					nextDate.setSeconds(0);
-					console.log({ nextDate });
-					console.log({
-						itemToCreate: item,
-					});
-					const result = validator.validate(item);
-					if (!result.validate()) return setValidation(result);
-					await onSubmit(item);
-					await refresh();
-					close();
-				}}
-			>
-				Save & Finish
-			</button>
+			<button onClick={handleSubmit(false)}>Save & Create Another</button>
+			<button onClick={handleSubmit(true)}>Save & Finish</button>
 		</div>
 	);
 };

@@ -2,6 +2,7 @@ import { BudgetItemRecord } from "budget/BudgetItem/BugetItemRecord/BudgetItemRe
 import { ConfirmationModal } from "./ConfirmationModal";
 import { App } from "obsidian";
 import { ContextMenu } from "./ContextMenu";
+import { Pencil, Trash2 } from "lucide-react";
 
 export const AccountingListContextMenu = ({
 	record,
@@ -35,7 +36,7 @@ export const AccountingListContextMenu = ({
 						}}
 						onClick={async () => await onEdit(record)}
 					>
-						Edit
+						<Pencil size={16} /> Edit
 					</li>
 					<li
 						style={{
@@ -51,7 +52,7 @@ export const AccountingListContextMenu = ({
 							await refresh();
 						}}
 					>
-						Delete
+						<Trash2 size={16} /> Delete
 					</li>
 				</ul>
 			}

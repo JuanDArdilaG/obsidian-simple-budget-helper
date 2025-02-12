@@ -1,43 +1,31 @@
-import { RefreshCcw } from "lucide-react";
-import { useContext } from "react";
-import { BudgetContext } from "./RightSidebarReactView";
+import { CalendarSync, ListCollapse, Menu } from "lucide-react";
+import { JSX } from "react";
 
 export type SidebarSections = "recurrentItems" | "accounting";
 
 export const SectionButtons = ({
 	selected,
 	setSelected,
-	refresh,
 }: {
 	selected: SidebarSections;
 	setSelected: (selected: SidebarSections) => void;
-	refresh: () => void;
 }) => {
-	const { updateBudget } = useContext(BudgetContext);
-
 	return (
 		<div className="section-buttons-container">
-			<button
-				style={{ float: "left" }}
-				onClick={async () => {
-					refresh();
-					await updateBudget();
-				}}
-			>
-				<RefreshCcw size={16} />
-			</button>
 			<div className="section-buttons">
-				<SectionButton
-					type="recurrentItems"
-					label="Recurrent Items"
-					selected={selected}
-					onClick={() => setSelected("recurrentItems")}
-				/>
 				<SectionButton
 					type="accounting"
 					label="Accounting"
+					icon={<ListCollapse size={16} />}
 					selected={selected}
 					onClick={() => setSelected("accounting")}
+				/>
+				<SectionButton
+					type="recurrentItems"
+					label="Recurrent"
+					icon={<CalendarSync size={16} />}
+					selected={selected}
+					onClick={() => setSelected("recurrentItems")}
 				/>
 			</div>
 		</div>
@@ -46,11 +34,13 @@ export const SectionButtons = ({
 
 export const SectionButton = ({
 	label,
+	icon,
 	type,
 	selected,
 	onClick,
 }: {
 	label: string;
+	icon?: JSX.Element;
 	type: string;
 	selected: string;
 	onClick?: () => void;
@@ -61,7 +51,8 @@ export const SectionButton = ({
 			onClick={onClick}
 			disabled={selected === type}
 		>
-			{label}
+			{icon}
+			{!icon || selected === type ? " " + label : ""}
 		</button>
 	);
 };

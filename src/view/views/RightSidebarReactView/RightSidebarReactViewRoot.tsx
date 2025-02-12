@@ -8,22 +8,14 @@ import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { SimpleBudgetHelperSettings } from "SettingTab";
 import { BudgetItemRecurrentMDFormatter } from "budget/BudgetItem/BudgetItemMDFormatter";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
+import SimpleBudgetHelperPlugin from "main";
 
 export class RightSidebarReactViewRoot extends ItemView {
 	root: Root | null = null;
 
 	constructor(
 		leaf: WorkspaceLeaf,
-		private _app: App,
-		private _settings: SimpleBudgetHelperSettings,
-		private _getBudget: (
-			app: App,
-			rootFolder: string
-		) => Promise<Budget<BudgetItem>>,
-		private _updateItemInFile: (
-			item: BudgetItem,
-			operation: "add" | "modify" | "remove"
-		) => Promise<void>,
+		private _plugin: SimpleBudgetHelperPlugin,
 		private _statusBarAddText: (val: string | DocumentFragment) => void
 	) {
 		super(leaf);
@@ -47,23 +39,18 @@ export class RightSidebarReactViewRoot extends ItemView {
 	}
 
 	async refresh() {
-		const budget = await this._getBudget(
-			this._app,
-			this._settings.rootFolder
+		const budget = await this._plugin._getBudget(
+			this._plugin.app,
+			this._plugin.settings.rootFolder
 		);
 		console.log({ refreshed: budget });
 		this.root?.render(
 			<StrictMode>
 				<RightSidebarReactView
 					budget={budget}
-					getBudget={(app, rootFolder) =>
-						this._getBudget(app, rootFolder)
-					}
+					plugin={this._plugin}
 					onRecord={(item) => this._updateFileOnRecord(item)}
-					updateItemFile={this._updateItemInFile}
 					refresh={async () => await this.refresh()}
-					app={this.app}
-					settings={this._settings}
 					statusBarAddText={(text) => this._statusBarAddText(text)}
 				/>
 			</StrictMode>
@@ -73,7 +60,8 @@ export class RightSidebarReactViewRoot extends ItemView {
 	private async _updateFileOnRecord(newItem: BudgetItem) {
 		const { vault } = this.app;
 		const file = vault.getFileByPath(
-			`${this._settings.rootFolder}/${newItem.filePath}`
+			newItem.filePath ??
+				`${this._plugin.settings.rootFolder}/${newItem.name}.md`
 		);
 		if (!file) return;
 

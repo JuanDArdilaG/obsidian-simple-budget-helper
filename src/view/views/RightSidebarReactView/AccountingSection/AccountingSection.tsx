@@ -8,6 +8,7 @@ import {
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { AccountsList } from "./AccountsList";
 import { App } from "obsidian";
+import { RightSidebarReactTab } from "../RightSidebarReactTab";
 
 export const AccountingSection = ({
 	app,
@@ -22,21 +23,17 @@ export const AccountingSection = ({
 		useState<SectionSelection>("movements");
 
 	return (
-		<>
-			<h1>Accounting</h1>
-
+		<RightSidebarReactTab title="Accounting">
 			<AccountingSectionButtons
 				selected={sectionSelection}
 				setSelected={setSectionSelection}
 			/>
-
 			{sectionSelection === "movements" && (
 				<AccountingList app={app} statusBarAddText={statusBarAddText} />
 			)}
-
 			{sectionSelection === "accounts" && (
 				<AccountsList budget={budget} />
 			)}
-		</>
+		</RightSidebarReactTab>
 	);
 };

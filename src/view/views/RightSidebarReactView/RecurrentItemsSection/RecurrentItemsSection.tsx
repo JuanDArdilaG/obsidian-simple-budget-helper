@@ -9,6 +9,8 @@ import { AllItemsRightSidebarReactTab } from "./Tabs/AllItemsRightSidebarReactVi
 import { CalendarRightSidebarReactTab } from "./Tabs/CalendarRightSidebarReactView";
 import { App } from "obsidian";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
+import { RightSidebarReactTab } from "../RightSidebarReactTab";
+import { PerCategoryRightSidebarReactTab } from "./PerCategoryRightSidebarReactTab";
 
 export const RecurrentItemsSection = ({
 	budget,
@@ -20,13 +22,12 @@ export const RecurrentItemsSection = ({
 	app: App;
 }) => {
 	const [sectionSelection, setSectionSelection] =
-		useState<SectionSelection>("calendar");
+		useState<SectionSelection>("perCategory");
 
 	const orderedBudget = useMemo(() => budget.orderByNextDate(), [budget]);
 
 	return (
-		<>
-			<h1>Recurrent Items</h1>
+		<RightSidebarReactTab title="Recurrent Items">
 			<RecurrentItemsSectionButtons
 				selected={sectionSelection}
 				setSelected={setSectionSelection}
@@ -46,6 +47,9 @@ export const RecurrentItemsSection = ({
 					app={app}
 				/>
 			)}
-		</>
+			{sectionSelection === "perCategory" && (
+				<PerCategoryRightSidebarReactTab />
+			)}
+		</RightSidebarReactTab>
 	);
 };

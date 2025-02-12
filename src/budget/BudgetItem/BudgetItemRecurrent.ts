@@ -73,8 +73,8 @@ export class BudgetItemRecurrent extends BudgetItem {
 		return item instanceof BudgetItemRecurrent;
 	}
 
-	get folderPath(): string {
-		return "Recurrent";
+	get filePath(): string {
+		return this._path;
 	}
 
 	get history(): BudgetItemRecord[] {
@@ -214,7 +214,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 			type: this._type,
 			nextDate: this._nextDate.toDate(),
 			toAccount: this._toAccount,
-			path: this._path ?? "",
+			path: this._path,
 			frequency: this._frequency.toString(),
 			history: this._history.toString(),
 		};

@@ -1,3 +1,6 @@
+import { CalendarClock, List, Logs } from "lucide-react";
+import { JSX } from "react";
+
 export type SectionSelection = "calendar" | "list" | "perCategory";
 
 export const RecurrentItemsSectionButtons = ({
@@ -12,19 +15,22 @@ export const RecurrentItemsSectionButtons = ({
 			<div className="section-buttons">
 				<SectionButton
 					type="calendar"
-					label="Calendar"
+					label="Upcoming"
+					icon={<CalendarClock size={16} />}
 					selected={selected}
 					onClick={() => setSelected("calendar")}
 				/>
 				<SectionButton
 					type="list"
-					label="All Items"
+					label="All"
+					icon={<List size={16} />}
 					selected={selected}
 					onClick={() => setSelected("list")}
 				/>
 				<SectionButton
-					type="perCategory"
 					label="Per Category"
+					type="perCategory"
+					icon={<Logs size={16} />}
 					selected={selected}
 					onClick={() => setSelected("perCategory")}
 				/>
@@ -35,11 +41,13 @@ export const RecurrentItemsSectionButtons = ({
 
 export const SectionButton = ({
 	label,
+	icon,
 	type,
 	selected,
 	onClick,
 }: {
 	label: string;
+	icon?: JSX.Element;
 	type: string;
 	selected: string;
 	onClick?: () => void;
@@ -50,7 +58,8 @@ export const SectionButton = ({
 			onClick={onClick}
 			disabled={selected === type}
 		>
-			{label}
+			{icon}
+			{!icon || selected === type ? " " + label : ""}
 		</button>
 	);
 };

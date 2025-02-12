@@ -25,6 +25,7 @@ export const CalendarRightSidebarReactTab = ({
 
 	const settings = useContext(SettingsContext);
 	const [selectedItem, setSelectedItem] = useState<BudgetItemRecurrent>();
+	const [editionIsActive, setEditionIsActive] = useState(false);
 
 	useEffect(() => {
 		setBudgetItems(
@@ -44,6 +45,7 @@ export const CalendarRightSidebarReactTab = ({
 		<>
 			{selectedItem && (
 				<BudgetItemsListContextMenu
+					setEditionIsActive={setEditionIsActive}
 					item={selectedItem}
 					openFile={async () => {
 						if (selectedItem.path) {
@@ -69,15 +71,17 @@ export const CalendarRightSidebarReactTab = ({
 						? "Week"
 						: "3 Days"
 				}`}
+				subtitle
 			>
 				<TimeframeButtons
 					selected={timeframe}
 					setSelected={setTimeframe}
 				/>
 				<BudgetItemsList
+					editionIsActive={editionIsActive}
+					setEditionIsActive={setEditionIsActive}
 					budgetItems={budgetItems}
 					onRecord={onRecord}
-					app={app}
 					selectedItem={selectedItem}
 					setSelectedItem={setSelectedItem}
 				/>

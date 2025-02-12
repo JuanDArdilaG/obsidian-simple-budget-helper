@@ -5,6 +5,7 @@ import {
 	BudgetItemRecordType,
 } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { monthIndexToAbbr } from "utils/date";
+import { Logger } from "utils/logger";
 
 type HistoryConfig = {
 	sinceDate?: Date;
@@ -33,7 +34,8 @@ export class BudgetHistory {
 
 	static fromBudget(
 		budget: Budget<BudgetItem>,
-		account?: string
+		account?: string,
+		category?: string
 	): BudgetHistory {
 		let history = new BudgetHistory(
 			budget.items
@@ -46,6 +48,11 @@ export class BudgetHistory {
 
 		if (account)
 			history = new BudgetHistory(history.filterByAccount(account));
+
+		if (category)
+			history = new BudgetHistory(
+				history.filterByCategory(budget, category)
+			);
 
 		return history;
 	}
@@ -87,6 +94,38 @@ export class BudgetHistory {
 		}, {} as GroupByYearMonthDay);
 	}
 
+	static groupByCategory(
+		budget: Budget<BudgetItem>,
+		byYearMonth: {
+			[day: number]: BudgetItemRecord[];
+		}
+	): Record<string, BudgetHistory> {
+		const result: Record<string, BudgetHistory> = {};
+		for (const day of Object.keys(byYearMonth)) {
+			byYearMonth[Number(day)].forEach((record) => {
+				const item = budget.getItemByID(record.itemID);
+				if (!item) return;
+				if (!result[item.category]) {
+					result[item.category] = new BudgetHistory([]);
+				}
+				result[item.category].history.push(record);
+			});
+		}
+		return result;
+	}
+
+	onlyExpense(): BudgetHistory {
+		return new BudgetHistory(
+			this._history.filter((item) => item.type === "expense")
+		);
+	}
+
+	onlyIncome(): BudgetHistory {
+		return new BudgetHistory(
+			this._history.filter((item) => item.type === "income")
+		);
+	}
+
 	getAccounts(): string[] {
 		const accounts: string[] = [];
 		for (const record of this._history) {
@@ -118,6 +157,23 @@ export class BudgetHistory {
 		return this.history.filter(
 			(item) => item.account === account || item.toAccount === account
 		);
+	}
+
+	filterByCategory(
+		budget: Budget<BudgetItem>,
+		category: string
+	): BudgetItemRecord[] {
+		return this.history.filter((record) => {
+			const item = budget.getItemByID(record.itemID);
+			Logger.debug("filtering by category", {
+				record,
+				item,
+				itemCategory: item?.category,
+				category,
+			});
+			if (!item) return false;
+			return item.category === category;
+		});
 	}
 
 	private _getTotalHistory(config?: HistoryConfig): number {

@@ -42,7 +42,13 @@ export const Input = <T extends NonNullable<InputValue>>({
 						alignItems: "center",
 					}}
 				>
-					<div style={error ? { border: "1px solid red" } : {}}>
+					<div
+						style={
+							error
+								? { border: "1px solid var(--color-red)" }
+								: {}
+						}
+					>
 						<ReactMoneyInput
 							id={`${id}-input-react`}
 							initialValue={value?.toNumber() ?? undefined}
@@ -120,7 +126,10 @@ export const Input = <T extends NonNullable<InputValue>>({
 					onChange={(e) => onChange(e.target.value as T)}
 					style={
 						error
-							? { border: "1px solid red", width: "100%" }
+							? {
+									border: "1px solid var(--color-red)",
+									width: "100%",
+							  }
 							: { width: "100%" }
 					}
 					list={datalist}

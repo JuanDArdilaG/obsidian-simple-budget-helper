@@ -6,13 +6,13 @@ import {
 	SimpleBudgetHelperSettings,
 } from "./SettingTab";
 import { RightSidebarReactViewRoot } from "./view/views/RightSidebarReactView/RightSidebarReactViewRoot";
-import { Commands } from "commands";
 import { LeftMenuItems } from "ribbonIcon";
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItemRecurrentMDFormatter } from "budget/BudgetItem/BudgetItemMDFormatter";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
+import { Logger } from "utils/logger";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
@@ -46,35 +46,20 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		const simpleTransactionsFile = await this.initFoldersAndFiles();
 		if (!simpleTransactionsFile) throw new Error("Failed to create file.");
 
-		const budget = await this._getBudget(
-			this.app,
-			this.settings.rootFolder
-		);
-
 		const statusBarItem = this.addStatusBarItem();
-
 		this.registerView(
 			views.LIST_BUDGET_ITEMS_REACT.type,
 			(leaf) =>
-				new RightSidebarReactViewRoot(
-					leaf,
-					this.app,
-					this.settings,
-					this._getBudget,
-					(item, operation) =>
-						this._updateItemInFile(item, operation),
-					(text) => statusBarItem.setText(text)
+				new RightSidebarReactViewRoot(leaf, this, (text) =>
+					statusBarItem.setText(text)
 				)
 		);
 
 		this.addSettingTab(new SettingTab(this.app, this));
-		Commands.CreateBudgetItemModal(this, budget, (item, operation) =>
-			this._updateItemInFile(item, operation)
-		);
 		LeftMenuItems.RightSidebarPanel(this);
 	}
 
-	private async _updateItemInFile(
+	async _updateItemInFile(
 		item: BudgetItem,
 		operation: "add" | "modify" | "remove"
 	) {
@@ -82,7 +67,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		if (operation === "add") {
 			if (item instanceof BudgetItemRecurrent) {
 				await this.app.vault.create(
-					`${this.settings.rootFolder}/${item.filePath}`,
+					`${this.settings.rootFolder}/${item.name}.md`,
 					new BudgetItemRecurrentMDFormatter(item).toMarkdown()
 				);
 				return;
@@ -102,7 +87,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		} else if (operation === "remove") {
 			if (item instanceof BudgetItemRecurrent) {
 				const file = this.app.vault.getAbstractFileByPath(
-					`${this.settings.rootFolder}/${item.filePath}`
+					item.filePath
 				);
 				if (!file || !(file instanceof TFile)) return;
 				await this.app.vault.modify(
@@ -127,8 +112,13 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 			});
 			if (item instanceof BudgetItemRecurrent) {
 				const file = this.app.vault.getAbstractFileByPath(
-					`${this.settings.rootFolder}/${item.filePath}`
+					item.filePath
 				);
+				Logger.debug("modifying file", {
+					path: item.filePath,
+					file,
+					isFile: file instanceof TFile,
+				});
 				if (!file || !(file instanceof TFile)) return;
 				await this.app.vault.modify(
 					file,
@@ -150,7 +140,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		}
 	}
 
-	private async _getBudget(
+	async _getBudget(
 		app: App,
 		rootFolder: string
 	): Promise<Budget<BudgetItem>> {

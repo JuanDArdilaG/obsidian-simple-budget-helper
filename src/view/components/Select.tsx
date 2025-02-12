@@ -1,6 +1,6 @@
 import { LockField } from "./LockField";
 
-export const Select = <T extends string>({
+export const Select = <T extends string | number>({
 	id,
 	label,
 	value,
@@ -24,7 +24,13 @@ export const Select = <T extends string>({
 			<label htmlFor={`${id}-input`}>{label}</label>
 			<select
 				defaultValue={value}
-				onChange={(e) => onChange(e.target.value as T)}
+				onChange={(e) =>
+					onChange(
+						(typeof value === "string"
+							? e.target.value
+							: Number(e.target.value)) as T
+					)
+				}
 				style={error ? { border: "1px solid red" } : {}}
 			>
 				{Array.isArray(values)

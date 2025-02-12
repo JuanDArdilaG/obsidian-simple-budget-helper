@@ -24,6 +24,7 @@ export const AllItemsRightSidebarReactTab = ({
 		<>
 			{selectedItem && (
 				<BudgetItemsListContextMenu
+					setEditionIsActive={() => {}}
 					item={selectedItem}
 					openFile={async () => {
 						if (selectedItem.path) {
@@ -37,15 +38,15 @@ export const AllItemsRightSidebarReactTab = ({
 					}}
 				/>
 			)}
-			<RightSidebarReactTab title="All Items">
+			<RightSidebarReactTab title="All Items" subtitle>
 				<BudgetItemsList
+					editionIsActive={false}
 					setSelectedItem={setSelectedItem}
 					budgetItems={budget.onlyRecurrent().items.map((item) => ({
 						item,
 						dates: [item.nextDate],
 					}))}
 					onRecord={onRecord}
-					app={app}
 					totalPerMonth
 				/>
 			</RightSidebarReactTab>

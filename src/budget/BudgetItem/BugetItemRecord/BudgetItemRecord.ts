@@ -82,6 +82,13 @@ export class BudgetItemRecord {
 		return this._amount;
 	}
 
+	get realAmount(): BudgetItemRecordAmount {
+		return new BudgetItemRecordAmount(
+			this.amount.toNumber() *
+				(this.type === "expense" ? -1 : this.type === "income" ? 1 : 0)
+		);
+	}
+
 	update(
 		name: string,
 		account: string,

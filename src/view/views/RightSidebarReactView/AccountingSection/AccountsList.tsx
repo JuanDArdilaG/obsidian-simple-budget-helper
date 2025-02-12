@@ -7,6 +7,7 @@ import { AccountsListContextMenu } from "./AccountsListContextMenu";
 import { FileOperationsContext } from "../RightSidebarReactView";
 import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
 import { Logger } from "utils/logger";
+import { RightSidebarReactTab } from "../RightSidebarReactTab";
 
 export const AccountsList = ({ budget }: { budget: Budget<BudgetItem> }) => {
 	const { itemOperations, refresh } = useContext(FileOperationsContext);
@@ -19,7 +20,7 @@ export const AccountsList = ({ budget }: { budget: Budget<BudgetItem> }) => {
 	}, [budget]);
 
 	return (
-		<>
+		<RightSidebarReactTab title="Accounts" subtitle>
 			{selectedAccount && (
 				<AccountsListContextMenu
 					actualAmount={byAccount[selectedAccount].getBalance({
@@ -47,7 +48,6 @@ export const AccountsList = ({ budget }: { budget: Budget<BudgetItem> }) => {
 					}}
 				/>
 			)}
-			<h2>Accounts</h2>
 			<ul>
 				{Object.keys(byAccount).map((account, i) => (
 					<li
@@ -73,6 +73,6 @@ export const AccountsList = ({ budget }: { budget: Budget<BudgetItem> }) => {
 					})
 				).toString()}
 			</div>
-		</>
+		</RightSidebarReactTab>
 	);
 };

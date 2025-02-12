@@ -2,7 +2,7 @@ import { MouseEvent, useEffect, useState } from "react";
 import { ContextMenu } from "./ContextMenu";
 import { Input } from "view/components/Input";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { CheckCircle, CircleX } from "lucide-react";
+import { CheckCircle, CircleX, EqualNot } from "lucide-react";
 import { Logger } from "utils/logger";
 
 export const AccountsListContextMenu = ({
@@ -47,7 +47,10 @@ export const AccountsListContextMenu = ({
 						},
 						{ on: false }
 					);
-					return (e.target as HTMLElement)?.innerText === "Adjust";
+					return (
+						(e.target as HTMLElement)?.innerText?.trim() ===
+						"Adjust"
+					);
 				},
 			}}
 			menu={
@@ -69,7 +72,7 @@ export const AccountsListContextMenu = ({
 							setAskForNewAmount(!askForNewAmount);
 						}}
 					>
-						Adjust
+						<EqualNot size={16} /> Adjust
 					</li>
 					{askForNewAmount && (
 						<div style={{ display: "flex", width: "100%" }}>

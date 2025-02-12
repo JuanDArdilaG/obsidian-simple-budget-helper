@@ -59,11 +59,7 @@ export abstract class BudgetItem {
 
 	abstract get history(): BudgetItemRecord[];
 
-	abstract get folderPath(): string;
-
-	get filePath(): string {
-		return `${this.folderPath}/${this._name}.md`;
-	}
+	abstract get filePath(): string;
 
 	get remainingDays(): { str: string; color: "green" | "yellow" | "red" } {
 		const rd = this.nextDate.remainingDays;
@@ -134,7 +130,8 @@ export class BudgetItemValidator extends Validator<TBudgetItem, BudgetItem> {
 			amount: (value) => !value.amount.isZero(),
 			nextDate: (value) => value.nextDate !== null,
 			category: (value) => value.category !== "",
-			toAccount: (value) => value.toAccount !== "",
+			toAccount: (value) =>
+				value.type !== "transfer" || value.toAccount !== "",
 			path: (_) => true,
 			history: (_) => true,
 			type: (_) => true,

@@ -78,8 +78,8 @@ export class BudgetItemSimple extends BudgetItem {
 		];
 	}
 
-	get folderPath(): string {
-		return "Simple";
+	get filePath(): string {
+		return "Simple.md";
 	}
 
 	record(date: Date, account: string, amount?: number): void {
@@ -122,7 +122,7 @@ export class BudgetItemSimple extends BudgetItem {
 			type: this._type,
 			nextDate: this._nextDate,
 			toAccount: this._toAccount,
-			path: this.folderPath,
+			path: this.filePath,
 			history: this.history.toString(),
 			frequency: "",
 		};

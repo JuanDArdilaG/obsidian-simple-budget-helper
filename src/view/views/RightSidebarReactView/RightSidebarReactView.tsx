@@ -4,11 +4,11 @@ import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { SectionButtons, SidebarSections } from "./SectionButtons";
 import { RecurrentItemsSection } from "./RecurrentItemsSection/RecurrentItemsSection";
 import { AccountingSection } from "./AccountingSection/AccountingSection";
-import { App } from "obsidian";
 import { DEFAULT_SETTINGS } from "SettingTab";
-import { SimpleBudgetHelperSettings } from "../../../SettingTab";
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { useCommands } from "./useCommands";
+import SimpleBudgetHelperPlugin from "main";
+import { CreateBudgetItemPanel } from "modals/CreateBudgetItemModal/CreateBudgetItemPanel";
+import { ActionButtons } from "./ActionButtons";
 
 export const SettingsContext = createContext(DEFAULT_SETTINGS);
 export const FileOperationsContext = createContext({
@@ -25,33 +25,31 @@ export const BudgetContext = createContext({
 
 export const RightSidebarReactView = ({
 	budget,
-	getBudget,
 	onRecord,
-	updateItemFile,
 	refresh,
-	app,
-	settings,
 	statusBarAddText,
+	plugin,
 }: {
-	getBudget: (app: App, rootFolder: string) => Promise<Budget<BudgetItem>>;
 	budget: Budget<BudgetItem>;
 	onRecord: (item: BudgetItem) => void;
-	updateItemFile: (
-		item: BudgetItem,
-		operation: "add" | "modify" | "remove"
-	) => Promise<void>;
+	plugin: SimpleBudgetHelperPlugin;
 	refresh: () => Promise<void>;
-	app: App;
-	settings: SimpleBudgetHelperSettings;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) => {
+	useCommands({
+		plugin,
+		budget,
+		updateFiles: plugin._updateItemInFile,
+	});
 	const [sectionSelection, setSectionSelection] =
-		useState<SidebarSections>("recurrentItems");
+		useState<SidebarSections>("accounting");
 
 	const [innerBudget, setInnerBudget] = useState(budget);
 
 	const updateBudget = async () => {
-		setInnerBudget(await getBudget(app, settings.rootFolder));
+		setInnerBudget(
+			await plugin._getBudget(plugin.app, plugin.settings.rootFolder)
+		);
 	};
 
 	const onlyRecurrent = useMemo(
@@ -63,38 +61,60 @@ export const RightSidebarReactView = ({
 		[innerBudget]
 	);
 
-	return (
-		<LocalizationProvider dateAdapter={AdapterDayjs}>
-			<SettingsContext.Provider value={settings}>
-				<FileOperationsContext.Provider
-					value={{ itemOperations: updateItemFile, refresh }}
-				>
-					<BudgetContext.Provider
-						value={{ budget: innerBudget, updateBudget }}
-					>
-						<SectionButtons
-							selected={sectionSelection}
-							setSelected={setSectionSelection}
-							refresh={refresh}
-						/>
+	const [showCreateForm, setShowCreateForm] = useState(false);
 
-						{sectionSelection === "recurrentItems" && (
-							<RecurrentItemsSection
-								budget={onlyRecurrent}
-								onRecord={onRecord}
-								app={app}
-							/>
-						)}
-						{sectionSelection === "accounting" && (
-							<AccountingSection
-								app={app}
-								statusBarAddText={statusBarAddText}
-								budget={orderedBudget}
-							/>
-						)}
-					</BudgetContext.Provider>
-				</FileOperationsContext.Provider>
-			</SettingsContext.Provider>
-		</LocalizationProvider>
+	return (
+		<SettingsContext.Provider value={plugin.settings}>
+			<FileOperationsContext.Provider
+				value={{
+					itemOperations: (item, operation) =>
+						plugin._updateItemInFile(item, operation),
+					refresh: async () => {
+						await updateBudget();
+						// await refresh();
+					},
+				}}
+			>
+				<BudgetContext.Provider
+					value={{ budget: innerBudget, updateBudget }}
+				>
+					<ActionButtons
+						refresh={refresh}
+						create={async () => setShowCreateForm(!showCreateForm)}
+						isCreating={showCreateForm}
+					/>
+					{showCreateForm && (
+						<CreateBudgetItemPanel
+							budget={innerBudget}
+							onSubmit={async (item) => {
+								await plugin._updateItemInFile(item, "add");
+								await updateBudget();
+								setShowCreateForm(false);
+							}}
+							close={() => setShowCreateForm(false)}
+						/>
+					)}
+					<SectionButtons
+						selected={sectionSelection}
+						setSelected={setSectionSelection}
+					/>
+
+					{sectionSelection === "recurrentItems" && (
+						<RecurrentItemsSection
+							budget={onlyRecurrent}
+							onRecord={onRecord}
+							app={plugin.app}
+						/>
+					)}
+					{sectionSelection === "accounting" && (
+						<AccountingSection
+							app={plugin.app}
+							statusBarAddText={statusBarAddText}
+							budget={orderedBudget}
+						/>
+					)}
+				</BudgetContext.Provider>
+			</FileOperationsContext.Provider>
+		</SettingsContext.Provider>
 	);
 };

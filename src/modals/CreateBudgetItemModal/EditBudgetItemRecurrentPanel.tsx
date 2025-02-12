@@ -1,5 +1,4 @@
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
-import { BudgetItemRecord } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
 import { useContext, useMemo, useState } from "react";
 import { BudgetItemRecordType } from "../../budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
@@ -8,29 +7,33 @@ import { Select } from "view/components/Select";
 import { SelectWithCreation } from "view/components/SelectWithCreation";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { BudgetContext } from "view/views/RightSidebarReactView/RightSidebarReactView";
+import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
+import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
+import { FrequencyString } from "budget/BudgetItem/FrequencyString";
 
-export const EditBudgetItemRecordPanel = ({
-	record,
-	onUpdate,
+export const EditBudgetItemRecurrentPanel = ({
+	item,
+	onEdit,
+	onClose,
 }: {
-	record: BudgetItemRecord;
-	onUpdate: (item: BudgetItem) => Promise<void>;
+	item: BudgetItemRecurrent;
+	onEdit: (item: BudgetItem) => Promise<void>;
+	onClose: () => void;
 }) => {
 	const { budget } = useContext(BudgetContext);
 	const categories = useMemo(() => budget.getCategories(), [budget]);
-	const item = useMemo(() => budget.getItemByID(record.itemID), [budget]);
 
-	const [name, setName] = useState(record.name);
-	const [amount, setAmount] = useState(record.amount);
-	const [type, setType] = useState(record.type);
+	const [name, setName] = useState(item.name);
+	const [amount, setAmount] = useState(item.amount);
+	const [type, setType] = useState(item.type);
 
 	const [category, setCategory] = useState(item?.category || "");
 
-	const [account, setAccount] = useState(record.account);
+	const [account, setAccount] = useState(item.account);
 
-	const [toAccount, setToAccount] = useState(record.toAccount || "");
+	const [frequency, setFrequency] = useState(String(item.frequency) || "");
 
-	const [date, setDate] = useState(record.date);
+	const [date, setDate] = useState(item.nextDate.toDate());
 	const [validation, setValidation] = useState<
 		Record<string, boolean> | undefined
 	>(undefined);
@@ -40,7 +43,7 @@ export const EditBudgetItemRecordPanel = ({
 		account: account.length > 0,
 		date: date.toString() !== "Invalid Date",
 		category: category.length > 0,
-		toAccount: type !== "transfer" || toAccount.length > 0,
+		frequency: frequency.length > 0,
 	});
 
 	return (
@@ -87,20 +90,6 @@ export const EditBudgetItemRecordPanel = ({
 					!validation || validation.account ? undefined : "required"
 				}
 			/>
-			{type === "transfer" && (
-				<SelectWithCreation
-					id="to-account"
-					label="To"
-					item={toAccount}
-					items={budget.getAccounts()}
-					onChange={(account) => setToAccount(account ?? "")}
-					error={
-						!validation || validation.toAccount
-							? undefined
-							: "required"
-					}
-				/>
-			)}
 			<SelectWithCreation
 				id="category"
 				label="Category"
@@ -118,6 +107,15 @@ export const EditBudgetItemRecordPanel = ({
 				onChange={setDate}
 				error={!validation || validation.date ? undefined : "required"}
 			/>
+			<Input
+				id="frequency"
+				label="Frequency"
+				value={frequency}
+				onChange={(account) => setFrequency(account ?? "")}
+				error={
+					!validation || validation.toAccount ? undefined : "required"
+				}
+			/>
 			<button
 				onClick={async () => {
 					const validation = validateOnUpdate();
@@ -127,31 +125,22 @@ export const EditBudgetItemRecordPanel = ({
 
 					date.setSeconds(0);
 
-					if (!item) return;
-					if (item instanceof BudgetItemSimple) {
-						item.updateHistoryRecord(
-							record.id,
+					await onEdit(
+						new BudgetItemRecurrent(
+							item.id,
 							name,
 							account,
-							date,
-							type,
 							amount.toNumber(),
 							category,
-							type === "transfer" ? toAccount : undefined
-						);
-					} else {
-						item.updateHistoryRecord(
-							record.id,
-							name,
-							account,
-							date,
 							type,
-							amount.toNumber(),
-							category
-						);
-					}
+							new BudgetItemNextDate(date, true),
+							item.path,
+							new FrequencyString(frequency),
+							item.history
+						)
+					);
 
-					await onUpdate(item);
+					onClose();
 				}}
 			>
 				Create

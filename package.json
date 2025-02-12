@@ -45,6 +45,7 @@
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"react-icons": "^5.4.0",
-		"react-input-price": "0.0.2-alpha.2"
+		"react-input-price": "0.0.2-alpha.2",
+		"recharts": "^2.15.1"
 	}
 }

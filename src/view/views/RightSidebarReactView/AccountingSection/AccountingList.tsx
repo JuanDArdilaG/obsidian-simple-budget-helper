@@ -11,6 +11,7 @@ import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 import { App } from "obsidian";
 import { Logger } from "utils/logger";
 import { EditBudgetItemRecordPanel } from "modals/CreateBudgetItemModal/EditBudgetItemRecordPanel";
+import { RightSidebarReactTab } from "../RightSidebarReactTab";
 
 export function AccountingList({
 	app,
@@ -19,23 +20,27 @@ export function AccountingList({
 	app: App;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) {
-	const fileOperations = useContext(FileOperationsContext);
+	const { refresh, itemOperations } = useContext(FileOperationsContext);
 	const { budget } = useContext(BudgetContext);
 	const accounts = useMemo(() => budget.getAccounts(), [budget]);
+	const categories = useMemo(() => budget.getCategories(), [budget]);
 
 	const [accountFilter, setAccountFilter] = useState("");
+	const [categoryFilter, setCategoryFilter] = useState("");
 
 	const budgetHistory = useMemo(() => {
 		const history = BudgetHistory.fromBudget(
 			budget,
-			accountFilter ?? undefined
+			accountFilter ?? undefined,
+			categoryFilter ?? undefined
 		);
 		Logger.debug("history with filter", {
 			filter: accountFilter,
+			category: categoryFilter,
 			history,
 		});
 		return history;
-	}, [budget, accountFilter]);
+	}, [budget, accountFilter, categoryFilter]);
 	const filteredHistory = useMemo(() => {
 		const history = budgetHistory.getGroupedByYearMonthDay();
 		Logger.debug("grouped filtered history", { history });
@@ -90,7 +95,7 @@ export function AccountingList({
 	}, [selectionActive]);
 
 	return (
-		<div>
+		<RightSidebarReactTab title="Accounting" subtitle>
 			<select
 				name="account"
 				id="account-filter"
@@ -100,6 +105,18 @@ export function AccountingList({
 				{accounts.map((account) => (
 					<option value={account} key={account}>
 						{account}
+					</option>
+				))}
+			</select>
+			<select
+				name="category"
+				id="category-filter"
+				onChange={(e) => setCategoryFilter(e.target.value)}
+			>
+				<option value="">All categories</option>
+				{categories.map((category) => (
+					<option value={category} key={category}>
+						{category}
 					</option>
 				))}
 			</select>
@@ -116,10 +133,10 @@ export function AccountingList({
 						if (item instanceof BudgetItemRecurrent) {
 							item.removeHistoryRecord(record.id);
 						}
-						await fileOperations.itemOperations(item, "remove");
-						await fileOperations.refresh();
+						await itemOperations(item, "remove");
+						await refresh();
 					}}
-					refresh={async () => await fileOperations.refresh()}
+					refresh={async () => await refresh()}
 				/>
 			)}
 			{Object.keys(filteredHistory)
@@ -412,14 +429,15 @@ export function AccountingList({
 																				record ===
 																					selectedRecord && (
 																					<EditBudgetItemRecordPanel
-																						onUpdate={(
+																						onUpdate={async (
 																							item
-																						) =>
-																							fileOperations.itemOperations(
+																						) => {
+																							await itemOperations(
 																								item,
 																								"modify"
-																							)
-																						}
+																							);
+																							await refresh();
+																						}}
 																						record={
 																							record
 																						}
@@ -437,7 +455,7 @@ export function AccountingList({
 							})}
 					</div>
 				))}
-		</div>
+		</RightSidebarReactTab>
 	);
 }
 

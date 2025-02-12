@@ -27,6 +27,8 @@ ul {
 
 .active-section-button {
 	cursor: none;
+	display: flex;
+	gap: 5px;
 }
 
 .record-budget-item-modal {
@@ -91,7 +93,7 @@ ul {
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
-	width: 70%;
+	width: 80%;
 	margin: auto;
 }
 
@@ -99,7 +101,7 @@ ul {
 .edit-budget-item-modal {
 	display: flex;
 	flex-direction: column;
-	width: 70%;
+	width: 80%;
 	margin: auto;
 }
 
