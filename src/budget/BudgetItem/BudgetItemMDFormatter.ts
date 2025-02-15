@@ -11,7 +11,7 @@ export class BudgetItemRecurrentMDFormatter {
 		rawMarkdown: string
 	): BudgetItemRecurrent {
 		const propertiesRegex =
-			/id: (.*)\nname: (.*)\namount: (.*)\ncategory: (.*)\ntype: (.*)\nnextDate: (.*)\nfrequency: (.*)\naccount: (.*)(?:\nto account: (.*))?/;
+			/id: (.*)\nname: (.*)\namount: (.*)\ncategory: (.*)(?:\nsubCategory: (.*))?\ntype: (.*)\nnextDate: (.*)\nfrequency: (.*)\naccount: (.*)(?:\nto account: (.*))?/;
 		const match = propertiesRegex.exec(rawMarkdown);
 		if (!match) throw new Error("Invalid raw markdown.");
 		const [
@@ -20,6 +20,7 @@ export class BudgetItemRecurrentMDFormatter {
 			name,
 			amount,
 			category,
+			subCategory,
 			type,
 			nextDate,
 			frequency,
@@ -38,6 +39,7 @@ export class BudgetItemRecurrentMDFormatter {
 			account,
 			parseInt(amount),
 			category,
+			subCategory || "To Assign",
 			type as "expense" | "income",
 			new BudgetItemNextDate(new Date(nextDate), true),
 			path,
@@ -61,6 +63,7 @@ id: ${this._item.id}
 name: ${this._item.name}
 amount: ${this._item.amount.toNumber()}
 category: ${this._item.category}
+subCategory: ${this._item.subCategory || "To Assign"}
 type: ${this._item.type}
 nextDate: ${this._item.nextDate
 			.toString()

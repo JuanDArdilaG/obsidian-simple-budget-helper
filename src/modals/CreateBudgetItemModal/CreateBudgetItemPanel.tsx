@@ -34,16 +34,25 @@ export const CreateBudgetItemPanel = ({
 				.sort((a, b) => a.name.localeCompare(b.name)),
 		[budget]
 	);
+	const [item, setItem] = useState<BudgetItem>(BudgetItemSimple.empty());
 	const categories = useMemo(
-		() => [...budget.getCategories()].sort(),
+		() => [...budget.getCategories({ order: "asc" })],
 		[budget]
+	);
+	const subCategories = useMemo(
+		() => [
+			...budget.getSubCategories({
+				category: item.category,
+				sort: { order: "asc" },
+			}),
+		],
+		[budget, item.category]
 	);
 	const { refresh } = useContext(FileOperationsContext);
 	const [selectedItem, setSelectedItem] = useState<BudgetItem | undefined>(
 		undefined
 	);
 
-	const [item, setItem] = useState<BudgetItem>(BudgetItemSimple.empty());
 	const [locks, setLocks] = useState<
 		Omit<
 			{
@@ -55,6 +64,7 @@ export const CreateBudgetItemPanel = ({
 		name: false,
 		amount: false,
 		category: false,
+		subcategory: false,
 		frequency: false,
 		nextDate: false,
 	});
@@ -86,6 +96,7 @@ export const CreateBudgetItemPanel = ({
 			if (!locks.name) toUpdate.name = json.name;
 			if (!locks.amount) toUpdate.amount = json.amount;
 			if (!locks.category) toUpdate.category = json.category;
+			if (!locks.subcategory) toUpdate.subcategory = json.subcategory;
 			if (!locks.nextDate) toUpdate.nextDate = json.nextDate;
 			if (!lockToAccount) toUpdate.toAccount = json.toAccount;
 			if (!lockAccount) toUpdate.account = json.account;
@@ -110,6 +121,7 @@ export const CreateBudgetItemPanel = ({
 		amount?: number;
 		frequency?: string;
 		category?: string;
+		subCategory?: string;
 		toAccount?: string;
 	}) => {
 		const toUpdate = item.toJSON();
@@ -120,6 +132,8 @@ export const CreateBudgetItemPanel = ({
 		if (newValues.amount !== undefined) toUpdate.amount = newValues.amount;
 		if (newValues.category !== undefined)
 			toUpdate.category = newValues.category;
+		if (newValues.subCategory !== undefined)
+			toUpdate.subcategory = newValues.subCategory;
 		if (newValues.toAccount) toUpdate.toAccount = newValues.toAccount;
 		if (newValues.frequency !== undefined)
 			toUpdate.frequency = newValues.frequency;
@@ -168,6 +182,7 @@ export const CreateBudgetItemPanel = ({
 				locks.name ? item.name : "",
 				locks.amount ? item.amount.toNumber() : 0,
 				locks.category ? item.category : "",
+				locks.subcategory ? item.subCategory : "",
 				"expense",
 				locks.nextDate ? item.nextDate : nextDate
 			)
@@ -235,6 +250,17 @@ export const CreateBudgetItemPanel = ({
 					isLocked={locks.category}
 					setIsLocked={(value) => updateLock("category", value)}
 					error={validation.check("category") ?? undefined}
+				/>
+				<SelectWithCreation
+					id="subcategory"
+					label="SubCategory"
+					style={{ flexGrow: 1 }}
+					item={item.subCategory}
+					items={subCategories}
+					onChange={(subCategory) => update({ subCategory })}
+					isLocked={locks.subcategory}
+					setIsLocked={(value) => updateLock("subcategory", value)}
+					error={validation.check("subcategory") ?? undefined}
 				/>
 			</div>
 			{accountsInputs}

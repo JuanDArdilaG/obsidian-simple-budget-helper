@@ -22,25 +22,42 @@ export function AccountingList({
 }) {
 	const { refresh, itemOperations } = useContext(FileOperationsContext);
 	const { budget } = useContext(BudgetContext);
-	const accounts = useMemo(() => budget.getAccounts(), [budget]);
-	const categories = useMemo(() => budget.getCategories(), [budget]);
+	const accounts = useMemo(
+		() => budget.getAccounts({ order: "asc" }),
+		[budget]
+	);
+	const categories = useMemo(
+		() => budget.getCategories({ order: "asc" }),
+		[budget]
+	);
+	const [categoryFilter, setCategoryFilter] = useState("");
+	const subcategories = useMemo(
+		() =>
+			budget.getSubCategories({
+				category: categoryFilter,
+				sort: { order: "asc" },
+			}),
+		[budget, categoryFilter]
+	);
 
 	const [accountFilter, setAccountFilter] = useState("");
-	const [categoryFilter, setCategoryFilter] = useState("");
+	const [subCategoryFilter, setSubCategoryFilter] = useState("");
 
 	const budgetHistory = useMemo(() => {
 		const history = BudgetHistory.fromBudget(
 			budget,
 			accountFilter ?? undefined,
-			categoryFilter ?? undefined
+			categoryFilter ?? undefined,
+			subCategoryFilter ?? undefined
 		);
 		Logger.debug("history with filter", {
 			filter: accountFilter,
 			category: categoryFilter,
+			subCategory: subCategoryFilter,
 			history,
 		});
 		return history;
-	}, [budget, accountFilter, categoryFilter]);
+	}, [budget, accountFilter, categoryFilter, subCategoryFilter]);
 	const filteredHistory = useMemo(() => {
 		const history = budgetHistory.getGroupedByYearMonthDay();
 		Logger.debug("grouped filtered history", { history });
@@ -115,6 +132,18 @@ export function AccountingList({
 			>
 				<option value="">All categories</option>
 				{categories.map((category) => (
+					<option value={category} key={category}>
+						{category}
+					</option>
+				))}
+			</select>
+			<select
+				name="subcategory"
+				id="subcategory-filter"
+				onChange={(e) => setSubCategoryFilter(e.target.value)}
+			>
+				<option value="">All sub categories</option>
+				{subcategories.map((category) => (
 					<option value={category} key={category}>
 						{category}
 					</option>
@@ -542,36 +571,42 @@ const AccountingListRow = ({
 					).toString()}
 				</div>
 			</span>
-			<span className="second-row">
+			<span className="second-row light-text">
 				<div className="category">
-					Category:{" "}
+					<b>Category:</b>{" "}
 					{budget.getItemByID(modifiedRecord.itemID)?.category}
 				</div>
-				<span className="light-text align-right">
+				<span>
 					{isTransfer
 						? modifiedRecord.toAccount
 						: modifiedRecord.account}
 				</span>
 			</span>
-			<span className="third-row light-text">
-				{new PriceValueObject(
-					budgetHistory.getBalance({
-						account: isTransfer
-							? modifiedRecord.toAccount
-							: modifiedRecord.account,
-						untilID: modifiedRecord.id,
-						dropLast: true,
-					})
-				).toString()}{" "}
-				{" -> "}
-				{new PriceValueObject(
-					budgetHistory.getBalance({
-						account: isTransfer
-							? modifiedRecord.toAccount
-							: modifiedRecord.account,
-						untilID: modifiedRecord.id,
-					})
-				).toString()}
+			<span className="second-row light-text">
+				<div className="category">
+					<b>SubCategory:</b>{" "}
+					{budget.getItemByID(modifiedRecord.itemID)?.subCategory}
+				</div>
+				<span>
+					{new PriceValueObject(
+						budgetHistory.getBalance({
+							account: isTransfer
+								? modifiedRecord.toAccount
+								: modifiedRecord.account,
+							untilID: modifiedRecord.id,
+							dropLast: true,
+						})
+					).toString()}{" "}
+					{" -> "}
+					{new PriceValueObject(
+						budgetHistory.getBalance({
+							account: isTransfer
+								? modifiedRecord.toAccount
+								: modifiedRecord.account,
+							untilID: modifiedRecord.id,
+						})
+					).toString()}
+				</span>
 			</span>
 		</li>
 	);

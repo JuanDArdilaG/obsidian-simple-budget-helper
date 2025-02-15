@@ -7,7 +7,7 @@ import {
 import { TBudgetItemRecurrent } from "./BudgetItemRecurrent";
 import { TBudgetItemSimple } from "./BudgetItemSimple";
 import { nanoid } from "nanoid";
-import { ValidationResult, Validator } from "./Validator";
+import { Validator } from "./Validator";
 
 export abstract class BudgetItem {
 	constructor(
@@ -15,6 +15,7 @@ export abstract class BudgetItem {
 		protected _name: string,
 		protected _amount: number,
 		protected _category: string,
+		protected _subCategory: string,
 		protected _type: BudgetItemRecordType,
 		protected _nextDate: BudgetItemNextDate,
 		protected _account: string,
@@ -47,6 +48,10 @@ export abstract class BudgetItem {
 
 	get category(): string {
 		return this._category;
+	}
+
+	get subCategory(): string {
+		return this._subCategory;
 	}
 
 	get nextDate(): BudgetItemNextDate {
@@ -111,7 +116,8 @@ export abstract class BudgetItem {
 		date: Date,
 		type: BudgetItemRecordType,
 		amount: number,
-		category: string
+		category: string,
+		subCategory: string
 	): void;
 
 	abstract removeHistoryRecord(id: string): void;
@@ -130,6 +136,7 @@ export class BudgetItemValidator extends Validator<TBudgetItem, BudgetItem> {
 			amount: (value) => !value.amount.isZero(),
 			nextDate: (value) => value.nextDate !== null,
 			category: (value) => value.category !== "",
+			subcategory: (value) => value.subCategory !== "",
 			toAccount: (value) =>
 				value.type !== "transfer" || value.toAccount !== "",
 			path: (_) => true,

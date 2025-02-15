@@ -6,13 +6,69 @@ import { getTestBudget } from "./BudgetHistory.test";
 describe("get names", () => {
 	it("should return unique names", () => {
 		const budget = new Budget<BudgetItemSimple>([
-			BudgetItemSimple.create("", "name 1", 0, "", "expense", new Date()),
-			BudgetItemSimple.create("", "name 1", 0, "", "expense", new Date()),
-			BudgetItemSimple.create("", "name 2", 0, "", "expense", new Date()),
-			BudgetItemSimple.create("", "name 3", 0, "", "expense", new Date()),
-			BudgetItemSimple.create("", "name 3", 0, "", "expense", new Date()),
-			BudgetItemSimple.create("", "name 4", 0, "", "expense", new Date()),
-			BudgetItemSimple.create("", "name 5", 0, "", "expense", new Date()),
+			BudgetItemSimple.create(
+				"",
+				"name 1",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
+			BudgetItemSimple.create(
+				"",
+				"name 1",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
+			BudgetItemSimple.create(
+				"",
+				"name 2",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
+			BudgetItemSimple.create(
+				"",
+				"name 3",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
+			BudgetItemSimple.create(
+				"",
+				"name 3",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
+			BudgetItemSimple.create(
+				"",
+				"name 4",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
+			BudgetItemSimple.create(
+				"",
+				"name 5",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
 		]);
 
 		const names = budget.getNames();
@@ -29,13 +85,69 @@ describe("get names", () => {
 describe("get accounts", () => {
 	it("should return unique accounts", () => {
 		const budget = new Budget<BudgetItemSimple>([
-			BudgetItemSimple.create("acc 1", "", 0, "", "expense", new Date()),
-			BudgetItemSimple.create("acc 1", "", 0, "", "expense", new Date()),
-			BudgetItemSimple.create("acc 2", "", 0, "", "expense", new Date()),
-			BudgetItemSimple.create("acc 3", "", 0, "", "expense", new Date()),
-			BudgetItemSimple.create("acc 3", "", 0, "", "expense", new Date()),
-			BudgetItemSimple.create("acc 4", "", 0, "", "expense", new Date()),
-			BudgetItemSimple.create("acc 5", "", 0, "", "expense", new Date()),
+			BudgetItemSimple.create(
+				"acc 1",
+				"",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
+			BudgetItemSimple.create(
+				"acc 1",
+				"",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
+			BudgetItemSimple.create(
+				"acc 2",
+				"",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
+			BudgetItemSimple.create(
+				"acc 3",
+				"",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
+			BudgetItemSimple.create(
+				"acc 3",
+				"",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
+			BudgetItemSimple.create(
+				"acc 4",
+				"",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
+			BudgetItemSimple.create(
+				"acc 5",
+				"",
+				0,
+				"",
+				"",
+				"expense",
+				new Date()
+			),
 		]);
 
 		const accounts = budget.getAccounts();

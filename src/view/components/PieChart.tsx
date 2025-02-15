@@ -6,15 +6,20 @@ import {
 	Sector,
 	ResponsiveContainer,
 } from "recharts";
+import { Logger } from "utils/logger";
 
 export const PieChart = ({
 	data,
+	setSelectedCategory,
 }: {
 	data?: { name: string; value: number }[] | undefined;
+	setSelectedCategory?: React.Dispatch<React.SetStateAction<string>>;
 }) => {
+	Logger.debug("PieChart", { data });
 	const [activeIndex, setActiveIndex] = useState(0);
 	const onPieEnter = useCallback(
-		(_: any, index: number) => {
+		(a: any, index: number) => {
+			console.log({ a, index });
 			setActiveIndex(index);
 		},
 		[setActiveIndex]
@@ -34,6 +39,10 @@ export const PieChart = ({
 						data={data}
 						fill="#8884d8"
 						dataKey="value"
+						onClick={(a) => {
+							if (setSelectedCategory)
+								setSelectedCategory(a.name);
+						}}
 					/>
 				</RechartsPieChart>
 			</ResponsiveContainer>

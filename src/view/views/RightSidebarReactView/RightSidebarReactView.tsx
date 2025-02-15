@@ -42,7 +42,7 @@ export const RightSidebarReactView = ({
 		updateFiles: plugin._updateItemInFile,
 	});
 	const [sectionSelection, setSectionSelection] =
-		useState<SidebarSections>("accounting");
+		useState<SidebarSections>("recurrentItems");
 
 	const [innerBudget, setInnerBudget] = useState(budget);
 
@@ -89,7 +89,6 @@ export const RightSidebarReactView = ({
 							onSubmit={async (item) => {
 								await plugin._updateItemInFile(item, "add");
 								await updateBudget();
-								setShowCreateForm(false);
 							}}
 							close={() => setShowCreateForm(false)}
 						/>

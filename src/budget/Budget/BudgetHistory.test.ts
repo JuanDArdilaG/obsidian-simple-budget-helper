@@ -129,6 +129,7 @@ export const getTestBudget = (config?: TestBudgetConfig) => {
 				"test",
 				100,
 				"test",
+				"test",
 				"income",
 				itemConfig.nextDate ?? new Date(2024, 0, 1),
 				new FrequencyString(itemConfig.frequency ?? "1mo"),
@@ -160,6 +161,7 @@ export const getTestBudget = (config?: TestBudgetConfig) => {
 				"account",
 				"test",
 				100,
+				"test",
 				"test",
 				"expense",
 				new Date(2024, 0, 1)

@@ -35,7 +35,8 @@ export class BudgetHistory {
 	static fromBudget(
 		budget: Budget<BudgetItem>,
 		account?: string,
-		category?: string
+		category?: string,
+		subcategory?: string
 	): BudgetHistory {
 		let history = new BudgetHistory(
 			budget.items
@@ -52,6 +53,11 @@ export class BudgetHistory {
 		if (category)
 			history = new BudgetHistory(
 				history.filterByCategory(budget, category)
+			);
+
+		if (subcategory)
+			history = new BudgetHistory(
+				history.filterBySubCategory(budget, subcategory)
 			);
 
 		return history;
@@ -114,6 +120,28 @@ export class BudgetHistory {
 		return result;
 	}
 
+	static groupBySubCategory(
+		budget: Budget<BudgetItem>,
+		category: string,
+		byYearMonth: {
+			[day: number]: BudgetItemRecord[];
+		}
+	): Record<string, BudgetHistory> {
+		const result: Record<string, BudgetHistory> = {};
+		for (const day of Object.keys(byYearMonth)) {
+			byYearMonth[Number(day)].forEach((record) => {
+				const item = budget.getItemByID(record.itemID);
+				if (!item) return;
+				if (item.category !== category) return;
+				if (!result[item.subCategory]) {
+					result[item.subCategory] = new BudgetHistory([]);
+				}
+				result[item.subCategory].history.push(record);
+			});
+		}
+		return result;
+	}
+
 	onlyExpense(): BudgetHistory {
 		return new BudgetHistory(
 			this._history.filter((item) => item.type === "expense")
@@ -126,9 +154,10 @@ export class BudgetHistory {
 		);
 	}
 
-	getAccounts(): string[] {
+	getAccounts(config?: { type?: BudgetItemRecordType }): string[] {
 		const accounts: string[] = [];
 		for (const record of this._history) {
+			if (config?.type && record.type !== config.type) continue;
 			if (!accounts.includes(record.account)) {
 				accounts.push(record.account);
 			}
@@ -143,8 +172,10 @@ export class BudgetHistory {
 		return this._getTotalHistory(config);
 	}
 
-	getAllByAccount(): Record<string, BudgetHistory> {
-		const accounts = this.getAccounts();
+	getAllByAccount(config?: {
+		type?: BudgetItemRecordType;
+	}): Record<string, BudgetHistory> {
+		const accounts = this.getAccounts(config);
 		const result: Record<string, BudgetHistory> = {};
 
 		for (const account of accounts) {
@@ -173,6 +204,17 @@ export class BudgetHistory {
 			});
 			if (!item) return false;
 			return item.category === category;
+		});
+	}
+
+	filterBySubCategory(
+		budget: Budget<BudgetItem>,
+		subcategory: string
+	): BudgetItemRecord[] {
+		return this.history.filter((record) => {
+			const item = budget.getItemByID(record.itemID);
+			if (!item) return false;
+			return item.subCategory === subcategory;
 		});
 	}
 

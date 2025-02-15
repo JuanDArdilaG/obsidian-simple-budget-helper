@@ -58,16 +58,12 @@ ul {
 	padding: 0px 7px;
 }
 
-.accounting-list-item .category {
-	font-size: 0.7em;
-	font-weight: lighter;
-}
-
 .accounting-list-item .second-row {
+	width: 100%;
 	display: flex;
 	justify-content: space-between;
 	gap: 15px;
-	padding: 5px;
+	padding: 2px;
 }
 
 .align-right {

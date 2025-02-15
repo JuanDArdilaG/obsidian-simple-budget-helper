@@ -8,6 +8,8 @@ import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 import { BudgetHistory } from "./BudgetHistory";
 import { BudgetItemRecordType } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 
+type SortConfig = { order?: "asc" | "desc" };
+
 export class Budget<T extends BudgetItem> {
 	constructor(private _items: T[]) {}
 
@@ -25,18 +27,58 @@ export class Budget<T extends BudgetItem> {
 		return names;
 	}
 
-	getCategories(): string[] {
+	getCategories(config?: SortConfig): string[] {
 		const categories: string[] = [];
 		for (const item of this._items) {
 			if (!categories.includes(item.category)) {
 				categories.push(item.category);
 			}
 		}
+
+		if (config?.order === "asc") {
+			return categories.sort((a, b) => a.localeCompare(b));
+		} else if (config?.order === "desc") {
+			return categories.sort((a, b) => b.localeCompare(a));
+		}
 		return categories;
 	}
 
-	getAccounts(): string[] {
-		return BudgetHistory.fromBudget(this).getAccounts();
+	getSubCategories(config?: {
+		category?: string;
+		sort?: SortConfig;
+	}): string[] {
+		const subCategories: string[] = [];
+		for (const item of this._items) {
+			if (
+				(!config?.category || item.category === config.category) &&
+				!subCategories.includes(item.subCategory)
+			) {
+				subCategories.push(item.subCategory);
+			}
+		}
+
+		if (config?.sort?.order === "asc") {
+			return subCategories.sort((a, b) => a.localeCompare(b));
+		} else if (config?.sort?.order === "desc") {
+			return subCategories.sort((a, b) => b.localeCompare(a));
+		}
+		return subCategories;
+	}
+
+	getAccounts(config?: SortConfig): string[] {
+		const accounts: string[] = [];
+		for (const item of this._items) {
+			if (!accounts.includes(item.account)) {
+				accounts.push(item.account);
+			}
+		}
+
+		if (config?.order === "asc") {
+			return accounts.sort((a, b) => a.localeCompare(b));
+		} else if (config?.order === "desc") {
+			return accounts.sort((a, b) => b.localeCompare(a));
+		}
+		return accounts;
 	}
 
 	addItems(...items: T[]) {
@@ -133,7 +175,7 @@ export class Budget<T extends BudgetItem> {
 		) as unknown as BudgetItemSimple[];
 
 		const headers =
-			"| ID | Name | Type | Category | Account | Date | Amount |\n|------|---------|------|--------|\n";
+			"| ID | Name | Type | Category | SubCategory | Account | Date | Amount |\n|------|---------|------|--------|\n";
 
 		if (simpleItems.length === 0) {
 			return headers + "| | | | | | | |";
@@ -145,7 +187,7 @@ export class Budget<T extends BudgetItem> {
 				.map((item) => {
 					return `| ${item.id} | ${item.name} | ${item.type} | ${
 						item.category
-					} | ${
+					} | ${item.subCategory} | ${
 						item.type !== "transfer"
 							? item.account
 							: `${item.account} - ${item.toAccount}`
@@ -199,26 +241,29 @@ export class Budget<T extends BudgetItem> {
 		const lines = markdown.split("\n").filter((line) => !!line);
 		const budget = new Budget<BudgetItemSimple>([]);
 		for (let i = 2; i < lines.length; i++) {
-			const line = lines[i].split("|");
-			const type = line[3].trim() as BudgetItemRecordType;
-			const account =
-				type === "transfer"
-					? line[5].trim().split(" - ")[0]
-					: line[5].trim();
-			const toAccount =
-				type === "transfer"
-					? line[5].trim().split(" - ")[1]
-					: undefined;
+			let [
+				,
+				id,
+				name,
+				type,
+				category,
+				subCategory,
+				account,
+				date,
+				amount,
+			] = lines[i].split("|").map((item) => item.trim());
+
 			budget.addItems(
 				new BudgetItemSimple(
-					line[1].trim(),
-					account,
-					line[2].trim(),
-					PriceValueObject.fromString(line[7].trim()).valueOf(),
-					line[4].trim(),
-					type,
-					new BudgetItemNextDate(new Date(line[6].trim())),
-					toAccount
+					id,
+					type === "transfer" ? account.split(" - ")[0] : account,
+					name,
+					PriceValueObject.fromString(amount).valueOf(),
+					category,
+					subCategory || "To Assign",
+					type as BudgetItemRecordType,
+					new BudgetItemNextDate(new Date(date)),
+					type === "transfer" ? account.split(" - ")[1] : undefined
 				)
 			);
 		}

@@ -21,13 +21,19 @@ export const EditBudgetItemRecurrentPanel = ({
 	onClose: () => void;
 }) => {
 	const { budget } = useContext(BudgetContext);
+
+	const [category, setCategory] = useState(item?.category || "");
 	const categories = useMemo(() => budget.getCategories(), [budget]);
+	const subCategories = useMemo(
+		() => budget.getSubCategories({ category }),
+		[budget, category]
+	);
 
 	const [name, setName] = useState(item.name);
 	const [amount, setAmount] = useState(item.amount);
 	const [type, setType] = useState(item.type);
 
-	const [category, setCategory] = useState(item?.category || "");
+	const [subCategory, setSubCategory] = useState(item?.subCategory || "");
 
 	const [account, setAccount] = useState(item.account);
 
@@ -43,6 +49,7 @@ export const EditBudgetItemRecurrentPanel = ({
 		account: account.length > 0,
 		date: date.toString() !== "Invalid Date",
 		category: category.length > 0,
+		subCategory: subCategory.length > 0,
 		frequency: frequency.length > 0,
 	});
 
@@ -100,6 +107,16 @@ export const EditBudgetItemRecurrentPanel = ({
 					!validation || validation.category ? undefined : "required"
 				}
 			/>
+			<SelectWithCreation
+				id="subcategory"
+				label="SubCategory"
+				item={subCategory}
+				items={subCategories}
+				onChange={(category) => setSubCategory(category ?? "")}
+				error={
+					!validation || validation.category ? undefined : "required"
+				}
+			/>
 			<Input<Date>
 				id="date"
 				label="Date"
@@ -132,6 +149,7 @@ export const EditBudgetItemRecurrentPanel = ({
 							account,
 							amount.toNumber(),
 							category,
+							subCategory,
 							type,
 							new BudgetItemNextDate(date, true),
 							item.path,

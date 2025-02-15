@@ -16,6 +16,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 		account: string,
 		amount: number,
 		category: string,
+		subcategory: string,
 		type: BudgetItemRecordType,
 		nextDate: BudgetItemNextDate,
 		private _path: string,
@@ -28,6 +29,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 			name,
 			amount,
 			category,
+			subcategory,
 			type,
 			nextDate,
 			account,
@@ -48,6 +50,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 		account: string,
 		amount: number,
 		category: string,
+		subcategory: string,
 		type: BudgetItemRecordType,
 		nextDate: Date,
 		frequency: FrequencyString,
@@ -60,6 +63,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 			account,
 			amount,
 			category,
+			subcategory,
 			type,
 			new BudgetItemNextDate(nextDate, true),
 			path,
@@ -177,6 +181,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 			amount: this._amount > 0,
 			nextDate: this._nextDate.toString() !== "Invalid Date",
 			category: this._category.length > 0,
+			subcategory: this._subCategory.length > 0,
 			toAccount: this._type !== "transfer" || !!this._toAccount?.length,
 			frequency: true,
 			path: true,
@@ -211,6 +216,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 			amount: this._amount,
 			account: this._account,
 			category: this._category,
+			subcategory: this._subCategory,
 			type: this._type,
 			nextDate: this._nextDate.toDate(),
 			toAccount: this._toAccount,
@@ -227,6 +233,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 			json.account,
 			json.amount,
 			json.category,
+			json.subcategory,
 			json.type as BudgetItemRecordType,
 			new BudgetItemNextDate(json.nextDate),
 			json.path,
@@ -243,6 +250,7 @@ export class BudgetItemRecurrent extends BudgetItem {
 			"",
 			0,
 			"",
+			"",
 			"expense",
 			BudgetItemNextDate.empty(),
 			"",
@@ -258,6 +266,7 @@ export type TBudgetItemRecurrent = {
 	amount: number;
 	account: string;
 	category: string;
+	subcategory: string;
 	type: BudgetItemRecordType;
 	nextDate: Date;
 	toAccount?: string;

@@ -17,7 +17,10 @@ export const EditBudgetItemRecordPanel = ({
 	onUpdate: (item: BudgetItem) => Promise<void>;
 }) => {
 	const { budget } = useContext(BudgetContext);
-	const categories = useMemo(() => budget.getCategories(), [budget]);
+	const categories = useMemo(
+		() => budget.getCategories({ order: "asc" }),
+		[budget]
+	);
 	const item = useMemo(() => budget.getItemByID(record.itemID), [budget]);
 
 	const [name, setName] = useState(record.name);
@@ -25,6 +28,11 @@ export const EditBudgetItemRecordPanel = ({
 	const [type, setType] = useState(record.type);
 
 	const [category, setCategory] = useState(item?.category || "");
+	const subCategories = useMemo(
+		() => budget.getSubCategories({ category, sort: { order: "asc" } }),
+		[budget, category]
+	);
+	const [subCategory, setSubCategory] = useState(item?.subCategory || "");
 
 	const [account, setAccount] = useState(record.account);
 
@@ -40,6 +48,7 @@ export const EditBudgetItemRecordPanel = ({
 		account: account.length > 0,
 		date: date.toString() !== "Invalid Date",
 		category: category.length > 0,
+		subCategory: subCategory.length > 0,
 		toAccount: type !== "transfer" || toAccount.length > 0,
 	});
 
@@ -101,16 +110,34 @@ export const EditBudgetItemRecordPanel = ({
 					}
 				/>
 			)}
-			<SelectWithCreation
-				id="category"
-				label="Category"
-				item={category}
-				items={categories}
-				onChange={(category) => setCategory(category ?? "")}
-				error={
-					!validation || validation.category ? undefined : "required"
-				}
-			/>
+			{item instanceof BudgetItemSimple && (
+				<>
+					<SelectWithCreation
+						id="category"
+						label="Category"
+						item={category}
+						items={categories}
+						onChange={(category) => setCategory(category ?? "")}
+						error={
+							!validation || validation.category
+								? undefined
+								: "required"
+						}
+					/>
+					<SelectWithCreation
+						id="subcategory"
+						label="SubCategory"
+						item={subCategory}
+						items={subCategories}
+						onChange={(category) => setSubCategory(category ?? "")}
+						error={
+							!validation || validation.subCategory
+								? undefined
+								: "required"
+						}
+					/>
+				</>
+			)}
 			<Input<Date>
 				id="date"
 				label="Date"
@@ -137,6 +164,7 @@ export const EditBudgetItemRecordPanel = ({
 							type,
 							amount.toNumber(),
 							category,
+							subCategory,
 							type === "transfer" ? toAccount : undefined
 						);
 					} else {
@@ -147,7 +175,8 @@ export const EditBudgetItemRecordPanel = ({
 							date,
 							type,
 							amount.toNumber(),
-							category
+							category,
+							subCategory
 						);
 					}
 

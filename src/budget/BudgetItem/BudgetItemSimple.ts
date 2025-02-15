@@ -14,11 +14,22 @@ export class BudgetItemSimple extends BudgetItem {
 		name: string,
 		amount: number,
 		category: string,
+		subcategory: string,
 		type: BudgetItemRecordType,
 		nextDate: BudgetItemNextDate,
 		toAccount?: string
 	) {
-		super(id, name, amount, category, type, nextDate, account, toAccount);
+		super(
+			id,
+			name,
+			amount,
+			category,
+			subcategory,
+			type,
+			nextDate,
+			account,
+			toAccount
+		);
 	}
 
 	get account(): string {
@@ -29,6 +40,7 @@ export class BudgetItemSimple extends BudgetItem {
 		account: string,
 		name: string,
 		amount: number,
+		subcategory: string,
 		category: string,
 		type: BudgetItemRecordType,
 		nextDate: Date,
@@ -40,6 +52,7 @@ export class BudgetItemSimple extends BudgetItem {
 			name,
 			amount,
 			category,
+			subcategory,
 			type,
 			new BudgetItemNextDate(nextDate),
 			toAccount
@@ -53,6 +66,7 @@ export class BudgetItemSimple extends BudgetItem {
 			item.name,
 			item.amount.toNumber(),
 			item.category,
+			item.subCategory,
 			item.type,
 			item.nextDate,
 			item.toAccount
@@ -97,6 +111,7 @@ export class BudgetItemSimple extends BudgetItem {
 		type: BudgetItemRecordType,
 		amount: number,
 		category: string,
+		subCategory: string,
 		toAccount?: string
 	) {
 		this._name = name;
@@ -105,6 +120,7 @@ export class BudgetItemSimple extends BudgetItem {
 		this._type = type;
 		this._amount = amount;
 		this._category = category;
+		this._subCategory = subCategory;
 		this._toAccount = toAccount;
 	}
 
@@ -119,6 +135,7 @@ export class BudgetItemSimple extends BudgetItem {
 			name: this._name,
 			amount: this._amount,
 			category: this._category,
+			subcategory: this._subCategory,
 			type: this._type,
 			nextDate: this._nextDate,
 			toAccount: this._toAccount,
@@ -135,6 +152,7 @@ export class BudgetItemSimple extends BudgetItem {
 			json.name,
 			json.amount,
 			json.category,
+			json.subcategory,
 			json.type,
 			new BudgetItemNextDate(json.nextDate),
 			json.toAccount
@@ -145,7 +163,7 @@ export class BudgetItemSimple extends BudgetItem {
 		const date = BudgetItemNextDate.empty();
 		const now = new Date();
 		date.setHours(now.getHours(), now.getMinutes(), 0);
-		return new BudgetItemSimple("", "", "", 0, "", "expense", date);
+		return new BudgetItemSimple("", "", "", 0, "", "", "expense", date);
 	}
 }
 
@@ -155,6 +173,7 @@ export type TBudgetItemSimple = {
 	name: string;
 	amount: number;
 	category: string;
+	subcategory: string;
 	type: BudgetItemRecordType;
 	nextDate: Date;
 	toAccount?: string;

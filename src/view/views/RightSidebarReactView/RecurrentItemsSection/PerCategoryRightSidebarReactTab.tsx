@@ -98,6 +98,51 @@ export const PerCategoryRightSidebarReactTab = ({}) => {
 		);
 	}, [filteredHistory, selectedYear, selectedMonth, budget]);
 
+	const [selectedType, setSelectedType] = useState("expense");
+	const [selectedCategory, setSelectedCategory] = useState("");
+
+	const groupedBySubCategory = useMemo(() => {
+		Logger.debug("groupedBySubCategory", {
+			selectedCategory,
+			selectedYear,
+			selectedMonth,
+		});
+
+		if (!filteredHistory[selectedYear][selectedMonth]) return [];
+
+		const group = BudgetHistory.groupBySubCategory(
+			budget,
+			selectedCategory,
+			filteredHistory[selectedYear][selectedMonth]
+		);
+
+		return Object.keys(group).reduce(
+			(acc: { name: string; value: number }[], category) => {
+				const balance = (
+					selectedType === "expense"
+						? group[category].onlyExpense()
+						: group[category].onlyIncome()
+				).getBalance();
+				if (balance === 0) return acc;
+				return [
+					...acc,
+					{
+						name: category,
+						value: Math.abs(balance),
+					},
+				];
+			},
+			[]
+		);
+	}, [
+		budget,
+		filteredHistory,
+		selectedYear,
+		selectedMonth,
+		selectedType,
+		selectedCategory,
+	]);
+
 	useConsoleLog({
 		title: "groupedByCategory",
 		data: expensesGroupedByCategory,
@@ -105,6 +150,13 @@ export const PerCategoryRightSidebarReactTab = ({}) => {
 
 	return (
 		<RightSidebarReactTab title="Per Category">
+			<Select
+				id="type"
+				label="Type"
+				onChange={(type: string) => setSelectedType(type)}
+				value={selectedType}
+				values={["expense", "income"]}
+			/>
 			<Select
 				id="year"
 				label="Year"
@@ -119,8 +171,20 @@ export const PerCategoryRightSidebarReactTab = ({}) => {
 				value={selectedMonth}
 				values={months}
 			/>
-			<PieChart data={expensesGroupedByCategory} />
-			<PieChart data={incomesGroupedByCategory} />
+			{selectedType === "expense" && (
+				<PieChart
+					data={expensesGroupedByCategory}
+					setSelectedCategory={setSelectedCategory}
+				/>
+			)}
+			{selectedType === "income" && (
+				<PieChart
+					data={incomesGroupedByCategory}
+					setSelectedCategory={setSelectedCategory}
+				/>
+			)}
+
+			{selectedCategory && <PieChart data={groupedBySubCategory} />}
 		</RightSidebarReactTab>
 	);
 };
