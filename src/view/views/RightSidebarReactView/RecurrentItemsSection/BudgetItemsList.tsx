@@ -3,11 +3,12 @@ import { Forward } from "lucide-react";
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { FileOperationsContext } from "../RightSidebarReactView";
+import { BudgetContext, FileOperationsContext } from "../RightSidebarReactView";
 import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 import { RecordBudgetItemPanel } from "./RecordBudgetItemPanel";
 import { EditBudgetItemRecurrentPanel } from "modals/CreateBudgetItemModal/EditBudgetItemRecurrentPanel";
+import { Logger } from "utils/logger";
 
 export const BudgetItemsList = ({
 	budgetItems,
@@ -26,6 +27,7 @@ export const BudgetItemsList = ({
 	editionIsActive: boolean;
 	setEditionIsActive?: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
+	const { updateBudget } = useContext(BudgetContext);
 	const { itemOperations } = useContext(FileOperationsContext);
 	const [showPanel, setShowPanel] = useState<{
 		item: BudgetItemRecurrent;
@@ -33,12 +35,16 @@ export const BudgetItemsList = ({
 	}>();
 
 	useEffect(() => {
-		console.log({ selectedItem, editionIsActive });
-		setShowPanel(
-			editionIsActive && selectedItem
-				? { item: selectedItem, action: "edit" }
-				: undefined
-		);
+		Logger.debug("item selected for action", {
+			selectedItem,
+			editionIsActive,
+		});
+		if (selectedItem)
+			setShowPanel(
+				editionIsActive
+					? { item: selectedItem, action: "edit" }
+					: { item: selectedItem, action: "record" }
+			);
 	}, [editionIsActive, selectedItem]);
 
 	useEffect(() => {
@@ -109,10 +115,7 @@ export const BudgetItemsList = ({
 											}}
 											size={19}
 											onClick={() =>
-												setShowPanel({
-													item,
-													action: "record",
-												})
+												setSelectedItem(item)
 											}
 										/>
 									</span>
@@ -154,6 +157,7 @@ export const BudgetItemsList = ({
 									item={item}
 									onEdit={async (item) => {
 										await itemOperations(item, "modify");
+										await updateBudget();
 									}}
 									onClose={() => setShowPanel(undefined)}
 								/>

@@ -104,17 +104,37 @@ describe("getGroupedByYearMonthDay", () => {
 			},
 		});
 	});
+
+	it("items in the same day should be sorted descending", () => {
+		const { budget, simple } = getTestBudget({
+			simple: 3,
+		});
+		const budgetHistory = BudgetHistory.fromBudget(budget);
+
+		const grouped = budgetHistory.getGroupedByYearMonthDay();
+		const dayItems = grouped[2024]["Jan"][1];
+
+		expect(dayItems).toEqual(
+			[...simple.map((item) => item.history).flat()].sort((a, b) => {
+				return b.date.getTime() - a.date.getTime();
+			})
+		);
+	});
 });
 
 type TestBudgetConfig = {
 	recurrent?: TestBudgetRecurrentConfig[];
-	simple?: number;
+	simple?: number | TestBudgetSimpleConfig[];
 };
 
 type TestBudgetRecurrentConfig = {
 	frequency?: string;
 	nextDate?: Date;
 	withHistory?: boolean;
+};
+
+type TestBudgetSimpleConfig = {
+	date?: Date;
 };
 
 export const getTestBudget = (config?: TestBudgetConfig) => {
@@ -156,17 +176,32 @@ export const getTestBudget = (config?: TestBudgetConfig) => {
 		}
 	}
 	if (simple) {
-		for (let i = 0; i < simple; i++) {
-			const item = BudgetItemSimple.create(
-				"account",
-				"test",
-				100,
-				"test",
-				"test",
-				"expense",
-				new Date(2024, 0, 1)
-			);
-			simpleItems.push(item);
+		if (simple instanceof Array) {
+			simple.forEach((itemConfig) => {
+				const item = BudgetItemSimple.create(
+					"account",
+					"test",
+					100,
+					"test",
+					"test",
+					"expense",
+					itemConfig.date ?? new Date(2024, 0, 1)
+				);
+				simpleItems.push(item);
+			});
+		} else {
+			for (let i = 0; i < simple; i++) {
+				const item = BudgetItemSimple.create(
+					"account",
+					"test",
+					100,
+					"test",
+					"test",
+					"expense",
+					new Date(2024, 0, 1)
+				);
+				simpleItems.push(item);
+			}
 		}
 	}
 	budget.addItems(...simpleItems, ...recurrentItems);

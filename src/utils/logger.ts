@@ -5,7 +5,7 @@ export class Logger {
 		body: Record<string, any>,
 		config?: { on: boolean }
 	) {
-		if (config && !config.on) return;
+		if (config && config.on === false) return;
 		console.log({ _title: title, ...body });
 	}
 }

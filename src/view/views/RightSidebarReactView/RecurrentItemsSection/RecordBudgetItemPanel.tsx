@@ -51,7 +51,7 @@ export const RecordBudgetItemPanel = ({
 				items={accounts}
 				setSelectedItem={setAccount}
 				onChange={(acc) => {
-					if (acc !== undefined) {
+					if (acc !== undefined && acc !== account) {
 						console.log({
 							title: "setting account",
 							old: account,

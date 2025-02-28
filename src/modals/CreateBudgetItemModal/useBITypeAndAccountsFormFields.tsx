@@ -1,8 +1,7 @@
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItem, TBudgetItem } from "budget/BudgetItem/BudgetItem";
 import { BudgetItemRecordType } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
-import { Validator } from "budget/BudgetItem/Validator";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Select } from "view/components/Select";
 import { SelectWithCreation } from "view/components/SelectWithCreation";
 
@@ -10,6 +9,9 @@ export const useBITypeAndAccountsFormFields = ({
 	item,
 	budget,
 	errors,
+	setAccount,
+	setToAccount,
+	setType,
 }: {
 	item?: BudgetItem;
 	budget: Budget<BudgetItem>;
@@ -19,6 +21,9 @@ export const useBITypeAndAccountsFormFields = ({
 			"account" | "toAccount" | "type"
 		>]: string;
 	};
+	setAccount: (account: string) => void;
+	setToAccount: (account: string) => void;
+	setType: (type: BudgetItemRecordType) => void;
 }) => {
 	const accounts = useMemo(() => [...budget.getAccounts()], [budget]);
 
@@ -38,26 +43,32 @@ export const useBITypeAndAccountsFormFields = ({
 			[key]: value,
 		});
 	};
-	const [type, setType] = useState<BudgetItemRecordType>(
-		item?.type ?? "expense"
-	);
-	const [account, setAccount] = useState(item?.account ?? "");
-	const [toAccount, setToAccount] = useState(item?.toAccount || "");
+	const [typeInternal, setTypeInternal] =
+		useState<BudgetItemRecordType>("expense");
+	const [accountInternal, setAccountInternal] = useState("");
+	const [toAccountInternal, setToAccountInternal] = useState("");
+
+	useEffect(() => {
+		setTypeInternal(item?.type ?? "expense");
+		setAccountInternal(item?.account ?? "");
+		setToAccountInternal(item?.toAccount ?? "");
+	}, [item]);
 
 	const inputs = (
 		<>
 			<Select
 				id="type"
 				label="Type"
-				value={type}
+				value={typeInternal}
 				values={{
 					expense: "Expense",
 					income: "Income",
 					transfer: "Transfer",
 				}}
-				onChange={(type) =>
-					setType(type.toLowerCase() as BudgetItemRecordType)
-				}
+				onChange={(type) => {
+					setTypeInternal(type.toLowerCase() as BudgetItemRecordType);
+					setType(type.toLowerCase() as BudgetItemRecordType);
+				}}
 				isLocked={locks.type}
 				setIsLocked={(value) => updateLock("type", value)}
 				error={errors?.type}
@@ -72,9 +83,12 @@ export const useBITypeAndAccountsFormFields = ({
 				<SelectWithCreation
 					id="account"
 					label="Account: From"
-					item={account}
+					item={accountInternal}
 					items={accounts}
-					onChange={setAccount}
+					onChange={(account) => {
+						setAccountInternal(account);
+						setAccount(account);
+					}}
 					style={{
 						flexGrow: 1,
 					}}
@@ -82,13 +96,16 @@ export const useBITypeAndAccountsFormFields = ({
 					setIsLocked={(value) => updateLock("account", value)}
 					error={errors?.account}
 				/>
-				{type === "transfer" && (
+				{typeInternal === "transfer" && (
 					<SelectWithCreation
 						id="toAccount"
 						label="Account: To"
-						item={toAccount}
+						item={toAccountInternal}
 						items={accounts}
-						onChange={setToAccount}
+						onChange={(account) => {
+							setToAccountInternal(account);
+							setToAccount(account);
+						}}
 						style={{
 							flexGrow: 1,
 						}}
@@ -102,13 +119,12 @@ export const useBITypeAndAccountsFormFields = ({
 	);
 
 	return {
-		type,
-		account,
-		toAccount,
+		type: typeInternal,
+		account: accountInternal,
+		toAccount: toAccountInternal,
+		lockType: locks.type,
 		lockAccount: locks.account,
 		lockToAccount: locks.toAccount,
-		// setAccount,
-		// setToAccount,
 		accountsInputs: inputs,
 	};
 };

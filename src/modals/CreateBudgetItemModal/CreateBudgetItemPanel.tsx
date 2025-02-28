@@ -11,6 +11,7 @@ import { SelectWithCreation } from "view/components/SelectWithCreation";
 import { Checkbox, FormControlLabel } from "@mui/material";
 import { TBudgetItem } from "../../budget/BudgetItem/BudgetItem";
 import { useBITypeAndAccountsFormFields } from "./useBITypeAndAccountsFormFields";
+import { Logger } from "utils/logger";
 
 const validator = new BudgetItemValidator();
 
@@ -83,9 +84,13 @@ export const CreateBudgetItemPanel = ({
 		type,
 		lockAccount,
 		lockToAccount,
+		lockType,
 	} = useBITypeAndAccountsFormFields({
 		budget,
 		item,
+		setAccount: (account) => update({ account }),
+		setToAccount: (account) => update({ toAccount: account }),
+		setType: (type) => update({ type }),
 	});
 
 	useEffect(() => {
@@ -93,6 +98,19 @@ export const CreateBudgetItemPanel = ({
 		if (selectedItem) {
 			const json = selectedItem.toJSON();
 			const toUpdate: Partial<TBudgetItem> = {};
+			Logger.debug(
+				"type and accounts fields",
+				{
+					lockAccount,
+					lockToAccount,
+					type,
+					account,
+					toAccount,
+					lockType,
+				},
+				{ on: false }
+			);
+			if (!lockType) toUpdate.type = json.type;
 			if (!locks.name) toUpdate.name = json.name;
 			if (!locks.amount) toUpdate.amount = json.amount;
 			if (!locks.category) toUpdate.category = json.category;
@@ -102,8 +120,8 @@ export const CreateBudgetItemPanel = ({
 			if (!lockAccount) toUpdate.account = json.account;
 			if (!locks.frequency) toUpdate.frequency = json.frequency;
 
-			update(toUpdate);
 			setIsRecurrent(!BudgetItemSimple.IsSimple(selectedItem));
+			update(toUpdate);
 		}
 	}, [selectedItem]);
 
@@ -121,7 +139,7 @@ export const CreateBudgetItemPanel = ({
 		amount?: number;
 		frequency?: string;
 		category?: string;
-		subCategory?: string;
+		subcategory?: string;
 		toAccount?: string;
 	}) => {
 		const toUpdate = item.toJSON();
@@ -132,8 +150,8 @@ export const CreateBudgetItemPanel = ({
 		if (newValues.amount !== undefined) toUpdate.amount = newValues.amount;
 		if (newValues.category !== undefined)
 			toUpdate.category = newValues.category;
-		if (newValues.subCategory !== undefined)
-			toUpdate.subcategory = newValues.subCategory;
+		if (newValues.subcategory !== undefined)
+			toUpdate.subcategory = newValues.subcategory;
 		if (newValues.toAccount) toUpdate.toAccount = newValues.toAccount;
 		if (newValues.frequency !== undefined)
 			toUpdate.frequency = newValues.frequency;
@@ -148,8 +166,9 @@ export const CreateBudgetItemPanel = ({
 		newItem.setRandomId();
 
 		console.log({
-			toUpdate,
 			isRecurrent,
+			newValues,
+			toUpdate,
 			item: newItem,
 		});
 
@@ -257,7 +276,7 @@ export const CreateBudgetItemPanel = ({
 					style={{ flexGrow: 1 }}
 					item={item.subCategory}
 					items={subCategories}
-					onChange={(subCategory) => update({ subCategory })}
+					onChange={(subcategory) => update({ subcategory })}
 					isLocked={locks.subcategory}
 					setIsLocked={(value) => updateLock("subcategory", value)}
 					error={validation.check("subcategory") ?? undefined}
