@@ -123,7 +123,7 @@ export const CreateBudgetItemPanel = ({
 			setIsRecurrent(!BudgetItemSimple.IsSimple(selectedItem));
 			update(toUpdate);
 		}
-	}, [selectedItem]);
+	}, [selectedItem, locks, lockAccount, lockToAccount, lockType]);
 
 	useEffect(() => {
 		update({ ...item.toJSON() });
