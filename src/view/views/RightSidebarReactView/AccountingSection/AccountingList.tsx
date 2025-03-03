@@ -251,7 +251,10 @@ export function AccountingList({
 							</span>
 						</h3>
 						{Object.keys(filteredHistory[year])
-							.sort()
+							.sort(
+								(a, b) =>
+									monthAbbrToIndex(b) - monthAbbrToIndex(a)
+							)
 							.map((month) => {
 								const since = new Date(
 									Number(year),

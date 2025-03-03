@@ -42,7 +42,7 @@ export const RightSidebarReactView = ({
 		updateFiles: plugin._updateItemInFile,
 	});
 	const [sectionSelection, setSectionSelection] =
-		useState<SidebarSections>("recurrentItems");
+		useState<SidebarSections>("accounting");
 
 	const [innerBudget, setInnerBudget] = useState(budget);
 
@@ -71,7 +71,6 @@ export const RightSidebarReactView = ({
 						plugin._updateItemInFile(item, operation),
 					refresh: async () => {
 						await updateBudget();
-						// await refresh();
 					},
 				}}
 			>
