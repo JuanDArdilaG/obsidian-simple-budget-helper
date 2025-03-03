@@ -81,13 +81,16 @@ export const Input = <T extends NonNullable<InputValue>>({
 							console.log({ dateValue: e.target.value });
 							const [year, month, day] =
 								e.target.value.split("-");
-							const date = new Date(
+							const newDate = new Date(
 								parseInt(year),
 								parseInt(month) - 1,
-								parseInt(day)
+								parseInt(day),
+								date.getHours(),
+								date.getMinutes(),
+								0
 							);
-							setDate(date);
-							onChange(date as T);
+							setDate(newDate);
+							onChange(newDate as T);
 						}}
 					/>
 					<input

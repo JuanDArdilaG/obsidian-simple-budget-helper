@@ -12,6 +12,7 @@ import { Checkbox, FormControlLabel } from "@mui/material";
 import { TBudgetItem } from "../../budget/BudgetItem/BudgetItem";
 import { useBITypeAndAccountsFormFields } from "./useBITypeAndAccountsFormFields";
 import { Logger } from "utils/logger";
+import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
 
 const validator = new BudgetItemValidator();
 
@@ -190,7 +191,7 @@ export const CreateBudgetItemPanel = ({
 			type,
 		});
 		const result = validator.validate(item);
-		if (!result.validate()) return setValidation(result);
+		if (!result) return setValidation(result);
 		await onSubmit(item);
 		await refresh();
 
@@ -203,7 +204,9 @@ export const CreateBudgetItemPanel = ({
 				locks.category ? item.category : "",
 				locks.subcategory ? item.subCategory : "",
 				"expense",
-				locks.nextDate ? item.nextDate : nextDate
+				locks.nextDate
+					? item.nextDate
+					: new BudgetItemNextDate(new Date())
 			)
 		);
 	};
