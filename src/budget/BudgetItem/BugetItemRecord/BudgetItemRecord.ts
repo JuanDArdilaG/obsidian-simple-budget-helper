@@ -11,7 +11,9 @@ export class BudgetItemRecord {
 		private _name: string,
 		private _type: BudgetItemRecordType,
 		private _date: Date,
-		private _amount: BudgetItemRecordAmount
+		private _amount: BudgetItemRecordAmount,
+		private _brand?: string,
+		private _store?: string
 	) {}
 
 	static fromString(
@@ -21,19 +23,24 @@ export class BudgetItemRecord {
 		toAccount?: string
 	): BudgetItemRecord {
 		const match =
-			/id: (.*)\. name: (.*)\. account: (.*)\. date: (.*)\. amount: (.*)/.exec(
+			/id: (.*)\. name: (.*)\. account: (.*)\. date: (.*)\. amount: (.*)(?:\. brand: (.*)\.(?: store: (.*)))?/.exec(
 				str
 			);
+		console.log({ match });
 		if (!match) throw new Error("Invalid raw markdown.");
+		const [, id, name, account, date, amount, brand, store] = match;
+		console.log({ id, name, account, date, amount, brand, store });
 		return new BudgetItemRecord(
-			match[1],
+			id,
 			itemID,
-			match[3],
+			account,
 			toAccount || "",
-			match[2],
+			name,
 			type,
-			new Date(match[4]),
-			BudgetItemRecordAmount.fromString(match[5])
+			new Date(date),
+			BudgetItemRecordAmount.fromString(amount),
+			brand,
+			store
 		);
 	}
 
@@ -46,7 +53,9 @@ export class BudgetItemRecord {
 			item.name,
 			item.type,
 			item.date,
-			new BudgetItemRecordAmount(item.amount)
+			new BudgetItemRecordAmount(item.amount),
+			item.brand,
+			item.store
 		);
 	}
 
@@ -108,7 +117,9 @@ export class BudgetItemRecord {
 			this._account
 		}. date: ${
 			this._date.toString().split(" GMT")[0]
-		}. amount: ${this._amount.toString()}`;
+		}. amount: ${this._amount.toString()}${
+			this._brand ? `. brand: ${this._brand}` : ""
+		}${this._store ? `. store: ${this._store}` : ""}`;
 	}
 
 	validate(): { [K in keyof TBudgetItemRecord]: boolean } {
@@ -134,4 +145,6 @@ export type TBudgetItemRecord = {
 	type: BudgetItemRecordType;
 	date: Date;
 	amount: number;
+	brand?: string;
+	store?: string;
 };

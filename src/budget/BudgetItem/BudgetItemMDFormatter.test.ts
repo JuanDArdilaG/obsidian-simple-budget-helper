@@ -12,6 +12,8 @@ describe("toMarkdown", () => {
 			100,
 			"test",
 			"test",
+			"test",
+			"test",
 			"income",
 			new BudgetItemNextDate(new Date("2023-01-01"), true),
 			new FrequencyString("1y"),
@@ -26,6 +28,8 @@ name: test
 amount: 100
 category: test
 subCategory: test
+brand: test
+store: test
 type: income
 nextDate: Sat Dec 31 2022
 frequency: 1y
@@ -41,6 +45,8 @@ account: test
 			"test",
 			"test",
 			100,
+			"test",
+			"test",
 			"test",
 			"test",
 			"income",
@@ -61,6 +67,8 @@ name: test
 amount: 100
 category: test
 subCategory: test
+brand: test
+store: test
 type: income
 nextDate: Tue Dec 31 2024
 frequency: 1y

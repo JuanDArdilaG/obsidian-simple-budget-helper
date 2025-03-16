@@ -11,6 +11,8 @@ describe("remainingDays", () => {
 			100,
 			"test",
 			"test",
+			"test",
+			"test",
 			"income",
 			itemDate
 		);
@@ -28,6 +30,8 @@ describe("remainingDays", () => {
 			"account",
 			"test",
 			100,
+			"test",
+			"test",
 			"test",
 			"test",
 			"income",
@@ -49,6 +53,8 @@ describe("remainingDays", () => {
 			100,
 			"test",
 			"test",
+			"test",
+			"test",
 			"income",
 			itemDate
 		);
@@ -66,6 +72,8 @@ describe("remainingDays", () => {
 			"account",
 			"test",
 			100,
+			"test",
+			"test",
 			"test",
 			"test",
 			"income",

@@ -21,4 +21,66 @@ describe("toString", () => {
 			`- id: 0. name: Test. account: account. date: Mon Jan 01 2024 15:35:00. amount: $100`
 		);
 	});
+
+	it("should return a string representation of the BudgetItemRecord with brand", () => {
+		const record = new BudgetItemRecord(
+			"0",
+			"0",
+			"account",
+			"",
+			"Test",
+			"expense",
+			new Date(2024, 0, 1, 15, 35),
+			new BudgetItemRecordAmount(100),
+			"brand"
+		);
+
+		const str = record.toString();
+
+		expect(str).toBe(
+			`- id: 0. name: Test. account: account. date: Mon Jan 01 2024 15:35:00. amount: $100. brand: brand`
+		);
+	});
+
+	it("should return a string representation of the BudgetItemRecord with store", () => {
+		const record = new BudgetItemRecord(
+			"0",
+			"0",
+			"account",
+			"",
+			"Test",
+			"expense",
+			new Date(2024, 0, 1, 15, 35),
+			new BudgetItemRecordAmount(100),
+			undefined,
+			"store"
+		);
+
+		const str = record.toString();
+
+		expect(str).toBe(
+			`- id: 0. name: Test. account: account. date: Mon Jan 01 2024 15:35:00. amount: $100. store: store`
+		);
+	});
+
+	it("should return a string representation of the BudgetItemRecord with both brand and store", () => {
+		const record = new BudgetItemRecord(
+			"0",
+			"0",
+			"account",
+			"",
+			"Test",
+			"expense",
+			new Date(2024, 0, 1, 15, 35),
+			new BudgetItemRecordAmount(100),
+			"brand",
+			"store"
+		);
+
+		const str = record.toString();
+
+		expect(str).toBe(
+			`- id: 0. name: Test. account: account. date: Mon Jan 01 2024 15:35:00. amount: $100. brand: brand. store: store`
+		);
+	});
 });

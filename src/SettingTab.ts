@@ -1,10 +1,10 @@
 import { PluginSettingTab, App, Setting } from "obsidian";
 import SimpleBudgetHelperPlugin from "./main";
 
-export interface SimpleBudgetHelperSettings {
+export type SimpleBudgetHelperSettings = {
 	rootFolder: string;
 	openInNewTab: boolean;
-}
+};
 
 export const DEFAULT_SETTINGS: SimpleBudgetHelperSettings = {
 	rootFolder: "Budget",

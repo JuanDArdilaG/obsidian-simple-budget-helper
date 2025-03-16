@@ -1,7 +1,6 @@
 import { Budget } from "budget/Budget/Budget";
 import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import SimpleBudgetHelperPlugin from "main";
-import { useEffect } from "react";
 
 export const useCommands = ({
 	plugin,

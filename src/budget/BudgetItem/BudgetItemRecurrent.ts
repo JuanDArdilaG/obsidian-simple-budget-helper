@@ -17,6 +17,8 @@ export class BudgetItemRecurrent extends BudgetItem {
 		amount: number,
 		category: string,
 		subcategory: string,
+		brand: string,
+		store: string,
 		type: BudgetItemRecordType,
 		nextDate: BudgetItemNextDate,
 		private _path: string,
@@ -30,6 +32,8 @@ export class BudgetItemRecurrent extends BudgetItem {
 			amount,
 			category,
 			subcategory,
+			brand,
+			store,
 			type,
 			nextDate,
 			account,
@@ -51,6 +55,8 @@ export class BudgetItemRecurrent extends BudgetItem {
 		amount: number,
 		category: string,
 		subcategory: string,
+		brand: string,
+		store: string,
 		type: BudgetItemRecordType,
 		nextDate: Date,
 		frequency: FrequencyString,
@@ -64,6 +70,8 @@ export class BudgetItemRecurrent extends BudgetItem {
 			amount,
 			category,
 			subcategory,
+			brand,
+			store,
 			type,
 			new BudgetItemNextDate(nextDate, true),
 			path,
@@ -187,6 +195,8 @@ export class BudgetItemRecurrent extends BudgetItem {
 			path: true,
 			history: true,
 			type: true,
+			brand: true,
+			store: true,
 		};
 	}
 
@@ -223,6 +233,8 @@ export class BudgetItemRecurrent extends BudgetItem {
 			path: this._path,
 			frequency: this._frequency.toString(),
 			history: this._history.toString(),
+			brand: this._brand,
+			store: this._store,
 		};
 	}
 
@@ -234,6 +246,8 @@ export class BudgetItemRecurrent extends BudgetItem {
 			json.amount,
 			json.category,
 			json.subcategory,
+			json.brand,
+			json.store,
 			json.type as BudgetItemRecordType,
 			new BudgetItemNextDate(json.nextDate),
 			json.path,
@@ -249,6 +263,8 @@ export class BudgetItemRecurrent extends BudgetItem {
 			"",
 			"",
 			0,
+			"",
+			"",
 			"",
 			"",
 			"expense",
@@ -267,6 +283,8 @@ export type TBudgetItemRecurrent = {
 	account: string;
 	category: string;
 	subcategory: string;
+	brand: string;
+	store: string;
 	type: BudgetItemRecordType;
 	nextDate: Date;
 	toAccount?: string;

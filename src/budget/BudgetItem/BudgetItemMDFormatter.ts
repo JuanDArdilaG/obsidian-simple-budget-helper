@@ -11,7 +11,7 @@ export class BudgetItemRecurrentMDFormatter {
 		rawMarkdown: string
 	): BudgetItemRecurrent {
 		const propertiesRegex =
-			/id: (.*)\nname: (.*)\namount: (.*)\ncategory: (.*)(?:\nsubCategory: (.*))?\ntype: (.*)\nnextDate: (.*)\nfrequency: (.*)\naccount: (.*)(?:\nto account: (.*))?/;
+			/id: (.*)\nname: (.*)\namount: (.*)\ncategory: (.*)\nsubCategory:(.*)\nbrand:(.*)\nstore:(.*)\ntype: (.*)\nnextDate: (.*)\nfrequency: (.*)\naccount: (.*)(?:\nto account: (.*))?/;
 		const match = propertiesRegex.exec(rawMarkdown);
 		if (!match) throw new Error("Invalid raw markdown.");
 		const [
@@ -21,17 +21,18 @@ export class BudgetItemRecurrentMDFormatter {
 			amount,
 			category,
 			subCategory,
+			brand,
+			store,
 			type,
 			nextDate,
 			frequency,
 			account,
 			toAccount,
 		] = match;
+
 		const historyStr = rawMarkdown.split("# History\n");
 		let history = undefined;
-		if (historyStr[1]) {
-			history = historyStr[1].split("\n");
-		}
+		if (historyStr[1]) history = historyStr[1].split("\n");
 
 		return new BudgetItemRecurrent(
 			id,
@@ -39,7 +40,9 @@ export class BudgetItemRecurrentMDFormatter {
 			account,
 			parseInt(amount),
 			category,
-			subCategory || "To Assign",
+			subCategory,
+			brand,
+			store,
 			type as "expense" | "income",
 			new BudgetItemNextDate(new Date(nextDate), true),
 			path,
@@ -64,14 +67,16 @@ name: ${this._item.name}
 amount: ${this._item.amount.toNumber()}
 category: ${this._item.category}
 subCategory: ${this._item.subCategory || "To Assign"}
+brand: ${this._item.brand}
+store: ${this._item.store}
 type: ${this._item.type}
 nextDate: ${this._item.nextDate
 			.toString()
 			.split(" GMT")[0]
-			.replace(
-				" 00:00:00",
-				""
-			)}${`\nfrequency: ${this._item.frequency}`}${`\naccount: ${this._item.account}`}
+			.replace(" 00:00:00", "")}
+${`\nfrequency: ${this._item.frequency}`}
+${`\naccount: ${this._item.account}`}
+${this._item.type === "transfer" ? `\nto account: ${this._item.account}` : ""}
 ---\n# History
 ${this._item.history.map((r) => r.toString()).join("\n")}`;
 	}

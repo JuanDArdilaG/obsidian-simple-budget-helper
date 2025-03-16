@@ -15,6 +15,8 @@ export class BudgetItemSimple extends BudgetItem {
 		amount: number,
 		category: string,
 		subcategory: string,
+		brand: string,
+		store: string,
 		type: BudgetItemRecordType,
 		nextDate: BudgetItemNextDate,
 		toAccount?: string
@@ -25,6 +27,8 @@ export class BudgetItemSimple extends BudgetItem {
 			amount,
 			category,
 			subcategory,
+			brand,
+			store,
 			type,
 			nextDate,
 			account,
@@ -42,6 +46,8 @@ export class BudgetItemSimple extends BudgetItem {
 		amount: number,
 		subcategory: string,
 		category: string,
+		brand: string,
+		store: string,
 		type: BudgetItemRecordType,
 		nextDate: Date,
 		toAccount?: string
@@ -53,6 +59,8 @@ export class BudgetItemSimple extends BudgetItem {
 			amount,
 			category,
 			subcategory,
+			brand,
+			store,
 			type,
 			new BudgetItemNextDate(nextDate),
 			toAccount
@@ -67,6 +75,8 @@ export class BudgetItemSimple extends BudgetItem {
 			item.amount.toNumber(),
 			item.category,
 			item.subCategory,
+			item.brand,
+			item.store,
 			item.type,
 			item.nextDate,
 			item.toAccount
@@ -136,6 +146,8 @@ export class BudgetItemSimple extends BudgetItem {
 			amount: this._amount,
 			category: this._category,
 			subcategory: this._subCategory,
+			brand: this._brand,
+			store: this._store,
 			type: this._type,
 			nextDate: this._nextDate,
 			toAccount: this._toAccount,
@@ -153,6 +165,8 @@ export class BudgetItemSimple extends BudgetItem {
 			json.amount,
 			json.category,
 			json.subcategory,
+			json.brand,
+			json.store,
 			json.type,
 			new BudgetItemNextDate(json.nextDate),
 			json.toAccount
@@ -163,7 +177,18 @@ export class BudgetItemSimple extends BudgetItem {
 		const date = BudgetItemNextDate.empty();
 		const now = new Date();
 		date.setHours(now.getHours(), now.getMinutes(), 0);
-		return new BudgetItemSimple("", "", "", 0, "", "", "expense", date);
+		return new BudgetItemSimple(
+			"",
+			"",
+			"",
+			0,
+			"",
+			"",
+			"",
+			"",
+			"expense",
+			date
+		);
 	}
 }
 
@@ -174,6 +199,8 @@ export type TBudgetItemSimple = {
 	amount: number;
 	category: string;
 	subcategory: string;
+	brand: string;
+	store: string;
 	type: BudgetItemRecordType;
 	nextDate: Date;
 	toAccount?: string;

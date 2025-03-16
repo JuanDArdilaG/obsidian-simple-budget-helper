@@ -85,10 +85,6 @@ export const RightSidebarReactView = ({
 					{showCreateForm && (
 						<CreateBudgetItemPanel
 							budget={innerBudget}
-							onSubmit={async (item) => {
-								await plugin._updateItemInFile(item, "add");
-								await updateBudget();
-							}}
 							close={() => setShowCreateForm(false)}
 						/>
 					)}

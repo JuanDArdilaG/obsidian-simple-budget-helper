@@ -67,7 +67,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		if (operation === "add") {
 			if (item instanceof BudgetItemRecurrent) {
 				await this.app.vault.create(
-					`${this.settings.rootFolder}/${item.name}.md`,
+					`${this.settings.rootFolder}/Recurrent/${item.name}.md`,
 					new BudgetItemRecurrentMDFormatter(item).toMarkdown()
 				);
 				return;

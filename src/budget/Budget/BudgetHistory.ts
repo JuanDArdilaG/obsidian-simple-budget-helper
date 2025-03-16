@@ -27,8 +27,13 @@ export type GroupByYearMonthDay = {
 export class BudgetHistory {
 	constructor(private _history: BudgetItemRecord[]) {
 		const ids = this._history.map((item) => item.id);
-		if (ids.length !== new Set(ids).size) {
-			throw new Error("Duplicate id found in history.");
+		const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+		if (duplicates.length > 0) {
+			throw new Error(
+				`Duplicate id found in history. ${JSON.stringify(
+					new Set(duplicates)
+				)}`
+			);
 		}
 	}
 

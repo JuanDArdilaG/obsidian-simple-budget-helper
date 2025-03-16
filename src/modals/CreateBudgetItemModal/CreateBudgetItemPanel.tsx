@@ -3,7 +3,10 @@ import { BudgetItem, BudgetItemValidator } from "budget/BudgetItem/BudgetItem";
 import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
 import { BudgetItemRecordType } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
 import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
-import { FileOperationsContext } from "view/views/RightSidebarReactView/RightSidebarReactView";
+import {
+	BudgetContext,
+	FileOperationsContext,
+} from "view/views/RightSidebarReactView/RightSidebarReactView";
 import { Budget } from "budget/Budget/Budget";
 import { Input } from "view/components/Input";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
@@ -18,11 +21,9 @@ const validator = new BudgetItemValidator();
 
 export const CreateBudgetItemPanel = ({
 	budget,
-	onSubmit,
 	close,
 }: {
 	budget: Budget<BudgetItem>;
-	onSubmit: (item: BudgetItem) => Promise<void>;
 	close: () => void;
 }) => {
 	const items = useMemo(
@@ -50,7 +51,17 @@ export const CreateBudgetItemPanel = ({
 		],
 		[budget, item.category]
 	);
-	const { refresh } = useContext(FileOperationsContext);
+	const brands = useMemo(
+		() => [...budget.getBrands({ order: "asc" })],
+		[budget]
+	);
+	const stores = useMemo(
+		() => [...budget.getStores({ order: "asc" })],
+		[budget]
+	);
+
+	const { refresh, itemOperations } = useContext(FileOperationsContext);
+	const { updateBudget } = useContext(BudgetContext);
 	const [selectedItem, setSelectedItem] = useState<BudgetItem | undefined>(
 		undefined
 	);
@@ -67,6 +78,8 @@ export const CreateBudgetItemPanel = ({
 		amount: false,
 		category: false,
 		subcategory: false,
+		brand: false,
+		store: false,
 		frequency: false,
 		nextDate: false,
 	});
@@ -116,6 +129,8 @@ export const CreateBudgetItemPanel = ({
 			if (!locks.amount) toUpdate.amount = json.amount;
 			if (!locks.category) toUpdate.category = json.category;
 			if (!locks.subcategory) toUpdate.subcategory = json.subcategory;
+			if (!locks.brand) toUpdate.brand = json.brand;
+			if (!locks.store) toUpdate.store = json.store;
 			if (!locks.nextDate) toUpdate.nextDate = json.nextDate;
 			if (!lockToAccount) toUpdate.toAccount = json.toAccount;
 			if (!lockAccount) toUpdate.account = json.account;
@@ -124,7 +139,7 @@ export const CreateBudgetItemPanel = ({
 			setIsRecurrent(!BudgetItemSimple.IsSimple(selectedItem));
 			update(toUpdate);
 		}
-	}, [selectedItem, locks, lockAccount, lockToAccount, lockType]);
+	}, [selectedItem]);
 
 	useEffect(() => {
 		update({ ...item.toJSON() });
@@ -142,6 +157,8 @@ export const CreateBudgetItemPanel = ({
 		category?: string;
 		subcategory?: string;
 		toAccount?: string;
+		brand?: string;
+		store?: string;
 	}) => {
 		const toUpdate = item.toJSON();
 		console.log({ toUpdate: { ...toUpdate }, newValues });
@@ -153,6 +170,8 @@ export const CreateBudgetItemPanel = ({
 			toUpdate.category = newValues.category;
 		if (newValues.subcategory !== undefined)
 			toUpdate.subcategory = newValues.subcategory;
+		if (newValues.brand !== undefined) toUpdate.brand = newValues.brand;
+		if (newValues.store !== undefined) toUpdate.store = newValues.store;
 		if (newValues.toAccount) toUpdate.toAccount = newValues.toAccount;
 		if (newValues.frequency !== undefined)
 			toUpdate.frequency = newValues.frequency;
@@ -192,7 +211,10 @@ export const CreateBudgetItemPanel = ({
 		});
 		const result = validator.validate(item);
 		if (!result) return setValidation(result);
-		await onSubmit(item);
+
+		await itemOperations(item, "add");
+		await updateBudget();
+
 		await refresh();
 
 		if (withClose) close();
@@ -203,6 +225,8 @@ export const CreateBudgetItemPanel = ({
 				locks.amount ? item.amount.toNumber() : 0,
 				locks.category ? item.category : "",
 				locks.subcategory ? item.subCategory : "",
+				locks.brand ? item.brand : "",
+				locks.store ? item.store : "",
 				"expense",
 				locks.nextDate
 					? item.nextDate
@@ -295,6 +319,32 @@ export const CreateBudgetItemPanel = ({
 				setIsLocked={(value) => updateLock("nextDate", value)}
 				error={validation.check("nextDate") ?? undefined}
 			/>
+			{type === "expense" && (
+				<>
+					<SelectWithCreation
+						id="brand"
+						label="Brand"
+						style={{ flexGrow: 1 }}
+						item={item.brand}
+						items={brands}
+						onChange={(brand) => update({ brand })}
+						isLocked={locks.brand}
+						setIsLocked={(value) => updateLock("brand", value)}
+						error={validation.check("brand") ?? undefined}
+					/>
+					<SelectWithCreation
+						id="store"
+						label="Store"
+						style={{ flexGrow: 1 }}
+						item={item.store}
+						items={stores}
+						onChange={(store) => update({ store })}
+						isLocked={locks.store}
+						setIsLocked={(value) => updateLock("store", value)}
+						error={validation.check("store") ?? undefined}
+					/>
+				</>
+			)}
 			<div style={{ display: "flex", alignItems: "center" }}>
 				<FormControlLabel
 					control={

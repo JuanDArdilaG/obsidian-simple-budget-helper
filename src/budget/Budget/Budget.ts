@@ -81,6 +81,38 @@ export class Budget<T extends BudgetItem> {
 		return accounts;
 	}
 
+	getBrands(config?: SortConfig): string[] {
+		const brands: string[] = [];
+		for (const item of this._items) {
+			if (!brands.includes(item.brand)) {
+				brands.push(item.brand);
+			}
+		}
+
+		if (config?.order === "asc") {
+			return brands.sort((a, b) => a.localeCompare(b));
+		} else if (config?.order === "desc") {
+			return brands.sort((a, b) => b.localeCompare(a));
+		}
+		return brands;
+	}
+
+	getStores(config?: SortConfig): string[] {
+		const stores: string[] = [];
+		for (const item of this._items) {
+			if (!stores.includes(item.store)) {
+				stores.push(item.store);
+			}
+		}
+
+		if (config?.order === "asc") {
+			return stores.sort((a, b) => a.localeCompare(b));
+		} else if (config?.order === "desc") {
+			return stores.sort((a, b) => b.localeCompare(a));
+		}
+		return stores;
+	}
+
 	addItems(...items: T[]) {
 		this._items = [...this._items, ...items];
 	}
@@ -175,10 +207,10 @@ export class Budget<T extends BudgetItem> {
 		) as unknown as BudgetItemSimple[];
 
 		const headers =
-			"| ID | Name | Type | Category | SubCategory | Account | Date | Amount |\n|------|---------|------|--------|\n";
+			"| ID | Name | Type | Category | SubCategory | Brand | Store | Account | Date | Amount |\n|------|---------|------|--------|\n";
 
 		if (simpleItems.length === 0) {
-			return headers + "| | | | | | | |";
+			return headers + "| | | | | | | | | | |";
 		}
 
 		return (
@@ -187,7 +219,7 @@ export class Budget<T extends BudgetItem> {
 				.map((item) => {
 					return `| ${item.id} | ${item.name} | ${item.type} | ${
 						item.category
-					} | ${item.subCategory} | ${
+					} | ${item.subCategory} | ${item.brand} | ${item.store} | ${
 						item.type !== "transfer"
 							? item.account
 							: `${item.account} - ${item.toAccount}`
@@ -248,6 +280,8 @@ export class Budget<T extends BudgetItem> {
 				type,
 				category,
 				subCategory,
+				brand,
+				store,
 				account,
 				date,
 				amount,
@@ -260,7 +294,9 @@ export class Budget<T extends BudgetItem> {
 					name,
 					PriceValueObject.fromString(amount).valueOf(),
 					category,
-					subCategory || "To Assign",
+					subCategory,
+					brand,
+					store,
 					type as BudgetItemRecordType,
 					new BudgetItemNextDate(new Date(date)),
 					type === "transfer" ? account.split(" - ")[1] : undefined

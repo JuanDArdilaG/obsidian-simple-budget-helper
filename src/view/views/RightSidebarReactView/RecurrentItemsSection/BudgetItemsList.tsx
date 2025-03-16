@@ -65,6 +65,8 @@ export const BudgetItemsList = ({
 							item.amount.toNumber(),
 							item.category,
 							item.subCategory,
+							item.brand,
+							item.store,
 							item.type,
 							new BudgetItemNextDate(date),
 							item.path,

@@ -29,11 +29,23 @@ export const EditBudgetItemRecurrentPanel = ({
 		[budget, category]
 	);
 
+	const brands = useMemo(
+		() => [...budget.getBrands({ order: "asc" })],
+		[budget]
+	);
+	const stores = useMemo(
+		() => [...budget.getStores({ order: "asc" })],
+		[budget]
+	);
+
 	const [name, setName] = useState(item.name);
 	const [amount, setAmount] = useState(item.amount);
 	const [type, setType] = useState(item.type);
 
 	const [subCategory, setSubCategory] = useState(item?.subCategory || "");
+
+	const [brand, setBrand] = useState(item.brand);
+	const [store, setStore] = useState(item.store);
 
 	const [account, setAccount] = useState(item.account);
 
@@ -112,9 +124,11 @@ export const EditBudgetItemRecurrentPanel = ({
 				label="SubCategory"
 				item={subCategory}
 				items={subCategories}
-				onChange={(category) => setSubCategory(category ?? "")}
+				onChange={(sub) => setSubCategory(sub ?? "")}
 				error={
-					!validation || validation.category ? undefined : "required"
+					!validation || validation.subCategory
+						? undefined
+						: "required"
 				}
 			/>
 			<Input<Date>
@@ -124,18 +138,33 @@ export const EditBudgetItemRecurrentPanel = ({
 				onChange={setDate}
 				error={!validation || validation.date ? undefined : "required"}
 			/>
+			<SelectWithCreation
+				id="brand"
+				label="Brand"
+				item={brand}
+				items={brands}
+				onChange={setBrand}
+			/>
+			<SelectWithCreation
+				id="store"
+				label="Store"
+				item={store}
+				items={stores}
+				onChange={setStore}
+			/>
 			<Input
 				id="frequency"
 				label="Frequency"
 				value={frequency}
-				onChange={(account) => setFrequency(account ?? "")}
+				onChange={(freq) => setFrequency(freq ?? "")}
 				error={
-					!validation || validation.toAccount ? undefined : "required"
+					!validation || validation.frequency ? undefined : "required"
 				}
 			/>
 			<button
 				onClick={async () => {
 					const validation = validateOnUpdate();
+					console.log({ validation });
 					setValidation(validation);
 					if (!Object.values(validation).every((value) => value))
 						return;
@@ -150,6 +179,8 @@ export const EditBudgetItemRecurrentPanel = ({
 							amount.toNumber(),
 							category,
 							subCategory,
+							brand,
+							store,
 							type,
 							new BudgetItemNextDate(date, true),
 							item.path,

@@ -16,6 +16,8 @@ export abstract class BudgetItem {
 		protected _amount: number,
 		protected _category: string,
 		protected _subCategory: string,
+		protected _brand: string,
+		protected _store: string,
 		protected _type: BudgetItemRecordType,
 		protected _nextDate: BudgetItemNextDate,
 		protected _account: string,
@@ -52,6 +54,14 @@ export abstract class BudgetItem {
 
 	get subCategory(): string {
 		return this._subCategory;
+	}
+
+	get brand(): string {
+		return this._brand;
+	}
+
+	get store(): string {
+		return this._store;
 	}
 
 	get nextDate(): BudgetItemNextDate {
@@ -137,6 +147,8 @@ export class BudgetItemValidator extends Validator<TBudgetItem, BudgetItem> {
 			nextDate: (value) => value.nextDate !== null,
 			category: (value) => value.category !== "",
 			subcategory: (value) => value.subCategory !== "",
+			brand: (_) => true,
+			store: (_) => true,
 			toAccount: (value) =>
 				value.type !== "transfer" || value.toAccount !== "",
 			path: (_) => true,
@@ -146,18 +158,3 @@ export class BudgetItemValidator extends Validator<TBudgetItem, BudgetItem> {
 		});
 	}
 }
-
-// export type TBudgetItemValidation = { [K in keyof TBudgetItem]: boolean };
-// export const BudgetItemValidationAllTrue: TBudgetItemValidation = {
-// 	id: true,
-// 	name: true,
-// 	account: true,
-// 	amount: true,
-// 	nextDate: true,
-// 	category: true,
-// 	toAccount: true,
-// 	frequency: true,
-// 	path: true,
-// 	history: true,
-// 	type: true,
-// };

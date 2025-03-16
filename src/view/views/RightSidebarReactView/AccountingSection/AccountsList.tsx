@@ -51,6 +51,8 @@ export const AccountsList = ({ budget }: { budget: Budget<BudgetItem> }) => {
 							Math.abs(newAmount),
 							"Adjustment",
 							"Adjustment",
+							"",
+							"",
 							newAmount > 0 ? "income" : "expense",
 							new Date()
 						);
