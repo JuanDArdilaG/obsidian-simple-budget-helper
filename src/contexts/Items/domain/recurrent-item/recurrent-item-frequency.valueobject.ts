@@ -1,6 +1,11 @@
 import { DATE_RELATIONS } from "apps/obsidian-plugin/config";
+import { StringValueObject } from "contexts/Shared/domain/value-objects/string.valueobject";
 
-export class FrequencyString extends String {
+export class RecurrrentItemFrequency extends StringValueObject {
+	constructor(value: string) {
+		super("Recurrent Item Frequency", value);
+	}
+
 	toObject(): FrequencyObject | undefined {
 		const regex = /(?:(\d*)y)?(?:(\d*)mo)?(?:(\d*)w)?(?:(\d*)d)?/;
 		const match = regex.exec(this.toString());
@@ -22,8 +27,8 @@ export class FrequencyString extends String {
 		);
 	}
 
-	static empty(): FrequencyString {
-		return new FrequencyString("");
+	static empty(): RecurrrentItemFrequency {
+		return new RecurrrentItemFrequency("");
 	}
 }
 

@@ -1,7 +1,7 @@
 {
 	"name": "simple-budget-helper",
 	"version": "0.0.1",
-	"description": "A simple budget helper for Obsidian app",
+	"description": "A simple budget helper for Obsidian",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

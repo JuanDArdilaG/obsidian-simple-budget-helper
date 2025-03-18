@@ -160,32 +160,6 @@ export class Budget<T extends BudgetItem> {
 		);
 	}
 
-	getNDaysItems(n: number): { item: BudgetItemRecurrent; dates: Date[] }[] {
-		const items: { item: BudgetItemRecurrent; dates: Date[] }[] = [];
-		this.onlyRecurrent().items.forEach((item) => {
-			const a = item.getRecurrenceDatesForNDays(n);
-			if (a.length > 0) {
-				items.push({ item, dates: a });
-			}
-		});
-
-		return items;
-	}
-
-	onlyRecurrent(): Budget<BudgetItemRecurrent> {
-		const items = this._items.filter(
-			BudgetItemRecurrent.IsRecurrent
-		) as unknown as BudgetItemRecurrent[];
-		return new Budget<BudgetItemRecurrent>(items);
-	}
-
-	onlySimple(): Budget<BudgetItemSimple> {
-		const items: BudgetItemSimple[] = this._items.filter(
-			BudgetItemSimple.IsSimple
-		) as unknown as BudgetItemSimple[];
-		return new Budget<BudgetItemSimple>(items);
-	}
-
 	getHistory(): BudgetHistory {
 		return new BudgetHistory(this.items.map((item) => item.history).flat());
 	}
