@@ -1,0 +1,108 @@
+import {
+	createContainer,
+	asClass,
+	InjectionMode,
+	AwilixContainer,
+	asValue,
+} from "awilix";
+import { ItemsDexieRepository } from "contexts/Items/infrastructure";
+import { Config } from "../config/config";
+import {
+	GetAllUniqueItemsByNameUseCase,
+	CreateSimpleItemUseCase,
+} from "contexts/Items/application";
+import {
+	GetAllAccountNamesUseCase,
+	GetAllAccountsUseCase,
+} from "contexts/Accounts/application";
+import { AccountsDexieRepository } from "contexts/Accounts/infrastructure";
+
+import {
+	RecordSimpleItemUseCase,
+	DeleteTransactionUseCase,
+	GetAllTransactionsUseCase,
+	UpdateTransactionUseCase,
+	RecordRecurrentItemUseCase,
+} from "contexts/Transactions/application";
+import { TransactionsDexieRepository } from "contexts/Transactions/infrastructure";
+import { GetAllCategoriesWithSubCategoriesUseCase } from "contexts/Categories/application";
+import { CategoriesDexieRepository } from "contexts/Categories";
+import { SubcategoriesDexieRepository } from "contexts/Subcategories";
+import {
+	GetAllUniqueItemBrandsUseCase,
+	GetAllUniqueItemStoresUseCase,
+} from "contexts/Items/application";
+import {
+	GetAllTransactionsGroupedByDaysUseCase,
+	ReportsService,
+} from "contexts/Reports/application";
+import { DexieDB } from "../persistence";
+
+const container = createContainer({
+	injectionMode: InjectionMode.CLASSIC,
+});
+
+export function buildContainer(): AwilixContainer {
+	container.register({
+		config: asValue(Config),
+		_db: asClass(DexieDB).singleton(),
+	});
+
+	container.register({
+		_itemsRepository: asClass(ItemsDexieRepository).singleton(),
+		createSimpleItemUseCase: asClass(CreateSimpleItemUseCase).singleton(),
+		getAllUniqueItemsByNameUseCase: asClass(
+			GetAllUniqueItemsByNameUseCase
+		).singleton(),
+		getAllUniqueItemBrandsUseCase: asClass(
+			GetAllUniqueItemBrandsUseCase
+		).singleton(),
+		getAllUniqueItemStoresUseCase: asClass(
+			GetAllUniqueItemStoresUseCase
+		).singleton(),
+	});
+
+	container.register({
+		_accountsRepository: asClass(AccountsDexieRepository).singleton(),
+		getAllAccountNamesUseCase: asClass(
+			GetAllAccountNamesUseCase
+		).singleton(),
+		getAllAccountsUseCase: asClass(GetAllAccountsUseCase).singleton(),
+	});
+
+	container.register({
+		_transactionsRepository: asClass(
+			TransactionsDexieRepository
+		).singleton(),
+		getAllTransactionsUseCase: asClass(
+			GetAllTransactionsUseCase
+		).singleton(),
+		recordSimpleItemUseCase: asClass(RecordSimpleItemUseCase).singleton(),
+		recordRecurrentItemUseCase: asClass(
+			RecordRecurrentItemUseCase
+		).singleton(),
+		deleteTransactionUseCase: asClass(DeleteTransactionUseCase).singleton(),
+		updateTransactionUseCase: asClass(UpdateTransactionUseCase).singleton(),
+	});
+
+	container.register({
+		_categoriesRepository: asClass(CategoriesDexieRepository).singleton(),
+		_subCategoriesRepository: asClass(
+			SubcategoriesDexieRepository
+		).singleton(),
+		getAllCategoriesWithSubCategoriesUseCase: asClass(
+			GetAllCategoriesWithSubCategoriesUseCase
+		).singleton(),
+	});
+
+	container.register({
+		_reportsService: asClass(ReportsService).singleton(),
+		getAllTransactionsGroupedByDaysUseCase: asClass(
+			GetAllTransactionsGroupedByDaysUseCase
+		).singleton(),
+	});
+
+	return container;
+}
+
+export default container;

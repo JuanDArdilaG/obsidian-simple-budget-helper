@@ -1,114 +1,156 @@
-import { createContext, useState, useMemo } from "react";
-import { Budget } from "budget/Budget/Budget";
-import { BudgetItem } from "budget/BudgetItem/BudgetItem";
+import { createContext, useMemo, useState } from "react";
 import { SectionButtons, SidebarSections } from "./SectionButtons";
-import { RecurrentItemsSection } from "./RecurrentItemsSection/RecurrentItemsSection";
 import { AccountingSection } from "./AccountingSection/AccountingSection";
 import { DEFAULT_SETTINGS } from "apps/obsidian-plugin/SettingTab";
-import { useCommands } from "./useCommands";
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
-import { CreateBudgetItemPanel } from "modals/CreateBudgetItemModal/CreateBudgetItemPanel";
 import { ActionButtons } from "./ActionButtons";
+import { CreateBudgetItemPanel } from "apps/obsidian-plugin/modals";
+import { useAsyncCallback } from "apps/obsidian-plugin/view/hooks";
+import {
+	GetAllCategoriesWithSubCategoriesUseCase,
+	GetAllCategoriesWithSubCategoriesUseCaseOutput,
+	Category,
+} from "contexts/Categories";
+import {
+	GetAllUniqueItemBrandsUseCase,
+	GetAllUniqueItemBrandsUseCaseOutput,
+	GetAllUniqueItemStoresUseCase,
+	GetAllUniqueItemStoresUseCaseOutput,
+} from "contexts/Items/application";
+import {
+	GetAllAccountsUseCase,
+	GetAllAccountsUseCaseOutput,
+} from "contexts/Accounts/application";
+import { AwilixContainer } from "awilix";
+import { Logger } from "contexts";
 
 export const SettingsContext = createContext(DEFAULT_SETTINGS);
-export const FileOperationsContext = createContext({
-	itemOperations: async (
-		item: BudgetItem,
-		operation: "add" | "modify" | "remove"
-	) => {},
+
+export const AppContext = createContext({
+	container: {} as AwilixContainer,
 	refresh: async () => {},
-});
-export const BudgetContext = createContext({
-	budget: new Budget<BudgetItem>([]),
-	updateBudget: async () => {},
+	categoriesWithSubcategories:
+		{} as GetAllCategoriesWithSubCategoriesUseCaseOutput,
+	brands: {} as GetAllUniqueItemBrandsUseCaseOutput,
+	stores: {} as GetAllUniqueItemStoresUseCaseOutput,
+	accounts: {} as GetAllAccountsUseCaseOutput,
+	categories: [] as Category[],
 });
 
 export const RightSidebarReactView = ({
-	budget,
-	onRecord,
+	container,
 	refresh,
 	statusBarAddText,
 	plugin,
 }: {
-	budget: Budget<BudgetItem>;
-	onRecord: (item: BudgetItem) => void;
+	container: AwilixContainer<any>;
 	plugin: SimpleBudgetHelperPlugin;
 	refresh: () => Promise<void>;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) => {
-	useCommands({
-		plugin,
-		budget,
-		updateFiles: plugin._updateItemInFile,
-	});
 	const [sectionSelection, setSectionSelection] =
 		useState<SidebarSections>("accounting");
-
-	const [innerBudget, setInnerBudget] = useState(budget);
-
-	const updateBudget = async () => {
-		setInnerBudget(
-			await plugin._getBudget(plugin.app, plugin.settings.rootFolder)
-		);
-	};
-
-	const onlyRecurrent = useMemo(
-		() => innerBudget.onlyRecurrent(),
-		[innerBudget]
-	);
-	const orderedBudget = useMemo(
-		() => innerBudget.orderByNextDate(),
-		[innerBudget]
-	);
-
 	const [showCreateForm, setShowCreateForm] = useState(false);
+
+	const getAllCategoriesWithSubCategoriesUseCase = useMemo(
+		() =>
+			container.resolve(
+				"getAllCategoriesWithSubCategoriesUseCase"
+			) as GetAllCategoriesWithSubCategoriesUseCase,
+		[container]
+	);
+	const getAllUniqueItemBrandsUseCase = useMemo(
+		() =>
+			container.resolve(
+				"getAllUniqueItemBrandsUseCase"
+			) as GetAllUniqueItemBrandsUseCase,
+		[container]
+	);
+	const getAllUniqueItemStoresUseCase = useMemo(
+		() =>
+			container.resolve(
+				"getAllUniqueItemStoresUseCase"
+			) as GetAllUniqueItemStoresUseCase,
+		[container]
+	);
+	const getAllAccountsUseCase = useMemo(
+		() =>
+			container.resolve("getAllAccountsUseCase") as GetAllAccountsUseCase,
+		[container]
+	);
+
+	const accounts =
+		useAsyncCallback<GetAllAccountsUseCaseOutput>(
+			getAllAccountsUseCase,
+			getAllAccountsUseCase.execute
+		) ?? [];
+	Logger.debug("accounts initialization", { accounts });
+	const categoriesWithSubcategories =
+		useAsyncCallback<GetAllCategoriesWithSubCategoriesUseCaseOutput>(
+			getAllCategoriesWithSubCategoriesUseCase,
+			getAllCategoriesWithSubCategoriesUseCase.execute
+		) ?? [];
+	const categories = categoriesWithSubcategories.map(
+		(catWithSubs) => catWithSubs.category
+	);
+
+	const brands =
+		useAsyncCallback<GetAllUniqueItemBrandsUseCaseOutput>(
+			getAllUniqueItemBrandsUseCase,
+			getAllUniqueItemBrandsUseCase.execute
+		) ?? [];
+	const stores =
+		useAsyncCallback<GetAllUniqueItemStoresUseCaseOutput>(
+			getAllUniqueItemStoresUseCase,
+			getAllUniqueItemStoresUseCase.execute
+		) ?? [];
 
 	return (
 		<SettingsContext.Provider value={plugin.settings}>
-			<FileOperationsContext.Provider
+			<AppContext.Provider
 				value={{
-					itemOperations: (item, operation) =>
-						plugin._updateItemInFile(item, operation),
-					refresh: async () => {
-						await updateBudget();
-					},
+					container,
+					refresh,
+					categoriesWithSubcategories,
+					brands,
+					stores,
+					accounts,
+					categories,
 				}}
 			>
-				<BudgetContext.Provider
-					value={{ budget: innerBudget, updateBudget }}
-				>
-					<ActionButtons
-						refresh={refresh}
-						create={async () => setShowCreateForm(!showCreateForm)}
-						isCreating={showCreateForm}
+				<ActionButtons
+					create={async () => setShowCreateForm(!showCreateForm)}
+					isCreating={showCreateForm}
+				/>
+				{showCreateForm && (
+					<CreateBudgetItemPanel
+						createSimpleItemUseCase={container.resolve(
+							"createSimpleItemUseCase"
+						)}
+						getAllUniqueItemsByNameUseCase={container.resolve(
+							"getAllUniqueItemsByNameUseCase"
+						)}
+						close={() => setShowCreateForm(false)}
 					/>
-					{showCreateForm && (
-						<CreateBudgetItemPanel
-							budget={innerBudget}
-							close={() => setShowCreateForm(false)}
-						/>
-					)}
-					<SectionButtons
-						selected={sectionSelection}
-						setSelected={setSectionSelection}
-					/>
+				)}
+				<SectionButtons
+					selected={sectionSelection}
+					setSelected={setSectionSelection}
+				/>
 
-					{sectionSelection === "recurrentItems" && (
-						<RecurrentItemsSection
-							budget={onlyRecurrent}
-							onRecord={onRecord}
-							app={plugin.app}
-						/>
-					)}
-					{sectionSelection === "accounting" && (
-						<AccountingSection
-							app={plugin.app}
-							statusBarAddText={statusBarAddText}
-							budget={orderedBudget}
-						/>
-					)}
-				</BudgetContext.Provider>
-			</FileOperationsContext.Provider>
+				{/* {sectionSelection === "recurrentItems" && (
+					<RecurrentItemsSection
+						onRecord={() => {}}
+						app={plugin.app}
+					/>
+				)} */}
+				{sectionSelection === "accounting" && (
+					<AccountingSection
+						app={plugin.app}
+						statusBarAddText={statusBarAddText}
+					/>
+				)}
+			</AppContext.Provider>
 		</SettingsContext.Provider>
 	);
 };

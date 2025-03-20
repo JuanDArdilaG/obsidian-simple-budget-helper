@@ -8,15 +8,19 @@ import { ItemBrand } from "contexts/Items/domain/item-brand.valueobject";
 import { ItemStore } from "contexts/Items/domain/item-store.valueobject";
 import { DateValueObject } from "@juandardilag/value-objects/DateValueObject";
 import { Item } from "contexts/Items/domain/item.entity";
-import { RecurrentItem } from "contexts/Items/domain/recurrent-item/recurrent-item.entity";
+import { RecurrentItem } from "contexts/Items/domain/RecurrentItem/recurrent-item.entity";
 import { TransactionCategory } from "./transaction-category.valueobject";
 import { TransactionSubcategory } from "./transaction-subcategory.valueobject";
 import { TransactionName } from "./item-name.valueobject";
+import { IEntity } from "../../Shared/domain/entity.interface";
+import { OperationType } from "contexts/Shared";
 
-export class Transaction {
+export class Transaction
+	implements IEntity<TransactionID, TransactionPrimitives>
+{
 	constructor(
 		private _id: TransactionID,
-		private _itemID: ItemID,
+		private _item: ItemID,
 		private _account: AccountID,
 		private _name: TransactionName,
 		private _operation: TransactionOperation,
@@ -63,12 +67,28 @@ export class Transaction {
 	// 	);
 	// }
 
+	get id(): TransactionID {
+		return this._id;
+	}
+
+	get itemID(): ItemID {
+		return this._item;
+	}
+
+	get name(): TransactionName {
+		return this._name;
+	}
+
 	get date(): TransactionDate {
 		return this._date;
 	}
 
 	get operation(): TransactionOperation {
 		return this._operation;
+	}
+
+	get account(): AccountID {
+		return this._account;
 	}
 
 	get category(): TransactionCategory {
@@ -94,10 +114,14 @@ export class Transaction {
 		);
 	}
 
+	get toAccount(): AccountID | undefined {
+		return this._toAccount;
+	}
+
 	update(
 		name: TransactionName,
 		account: AccountID,
-		date: DateValueObject,
+		date: TransactionDate,
 		type: TransactionOperation,
 		amount: TransactionAmount
 	) {
@@ -121,15 +145,64 @@ export class Transaction {
 	toPrimitives(): TransactionPrimitives {
 		return {
 			id: this._id.value,
-			item: this._itemID.value,
+			item: this._item.value,
 			name: this._name.value,
 			account: this._account.value,
 			toAccount: this._toAccount?.value,
-			type: this._operation.value,
+			operation: this._operation.value,
 			date: this._date.valueOf(),
 			amount: this._amount.valueOf(),
 			brand: this._brand?.value,
 			store: this._store?.value,
+			category: this._category.value,
+			subCategory: this._subCategory.value,
+		};
+	}
+
+	static fromPrimitives({
+		id,
+		item,
+		name,
+		account,
+		toAccount,
+		operation,
+		date,
+		amount,
+		brand,
+		store,
+		category,
+		subCategory,
+	}: TransactionPrimitives): Transaction {
+		return new Transaction(
+			new TransactionID(id),
+			new ItemID(item),
+			new AccountID(account),
+			new TransactionName(name),
+			new TransactionOperation(operation),
+			new TransactionCategory(category),
+			new TransactionSubcategory(subCategory),
+			new TransactionDate(date),
+			new TransactionAmount(amount),
+			toAccount ? new AccountID(toAccount) : undefined,
+			brand ? new ItemBrand(brand) : undefined,
+			store ? new ItemStore(store) : undefined
+		);
+	}
+
+	static emptyPrimitives(): TransactionPrimitives {
+		return {
+			id: "",
+			item: "",
+			name: "",
+			account: "",
+			toAccount: "",
+			operation: "expense",
+			date: new Date(),
+			amount: 0,
+			brand: "",
+			store: "",
+			category: "",
+			subCategory: "",
 		};
 	}
 }
@@ -139,8 +212,10 @@ export type TransactionPrimitives = {
 	item: string;
 	name: string;
 	account: string;
+	category: string;
+	subCategory: string;
 	toAccount?: string;
-	type: string;
+	operation: OperationType;
 	date: Date;
 	amount: number;
 	brand?: string;

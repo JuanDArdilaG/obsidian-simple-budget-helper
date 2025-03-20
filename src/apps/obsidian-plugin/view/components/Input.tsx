@@ -52,7 +52,9 @@ export const Input = <T extends NonNullable<InputValue>>({
 						<ReactMoneyInput
 							id={`${id}-input-react`}
 							initialValue={value?.toNumber() ?? undefined}
-							onValueChange={(priceVO) => onChange(priceVO as T)}
+							onValueChange={(priceVO) =>
+								onChange(priceVO as unknown as T)
+							}
 						/>
 					</div>
 					{isLocked !== undefined && (

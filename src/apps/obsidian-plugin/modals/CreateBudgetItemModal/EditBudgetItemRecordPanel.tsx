@@ -1,56 +1,66 @@
-import { BudgetItem } from "budget/BudgetItem/BudgetItem";
-import { BudgetItemRecord } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
-import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
 import { useContext, useMemo, useState } from "react";
-import { BudgetItemRecordType } from "../../budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
-import { Input } from "view/components/Input";
-import { Select } from "view/components/Select";
-import { SelectWithCreation } from "view/components/SelectWithCreation";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { BudgetContext } from "view/views/RightSidebarReactView/RightSidebarReactView";
+import {
+	Transaction,
+	TransactionDate,
+	TransactionName,
+} from "contexts/Transactions/domain";
+import { AppContext } from "apps/obsidian-plugin/view";
+import {
+	Input,
+	Select,
+	SelectWithCreation,
+} from "apps/obsidian-plugin/view/components";
+import { OperationType } from "contexts/Shared/domain";
+import { UpdateTransactionUseCase } from "contexts/Transactions/application";
+import { AccountID } from "contexts";
 
-export const EditBudgetItemRecordPanel = ({
-	record,
+export const EditTransactionPanel = ({
+	transaction,
 	onUpdate,
 }: {
-	record: BudgetItemRecord;
-	onUpdate: (item: BudgetItem) => Promise<void>;
+	transaction: Transaction;
+	onUpdate: () => Promise<void>;
 }) => {
-	const { budget } = useContext(BudgetContext);
-	const categories = useMemo(
-		() => budget.getCategories({ order: "asc" }),
-		[budget]
-	);
-	const item = useMemo(() => budget.getItemByID(record.itemID), [budget]);
+	const { categoriesWithSubcategories, accounts, container, categories } =
+		useContext(AppContext);
 
-	const [name, setName] = useState(record.name);
-	const [amount, setAmount] = useState(record.amount);
-	const [type, setType] = useState(record.type);
+	const updateTransactionUseCase = container.resolve(
+		"updateTransactionUseCase"
+	) as UpdateTransactionUseCase;
 
-	const [category, setCategory] = useState(item?.category || "");
+	const [name, setName] = useState(transaction.name.value);
+	const [amount, setAmount] = useState(transaction.amount);
+	const [type, setType] = useState(transaction.operation.value);
+	const [category, setCategory] = useState(transaction.category.value);
 	const subCategories = useMemo(
-		() => budget.getSubCategories({ category, sort: { order: "asc" } }),
-		[budget, category]
+		() =>
+			categoriesWithSubcategories.find(
+				(catWithSubs) => catWithSubs.category.id.value === category
+			)?.subCategories ?? [],
+		[category]
 	);
-	const [subCategory, setSubCategory] = useState(item?.subCategory || "");
+	const [subCategory, setSubCategory] = useState(
+		transaction.subCategory.value
+	);
 
-	const [account, setAccount] = useState(record.account);
+	const [account, setAccount] = useState(transaction.account.value);
+	const [toAccount, setToAccount] = useState(transaction.toAccount?.value);
 
-	const [toAccount, setToAccount] = useState(record.toAccount || "");
-
-	const [date, setDate] = useState(record.date);
+	const [date, setDate] = useState(transaction.date.valueOf());
 	const [validation, setValidation] = useState<
 		Record<string, boolean> | undefined
 	>(undefined);
-	const validateOnUpdate = () => ({
-		name: name.length > 0,
-		amount: amount.toNumber() > 0,
-		account: account.length > 0,
-		date: date.toString() !== "Invalid Date",
-		category: category.length > 0,
-		subCategory: subCategory.length > 0,
-		toAccount: type !== "transfer" || toAccount.length > 0,
-	});
+
+	// const validateOnUpdate = () => ({
+	// 	name: name.length > 0,
+	// 	amount: amount.toNumber() > 0,
+	// 	account: account.length > 0,
+	// 	date: date.toString() !== "Invalid Date",
+	// 	category: category.length > 0,
+	// 	subCategory: subCategory.length > 0,
+	// 	toAccount: type !== "transfer" || toAccount.length > 0,
+	// });
 
 	return (
 		<div className="create-budget-item-modal">
@@ -59,7 +69,7 @@ export const EditBudgetItemRecordPanel = ({
 				id="name"
 				label="Name"
 				value={name}
-				onChange={(name: string) => setName(name)}
+				onChange={(name) => setName(name)}
 				error={!validation || validation.name ? undefined : "required"}
 			/>
 			<Input<PriceValueObject>
@@ -71,26 +81,24 @@ export const EditBudgetItemRecordPanel = ({
 					!validation || validation.amount ? undefined : "required"
 				}
 			/>
-			{item instanceof BudgetItemSimple && (
-				<Select
-					id="type"
-					label="Type"
-					value={type}
-					values={{
-						expense: "Expense",
-						transfer: "Transfer",
-						income: "Income",
-					}}
-					onChange={(type) =>
-						setType(type.toLowerCase() as BudgetItemRecordType)
-					}
-				/>
-			)}
+			<Select
+				id="type"
+				label="Type"
+				value={type}
+				values={{
+					expense: "Expense",
+					transfer: "Transfer",
+					income: "Income",
+				}}
+				onChange={(type) =>
+					setType(type.toLowerCase() as OperationType)
+				}
+			/>
 			<SelectWithCreation
 				id="account"
 				label="From"
 				item={account}
-				items={budget.getAccounts()}
+				items={accounts.map((acc) => acc.name.value)}
 				onChange={(account) => setAccount(account ?? "")}
 				error={
 					!validation || validation.account ? undefined : "required"
@@ -100,8 +108,8 @@ export const EditBudgetItemRecordPanel = ({
 				<SelectWithCreation
 					id="to-account"
 					label="To"
-					item={toAccount}
-					items={budget.getAccounts()}
+					item={toAccount ?? ""}
+					items={accounts.map((acc) => acc.name.value)}
 					onChange={(account) => setToAccount(account ?? "")}
 					error={
 						!validation || validation.toAccount
@@ -110,34 +118,28 @@ export const EditBudgetItemRecordPanel = ({
 					}
 				/>
 			)}
-			{item instanceof BudgetItemSimple && (
-				<>
-					<SelectWithCreation
-						id="category"
-						label="Category"
-						item={category}
-						items={categories}
-						onChange={(category) => setCategory(category ?? "")}
-						error={
-							!validation || validation.category
-								? undefined
-								: "required"
-						}
-					/>
-					<SelectWithCreation
-						id="subcategory"
-						label="SubCategory"
-						item={subCategory}
-						items={subCategories}
-						onChange={(category) => setSubCategory(category ?? "")}
-						error={
-							!validation || validation.subCategory
-								? undefined
-								: "required"
-						}
-					/>
-				</>
-			)}
+			<SelectWithCreation
+				id="category"
+				label="Category"
+				item={category}
+				items={categories.map((cat) => cat.name.value)}
+				onChange={(category) => setCategory(category ?? "")}
+				error={
+					!validation || validation.category ? undefined : "required"
+				}
+			/>
+			<SelectWithCreation
+				id="subcategory"
+				label="SubCategory"
+				item={subCategory}
+				items={subCategories.map((sub) => sub.name.value)}
+				onChange={(category) => setSubCategory(category ?? "")}
+				error={
+					!validation || validation.subCategory
+						? undefined
+						: "required"
+				}
+			/>
 			<Input<Date>
 				id="date"
 				label="Date"
@@ -147,40 +149,23 @@ export const EditBudgetItemRecordPanel = ({
 			/>
 			<button
 				onClick={async () => {
-					const validation = validateOnUpdate();
-					setValidation(validation);
-					if (!Object.values(validation).every((value) => value))
-						return;
+					// const validation = validateOnUpdate();
+					// setValidation(validation);
+					// if (!Object.values(validation).every((value) => value))
+					// 	return;
 
 					date.setSeconds(0);
 
-					if (!item) return;
-					if (item instanceof BudgetItemSimple) {
-						item.updateHistoryRecord(
-							record.id,
-							name,
-							account,
-							date,
-							type,
-							amount.toNumber(),
-							category,
-							subCategory,
-							type === "transfer" ? toAccount : undefined
-						);
-					} else {
-						item.updateHistoryRecord(
-							record.id,
-							name,
-							account,
-							date,
-							type,
-							amount.toNumber(),
-							category,
-							subCategory
-						);
-					}
+					transaction.update(
+						new TransactionName(name),
+						new AccountID(account),
+						new TransactionDate(date),
+						transaction.operation,
+						amount
+					);
 
-					await onUpdate(item);
+					await updateTransactionUseCase.execute(transaction);
+					await onUpdate();
 				}}
 			>
 				Create

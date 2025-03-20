@@ -6,7 +6,7 @@ import {
 	Sector,
 	ResponsiveContainer,
 } from "recharts";
-import { Logger } from "utils/logger";
+import { Logger } from "../../../../contexts/Shared/infrastructure/logger";
 
 export const PieChart = ({
 	data,

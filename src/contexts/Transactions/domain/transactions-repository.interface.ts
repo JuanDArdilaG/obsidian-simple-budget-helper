@@ -3,4 +3,4 @@ import { Transaction } from "./transaction.entity";
 import { TransactionID } from "./transaction-id.valueobject";
 
 export interface ITransactionsRepository
-	extends IRepository<Transaction, TransactionID> {}
+	extends IRepository<TransactionID, Transaction> {}

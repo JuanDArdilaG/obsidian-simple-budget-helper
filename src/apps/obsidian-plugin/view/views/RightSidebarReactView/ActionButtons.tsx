@@ -1,19 +1,17 @@
 import { LucideMinus, LucidePlus, RefreshCcw } from "lucide-react";
 import { useContext } from "react";
-import { BudgetContext } from "./RightSidebarReactView";
+import { AppContext } from "./RightSidebarReactView";
 
 export type SidebarSections = "recurrentItems" | "accounting";
 
 export const ActionButtons = ({
-	refresh,
 	create,
 	isCreating,
 }: {
-	refresh: () => Promise<void>;
 	create: () => Promise<void>;
 	isCreating: boolean;
 }) => {
-	const { updateBudget } = useContext(BudgetContext);
+	const { refresh } = useContext(AppContext);
 
 	return (
 		<div>
@@ -21,7 +19,6 @@ export const ActionButtons = ({
 				style={{ float: "left" }}
 				onClick={async () => {
 					await refresh();
-					await updateBudget();
 				}}
 			>
 				<RefreshCcw size={16} />

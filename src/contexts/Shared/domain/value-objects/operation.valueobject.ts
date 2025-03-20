@@ -2,7 +2,7 @@ import { EnumValueObject } from "contexts/Shared/domain/value-objects/enum.value
 
 export type OperationType = "income" | "expense" | "transfer";
 
-export class Operation extends EnumValueObject<string> {
+export class Operation extends EnumValueObject<OperationType> {
 	constructor(value: OperationType) {
 		super(
 			"Operation",

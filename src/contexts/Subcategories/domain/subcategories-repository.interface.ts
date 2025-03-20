@@ -1,9 +1,8 @@
+import { CategoryID } from "contexts/Categories";
 import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
-import { Subcategory } from "./subcategory.entity";
-import { SubcategoryID } from "./subcategory-id.valueobject";
-import { SubcategoryName } from "./subcategory-name.valueobject";
+import { Subcategory, SubcategoryID } from "contexts/Subcategories/domain";
 
 export interface ISubcategoriesRepository
-	extends IRepository<Subcategory, SubcategoryID> {
-	findAllNames(): Promise<SubcategoryName[]>;
+	extends IRepository<SubcategoryID, Subcategory> {
+	findAllByCategory(categoryID: CategoryID): Promise<Subcategory[]>;
 }

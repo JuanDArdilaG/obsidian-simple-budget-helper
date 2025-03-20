@@ -1,27 +1,29 @@
-import { MouseEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ContextMenu } from "./ContextMenu";
-import { Input } from "view/components/Input";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { CheckCircle, CircleX, EqualNot } from "lucide-react";
-import { Logger } from "utils/logger";
+import { Logger } from "../../../../../../contexts/Shared/infrastructure/logger";
+import { Account, AccountID } from "contexts";
+import { Input } from "apps/obsidian-plugin/view/components";
 
 export const AccountsListContextMenu = ({
 	account,
-	actualAmount,
 	onAdjust,
 }: {
-	account: string;
-	actualAmount: number;
-	onAdjust: (account: string, newAmount: number) => Promise<void>;
+	account: Account;
+	onAdjust: (account: AccountID, newAmount: number) => Promise<void>;
 }) => {
-	const [newAmount, setNewAmount] = useState(actualAmount);
+	const [newAmount, setNewAmount] = useState(account.balance);
 	const [askForNewAmount, setAskForNewAmount] = useState(false);
 
 	useEffect(() => {
 		const newAmountInput = document.getElementById("newAmount");
 		const listener = async (e: KeyboardEvent) => {
 			if (e.key === "Enter") {
-				await onAdjust(account, newAmount - actualAmount);
+				await onAdjust(
+					account.id,
+					newAmount.valueOf() - account.balance.valueOf()
+				);
 			}
 		};
 		if (newAmountInput) {
@@ -33,7 +35,7 @@ export const AccountsListContextMenu = ({
 				newAmountInput.removeEventListener("keydown", listener);
 			}
 		};
-	}, [newAmount, actualAmount, account, onAdjust]);
+	}, [newAmount, account.balance, account, onAdjust]);
 
 	return (
 		<ContextMenu
@@ -62,7 +64,9 @@ export const AccountsListContextMenu = ({
 						padding: "15px",
 					}}
 				>
-					<li style={{ marginBottom: "10px" }}>{account}</li>
+					<li style={{ marginBottom: "10px" }}>
+						{account.name.toString()}
+					</li>
 					<li
 						style={{
 							cursor: "pointer",
@@ -78,16 +82,17 @@ export const AccountsListContextMenu = ({
 						<div style={{ display: "flex", width: "100%" }}>
 							<Input<PriceValueObject>
 								id="newAmount"
-								value={new PriceValueObject(newAmount)}
+								value={newAmount}
 								label="New balance"
-								onChange={(e) => setNewAmount(e.toNumber())}
+								onChange={(e) => setNewAmount(e)}
 							/>
 
 							<CheckCircle
 								onClick={async () => {
 									await onAdjust(
-										account,
-										newAmount - actualAmount
+										account.id,
+										newAmount.valueOf() -
+											account.balance.valueOf()
 									);
 								}}
 							/>

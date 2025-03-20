@@ -1,24 +1,31 @@
-import { BudgetItem } from "budget/BudgetItem/BudgetItem";
-import { useContext, useState, useMemo, useEffect } from "react";
+import { useContext, useState, useEffect } from "react";
 import { ReactMoneyInput } from "react-input-price";
-import { BudgetContext } from "../RightSidebarReactView";
-import { SelectWithCreation } from "view/components/SelectWithCreation";
-import { Input } from "view/components/Input";
+import { AppContext } from "../RightSidebarReactView";
+import { RecurrentItem } from "contexts/Items";
+import {
+	Input,
+	SelectWithCreation,
+} from "apps/obsidian-plugin/view/components";
+import { RecordRecurrentItemUseCase } from "../../../../../../contexts/Transactions/application/record-recurrent-item.usecase";
+import { AccountID, TransactionAmount, TransactionDate } from "contexts";
+import { BooleanValueObject } from "@juandardilag/value-objects/BooleanValueObject";
 
 export const RecordBudgetItemPanel = ({
 	item,
 	onRecord,
 	onClose,
 }: {
-	item: BudgetItem;
-	onRecord: (item: BudgetItem) => void;
+	item: RecurrentItem;
+	onRecord: (item: RecurrentItem) => void;
 	onClose: () => void;
 }) => {
-	const { budget } = useContext(BudgetContext);
-	const accounts = useMemo(() => [...budget.getAccounts()], [budget]);
+	const { accounts, container } = useContext(AppContext);
+	const recordRecurrentItemUseCase = container.resolve(
+		"recordRecurrentItemUseCase"
+	) as RecordRecurrentItemUseCase;
 
 	const nowDate = new Date();
-	const dateDate = item.nextDate.toDate();
+	const dateDate = item.nextDate.valueOf();
 	const [date, setDate] = useState<Date>(
 		new Date(
 			dateDate.getFullYear(),
@@ -30,7 +37,7 @@ export const RecordBudgetItemPanel = ({
 			0
 		)
 	);
-	const [account, setAccount] = useState(item.account);
+	const [account, setAccount] = useState(item.account.value);
 	useEffect(() => {
 		console.log({
 			accountChanged: account,
@@ -48,7 +55,7 @@ export const RecordBudgetItemPanel = ({
 				id="account"
 				label="Account"
 				item={account}
-				items={accounts}
+				items={accounts.map((acc) => acc.name.value)}
 				setSelectedItem={setAccount}
 				onChange={(acc) => {
 					if (acc !== undefined && acc !== account) {
@@ -84,8 +91,14 @@ export const RecordBudgetItemPanel = ({
 				<label htmlFor="permanent-input">Modify recurrence</label>
 			</div>
 			<button
-				onClick={() => {
-					item.record(date, account, amount, isPermanent);
+				onClick={async () => {
+					await recordRecurrentItemUseCase.execute({
+						itemID: item.id,
+						account: new AccountID(account),
+						amount: new TransactionAmount(amount),
+						date: new TransactionDate(date),
+						permanentChanges: new BooleanValueObject(isPermanent),
+					});
 					onRecord(item);
 					onClose();
 				}}

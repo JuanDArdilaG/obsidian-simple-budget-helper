@@ -1,57 +1,59 @@
-import { App, Plugin, TFile } from "obsidian";
-import { views } from "./config";
-import {
-	DEFAULT_SETTINGS,
-	SettingTab,
-	SimpleBudgetHelperSettings,
-} from "./SettingTab";
-import { RightSidebarReactViewRoot } from "./view/views/RightSidebarReactView/RightSidebarReactViewRoot";
-import { LeftMenuItems } from "apps/obsidian-plugin/ribbonIcon";
-import { Budget } from "budget/Budget/Budget";
-import { BudgetItemRecurrentMDFormatter } from "budget/BudgetItem/BudgetItemMDFormatter";
-import { BudgetItem } from "budget/BudgetItem/BudgetItem";
-import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
-import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
-import { Logger } from "utils/logger";
+import { Plugin } from "obsidian";
+import { DEFAULT_SETTINGS, SimpleBudgetHelperSettings } from "./SettingTab";
+import { buildContainer } from "contexts/Shared/infrastructure/di/container";
+import { CreateSimpleItemUseCase } from "contexts/Items/application/create-simple-item.usecase";
+import { ItemID } from "contexts/Items/domain/item-id.valueobject";
+import { ItemOperation } from "contexts/Items/domain/item-operation.valueobject";
+import { ItemName } from "contexts/Items/domain/item-name.valueobject";
+import { ItemPrice } from "contexts/Items/domain/item-price.valueobject";
+import { ItemCategory } from "contexts/Items/domain/item-category.valueobject";
+import { ItemSubcategory } from "contexts/Items/domain/item-subcategory.valueobject";
+import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
+import { GetAllUniqueItemsByNameUseCase } from "contexts/Items/application/get-all-unique-items-by-name.usecase";
+import { Logger } from "../../contexts/Shared/infrastructure/logger";
+import { LeftMenuItems, SettingTab, views } from "apps/obsidian-plugin";
+import { RightSidebarReactViewRoot } from "apps/obsidian-plugin/view";
+import { Item, RecordSimpleItemUseCase, SimpleItem } from "contexts";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
 
-	async initFoldersAndFiles() {
-		const safeCreateFolder = async (path: string) => {
-			try {
-				await this.app.vault.createFolder(path);
-			} catch (error) {
-				console.log({ error, path });
-			}
-		};
-		const safeCreateFile = async (path: string, content: string) => {
-			try {
-				await this.app.vault.create(path, content);
-			} catch (error) {
-				console.log({ error, path, content });
-			}
-		};
-
-		await safeCreateFolder(this.settings.rootFolder);
-		await safeCreateFolder(`${this.settings.rootFolder}/Recurrent`);
-		await safeCreateFile(`${this.settings.rootFolder}/Simple.md`, "");
-		return this.app.vault.getFileByPath(
-			`${this.settings.rootFolder}/Simple.md`
-		);
-	}
-
 	async onload() {
+		await initStoragePersistence();
+		const storageQuota = await showEstimatedQuota();
+		Logger.debug("storage quota", { storageQuota });
+
+		const container = buildContainer();
+		const createSimpleItemUseCase = container.resolve(
+			"createSimpleItemUseCase"
+		) as CreateSimpleItemUseCase;
+		const recordSimpleItemUseCase = container.resolve(
+			"recordSimpleItemUseCase"
+		) as RecordSimpleItemUseCase;
+
+		const item = SimpleItem.create(
+			new ItemName("name"),
+			new ItemPrice(100),
+			ItemOperation.income(),
+			new ItemCategory("category"),
+			new ItemSubcategory("subCategory"),
+			AccountID.generate()
+		);
+
+		await createSimpleItemUseCase.execute(item);
+		await recordSimpleItemUseCase.execute(item);
+
 		await this.loadSettings();
-		const simpleTransactionsFile = await this.initFoldersAndFiles();
-		if (!simpleTransactionsFile) throw new Error("Failed to create file.");
 
 		const statusBarItem = this.addStatusBarItem();
 		this.registerView(
 			views.LIST_BUDGET_ITEMS_REACT.type,
 			(leaf) =>
-				new RightSidebarReactViewRoot(leaf, this, (text) =>
-					statusBarItem.setText(text)
+				new RightSidebarReactViewRoot(
+					leaf,
+					this,
+					(text) => statusBarItem.setText(text),
+					container
 				)
 		);
 
@@ -59,125 +61,46 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		LeftMenuItems.RightSidebarPanel(this);
 	}
 
-	async _updateItemInFile(
-		item: BudgetItem,
-		operation: "add" | "modify" | "remove"
-	) {
-		console.log({ item, operation });
-		if (operation === "add") {
-			if (item instanceof BudgetItemRecurrent) {
-				await this.app.vault.create(
-					`${this.settings.rootFolder}/Recurrent/${item.name}.md`,
-					new BudgetItemRecurrentMDFormatter(item).toMarkdown()
-				);
-				return;
-			} else if (item instanceof BudgetItemSimple) {
-				const simpleBudget = await Budget.loadSimpleTransactions(
-					this.app.vault,
-					this.settings.rootFolder
-				);
+	// async _getBudget(
+	// 	app: App,
+	// 	rootFolder: string
+	// ): Promise<Budget<BudgetItem>> {
+	// 	const { vault } = app;
+	// 	const getBudgetItemsByPath = async (
+	// 		path: string,
+	// 		budget: Budget<BudgetItem>
+	// 	): Promise<Budget<BudgetItem>> => {
+	// 		const folder = vault.getFolderByPath(path);
+	// 		if (!folder) return budget;
+	// 		for (const file of folder.children) {
+	// 			if (file instanceof TFile) {
+	// 				const fileContent = await vault.cachedRead(file);
+	// 				const item = BudgetItemRecurrentMDFormatter.fromRawMarkdown(
+	// 					file.path,
+	// 					fileContent
+	// 				);
+	// 				budget.addItems(item);
+	// 			}
+	// 		}
 
-				simpleBudget.addItems(item);
+	// 		return budget;
+	// 	};
+	// 	let budget = new Budget<BudgetItem>([]);
+	// 	budget = await getBudgetItemsByPath(`${rootFolder}/Recurrent`, budget);
+	// 	const simpleBudget = await Budget.loadSimpleTransactions(
+	// 		vault,
+	// 		rootFolder
+	// 	);
+	// 	budget.addItems(...simpleBudget.items);
 
-				await simpleBudget.saveSimpleTransactions(
-					this.app.vault,
-					this.settings.rootFolder
-				);
-			}
-		} else if (operation === "remove") {
-			if (item instanceof BudgetItemRecurrent) {
-				const file = this.app.vault.getAbstractFileByPath(
-					item.filePath
-				);
-				if (!file || !(file instanceof TFile)) return;
-				await this.app.vault.modify(
-					file,
-					new BudgetItemRecurrentMDFormatter(item).toMarkdown()
-				);
-				return;
-			}
-			const simpleBudget = await Budget.loadSimpleTransactions(
-				this.app.vault,
-				this.settings.rootFolder
-			);
-			simpleBudget.removeItemByID(item.id);
-			await simpleBudget.saveSimpleTransactions(
-				this.app.vault,
-				this.settings.rootFolder
-			);
-		} else {
-			console.log({
-				item,
-				isRecurrent: item instanceof BudgetItemRecurrent,
-			});
-			if (item instanceof BudgetItemRecurrent) {
-				const file = this.app.vault.getAbstractFileByPath(
-					item.filePath
-				);
-				Logger.debug("modifying file", {
-					path: item.filePath,
-					file,
-					isFile: file instanceof TFile,
-				});
-				if (!file || !(file instanceof TFile)) return;
-				await this.app.vault.modify(
-					file,
-					new BudgetItemRecurrentMDFormatter(item).toMarkdown()
-				);
+	// 	console.log({ budget });
 
-				return;
-			} else if (item instanceof BudgetItemSimple) {
-				const simpleBudget = await Budget.loadSimpleTransactions(
-					this.app.vault,
-					this.settings.rootFolder
-				);
-				simpleBudget.updateItemByID(item.id, item);
-				await simpleBudget.saveSimpleTransactions(
-					this.app.vault,
-					this.settings.rootFolder
-				);
-			}
-		}
+	// 	return budget;
+	// }
+
+	onunload() {
+		persist();
 	}
-
-	async _getBudget(
-		app: App,
-		rootFolder: string
-	): Promise<Budget<BudgetItem>> {
-		const { vault } = app;
-		const getBudgetItemsByPath = async (
-			path: string,
-			budget: Budget<BudgetItem>
-		): Promise<Budget<BudgetItem>> => {
-			const folder = vault.getFolderByPath(path);
-			if (!folder) return budget;
-			for (const file of folder.children) {
-				if (file instanceof TFile) {
-					const fileContent = await vault.cachedRead(file);
-					const item = BudgetItemRecurrentMDFormatter.fromRawMarkdown(
-						file.path,
-						fileContent
-					);
-					budget.addItems(item);
-				}
-			}
-
-			return budget;
-		};
-		let budget = new Budget<BudgetItem>([]);
-		budget = await getBudgetItemsByPath(`${rootFolder}/Recurrent`, budget);
-		const simpleBudget = await Budget.loadSimpleTransactions(
-			vault,
-			rootFolder
-		);
-		budget.addItems(...simpleBudget.items);
-
-		console.log({ budget });
-
-		return budget;
-	}
-
-	onunload() {}
 
 	async loadSettings() {
 		this.settings = Object.assign(
@@ -190,4 +113,48 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+}
+
+async function persist() {
+	return navigator.storage && navigator.storage.persist
+		? navigator.storage.persist()
+		: undefined;
+}
+
+async function showEstimatedQuota(): Promise<
+	{ quota?: number; usage?: number; percentage?: number } | undefined
+> {
+	const estimation =
+		navigator.storage && navigator.storage.estimate
+			? await navigator.storage.estimate()
+			: undefined;
+	if (!estimation) return undefined;
+	return {
+		...estimation,
+		percentage: estimation.quota
+			? ((estimation.usage ?? 0) / estimation.quota) * 100
+			: 0,
+	};
+}
+
+async function tryPersistWithoutPromptingUser() {
+	if (!navigator.storage || !navigator.storage.persisted) return "never";
+	let persisted = await navigator.storage.persisted();
+	if (persisted) return "persisted";
+	if (!navigator.permissions || !navigator.permissions.query) return "prompt";
+	const permission = await navigator.permissions.query({
+		name: "persistent-storage",
+	});
+	if (permission.state === "granted") {
+		persisted = await navigator.storage.persist();
+		if (persisted) return "persisted";
+		throw new Error("failed to persist");
+	}
+	if (permission.state === "prompt") return "prompt";
+	return "never";
+}
+
+async function initStoragePersistence() {
+	const persist = await tryPersistWithoutPromptingUser();
+	console.log({ persist });
 }

@@ -1,5 +1,5 @@
-import { InvalidArgumentError } from "../errors/invalid-argument.error";
-import { ValueObject } from "./value-object";
+import { InvalidArgumentError } from "contexts/Shared/domain/errors";
+import { ValueObject } from "contexts/Shared/domain";
 
 export abstract class EnumValueObject<T> extends ValueObject<T> {
 	constructor(

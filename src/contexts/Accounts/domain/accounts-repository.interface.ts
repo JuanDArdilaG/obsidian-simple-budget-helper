@@ -1,8 +1,6 @@
-import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
-import { Account } from "./account.entity";
-import { AccountID } from "./account-id.valueobject";
-import { AccountName } from "./account-name.valueobject";
+import { Account, AccountID, AccountName } from "contexts/Accounts/domain";
+import { IRepository } from "contexts/Shared/domain";
 
-export interface IAccountsRepository extends IRepository<Account, AccountID> {
+export interface IAccountsRepository extends IRepository<AccountID, Account> {
 	findAllNames(): Promise<AccountName[]>;
 }

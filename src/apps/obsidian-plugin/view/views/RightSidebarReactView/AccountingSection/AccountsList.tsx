@@ -1,67 +1,66 @@
-import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { Budget } from "budget/Budget/Budget";
-import { BudgetHistory } from "budget/Budget/BudgetHistory";
-import { BudgetItem } from "budget/BudgetItem/BudgetItem";
 import { useContext, useEffect, useState } from "react";
 import { AccountsListContextMenu } from "./AccountsListContextMenu";
-import { FileOperationsContext } from "../RightSidebarReactView";
-import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
-import { Logger } from "utils/logger";
+import { AppContext } from "../RightSidebarReactView";
+import { Logger } from "../../../../../../contexts/Shared/infrastructure/logger";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
+import {
+	ItemCategory,
+	ItemName,
+	ItemOperation,
+	ItemPrice,
+	ItemSubcategory,
+	SimpleItem,
+} from "contexts/Items/domain";
+import { Account, AccountID } from "contexts/Accounts/domain";
+import { RecordSimpleItemUseCase } from "contexts/Transactions/application";
+import { GetAllAccountsUseCase } from "contexts/Accounts/application";
 
-export const AccountsList = ({ budget }: { budget: Budget<BudgetItem> }) => {
-	const { itemOperations, refresh } = useContext(FileOperationsContext);
-	const [selectedAccount, setSelectedAccount] = useState<string>();
-	const [accounts, setAccounts] = useState<
-		{ name: string; amount: number }[]
-	>([]);
+export const AccountsList = () => {
+	const { container, refresh } = useContext(AppContext);
+	const recordSimpleItemUseCase = container.resolve(
+		"recordSimpleItemUseCase"
+	) as RecordSimpleItemUseCase;
+	const getAllAccountsUseCase = container.resolve(
+		"getAllAccountsUseCase"
+	) as GetAllAccountsUseCase;
+
+	const [selectedAccount, setSelectedAccount] = useState<Account>();
+	const [accounts, setAccounts] = useState<Account[]>([]);
 	useEffect(() => {
-		setAccounts(
-			Object.keys(BudgetHistory.fromBudget(budget).getAllByAccount())
-				.map((account) => {
-					return {
-						name: account,
-						amount: BudgetHistory.fromBudget(budget)
-							.getAllByAccount()
-							[account].getBalance({
-								untilDate: new Date(),
-								account,
-							}),
-					};
-				})
-				.sort((a, b) => b.amount - a.amount)
-		);
-	}, [budget]);
+		getAllAccountsUseCase
+			.execute()
+			.then((accs) =>
+				setAccounts(
+					accs.sort(
+						(a, b) => b.balance.valueOf() - a.balance.valueOf()
+					)
+				)
+			);
+	}, [getAllAccountsUseCase]);
 
 	return (
 		<RightSidebarReactTab title="Accounts" subtitle>
 			{selectedAccount && (
 				<AccountsListContextMenu
-					actualAmount={
-						accounts.find(
-							(account) => account.name === selectedAccount
-						)?.amount ?? 0
-					}
 					account={selectedAccount}
-					onAdjust={async (account: string, newAmount: number) => {
+					onAdjust={async (account: AccountID, newAmount: number) => {
 						if (!newAmount) return;
-						const adjustTransaction = BudgetItemSimple.create(
-							account,
-							`Adjustment for ${account}`,
-							Math.abs(newAmount),
-							"Adjustment",
-							"Adjustment",
-							"",
-							"",
-							newAmount > 0 ? "income" : "expense",
-							new Date()
+						const adjustmentItem = SimpleItem.create(
+							new ItemName(`Adjustment for ${account}`),
+							new ItemPrice(Math.abs(newAmount)),
+							new ItemOperation(
+								newAmount > 0 ? "income" : "expense"
+							),
+							new ItemCategory("Adjustment"),
+							new ItemSubcategory("Adjustment"),
+							account
 						);
 						Logger.debug("adjusting account: " + account, {
 							account,
 							newAmount,
-							adjustTransaction,
+							adjustmentItem,
 						});
-						await itemOperations(adjustTransaction, "add");
+						await recordSimpleItemUseCase.execute(adjustmentItem);
 						await refresh();
 					}}
 				/>
@@ -70,21 +69,20 @@ export const AccountsList = ({ budget }: { budget: Budget<BudgetItem> }) => {
 				{accounts.map((account, i) => (
 					<li
 						key={i}
-						onContextMenu={() => setSelectedAccount(account.name)}
+						onContextMenu={() => setSelectedAccount(account)}
 					>
-						{account.name}:{" "}
-						{new PriceValueObject(account.amount).toString()}
+						{account.name.toString()}: {account.balance.toString()}
 						<hr />
 					</li>
 				))}
 			</ul>
 			<div style={{ textAlign: "right" }}>
 				Total:{" "}
-				{new PriceValueObject(
+				{/* {new PriceValueObject(
 					budget.getHistory().getBalance({
 						untilDate: new Date(),
 					})
-				).toString()}
+				).toString()} */}
 			</div>
 		</RightSidebarReactTab>
 	);

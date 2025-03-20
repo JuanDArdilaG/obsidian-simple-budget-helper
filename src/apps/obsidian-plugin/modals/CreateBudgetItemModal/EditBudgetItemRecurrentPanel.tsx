@@ -1,69 +1,66 @@
-import { BudgetItem } from "budget/BudgetItem/BudgetItem";
-import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
 import { useContext, useMemo, useState } from "react";
-import { BudgetItemRecordType } from "../../budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
-import { Input } from "view/components/Input";
-import { Select } from "view/components/Select";
-import { SelectWithCreation } from "view/components/SelectWithCreation";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { BudgetContext } from "view/views/RightSidebarReactView/RightSidebarReactView";
-import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
-import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
-import { FrequencyString } from "budget/BudgetItem/FrequencyString";
+import { RecurrentItem } from "contexts/Items/domain";
+import { AppContext } from "apps/obsidian-plugin/view";
+import {
+	Input,
+	Select,
+	SelectWithCreation,
+} from "apps/obsidian-plugin/view/components";
+import { OperationType } from "contexts/Shared/domain";
 
 export const EditBudgetItemRecurrentPanel = ({
 	item,
 	onEdit,
 	onClose,
 }: {
-	item: BudgetItemRecurrent;
-	onEdit: (item: BudgetItem) => Promise<void>;
+	item: RecurrentItem;
+	onEdit: (item: RecurrentItem) => Promise<void>;
 	onClose: () => void;
 }) => {
-	const { budget } = useContext(BudgetContext);
+	const {
+		categoriesWithSubcategories,
+		categories,
+		accounts,
+		brands,
+		stores,
+	} = useContext(AppContext);
 
-	const [category, setCategory] = useState(item?.category || "");
-	const categories = useMemo(() => budget.getCategories(), [budget]);
+	const [category, setCategory] = useState(item.category.value);
 	const subCategories = useMemo(
-		() => budget.getSubCategories({ category }),
-		[budget, category]
+		() =>
+			categoriesWithSubcategories.find(
+				(catWithSubs) => catWithSubs.category.id.value === category
+			)?.subCategories ?? [],
+		[category]
 	);
 
-	const brands = useMemo(
-		() => [...budget.getBrands({ order: "asc" })],
-		[budget]
-	);
-	const stores = useMemo(
-		() => [...budget.getStores({ order: "asc" })],
-		[budget]
-	);
-
-	const [name, setName] = useState(item.name);
+	const [name, setName] = useState(item.name.value);
 	const [amount, setAmount] = useState(item.amount);
-	const [type, setType] = useState(item.type);
+	const [type, setType] = useState(item.operation.value);
 
-	const [subCategory, setSubCategory] = useState(item?.subCategory || "");
+	const [subCategory, setSubCategory] = useState(item.subCategory.value);
 
-	const [brand, setBrand] = useState(item.brand);
-	const [store, setStore] = useState(item.store);
+	const [brand, setBrand] = useState(item.brand?.value);
+	const [store, setStore] = useState(item.store?.value);
 
-	const [account, setAccount] = useState(item.account);
+	const [account, setAccount] = useState(item.account.value);
 
-	const [frequency, setFrequency] = useState(String(item.frequency) || "");
+	const [frequency, setFrequency] = useState(item.frequency.value);
 
-	const [date, setDate] = useState(item.nextDate.toDate());
+	const [date, setDate] = useState(item.nextDate.valueOf());
 	const [validation, setValidation] = useState<
 		Record<string, boolean> | undefined
 	>(undefined);
-	const validateOnUpdate = () => ({
-		name: name.length > 0,
-		amount: amount.toNumber() > 0,
-		account: account.length > 0,
-		date: date.toString() !== "Invalid Date",
-		category: category.length > 0,
-		subCategory: subCategory.length > 0,
-		frequency: frequency.length > 0,
-	});
+	// const validateOnUpdate = () => ({
+	// 	name: name.length > 0,
+	// 	amount: amount.toNumber() > 0,
+	// 	account: account.length > 0,
+	// 	date: date.toString() !== "Invalid Date",
+	// 	category: category.length > 0,
+	// 	subCategory: subCategory.length > 0,
+	// 	frequency: frequency.length > 0,
+	// });
 
 	return (
 		<div className="create-budget-item-modal">
@@ -84,26 +81,24 @@ export const EditBudgetItemRecurrentPanel = ({
 					!validation || validation.amount ? undefined : "required"
 				}
 			/>
-			{item instanceof BudgetItemSimple && (
-				<Select
-					id="type"
-					label="Type"
-					value={type}
-					values={{
-						expense: "Expense",
-						transfer: "Transfer",
-						income: "Income",
-					}}
-					onChange={(type) =>
-						setType(type.toLowerCase() as BudgetItemRecordType)
-					}
-				/>
-			)}
+			<Select
+				id="type"
+				label="Type"
+				value={type}
+				values={{
+					expense: "Expense",
+					transfer: "Transfer",
+					income: "Income",
+				}}
+				onChange={(type) =>
+					setType(type.toLowerCase() as OperationType)
+				}
+			/>
 			<SelectWithCreation
 				id="account"
 				label="From"
 				item={account}
-				items={budget.getAccounts()}
+				items={accounts.map((acc) => acc.name.value)}
 				onChange={(account) => setAccount(account ?? "")}
 				error={
 					!validation || validation.account ? undefined : "required"
@@ -113,7 +108,7 @@ export const EditBudgetItemRecurrentPanel = ({
 				id="category"
 				label="Category"
 				item={category}
-				items={categories}
+				items={categories.map((cat) => cat.name.value)}
 				onChange={(category) => setCategory(category ?? "")}
 				error={
 					!validation || validation.category ? undefined : "required"
@@ -123,7 +118,7 @@ export const EditBudgetItemRecurrentPanel = ({
 				id="subcategory"
 				label="SubCategory"
 				item={subCategory}
-				items={subCategories}
+				items={subCategories.map((sub) => sub.name.value)}
 				onChange={(sub) => setSubCategory(sub ?? "")}
 				error={
 					!validation || validation.subCategory
@@ -141,15 +136,15 @@ export const EditBudgetItemRecurrentPanel = ({
 			<SelectWithCreation
 				id="brand"
 				label="Brand"
-				item={brand}
-				items={brands}
+				item={brand ?? ""}
+				items={brands.map((b) => b.value)}
 				onChange={setBrand}
 			/>
 			<SelectWithCreation
 				id="store"
 				label="Store"
-				item={store}
-				items={stores}
+				item={store ?? ""}
+				items={stores.map((s) => s.value)}
 				onChange={setStore}
 			/>
 			<Input
@@ -163,31 +158,31 @@ export const EditBudgetItemRecurrentPanel = ({
 			/>
 			<button
 				onClick={async () => {
-					const validation = validateOnUpdate();
-					console.log({ validation });
-					setValidation(validation);
-					if (!Object.values(validation).every((value) => value))
-						return;
+					// const validation = validateOnUpdate();
+					// console.log({ validation });
+					// setValidation(validation);
+					// if (!Object.values(validation).every((value) => value))
+					// 	return;
 
 					date.setSeconds(0);
 
-					await onEdit(
-						new BudgetItemRecurrent(
-							item.id,
-							name,
-							account,
-							amount.toNumber(),
-							category,
-							subCategory,
-							brand,
-							store,
-							type,
-							new BudgetItemNextDate(date, true),
-							item.path,
-							new FrequencyString(frequency),
-							item.history
-						)
-					);
+					// await onEdit(
+					// 	new BudgetItemRecurrent(
+					// 		item.id,
+					// 		name,
+					// 		account,
+					// 		amount.toNumber(),
+					// 		category,
+					// 		subCategory,
+					// 		brand,
+					// 		store,
+					// 		type,
+					// 		new BudgetItemNextDate(date, true),
+					// 		item.path,
+					// 		new FrequencyString(frequency),
+					// 		item.history
+					// 	)
+					// );
 
 					onClose();
 				}}

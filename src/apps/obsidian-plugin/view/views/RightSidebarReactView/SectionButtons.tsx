@@ -1,4 +1,4 @@
-import { CalendarSync, ListCollapse, Menu } from "lucide-react";
+import { CalendarSync, ListCollapse } from "lucide-react";
 import { JSX } from "react";
 
 export type SidebarSections = "recurrentItems" | "accounting";

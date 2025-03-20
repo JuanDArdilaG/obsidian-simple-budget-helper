@@ -6,10 +6,10 @@ import { ItemName } from "./item-name.valueobject";
 import { ItemPrice } from "./item-price.valueobject";
 import { ItemStore } from "./item-store.valueobject";
 import { ItemSubcategory } from "./item-subcategory.valueobject";
-import { DateValueObject } from "@juandardilag/value-objects/DateValueObject";
 import { ItemOperation } from "./item-operation.valueobject";
+import { OperationType } from "contexts/Shared/domain/value-objects/operation.valueobject";
 
-export abstract class Item {
+export class Item {
 	constructor(
 		protected _id: ItemID,
 		protected _operation: ItemOperation,
@@ -23,34 +23,53 @@ export abstract class Item {
 		protected _toAccount?: AccountID
 	) {}
 
-	// static createExpenseItem(
-	// 	name: ItemName,
-	// 	amount: ItemPrice,
-	// 	category: ItemCategory,
-	// 	subCategory: ItemSubcategory,
-	// 	account: AccountID,
-	// 	brand?: ItemBrand,
-	// 	store?: ItemStore
-	// ) {
-	// 	return new Item(
-	// 		ItemID.generate(),
-	// 		ItemOperation.expense(),
-	// 		name,
-	// 		amount,
-	// 		category,
-	// 		subCategory,
-	// 		account,
-	// 		brand,
-	// 		store
-	// 	);
-	// }
+	static create(
+		name: ItemName,
+		amount: ItemPrice,
+		operation: ItemOperation,
+		category: ItemCategory,
+		subCategory: ItemSubcategory,
+		account: AccountID,
+		brand?: ItemBrand,
+		store?: ItemStore
+	) {
+		return new Item(
+			ItemID.generate(),
+			operation,
+			name,
+			amount,
+			category,
+			subCategory,
+			account,
+			brand,
+			store
+		);
+	}
+
+	static createExpenseItem(
+		name: ItemName,
+		amount: ItemPrice,
+		category: ItemCategory,
+		subCategory: ItemSubcategory,
+		account: AccountID,
+		brand?: ItemBrand,
+		store?: ItemStore
+	) {
+		return new Item(
+			ItemID.generate(),
+			ItemOperation.expense(),
+			name,
+			amount,
+			category,
+			subCategory,
+			account,
+			brand,
+			store
+		);
+	}
 
 	get id(): ItemID {
 		return this._id;
-	}
-
-	setRandomId() {
-		this._id = ItemID.generate();
 	}
 
 	get operation(): ItemOperation {
@@ -67,6 +86,10 @@ export abstract class Item {
 
 	get amount(): ItemPrice {
 		return this._amount;
+	}
+
+	set amount(amount: ItemPrice) {
+		this._amount = amount;
 	}
 
 	get category(): ItemCategory {
@@ -89,6 +112,10 @@ export abstract class Item {
 		return this._account;
 	}
 
+	set account(account: AccountID) {
+		this._account = account;
+	}
+
 	update({
 		name,
 		amount,
@@ -109,33 +136,7 @@ export abstract class Item {
 		if (toAccount) this._toAccount = toAccount;
 	}
 
-	// TODO: refactor
-	// abstract record(
-	// 	date: DateValueObject,
-	// 	account: AccountID,
-	// 	amount?: ItemPrice,
-	// 	isPermanent?: boolean
-	// ): void;
-
-	abstract updateOnRecord(isPermanent?: {
-		amount?: ItemPrice;
-		date?: DateValueObject;
-	}): void;
-
-	// abstract updateHistoryRecord(
-	// 	id: TransactionID,
-	// 	name: ItemName,
-	// 	account: AccountID,
-	// 	date: Date,
-	// 	type: TransactionOperation,
-	// 	amount: ItemPrice,
-	// 	category: ItemCategory,
-	// 	subCategory: ItemSubcategory
-	// ): void;
-
-	// abstract removeHistoryRecord(id: TransactionID): void;
-
-	toJSON(): ItemPrimitives {
+	toPrimitives(): ItemPrimitives {
 		return {
 			id: this._id.value,
 			operation: this._operation.value,
@@ -146,14 +147,31 @@ export abstract class Item {
 			brand: this._brand?.value,
 			store: this._store?.value,
 			account: this._account.value,
-			toAccount: this._account.value,
+			toAccount: this.toAccount?.value,
+		};
+	}
+
+	static emptyPrimitives(): ItemPrimitives {
+		return {
+			id: "",
+			name: "",
+			account: "",
+			category: "",
+			subCategory: "",
+			amount: 0,
+			operation: "expense",
+			brand: "",
+			frequency: "",
+			nextDate: new Date(),
+			store: "",
+			toAccount: "",
 		};
 	}
 }
 
 export type ItemPrimitives = {
 	id: string;
-	operation: string;
+	operation: OperationType;
 	name: string;
 	amount: number;
 	category: string;
@@ -161,5 +179,29 @@ export type ItemPrimitives = {
 	brand?: string;
 	store?: string;
 	account: string;
-	toAccount: string;
+	toAccount?: string;
+	nextDate?: Date;
+	frequency?: string;
 };
+
+// export class BudgetItemValidator extends Validator<TBudgetItem, BudgetItem> {
+// 	constructor() {
+// 		super({
+// 			id: (value) => value.id !== "",
+// 			name: (value) => value.name !== "",
+// 			account: (value) => value.account !== "",
+// 			amount: (value) => !value.amount.isZero(),
+// 			nextDate: (value) => value.nextDate !== null,
+// 			category: (value) => value.category !== "",
+// 			subcategory: (value) => value.subCategory !== "",
+// 			brand: (_) => true,
+// 			store: (_) => true,
+// 			toAccount: (value) =>
+// 				value.type !== "transfer" || value.toAccount !== "",
+// 			path: (_) => true,
+// 			history: (_) => true,
+// 			type: (_) => true,
+// 			frequency: () => true,
+// 		});
+// 	}
+// }

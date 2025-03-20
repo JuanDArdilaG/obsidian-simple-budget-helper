@@ -1,4 +1,4 @@
-import { IValueObject } from "./value-object.interface";
+import { IValueObject } from "contexts/Shared/domain";
 
 export abstract class ValueObject<T> implements IValueObject<T> {
 	constructor(readonly value: T) {}

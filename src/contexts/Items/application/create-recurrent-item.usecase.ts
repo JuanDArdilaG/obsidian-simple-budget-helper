@@ -7,9 +7,9 @@ import { IItemsRepository } from "../domain/item-repository.interface";
 import { ItemStore } from "../domain/item-store.valueobject";
 import { ItemSubcategory } from "../domain/item-subcategory.valueobject";
 import { ItemOperation } from "../domain/item-operation.valueobject";
-import { RecurrrentItemFrequency } from "../domain/recurrent-item/recurrent-item-frequency.valueobject";
-import { RecurrentItemNextDate } from "../domain/recurrent-item/recurrent-item-nextdate.valueobject";
-import { RecurrentItem } from "../domain/recurrent-item/recurrent-item.entity";
+import { RecurrrentItemFrequency } from "../domain/RecurrentItem/recurrent-item-frequency.valueobject";
+import { RecurrentItemNextDate } from "../domain/RecurrentItem/recurrent-item-nextdate.valueobject";
+import { RecurrentItem } from "../domain/RecurrentItem/recurrent-item.entity";
 import { ItemID } from "../domain/item-id.valueobject";
 
 export type CreateRecurrentItemUseCaseInput = {

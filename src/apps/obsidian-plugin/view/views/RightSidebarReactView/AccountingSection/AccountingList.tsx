@@ -1,17 +1,21 @@
 import { useContext, useEffect, useMemo, useState } from "react";
-import { BudgetItemRecord } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
-import { Budget } from "budget/Budget/Budget";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { BudgetHistory } from "budget/Budget/BudgetHistory";
-import { BudgetContext, FileOperationsContext } from "../RightSidebarReactView";
-import { getLastDayOfMonth, monthAbbrToIndex } from "utils/date";
+import { AppContext } from "../RightSidebarReactView";
+import {
+	getLastDayOfMonth,
+	monthAbbrToIndex,
+} from "../../../../../../../utils/date";
 import { AccountingListContextMenu } from "./AccountingListContextMenu";
-import { BudgetItem } from "budget/BudgetItem/BudgetItem";
-import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
 import { App } from "obsidian";
-import { Logger } from "utils/logger";
-import { EditBudgetItemRecordPanel } from "modals/CreateBudgetItemModal/EditBudgetItemRecordPanel";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
+import { DeleteTransactionUseCase } from "contexts/Transactions/application";
+import { Transaction } from "contexts/Transactions/domain";
+import { useAsyncCallback } from "apps/obsidian-plugin/view/hooks";
+import {
+	GetAllTransactionsGroupedByDaysUseCase,
+	GetAllTransactionsGroupedByDaysUseCaseOutput,
+} from "contexts/Reports/application";
+import { EditTransactionPanel } from "apps/obsidian-plugin/modals";
 
 export function AccountingList({
 	app,
@@ -20,55 +24,53 @@ export function AccountingList({
 	app: App;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) {
-	const { refresh, itemOperations } = useContext(FileOperationsContext);
-	const { budget } = useContext(BudgetContext);
-	const accounts = useMemo(
-		() => budget.getAccounts({ order: "asc" }),
-		[budget]
-	);
-	const categories = useMemo(
-		() => budget.getCategories({ order: "asc" }),
-		[budget]
-	);
+	const { refresh, categoriesWithSubcategories, accounts, container } =
+		useContext(AppContext);
+
+	const getAllTransactionsGroupedByDaysUseCase = container.resolve(
+		"getAllTransactionsGroupedByDaysUseCase"
+	) as GetAllTransactionsGroupedByDaysUseCase;
+	const deleteTransactionUseCase = container.resolve(
+		"deleteTransactionUseCase"
+	) as DeleteTransactionUseCase;
+
+	const transactionsGroupedByDay =
+		useAsyncCallback<GetAllTransactionsGroupedByDaysUseCaseOutput>(
+			getAllTransactionsGroupedByDaysUseCase,
+			getAllTransactionsGroupedByDaysUseCase.execute
+		) ?? [];
+
 	const [categoryFilter, setCategoryFilter] = useState("");
-	const subcategories = useMemo(
-		() =>
-			budget.getSubCategories({
-				category: categoryFilter,
-				sort: { order: "asc" },
-			}),
-		[budget, categoryFilter]
-	);
 
 	const [accountFilter, setAccountFilter] = useState("");
 	const [subCategoryFilter, setSubCategoryFilter] = useState("");
 
-	const budgetHistory = useMemo(() => {
-		const history = BudgetHistory.fromBudget(
-			budget,
-			accountFilter ?? undefined,
-			categoryFilter ?? undefined,
-			subCategoryFilter ?? undefined
-		);
-		Logger.debug("history with filter", {
-			filter: accountFilter,
-			category: categoryFilter,
-			subCategory: subCategoryFilter,
-			history,
-		});
-		return history;
-	}, [budget, accountFilter, categoryFilter, subCategoryFilter]);
-	const filteredHistory = useMemo(() => {
-		const history = budgetHistory.getGroupedByYearMonthDay();
-		Logger.debug("grouped filtered history", { history });
-		return history;
-	}, [budgetHistory]);
+	// const budgetHistory = useMemo(() => {
+	// 	const history = BudgetHistory.fromBudget(
+	// 		accountFilter ?? undefined,
+	// 		categoryFilter ?? undefined,
+	// 		subCategoryFilter ?? undefined
+	// 	);
+	// 	Logger.debug("history with filter", {
+	// 		filter: accountFilter,
+	// 		category: categoryFilter,
+	// 		subCategory: subCategoryFilter,
+	// 		history,
+	// 	});
+	// 	return history;
+	// }, [accountFilter, categoryFilter, subCategoryFilter]);
+	// const filteredHistory = useMemo(() => {
+	// 	const history = budgetHistory.getGroupedByYearMonthDay();
+	// 	Logger.debug("grouped filtered history", { history });
+	// 	return history;
+	// }, [budgetHistory]);
 
-	const [selectedRecord, setSelectedRecord] = useState<BudgetItemRecord>();
+	const [selectedTransaction, setSelectedTransaction] =
+		useState<Transaction>();
 	const [action, setAction] = useState("");
 
 	const [selectionActive, setSelectionActive] = useState(false);
-	const [selection, setSelection] = useState<BudgetItemRecord[]>([]);
+	const [selection, setSelection] = useState<Transaction[]>([]);
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -94,10 +96,10 @@ export function AccountingList({
 						selection.length
 				  } records. Balance: ${new PriceValueObject(
 						selection.reduce(
-							(total, record) =>
+							(total, transaction) =>
 								total +
-								record.amount.toNumber() *
-									(record.type === "income" ? 1 : -1),
+								transaction.amount.toNumber() *
+									(transaction.operation.isIncome() ? 1 : -1),
 							0
 						)
 				  ).toString()}`
@@ -120,8 +122,11 @@ export function AccountingList({
 			>
 				<option value="">All accounts</option>
 				{accounts.map((account) => (
-					<option value={account} key={account}>
-						{account}
+					<option
+						value={account.name.toString()}
+						key={account.name.toString()}
+					>
+						{account.name.toString()}
 					</option>
 				))}
 			</select>
@@ -131,9 +136,12 @@ export function AccountingList({
 				onChange={(e) => setCategoryFilter(e.target.value)}
 			>
 				<option value="">All categories</option>
-				{categories.map((category) => (
-					<option value={category} key={category}>
-						{category}
+				{categoriesWithSubcategories.map((catWithSub) => (
+					<option
+						value={catWithSub.category.name.toString()}
+						key={catWithSub.category.name.toString()}
+					>
+						{catWithSub.category.name.toString()}
 					</option>
 				))}
 			</select>
@@ -143,32 +151,32 @@ export function AccountingList({
 				onChange={(e) => setSubCategoryFilter(e.target.value)}
 			>
 				<option value="">All sub categories</option>
-				{subcategories.map((category) => (
-					<option value={category} key={category}>
-						{category}
-					</option>
-				))}
+				{categoriesWithSubcategories.map((catWithSubs) =>
+					catWithSubs.subCategories
+						.map((subs) => subs.name.value)
+						.map((subName) => (
+							<option value={subName} key={subName}>
+								{subName}
+							</option>
+						))
+				)}
 			</select>
-			{selectedRecord && (
+			{selectedTransaction && (
 				<AccountingListContextMenu
 					app={app}
-					record={selectedRecord}
+					transaction={selectedTransaction}
 					onEdit={async () => {
 						setAction("edit");
 					}}
-					onDelete={async (record) => {
-						const item = budget.getItemByID(record.itemID);
-						if (!item) return;
-						if (item instanceof BudgetItemRecurrent) {
-							item.removeHistoryRecord(record.id);
-						}
-						await itemOperations(item, "remove");
+					onDelete={async () => {
+						await deleteTransactionUseCase.execute(
+							selectedTransaction.id
+						);
 						await refresh();
 					}}
-					refresh={async () => await refresh()}
 				/>
 			)}
-			{Object.keys(filteredHistory)
+			{Object.keys(transactionsGroupedByDay)
 				.sort((a, b) => Number(b) - Number(a))
 				.map((year) => Number(year))
 				.map((year) => (
@@ -191,7 +199,7 @@ export function AccountingList({
 									}}
 								>
 									Incomes:{" "}
-									{new PriceValueObject(
+									{/* {new PriceValueObject(
 										budgetHistory.getBalance({
 											type: "income",
 											sinceDate: new Date(
@@ -205,7 +213,7 @@ export function AccountingList({
 												31
 											),
 										})
-									).toString()}
+									).toString()} */}
 								</span>
 								<span
 									style={{
@@ -215,7 +223,7 @@ export function AccountingList({
 									}}
 								>
 									Expenses:{" "}
-									{new PriceValueObject(
+									{/* {new PriceValueObject(
 										budgetHistory.getBalance({
 											type: "expense",
 											sinceDate: new Date(
@@ -229,7 +237,7 @@ export function AccountingList({
 												31
 											),
 										})
-									).toString()}
+									).toString()} */}
 								</span>
 								<span
 									style={{
@@ -238,7 +246,7 @@ export function AccountingList({
 									}}
 								>
 									Balance:{" "}
-									{new PriceValueObject(
+									{/* {new PriceValueObject(
 										budgetHistory.getBalance({
 											untilDate: new Date(
 												Number(year),
@@ -246,11 +254,11 @@ export function AccountingList({
 												31
 											),
 										})
-									).toString()}
+									).toString()} */}
 								</span>
 							</span>
 						</h3>
-						{Object.keys(filteredHistory[year])
+						{Object.keys(transactionsGroupedByDay[year])
 							.sort(
 								(a, b) =>
 									monthAbbrToIndex(b) - monthAbbrToIndex(a)
@@ -295,7 +303,7 @@ export function AccountingList({
 													}}
 												>
 													Incomes:{" "}
-													{new PriceValueObject(
+													{/* {new PriceValueObject(
 														budgetHistory.getBalance(
 															{
 																sinceDate:
@@ -305,7 +313,7 @@ export function AccountingList({
 																type: "income",
 															}
 														)
-													).toString()}
+													).toString()} */}
 												</span>
 												<span
 													style={{
@@ -315,7 +323,7 @@ export function AccountingList({
 													}}
 												>
 													Expenses:{" "}
-													{new PriceValueObject(
+													{/* {new PriceValueObject(
 														budgetHistory.getBalance(
 															{
 																type: "expense",
@@ -325,7 +333,7 @@ export function AccountingList({
 																	until,
 															}
 														)
-													).toString()}
+													).toString()} */}
 												</span>
 												<span
 													style={{
@@ -334,20 +342,22 @@ export function AccountingList({
 													}}
 												>
 													Balance:
-													{new PriceValueObject(
+													{/* {new PriceValueObject(
 														budgetHistory.getBalance(
 															{
 																untilDate:
 																	until,
 															}
 														)
-													).toString()}
+													).toString()} */}
 												</span>
 											</span>
 										</h4>
 										<ul className="accounting-list">
 											{Object.keys(
-												filteredHistory[year][month]
+												transactionsGroupedByDay[year][
+													month
+												]
 											)
 												.map((day) => Number(day))
 												.sort((a, b) => b - a)
@@ -371,20 +381,21 @@ export function AccountingList({
 																/ {year}
 															</b>
 														</span>
-														{filteredHistory[year][
-															month
-														][day]
+														{transactionsGroupedByDay[
+															year
+														][month][day]
 															.sort(
 																(
-																	a: BudgetItemRecord,
-																	b: BudgetItemRecord
+																	a: Transaction,
+																	b: Transaction
 																) =>
-																	b.date.getTime() -
-																	a.date.getTime()
+																	b.date.compare(
+																		a.date
+																	)
 															)
 															.map(
 																(
-																	record: BudgetItemRecord,
+																	transaction: Transaction,
 																	index: number
 																) => {
 																	return (
@@ -393,25 +404,21 @@ export function AccountingList({
 																				index
 																			}
 																		>
-																			{record.type ===
-																				"transfer" && (
+																			{transaction.operation.isTransfer() && (
 																				<AccountingListRow
 																					isTransfer
 																					index={
-																						record.id +
+																						transaction.id +
 																						"transfer"
 																					}
 																					setAction={
 																						setAction
 																					}
-																					record={
-																						record
+																					transaction={
+																						transaction
 																					}
-																					budget={
-																						budget
-																					}
-																					budgetHistory={
-																						budgetHistory
+																					transactionsGrouped={
+																						transactionsGroupedByDay
 																					}
 																					selection={
 																						selection
@@ -423,25 +430,24 @@ export function AccountingList({
 																						setSelection
 																					}
 																					setSelectedRecord={
-																						setSelectedRecord
+																						setSelectedTransaction
 																					}
 																				/>
 																			)}
 																			<AccountingListRow
 																				index={
-																					record.id
+																					transaction
+																						.id
+																						.value
 																				}
 																				setAction={
 																					setAction
 																				}
-																				record={
-																					record
+																				transaction={
+																					transaction
 																				}
-																				budget={
-																					budget
-																				}
-																				budgetHistory={
-																					budgetHistory
+																				transactionsGrouped={
+																					transactionsGroupedByDay
 																				}
 																				selection={
 																					selection
@@ -453,25 +459,19 @@ export function AccountingList({
 																					setSelection
 																				}
 																				setSelectedRecord={
-																					setSelectedRecord
+																					setSelectedTransaction
 																				}
 																			/>
 																			{action ===
 																				"edit" &&
-																				record ===
-																					selectedRecord && (
-																					<EditBudgetItemRecordPanel
-																						onUpdate={async (
-																							item
-																						) => {
-																							await itemOperations(
-																								item,
-																								"modify"
-																							);
-																							await refresh();
-																						}}
-																						record={
-																							record
+																				transaction ===
+																					selectedTransaction && (
+																					<EditTransactionPanel
+																						onUpdate={async () =>
+																							await refresh()
+																						}
+																						transaction={
+																							transaction
 																						}
 																					/>
 																				)}
@@ -493,9 +493,8 @@ export function AccountingList({
 
 const AccountingListRow = ({
 	index,
-	record,
-	budget,
-	budgetHistory,
+	transaction,
+	transactionsGrouped,
 	selectionActive,
 	selection,
 	setSelection,
@@ -505,28 +504,29 @@ const AccountingListRow = ({
 }: {
 	index: string;
 	isTransfer?: boolean;
-	record: BudgetItemRecord;
-	budget: Budget<BudgetItem>;
-	budgetHistory: BudgetHistory;
+	transaction: Transaction;
+	transactionsGrouped: GetAllTransactionsGroupedByDaysUseCaseOutput;
 	selectionActive: boolean;
-	selection: BudgetItemRecord[];
-	setSelection: React.Dispatch<React.SetStateAction<BudgetItemRecord[]>>;
-	setSelectedRecord: React.Dispatch<React.SetStateAction<BudgetItemRecord>>;
+	selection: Transaction[];
+	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
+	setSelectedRecord: React.Dispatch<React.SetStateAction<Transaction>>;
 	setAction: React.Dispatch<React.SetStateAction<string>>;
 }) => {
-	const modifiedRecord = useMemo(() => {
-		if (!isTransfer) return record;
-		return new BudgetItemRecord(
-			record.id,
-			record.itemID,
-			record.account,
-			record.toAccount,
-			record.name,
-			record.type,
-			record.date,
-			record.amount.negate()
+	const modifiedTransaction = useMemo(() => {
+		if (!isTransfer) return transaction;
+		return new Transaction(
+			transaction.id,
+			transaction.itemID,
+			transaction.account,
+			transaction.name,
+			transaction.operation,
+			transaction.category,
+			transaction.subCategory,
+			transaction.date,
+			transaction.amount.negate(),
+			transaction.toAccount
 		);
-	}, [record, isTransfer]);
+	}, [transaction, isTransfer]);
 
 	return (
 		<li
@@ -534,65 +534,62 @@ const AccountingListRow = ({
 			onClick={() => {
 				if (selectionActive)
 					setSelection((prevSelection) =>
-						prevSelection.includes(modifiedRecord)
+						prevSelection.includes(modifiedTransaction)
 							? prevSelection.filter(
-									(item) => item !== modifiedRecord
+									(item) => item !== modifiedTransaction
 							  )
-							: [...prevSelection, modifiedRecord]
+							: [...prevSelection, modifiedTransaction]
 					);
 			}}
 			onContextMenu={() => {
 				setAction("");
-				setSelectedRecord(modifiedRecord);
+				setSelectedRecord(modifiedTransaction);
 			}}
 			className="accounting-list-item"
 			style={{
-				backgroundColor: selection.includes(modifiedRecord)
+				backgroundColor: selection.includes(modifiedTransaction)
 					? "gray"
 					: "",
 			}}
 		>
 			<span className="first-row">
-				<div>{modifiedRecord.name}</div>
+				<div>{modifiedTransaction.name.toString()}</div>
 				<div
 					style={{
-						color:
-							modifiedRecord.type === "expense"
-								? "var(--color-red)"
-								: modifiedRecord.type === "transfer"
-								? "var(--color-blue)"
-								: "var(--color-green)",
+						color: modifiedTransaction.operation.isExpense()
+							? "var(--color-red)"
+							: modifiedTransaction.operation.isTransfer()
+							? "var(--color-blue)"
+							: "var(--color-green)",
 					}}
 				>
-					{modifiedRecord.type === "expense" ||
-					(!isTransfer && modifiedRecord.type === "transfer")
+					{modifiedTransaction.operation.isExpense() ||
+					(!isTransfer && modifiedTransaction.operation.isTransfer())
 						? "-"
 						: "+"}
 					{(!isTransfer
-						? modifiedRecord.amount
-						: modifiedRecord.amount.negate()
+						? modifiedTransaction.amount
+						: modifiedTransaction.amount.negate()
 					).toString()}
 				</div>
 			</span>
 			<span className="second-row light-text">
 				<div className="category">
-					<b>Category:</b>{" "}
-					{budget.getItemByID(modifiedRecord.itemID)?.category}
+					<b>Category:</b> {transaction.category.toString()}
 				</div>
 				<span>
 					{isTransfer
-						? modifiedRecord.toAccount
-						: modifiedRecord.account}
+						? modifiedTransaction.toAccount?.value
+						: modifiedTransaction.account.value}
 				</span>
 			</span>
 			<span className="second-row light-text">
 				<div className="category">
-					<b>SubCategory:</b>{" "}
-					{budget.getItemByID(modifiedRecord.itemID)?.subCategory}
+					<b>SubCategory:</b> {transaction.subCategory.value}
 				</div>
-				<span>
+				{/* <span>
 					{new PriceValueObject(
-						budgetHistory.getBalance({
+						transactionsGrouped.getBalance({
 							account: isTransfer
 								? modifiedRecord.toAccount
 								: modifiedRecord.account,
@@ -602,14 +599,14 @@ const AccountingListRow = ({
 					).toString()}{" "}
 					{" -> "}
 					{new PriceValueObject(
-						budgetHistory.getBalance({
+						transactionsGrouped.getBalance({
 							account: isTransfer
 								? modifiedRecord.toAccount
 								: modifiedRecord.account,
 							untilID: modifiedRecord.id,
 						})
 					).toString()}
-				</span>
+				</span> */}
 			</span>
 		</li>
 	);

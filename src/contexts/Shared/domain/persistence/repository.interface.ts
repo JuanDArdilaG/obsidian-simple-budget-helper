@@ -1,11 +1,15 @@
 import { Criteria } from "../criteria";
+import { IEntity } from "../entity.interface";
 import { IDValueObject } from "../value-objects/id/id.valueobject";
 
 /**
  * Generic repository interface that defines common operations
  * for domain entities
  */
-export interface IRepository<T, ID extends IDValueObject> {
+export interface IRepository<
+	ID extends IDValueObject,
+	T extends IEntity<ID, Record<string, string | number | Date>>
+> {
 	/**
 	 * Find entity by its ID
 	 * @param id Entity identifier
@@ -47,29 +51,29 @@ export interface IRepository<T, ID extends IDValueObject> {
 	exists(id: ID): Promise<boolean>;
 }
 
-/**
- * Extended repository interface with pagination support
- */
-export interface IPaginatedRepository<T, ID extends IDValueObject>
-	extends IRepository<T, ID> {
-	/**
-	 * Find entities with pagination
-	 * @param page Page number (0-based)
-	 * @param size Page size
-	 * @returns Paginated result with entities and metadata
-	 */
-	findPaginated(page: number, size: number): Promise<PaginationResult<T>>;
-}
+// /**
+//  * Extended repository interface with pagination support
+//  */
+// export interface IPaginatedRepository<T, ID extends IDValueObject>
+// 	extends IRepository<T, ID> {
+// 	/**
+// 	 * Find entities with pagination
+// 	 * @param page Page number (0-based)
+// 	 * @param size Page size
+// 	 * @returns Paginated result with entities and metadata
+// 	 */
+// 	findPaginated(page: number, size: number): Promise<PaginationResult<T>>;
+// }
 
-/**
- * Pagination result structure
- */
-export interface PaginationResult<T> {
-	items: T[];
-	total: number;
-	page: number;
-	size: number;
-	pages: number;
-	hasNext: boolean;
-	hasPrev: boolean;
-}
+// /**
+//  * Pagination result structure
+//  */
+// export interface PaginationResult<T> {
+// 	items: T[];
+// 	total: number;
+// 	page: number;
+// 	size: number;
+// 	pages: number;
+// 	hasNext: boolean;
+// 	hasPrev: boolean;
+// }

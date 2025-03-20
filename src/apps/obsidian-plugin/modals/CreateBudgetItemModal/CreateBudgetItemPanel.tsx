@@ -1,89 +1,71 @@
-import { useContext, useEffect, useMemo, useState } from "react";
-import { BudgetItem, BudgetItemValidator } from "budget/BudgetItem/BudgetItem";
-import { BudgetItemSimple } from "budget/BudgetItem/BudgetItemSimple";
-import { BudgetItemRecordType } from "budget/BudgetItem/BugetItemRecord/BudgetItemRecord";
-import { BudgetItemRecurrent } from "budget/BudgetItem/BudgetItemRecurrent";
-import {
-	BudgetContext,
-	FileOperationsContext,
-} from "view/views/RightSidebarReactView/RightSidebarReactView";
-import { Budget } from "budget/Budget/Budget";
-import { Input } from "view/components/Input";
+import { useContext, useEffect, useState } from "react";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { SelectWithCreation } from "view/components/SelectWithCreation";
 import { Checkbox, FormControlLabel } from "@mui/material";
-import { TBudgetItem } from "../../budget/BudgetItem/BudgetItem";
 import { useBITypeAndAccountsFormFields } from "./useBITypeAndAccountsFormFields";
-import { Logger } from "utils/logger";
-import { BudgetItemNextDate } from "budget/BudgetItem/BudgetItemNextDate";
-
-const validator = new BudgetItemValidator();
+import { Logger } from "../../../../contexts/Shared/infrastructure/logger";
+import { SelectWithCreation } from "apps/obsidian-plugin/view/components/SelectWithCreation";
+import {
+	Item,
+	ItemBrand,
+	ItemCategory,
+	ItemID,
+	ItemName,
+	ItemOperation,
+	ItemPrice,
+	ItemPrimitives,
+	ItemStore,
+	ItemSubcategory,
+} from "contexts/Items/domain";
+import { AccountID } from "contexts/Accounts/domain";
+import { Input } from "apps/obsidian-plugin/view/components/Input";
+import {
+	GetAllUniqueItemsByNameUseCase,
+	CreateSimpleItemUseCase,
+} from "contexts/Items/application";
+import { AppContext } from "apps/obsidian-plugin/view";
 
 export const CreateBudgetItemPanel = ({
-	budget,
+	createSimpleItemUseCase,
+	getAllUniqueItemsByNameUseCase,
 	close,
 }: {
-	budget: Budget<BudgetItem>;
+	createSimpleItemUseCase: CreateSimpleItemUseCase;
+	getAllUniqueItemsByNameUseCase: GetAllUniqueItemsByNameUseCase;
 	close: () => void;
 }) => {
-	const items = useMemo(
-		() =>
-			budget.items
-				.filter((item, index, self) => {
-					return (
-						index === self.findIndex((o) => o.name === item.name)
-					);
-				})
-				.sort((a, b) => a.name.localeCompare(b.name)),
-		[budget]
-	);
-	const [item, setItem] = useState<BudgetItem>(BudgetItemSimple.empty());
-	const categories = useMemo(
-		() => [...budget.getCategories({ order: "asc" })],
-		[budget]
-	);
-	const subCategories = useMemo(
-		() => [
-			...budget.getSubCategories({
-				category: item.category,
-				sort: { order: "asc" },
-			}),
-		],
-		[budget, item.category]
-	);
-	const brands = useMemo(
-		() => [...budget.getBrands({ order: "asc" })],
-		[budget]
-	);
-	const stores = useMemo(
-		() => [...budget.getStores({ order: "asc" })],
-		[budget]
-	);
+	const { refresh, categoriesWithSubcategories, stores, brands } =
+		useContext(AppContext);
+	const [items, setItems] = useState<ItemPrimitives[]>([]);
+	useEffect(() => {
+		getAllUniqueItemsByNameUseCase
+			.execute()
+			.then((res) => setItems(res.map((r) => r.toPrimitives())));
+	}, [getAllUniqueItemsByNameUseCase]);
 
-	const { refresh, itemOperations } = useContext(FileOperationsContext);
-	const { updateBudget } = useContext(BudgetContext);
-	const [selectedItem, setSelectedItem] = useState<BudgetItem | undefined>(
-		undefined
+	const [item, setItem] = useState<ItemPrimitives>(Item.emptyPrimitives());
+
+	const [selectedItem, setSelectedItem] = useState<ItemPrimitives>(
+		Item.emptyPrimitives()
 	);
 
 	const [locks, setLocks] = useState<
 		Omit<
 			{
-				[K in keyof TBudgetItem]: boolean;
+				[K in keyof ItemPrimitives]: boolean;
 			},
-			"history" | "id" | "path" | "account" | "toAccount" | "type"
+			"id" | "account" | "toAccount" | "operation"
 		>
 	>({
 		name: false,
 		amount: false,
 		category: false,
-		subcategory: false,
+		subCategory: false,
 		brand: false,
 		store: false,
 		frequency: false,
 		nextDate: false,
 	});
-	const updateLock = (key: keyof TBudgetItem, value: boolean) => {
+	const updateLock = (key: keyof ItemPrimitives, value: boolean) => {
 		setLocks({
 			...locks,
 			[key]: value,
@@ -100,18 +82,15 @@ export const CreateBudgetItemPanel = ({
 		lockToAccount,
 		lockType,
 	} = useBITypeAndAccountsFormFields({
-		budget,
-		item,
-		setAccount: (account) => update({ account }),
-		setToAccount: (account) => update({ toAccount: account }),
-		setType: (type) => update({ type }),
+		setAccount: (accountID) => update({ account: accountID.value }),
+		setToAccount: (accountID) => update({ toAccount: accountID.value }),
+		setType: (type) => update({ operation: type }),
 	});
 
 	useEffect(() => {
 		console.log({ selectedItem });
 		if (selectedItem) {
-			const json = selectedItem.toJSON();
-			const toUpdate: Partial<TBudgetItem> = {};
+			const toUpdate: Partial<ItemPrimitives> = {};
 			Logger.debug(
 				"type and accounts fields",
 				{
@@ -124,151 +103,141 @@ export const CreateBudgetItemPanel = ({
 				},
 				{ on: false }
 			);
-			if (!lockType) toUpdate.type = json.type;
-			if (!locks.name) toUpdate.name = json.name;
-			if (!locks.amount) toUpdate.amount = json.amount;
-			if (!locks.category) toUpdate.category = json.category;
-			if (!locks.subcategory) toUpdate.subcategory = json.subcategory;
-			if (!locks.brand) toUpdate.brand = json.brand;
-			if (!locks.store) toUpdate.store = json.store;
-			if (!locks.nextDate) toUpdate.nextDate = json.nextDate;
-			if (!lockToAccount) toUpdate.toAccount = json.toAccount;
-			if (!lockAccount) toUpdate.account = json.account;
-			if (!locks.frequency) toUpdate.frequency = json.frequency;
+			if (!lockType) toUpdate.operation = selectedItem.operation;
+			if (!locks.name) toUpdate.name = selectedItem.name;
+			if (!locks.amount) toUpdate.amount = selectedItem.amount;
+			if (!locks.category) toUpdate.category = selectedItem.category;
+			if (!locks.subCategory)
+				toUpdate.subCategory = selectedItem.subCategory;
+			if (!locks.brand) toUpdate.brand = selectedItem.brand;
+			if (!locks.store) toUpdate.store = selectedItem.store;
+			if (!locks.nextDate) toUpdate.nextDate = selectedItem.nextDate;
+			if (!lockToAccount) toUpdate.toAccount = selectedItem.toAccount;
+			if (!lockAccount) toUpdate.account = selectedItem.account;
+			if (!locks.frequency) toUpdate.frequency = selectedItem.frequency;
 
-			setIsRecurrent(!BudgetItemSimple.IsSimple(selectedItem));
+			setIsRecurrent(!!selectedItem.frequency);
 			update(toUpdate);
 		}
 	}, [selectedItem]);
 
 	useEffect(() => {
-		update({ ...item.toJSON() });
+		update({ ...item });
 	}, [isRecurrent]);
 
 	useEffect(() => console.log({ itemChanged: item }), [item]);
 
-	const update = (newValues: {
-		name?: string;
-		account?: string;
-		date?: Date;
-		type?: BudgetItemRecordType;
-		amount?: number;
-		frequency?: string;
-		category?: string;
-		subcategory?: string;
-		toAccount?: string;
-		brand?: string;
-		store?: string;
-	}) => {
-		const toUpdate = item.toJSON();
-		console.log({ toUpdate: { ...toUpdate }, newValues });
-		if (newValues.name !== undefined) toUpdate.name = newValues.name;
-		if (newValues.date !== undefined) toUpdate.nextDate = newValues.date;
-		if (newValues.type !== undefined) toUpdate.type = newValues.type;
-		if (newValues.amount !== undefined) toUpdate.amount = newValues.amount;
+	const update = (newValues: Partial<ItemPrimitives>) => {
+		console.log({ toUpdate: { ...item }, newValues });
+		if (newValues.name !== undefined) item.name = newValues.name;
+		if (newValues.nextDate !== undefined)
+			item.nextDate = newValues.nextDate;
+		if (newValues.operation !== undefined)
+			item.operation = newValues.operation;
+		if (newValues.amount !== undefined) item.amount = newValues.amount;
 		if (newValues.category !== undefined)
-			toUpdate.category = newValues.category;
-		if (newValues.subcategory !== undefined)
-			toUpdate.subcategory = newValues.subcategory;
-		if (newValues.brand !== undefined) toUpdate.brand = newValues.brand;
-		if (newValues.store !== undefined) toUpdate.store = newValues.store;
-		if (newValues.toAccount) toUpdate.toAccount = newValues.toAccount;
+			item.category = newValues.category;
+		if (newValues.subCategory !== undefined)
+			item.subCategory = newValues.subCategory;
+		if (newValues.brand !== undefined) item.brand = newValues.brand;
+		if (newValues.store !== undefined) item.store = newValues.store;
+		if (newValues.toAccount) item.toAccount = newValues.toAccount;
 		if (newValues.frequency !== undefined)
-			toUpdate.frequency = newValues.frequency;
+			item.frequency = newValues.frequency;
+		if (newValues.account !== undefined) item.account = newValues.account;
 
-		if (newValues.account !== undefined)
-			toUpdate.account = newValues.account;
-
+		item.id = ItemID.generate().value;
 		const newItem = isRecurrent
-			? BudgetItemRecurrent.fromJSON(toUpdate)
-			: BudgetItemSimple.fromJSON(toUpdate);
-
-		newItem.setRandomId();
+			? {
+					...item,
+					nextDate: item.nextDate ?? new Date(),
+					frequency: item.frequency ?? "",
+			  }
+			: item;
 
 		console.log({
 			isRecurrent,
 			newValues,
-			toUpdate,
-			item: newItem,
+			item,
+			newItem,
 		});
 
 		setItem(newItem);
 	};
 
-	const [validation, setValidation] = useState(validator.getAllTrue());
-
 	const handleSubmit = (withClose: boolean) => async () => {
-		const nextDate = new Date(item.nextDate);
-		nextDate.setSeconds(0);
-		console.log({ nextDate });
+		if (!item) return;
+		// const nextDate = new Date(item.nextDate);
+		// nextDate.setSeconds(0);
+		// console.log({ nextDate });
 		console.log({
 			itemToCreate: item,
 		});
-		item.update({
-			account,
-			toAccount,
-			type,
-		});
-		const result = validator.validate(item);
-		if (!result) return setValidation(result);
 
-		await itemOperations(item, "add");
-		await updateBudget();
+		item.account = account?.id.value ?? "";
+		item.toAccount = toAccount?.id.value ?? "";
+		item.operation = type;
+
+		if (isRecurrent) {
+		} else {
+			await createSimpleItemUseCase.execute({
+				id: ItemID.generate(),
+				name: new ItemName(item.name),
+				category: new ItemCategory(item.category),
+				subCategory: new ItemSubcategory(item.subCategory),
+				operation: new ItemOperation(item.operation),
+				amount: new ItemPrice(item.amount),
+				account: new AccountID(item.account),
+				brand: item.brand ? new ItemBrand(item.brand) : undefined,
+				store: item.store ? new ItemStore(item.store) : undefined,
+				toAccount: item.toAccount
+					? new AccountID(item.toAccount)
+					: undefined,
+			});
+		}
 
 		await refresh();
 
 		if (withClose) close();
-		setSelectedItem(
-			BudgetItemSimple.create(
-				lockAccount ? item.account : "",
-				locks.name ? item.name : "",
-				locks.amount ? item.amount.toNumber() : 0,
-				locks.category ? item.category : "",
-				locks.subcategory ? item.subCategory : "",
-				locks.brand ? item.brand : "",
-				locks.store ? item.store : "",
-				"expense",
-				locks.nextDate
-					? item.nextDate
-					: new BudgetItemNextDate(new Date())
-			)
-		);
+		setSelectedItem({
+			id: "",
+			account: lockAccount ? item.account : "",
+			name: locks.name ? item.name : "",
+			amount: locks.amount ? item.amount : 0,
+			category: locks.category ? item.category : "",
+			subCategory: locks.subCategory ? item.subCategory : "",
+			brand: locks.brand ? item.brand : "",
+			store: locks.store ? item.store : "",
+			operation: "expense",
+			nextDate: locks.nextDate ? item.nextDate : new Date(),
+		});
 	};
 
 	return (
 		<div className="create-budget-item-modal">
 			<h1>Create Budget Item</h1>
-			<SelectWithCreation<BudgetItem>
+			<SelectWithCreation<ItemPrimitives>
 				id="name"
 				label="Name"
 				item={item}
 				items={items}
 				getLabel={(item) => {
 					if (!item) return "";
-					const label = `${
-						item instanceof BudgetItemSimple &&
-						!item.amount.isZero()
-							? item.account
-							: ""
-					}${
-						item.type === "transfer"
+					const label = `${item.account}${
+						item.operation === "transfer"
 							? ` -> ${item.toAccount} - `
 							: ""
-					}${
-						item.amount.isZero() ? "" : " " + item.amount.toString()
-					}`;
+					}${item.amount === 0 ? "" : " " + item.amount}`;
 					return label.length > 40
 						? label.slice(0, 40) + "..."
 						: label;
 				}}
 				getKey={(item) => item.name}
 				setSelectedItem={setSelectedItem}
-				onChange={(name) => {
-					update({ name });
-				}}
+				onChange={(name) => update({ name })}
 				isLocked={locks.name}
 				setIsLocked={(value) => updateLock("name", value)}
-				error={validation.check("name") ?? undefined}
+				// error={validation.check("name") ?? undefined}
 			/>
 			<div
 				style={{
@@ -280,44 +249,64 @@ export const CreateBudgetItemPanel = ({
 					id="amount"
 					label="Amount"
 					style={{ flexGrow: 1 }}
-					value={item.amount}
+					value={new PriceValueObject(item.amount)}
 					onChange={(amount) => update({ amount: amount.toNumber() })}
 					isLocked={locks.amount}
 					setIsLocked={(value) => updateLock("amount", value)}
-					error={validation.check("amount") ?? undefined}
+					// error={validation.check("amount") ?? undefined}
 				/>
 				<SelectWithCreation
 					id="category"
 					label="Category"
 					style={{ flexGrow: 1 }}
 					item={item.category}
-					items={categories}
+					items={categoriesWithSubcategories.map(
+						(catWithSubs) => catWithSubs.category.name.value
+					)}
 					onChange={(category) => update({ category })}
 					isLocked={locks.category}
 					setIsLocked={(value) => updateLock("category", value)}
-					error={validation.check("category") ?? undefined}
+					// error={validation.check("category") ?? undefined}
 				/>
 				<SelectWithCreation
 					id="subcategory"
 					label="SubCategory"
 					style={{ flexGrow: 1 }}
-					item={item.subCategory}
-					items={subCategories}
-					onChange={(subcategory) => update({ subcategory })}
-					isLocked={locks.subcategory}
-					setIsLocked={(value) => updateLock("subcategory", value)}
-					error={validation.check("subcategory") ?? undefined}
+					item={
+						categoriesWithSubcategories
+							.find(
+								(catWithSubs) =>
+									item.category ===
+									catWithSubs.category.name.value
+							)
+							?.subCategories.find(
+								(sub) => sub.id.value === item.subCategory
+							)?.name ?? ""
+					}
+					items={
+						categoriesWithSubcategories
+							.find(
+								(catWithSubs) =>
+									item.category ===
+									catWithSubs.category.name.value
+							)
+							?.subCategories.map((sub) => sub.name.value) ?? []
+					}
+					onChange={(subCategory) => update({ subCategory })}
+					isLocked={locks.subCategory}
+					setIsLocked={(value) => updateLock("subCategory", value)}
+					// error={validation.check("subcategory") ?? undefined}
 				/>
 			</div>
 			{accountsInputs}
 			<Input<Date>
 				id="date"
 				label="Date"
-				value={item.nextDate.toDate()}
-				onChange={(nextDate) => update({ date: nextDate })}
+				value={item.nextDate}
+				onChange={(nextDate) => update({ nextDate })}
 				isLocked={locks.nextDate}
 				setIsLocked={(value) => updateLock("nextDate", value)}
-				error={validation.check("nextDate") ?? undefined}
+				// error={validation.check("nextDate") ?? undefined}
 			/>
 			{type === "expense" && (
 				<>
@@ -325,23 +314,23 @@ export const CreateBudgetItemPanel = ({
 						id="brand"
 						label="Brand"
 						style={{ flexGrow: 1 }}
-						item={item.brand}
-						items={brands}
+						item={item.brand ?? ""}
+						items={brands.map((brand) => brand.value)}
 						onChange={(brand) => update({ brand })}
 						isLocked={locks.brand}
 						setIsLocked={(value) => updateLock("brand", value)}
-						error={validation.check("brand") ?? undefined}
+						// error={validation.check("brand") ?? undefined}
 					/>
 					<SelectWithCreation
 						id="store"
 						label="Store"
 						style={{ flexGrow: 1 }}
-						item={item.store}
-						items={stores}
+						item={item.store ?? ""}
+						items={stores.map((store) => store.value)}
 						onChange={(store) => update({ store })}
 						isLocked={locks.store}
 						setIsLocked={(value) => updateLock("store", value)}
-						error={validation.check("store") ?? undefined}
+						// error={validation.check("store") ?? undefined}
 					/>
 				</>
 			)}
@@ -359,15 +348,11 @@ export const CreateBudgetItemPanel = ({
 					<Input<string>
 						id="frequency"
 						label="Frequency"
-						value={
-							item instanceof BudgetItemRecurrent
-								? item.frequency.toString()
-								: ""
-						}
+						value={item.frequency}
 						onChange={(frequency) => update({ frequency })}
 						isLocked={locks.frequency}
 						setIsLocked={(value) => updateLock("frequency", value)}
-						error={validation.check("frequency") ?? undefined}
+						// error={validation.check("frequency") ?? undefined}
 					/>
 				)}
 			</div>

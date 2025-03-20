@@ -1,0 +1,13 @@
+export function dateStringToDate(dateString: string): Date {
+	const [year, month, day] = dateString.split("-").map(Number);
+	return new Date(year, month - 1, day);
+}
+
+export function getLastDayOfMonth(year: number, monthIndex: number): number {
+	return new Date(year, monthIndex + 1, 0).getDate();
+}
+
+export function monthAbbrToIndex(monthAbbr: string): number {
+	return 0;
+	// return months.indexOf(monthAbbr);
+}

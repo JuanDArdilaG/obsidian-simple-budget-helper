@@ -1,13 +1,15 @@
-import { DomainError } from "./domain-error";
+import { DomainError } from "contexts/Shared/domain/errors";
 
 export class InvalidArgumentError extends DomainError {
-  constructor(entityName: string, value: string, reason: string) {
-    super(
-      `${entityName} with value '${value ?? ""}' is invalid. Reason: ${reason}`
-    );
-  }
+	constructor(entityName: string, value: string, reason: string) {
+		super(
+			`${entityName} with value '${
+				value ?? ""
+			}' is invalid. Reason: ${reason}`
+		);
+	}
 
-  public errorType(): string {
-    return "INVALID_ARGUMENT";
-  }
+	public errorType(): string {
+		return "INVALID_ARGUMENT";
+	}
 }

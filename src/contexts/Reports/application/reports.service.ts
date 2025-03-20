@@ -1,21 +1,23 @@
-import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 import {
 	GroupByYearMonthDay,
 	IReportsService,
 } from "../domain/reports-service.interface";
-import { ITransactionsService } from "contexts/Transactions/domain/transactions-service.interface";
 import { CategoryName } from "../../Categories/domain/category-name.valueobject";
 import { SubcategoryName } from "../../Subcategories/domain/subcategory-name.valueobject";
 import { ReportBalance } from "../domain/report-balance.valueobject";
-import { TransactionCriteria } from "contexts/Transactions/domain/transaction.criteria";
+import {
+	Transaction,
+	TransactionCriteria,
+	ITransactionsRepository,
+} from "contexts/Transactions/domain";
 
 export class ReportsService implements IReportsService {
-	constructor(private _transactionsService: ITransactionsService) {}
+	constructor(private _transactionsRepository: ITransactionsRepository) {}
 
 	async groupTransactionsByCategories(
 		criteria?: TransactionCriteria
 	): Promise<{ category: CategoryName; transactions: Transaction[] }[]> {
-		const transactions = await this._transactionsService.getByCriteria(
+		const transactions = await this._transactionsRepository.findByCriteria(
 			criteria ?? new TransactionCriteria()
 		);
 		const result: {
@@ -43,7 +45,7 @@ export class ReportsService implements IReportsService {
 	): Promise<
 		{ subcategory: SubcategoryName; transactions: Transaction[] }[]
 	> {
-		const transactions = await this._transactionsService.getByCriteria(
+		const transactions = await this._transactionsRepository.findByCriteria(
 			criteria ?? new TransactionCriteria()
 		);
 		const result: {
@@ -69,7 +71,7 @@ export class ReportsService implements IReportsService {
 	async groupTransactionsByYearMonthDay(
 		criteria?: TransactionCriteria
 	): Promise<GroupByYearMonthDay> {
-		const transactions = await this._transactionsService.getByCriteria(
+		const transactions = await this._transactionsRepository.findByCriteria(
 			criteria ?? new TransactionCriteria()
 		);
 
@@ -90,7 +92,7 @@ export class ReportsService implements IReportsService {
 	async getTransactionsBalance(
 		criteria?: TransactionCriteria
 	): Promise<ReportBalance> {
-		const transactions = await this._transactionsService.getByCriteria(
+		const transactions = await this._transactionsRepository.findByCriteria(
 			criteria ?? new TransactionCriteria()
 		);
 		// const untilIDIndex = config?.untilID
@@ -114,4 +116,16 @@ export class ReportsService implements IReportsService {
 				}, 0)
 		);
 	}
+
+	// static fromGroupByYearMonthDay(groupedByYearMonthDay: GroupByYearMonthDay) {
+	// 	return new BudgetHistory(
+	// 		(
+	// 			Object.values(
+	// 				Object.values(groupedByYearMonthDay) as object[]
+	// 			) as BudgetItemRecord[]
+	// 		)
+	// 			.flat()
+	// 			.flat()
+	// 	);
+	// }
 }
