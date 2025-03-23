@@ -2,7 +2,8 @@ import {
 	Subcategory,
 	SubcategoryID,
 	SubcategoryPrimitives,
-	ISubcategoriesRepository,
+	ISubCategoriesRepository,
+	SubcategoryName,
 } from "contexts/Subcategories/domain";
 import {
 	DexieDB,
@@ -13,7 +14,7 @@ import { Config } from "contexts/Shared/infrastructure";
 
 export class SubcategoriesDexieRepository
 	extends DexieRepository<Subcategory, SubcategoryID, SubcategoryPrimitives>
-	implements ISubcategoriesRepository
+	implements ISubCategoriesRepository
 {
 	constructor(config: typeof Config, protected readonly _db: DexieDB) {
 		super(_db, config.subCategoriesTableName);
@@ -26,6 +27,16 @@ export class SubcategoriesDexieRepository
 				.equals(categoryID.toString())
 				.toArray()
 		).map((v) => this.mapToDomain(v));
+	}
+
+	async findByName(name: SubcategoryName): Promise<Subcategory | null> {
+		const record = await this._table
+			.where("name")
+			.equals(name.toString())
+			.limit(1)
+			.first();
+		if (!record) return null;
+		return this.mapToDomain(record);
 	}
 
 	protected mapToDomain(record: SubcategoryPrimitives): Subcategory {

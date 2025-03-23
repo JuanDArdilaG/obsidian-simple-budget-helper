@@ -8,7 +8,8 @@ import { IDValueObject } from "../value-objects/id/id.valueobject";
  */
 export interface IRepository<
 	ID extends IDValueObject,
-	T extends IEntity<ID, Record<string, string | number | Date>>
+	T extends IEntity<ID, P>,
+	P extends Record<string, string | number | Date>
 > {
 	/**
 	 * Find entity by its ID
@@ -27,7 +28,7 @@ export interface IRepository<
 	 * Find entities that match the criteria
 	 * @returns Array of entities found
 	 */
-	findByCriteria(criteria: Criteria<T>): Promise<T[]>;
+	findByCriteria(criteria: Criteria<P>): Promise<T[]>;
 
 	/**
 	 * Save an entity (create or update)

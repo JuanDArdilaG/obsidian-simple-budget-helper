@@ -62,7 +62,10 @@ export class RecordRecurrentItemUseCase
 			next: nextDate,
 		});
 
-		const transaction = Transaction.fromItem(item);
+		const transaction = Transaction.fromItem(
+			item,
+			date ?? TransactionDate.now()
+		);
 
 		await this._transactionsRepository.persist(transaction);
 	}

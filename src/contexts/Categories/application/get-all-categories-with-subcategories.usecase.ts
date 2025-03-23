@@ -2,7 +2,7 @@ import { QueryUseCase } from "contexts/Shared/domain";
 import { Category, ICategoriesRepository } from "contexts/Categories/domain";
 import {
 	Subcategory,
-	ISubcategoriesRepository,
+	ISubCategoriesRepository,
 } from "contexts/Subcategories/domain";
 
 export type GetAllCategoriesWithSubCategoriesUseCaseOutput = {
@@ -16,7 +16,7 @@ export class GetAllCategoriesWithSubCategoriesUseCase
 {
 	constructor(
 		private _categoriesRepository: ICategoriesRepository,
-		private _subCategoriesRepository: ISubcategoriesRepository
+		private _subCategoriesRepository: ISubCategoriesRepository
 	) {}
 
 	async execute(): Promise<GetAllCategoriesWithSubCategoriesUseCaseOutput> {

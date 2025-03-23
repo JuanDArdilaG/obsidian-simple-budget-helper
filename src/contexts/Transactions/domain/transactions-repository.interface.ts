@@ -1,6 +1,9 @@
 import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
-import { Transaction } from "./transaction.entity";
-import { TransactionID } from "./transaction-id.valueobject";
+import {
+	TransactionID,
+	Transaction,
+	TransactionPrimitives,
+} from "contexts/Transactions/domain";
 
 export interface ITransactionsRepository
-	extends IRepository<TransactionID, Transaction> {}
+	extends IRepository<TransactionID, Transaction, TransactionPrimitives> {}

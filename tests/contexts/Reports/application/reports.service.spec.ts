@@ -1,23 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { OperationType } from "../../../../src/contexts/Shared/domain/value-objects/operation.valueobject";
-import { AccountID } from "../../../../src/contexts/Accounts/domain/account-id.valueobject";
-import { ItemID } from "../../../../src/contexts/Items/domain/item-id.valueobject";
-import { Transaction } from "../../../../src/contexts/Transactions/domain/transaction.entity";
-import { TransactionName } from "../../../../src/contexts/Transactions/domain/item-name.valueobject";
-import { TransactionAmount } from "../../../../src/contexts/Transactions/domain/transaction-amount.valueobject";
-import { TransactionCategory } from "../../../../src/contexts/Transactions/domain/transaction-category.valueobject";
-import { TransactionDate } from "../../../../src/contexts/Transactions/domain/transaction-date.valueobject";
-import { TransactionID } from "../../../../src/contexts/Transactions/domain/transaction-id.valueobject";
-import { TransactionOperation } from "../../../../src/contexts/Transactions/domain/transaction-operation.valueobject";
-import { TransactionSubcategory } from "../../../../src/contexts/Transactions/domain/transaction-subcategory.valueobject";
 import { ReportsService } from "../../../../src/contexts/Reports/application/reports.service";
-import { TransactionsServiceMock } from "../../../../src/contexts/Transactions/domain/transactions-service.mock";
+import { TransactionsRepositoryMock } from "../../../../src/contexts/Transactions/domain/transactions-repository.mock";
+import { buildTestTransactions } from "../domain/buildTestTransactions";
 
 describe("getTransactionsBalance", () => {
 	it("should return the correct balance for one expense transaction", async () => {
 		const transactions = buildTestTransactions({ transactions: 1 });
 		let reportsService = new ReportsService(
-			new TransactionsServiceMock(transactions)
+			new TransactionsRepositoryMock(transactions)
 		);
 		const expectedBalance = -100;
 
@@ -29,7 +19,7 @@ describe("getTransactionsBalance", () => {
 	it("should return the correct balance for three expense transactions", async () => {
 		const transactions = buildTestTransactions({ transactions: 3 });
 		let reportsService = new ReportsService(
-			new TransactionsServiceMock(transactions)
+			new TransactionsRepositoryMock(transactions)
 		);
 		const expectedBalance = -300;
 
@@ -47,7 +37,7 @@ describe("getTransactionsBalance", () => {
 			],
 		});
 		let reportsService = new ReportsService(
-			new TransactionsServiceMock(transactions)
+			new TransactionsRepositoryMock(transactions)
 		);
 		const expectedBalance = 900;
 
@@ -89,10 +79,12 @@ describe("getGroupedByYearMonthDay", () => {
 			transactions: [{ date: new Date(2024, 0, 1) }],
 		});
 		let reportsService = new ReportsService(
-			new TransactionsServiceMock(transactions)
+			new TransactionsRepositoryMock(transactions)
 		);
 
-		const grouped = await reportsService.groupTransactionsByYearMonthDay();
+		const grouped = await reportsService.groupTransactionsByYearMonthDay(
+			{}
+		);
 
 		expect(Object.keys(grouped)).toEqual(["2024"]);
 		expect(Object.keys(grouped[2024])).toEqual(["Jan"]);
@@ -112,10 +104,12 @@ describe("getGroupedByYearMonthDay", () => {
 			],
 		});
 		let reportsService = new ReportsService(
-			new TransactionsServiceMock(transactions)
+			new TransactionsRepositoryMock(transactions)
 		);
 
-		const grouped = await reportsService.groupTransactionsByYearMonthDay();
+		const grouped = await reportsService.groupTransactionsByYearMonthDay(
+			{}
+		);
 
 		expect(Object.keys(grouped)).toEqual(["2024"]);
 		expect(Object.keys(grouped[2024])).toEqual(["Jan"]);
@@ -158,54 +152,3 @@ describe("getGroupedByYearMonthDay", () => {
 	// 	expect(grouped[2024]["Jan"][1][5].date.valueOf().getHours()).toEqual(1);
 	// });
 });
-
-type TestBudgetConfig = {
-	transactions: number | TestBudgetSimpleConfig[];
-};
-
-type TestBudgetSimpleConfig = {
-	date?: Date;
-	amount?: number;
-	operation?: OperationType;
-};
-
-export const buildTestTransactions = ({
-	transactions,
-}: TestBudgetConfig): Transaction[] => {
-	const testTransactions: Transaction[] = [];
-	if (transactions instanceof Array) {
-		transactions.forEach((transactionConfig) => {
-			const transaction = new Transaction(
-				TransactionID.generate(),
-				ItemID.generate(),
-				AccountID.generate(),
-				new TransactionName("test"),
-				new TransactionOperation(
-					transactionConfig.operation ?? "expense"
-				),
-				new TransactionCategory("test"),
-				new TransactionSubcategory("test"),
-				new TransactionDate(transactionConfig.date ?? new Date()),
-				new TransactionAmount(transactionConfig.amount ?? 100)
-			);
-			testTransactions.push(transaction);
-		});
-	} else {
-		for (let i = 0; i < transactions; i++) {
-			const transaction = new Transaction(
-				TransactionID.generate(),
-				ItemID.generate(),
-				AccountID.generate(),
-				new TransactionName("test"),
-				TransactionOperation.expense(),
-				new TransactionCategory("test"),
-				new TransactionSubcategory("test"),
-				new TransactionDate(new Date()),
-				new TransactionAmount(100)
-			);
-			testTransactions.push(transaction);
-		}
-	}
-
-	return testTransactions;
-};

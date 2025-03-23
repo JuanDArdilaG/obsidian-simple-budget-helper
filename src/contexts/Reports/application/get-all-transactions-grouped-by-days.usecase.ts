@@ -1,15 +1,34 @@
 import { QueryUseCase } from "contexts/Shared/domain";
 import { GroupByYearMonthDay, IReportsService } from "contexts/Reports/domain";
+import { SubcategoryID } from "contexts/Subcategories/domain";
+import { CategoryID } from "contexts/Categories/domain";
+import { AccountID } from "contexts/Accounts/domain";
 
+export type GetAllTransactionsGroupedByDaysUseCaseInput = {
+	accountFilter?: AccountID;
+	categoryFilter?: CategoryID;
+	subCategoryFilter?: SubcategoryID;
+};
 export type GetAllTransactionsGroupedByDaysUseCaseOutput = GroupByYearMonthDay;
 
 export class GetAllTransactionsGroupedByDaysUseCase
 	implements
-		QueryUseCase<undefined, GetAllTransactionsGroupedByDaysUseCaseOutput>
+		QueryUseCase<
+			GetAllTransactionsGroupedByDaysUseCaseInput,
+			GetAllTransactionsGroupedByDaysUseCaseOutput
+		>
 {
 	constructor(private _reportsService: IReportsService) {}
 
-	async execute(): Promise<GroupByYearMonthDay> {
-		return this._reportsService.groupTransactionsByYearMonthDay();
+	async execute({
+		accountFilter,
+		categoryFilter,
+		subCategoryFilter,
+	}: GetAllTransactionsGroupedByDaysUseCaseInput): Promise<GroupByYearMonthDay> {
+		return await this._reportsService.groupTransactionsByYearMonthDay({
+			accountFilter,
+			categoryFilter,
+			subCategoryFilter,
+		});
 	}
 }

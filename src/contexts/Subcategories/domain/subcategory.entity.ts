@@ -11,6 +11,10 @@ export class Subcategory
 		private _name: SubcategoryName
 	) {}
 
+	static create(category: CategoryID, name: SubcategoryName): Subcategory {
+		return new Subcategory(SubcategoryID.generate(), category, name);
+	}
+
 	get id(): SubcategoryID {
 		return this._id;
 	}

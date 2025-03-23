@@ -3,12 +3,12 @@ import { ItemID } from "../../../../../src/contexts/Items/domain/item-id.valueob
 import { ItemOperation } from "../../../../../src/contexts/Items/domain/item-operation.valueobject";
 import { ItemName } from "../../../../../src/contexts/Items/domain/item-name.valueobject";
 import { ItemPrice } from "../../../../../src/contexts/Items/domain/item-price.valueobject";
-import { ItemCategory } from "../../../../../src/contexts/Items/domain/item-category.valueobject";
-import { ItemSubcategory } from "../../../../../src/contexts/Items/domain/item-subcategory.valueobject";
 import { RecurrentItem } from "../../../../../src/contexts/Items/domain/RecurrentItem/recurrent-item.entity";
 import { RecurrentItemNextDate } from "../../../../../src/contexts/Items/domain/RecurrentItem/recurrent-item-nextdate.valueobject";
 import { RecurrrentItemFrequency } from "../../../../../src/contexts/Items/domain/RecurrentItem/recurrent-item-frequency.valueobject";
 import { AccountID } from "../../../../../src/contexts/Accounts/domain/account-id.valueobject";
+import { CategoryID } from "../../../../../src/contexts/Categories/domain/category-id.valueobject";
+import { SubcategoryID } from "../../../../../src/contexts/Subcategories/domain/subcategory-id.valueobject";
 
 describe("remainingDays", () => {
 	it("should calculate remaining future 7 days correctly", () => {
@@ -21,8 +21,8 @@ describe("remainingDays", () => {
 			ItemOperation.income(),
 			new ItemName("test"),
 			new ItemPrice(100),
-			new ItemCategory("test"),
-			new ItemSubcategory("test"),
+			CategoryID.generate(),
+			SubcategoryID.generate(),
 			AccountID.generate(),
 			itemDate,
 			new RecurrrentItemFrequency("1w")
@@ -44,8 +44,8 @@ describe("remainingDays", () => {
 			ItemOperation.income(),
 			new ItemName("test"),
 			new ItemPrice(100),
-			new ItemCategory("test"),
-			new ItemSubcategory("test"),
+			CategoryID.generate(),
+			SubcategoryID.generate(),
 			AccountID.generate(),
 			itemDate,
 			new RecurrrentItemFrequency("1w")
@@ -67,8 +67,8 @@ describe("remainingDays", () => {
 			ItemOperation.income(),
 			new ItemName("test"),
 			new ItemPrice(100),
-			new ItemCategory("test"),
-			new ItemSubcategory("test"),
+			CategoryID.generate(),
+			SubcategoryID.generate(),
 			AccountID.generate(),
 			itemDate,
 			new RecurrrentItemFrequency("1w")
@@ -90,8 +90,8 @@ describe("remainingDays", () => {
 			ItemOperation.income(),
 			new ItemName("test"),
 			new ItemPrice(100),
-			new ItemCategory("test"),
-			new ItemSubcategory("test"),
+			CategoryID.generate(),
+			SubcategoryID.generate(),
 			AccountID.generate(),
 			itemDate,
 			new RecurrrentItemFrequency("1w")
@@ -111,8 +111,8 @@ describe("createRecurretItemsBetweenDates", () => {
 			ItemOperation.expense(),
 			new ItemName("name"),
 			new ItemPrice(300),
-			new ItemCategory("category"),
-			new ItemSubcategory("subCategory"),
+			CategoryID.generate(),
+			SubcategoryID.generate(),
 			AccountID.generate(),
 			RecurrentItemNextDate.now(),
 			new RecurrrentItemFrequency("2d")

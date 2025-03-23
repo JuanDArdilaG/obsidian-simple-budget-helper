@@ -5,10 +5,10 @@ import { ItemID } from "./item-id.valueobject";
 import { ItemOperation } from "./item-operation.valueobject";
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { ItemBrand } from "./item-brand.valueobject";
-import { ItemCategory } from "./item-category.valueobject";
 import { ItemName } from "./item-name.valueobject";
 import { ItemStore } from "./item-store.valueobject";
-import { ItemSubcategory } from "./item-subcategory.valueobject";
+import { SubcategoryID } from "contexts/Subcategories/domain";
+import { CategoryID } from "contexts/Categories/domain";
 
 export class SimpleItem extends Item {
 	static IsSimple(item: Item): item is SimpleItem {
@@ -19,8 +19,8 @@ export class SimpleItem extends Item {
 		name: ItemName,
 		amount: ItemPrice,
 		operation: ItemOperation,
-		category: ItemCategory,
-		subCategory: ItemSubcategory,
+		category: CategoryID,
+		subCategory: SubcategoryID,
 		account: AccountID,
 		brand?: ItemBrand,
 		store?: ItemStore
@@ -62,8 +62,8 @@ export class SimpleItem extends Item {
 			new ItemOperation(operation),
 			new ItemName(name),
 			new ItemPrice(amount),
-			new ItemCategory(category),
-			new ItemSubcategory(subCategory),
+			new CategoryID(category),
+			new SubcategoryID(subCategory),
 			new AccountID(account),
 			brand ? new ItemBrand(brand) : undefined,
 			store ? new ItemStore(store) : undefined,

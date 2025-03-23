@@ -1,5 +1,5 @@
-import { InvalidArgumentError } from "../errors/invalid-argument.error";
-import { ValueObject } from "./value-object";
+import { ValueObject } from "contexts/Shared/domain/value-objects/value-object";
+import { InvalidArgumentError } from "contexts/Shared/domain/errors/invalid-argument.error";
 
 export type StringLengthOptions = {
 	minLength: number;
@@ -13,7 +13,7 @@ export const StringLengthOptionsDefault: StringLengthOptions = {
 
 export class StringValueObject extends ValueObject<string> {
 	constructor(
-		private _name: string,
+		protected _name: string,
 		value: string,
 		private _length: StringLengthOptions = StringLengthOptionsDefault
 	) {
@@ -48,7 +48,7 @@ export class StringValueObject extends ValueObject<string> {
 		return this.value;
 	}
 
-	equal(other: StringValueObject): boolean {
+	equalTo(other: StringValueObject): boolean {
 		return this.value === other.value;
 	}
 }

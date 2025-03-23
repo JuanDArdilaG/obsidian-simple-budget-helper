@@ -1,6 +1,12 @@
-import { Account, AccountID, AccountName } from "contexts/Accounts/domain";
+import {
+	Account,
+	AccountID,
+	AccountName,
+	AccountPrimitives,
+} from "contexts/Accounts/domain";
 import { IRepository } from "contexts/Shared/domain";
 
-export interface IAccountsRepository extends IRepository<AccountID, Account> {
+export interface IAccountsRepository
+	extends IRepository<AccountID, Account, AccountPrimitives> {
 	findAllNames(): Promise<AccountName[]>;
 }

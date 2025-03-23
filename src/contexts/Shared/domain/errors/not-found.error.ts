@@ -1,8 +1,7 @@
-import { IDValueObject } from "../value-objects/id/id.valueobject";
-import { DomainError } from "./domain-error";
+import { StringValueObject, DomainError } from "contexts/Shared/domain";
 
 export class EntityNotFoundError extends DomainError {
-	constructor(entityName: string, id: IDValueObject) {
+	constructor(entityName: string, id: StringValueObject) {
 		super(`${entityName} with id ${id.toString()} not found`);
 	}
 

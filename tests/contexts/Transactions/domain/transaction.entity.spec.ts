@@ -1,14 +1,17 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { Transaction, TransactionPrimitives } from "./transaction.entity";
-import { TransactionID } from "./transaction-id.valueobject";
-import { ItemID } from "contexts/Items/domain/item-id.valueobject";
-import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
-import { ItemName } from "contexts/Items/domain/item-name.valueobject";
-import { TransactionOperation } from "./transaction-operation.valueobject";
-import { TransactionDate } from "./transaction-date.valueobject";
-import { TransactionAmount } from "./transaction-amount.valueobject";
-import { TransactionCategory } from "./transaction-category.valueobject";
-import { TransactionSubcategory } from "./transaction-subcategory.valueobject";
+import { AccountID } from "../../../../src/contexts/Accounts/domain/account-id.valueobject";
+import { ItemID } from "../../../../src/contexts/Items/domain/item-id.valueobject";
+import { ItemName } from "../../../../src/contexts/Items/domain/item-name.valueobject";
+import { TransactionAmount } from "../../../../src/contexts/Transactions/domain/transaction-amount.valueobject";
+import { TransactionDate } from "../../../../src/contexts/Transactions/domain/transaction-date.valueobject";
+import { TransactionID } from "../../../../src/contexts/Transactions/domain/transaction-id.valueobject";
+import { TransactionOperation } from "../../../../src/contexts/Transactions/domain/transaction-operation.valueobject";
+import {
+	TransactionPrimitives,
+	Transaction,
+} from "../../../../src/contexts/Transactions/domain/transaction.entity";
+import { CategoryID } from "../../../../src/contexts/Categories/domain/category-id.valueobject";
+import { SubcategoryID } from "../../../../src/contexts/Subcategories/domain/subcategory-id.valueobject";
 
 describe("toString", () => {
 	let mockTransaction: Transaction;
@@ -16,12 +19,11 @@ describe("toString", () => {
 	beforeAll(() => {
 		mockTransaction = new Transaction(
 			TransactionID.generate(),
-			ItemID.generate(),
 			AccountID.generate(),
 			new ItemName("name"),
 			new TransactionOperation("expense"),
-			new TransactionCategory("test"),
-			new TransactionSubcategory("test"),
+			CategoryID.generate(),
+			SubcategoryID.generate(),
 			new TransactionDate(new Date(2024, 0, 1, 15, 35)),
 			new TransactionAmount(100)
 		);

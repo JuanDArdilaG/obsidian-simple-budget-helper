@@ -1,18 +1,35 @@
-import { IEntity } from "contexts/Shared/domain/entity.interface";
-import { AccountID } from "./account-id.valueobject";
-import { AccountName } from "./account-name.valueobject";
-import { AccountBalance } from "./account-balance.valueobject";
-import { createDefault } from "contexts/Shared/domain";
+import {
+	AccountBalance,
+	AccountID,
+	AccountName,
+	AccountType,
+	AccountTypeType,
+} from "contexts/Accounts/domain";
+import { IEntity } from "contexts/Shared/domain";
 
 export class Account implements IEntity<AccountID, AccountPrimitives> {
 	constructor(
 		private _id: AccountID,
+		private _type: AccountType,
 		private _name: AccountName,
 		private _balance: AccountBalance
 	) {}
 
+	static create(type: AccountType, name: AccountName): Account {
+		return new Account(
+			AccountID.generate(),
+			type,
+			name,
+			AccountBalance.zero()
+		);
+	}
+
 	get id(): AccountID {
 		return this._id;
+	}
+
+	get type(): AccountType {
+		return this._type;
 	}
 
 	get name(): AccountName {
@@ -26,14 +43,21 @@ export class Account implements IEntity<AccountID, AccountPrimitives> {
 	toPrimitives(): AccountPrimitives {
 		return {
 			id: this._id.value,
+			type: this._type.value,
 			name: this._name.value,
 			balance: this._balance.valueOf(),
 		};
 	}
 
-	static fromPrimitives({ id, name, balance }: AccountPrimitives): Account {
+	static fromPrimitives({
+		id,
+		type,
+		name,
+		balance,
+	}: AccountPrimitives): Account {
 		return new Account(
 			new AccountID(id),
+			new AccountType(type),
 			new AccountName(name),
 			new AccountBalance(balance)
 		);
@@ -42,6 +66,7 @@ export class Account implements IEntity<AccountID, AccountPrimitives> {
 	static emptyPrimitives(): AccountPrimitives {
 		return {
 			id: "",
+			type: "asset",
 			name: "",
 			balance: 0,
 		};
@@ -50,6 +75,7 @@ export class Account implements IEntity<AccountID, AccountPrimitives> {
 
 export type AccountPrimitives = {
 	id: string;
+	type: AccountTypeType;
 	name: string;
 	balance: number;
 };

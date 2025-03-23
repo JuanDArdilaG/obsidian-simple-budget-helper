@@ -4,14 +4,15 @@ import { Criteria } from "contexts/Shared/domain/criteria";
 import { DexieDB } from "./dexie.db";
 import { IEntity } from "contexts/Shared/domain/entity.interface";
 import { EntityTable } from "dexie";
+import { Logger } from "contexts/Shared/infrastructure/logger";
 
 export abstract class DexieRepository<
-	T extends IEntity<ID, EntityPrimitives>,
+	T extends IEntity<ID, P>,
 	ID extends IDValueObject,
-	EntityPrimitives extends Record<string, string | number | Date>
-> implements IRepository<ID, T>
+	P extends Record<string, string | number | Date>
+> implements IRepository<ID, T, P>
 {
-	protected readonly _table: EntityTable<EntityPrimitives, "id">;
+	protected readonly _table: EntityTable<P, "id">;
 
 	constructor(
 		protected readonly _db: DexieDB,
@@ -42,15 +43,28 @@ export abstract class DexieRepository<
 		return (await this._table.toArray()).map((i) => this.mapToDomain(i));
 	}
 
-	async findByCriteria(criteria: Criteria<T>): Promise<T[]> {
-		//TODO: real implementation, actually just returns all
-		return (await this._table.toArray()).map((i) => this.mapToDomain(i));
+	async findByCriteria(criteria: Criteria<P>): Promise<T[]> {
+		//TODO: real implementation, actually just assume all operations are EQUAL
+		const table = this._table;
+		Logger.debug("findByCriteria dexie repository", {
+			criteria,
+		});
+		let collection = table.toCollection();
+		Object.keys(criteria.filters).forEach((field) => {
+			Logger.debug("new filter", {
+				filter: `where ${field} equals ${criteria.filters[field].value}`,
+			});
+			collection = table
+				.where(field)
+				.equals(criteria.filters[field].value);
+		});
+		const res = await collection.toArray();
+		Logger.debug("findByCriteria res", { res });
+		return res.map((i) => this.mapToDomain(i));
 	}
 
 	/**
 	 * Save entity (create or update)
-	 * This is an abstract method since the implementation
-	 * depends on the specific entity structure
 	 */
 	async persist(entity: T): Promise<void> {
 		const exists = await this.exists(entity.id);
@@ -58,7 +72,8 @@ export abstract class DexieRepository<
 			await this._table.add(entity.toPrimitives());
 		} else {
 			await this._table.update(
-				entity.id.toString(),
+				//@ts-ignore
+				entity.id.value,
 				entity.toPrimitives()
 			);
 		}
@@ -68,7 +83,10 @@ export abstract class DexieRepository<
 	 * Delete entity by ID
 	 */
 	async deleteById(id: ID): Promise<boolean> {
-		await this._table.delete(id.toString());
+		await this._table.delete(
+			//@ts-ignore
+			id.toString()
+		);
 		return true;
 	}
 

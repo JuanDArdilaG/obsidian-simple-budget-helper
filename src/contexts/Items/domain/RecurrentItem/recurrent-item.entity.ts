@@ -6,11 +6,11 @@ import { RecurrrentItemFrequency } from "./recurrent-item-frequency.valueobject"
 import { ItemID } from "../item-id.valueobject";
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { ItemBrand } from "../item-brand.valueobject";
-import { ItemCategory } from "../item-category.valueobject";
 import { ItemName } from "../item-name.valueobject";
 import { ItemOperation } from "../item-operation.valueobject";
 import { ItemStore } from "../item-store.valueobject";
-import { ItemSubcategory } from "../item-subcategory.valueobject";
+import { CategoryID } from "contexts/Categories/domain";
+import { SubcategoryID } from "contexts/Subcategories/domain";
 
 export class RecurrentItem extends Item {
 	constructor(
@@ -18,8 +18,8 @@ export class RecurrentItem extends Item {
 		operation: ItemOperation,
 		name: ItemName,
 		amount: ItemPrice,
-		category: ItemCategory,
-		subCategory: ItemSubcategory,
+		category: CategoryID,
+		subCategory: SubcategoryID,
 		account: AccountID,
 		private _nextDate: RecurrentItemNextDate,
 		private _frequency: RecurrrentItemFrequency,
@@ -167,8 +167,8 @@ export class RecurrentItem extends Item {
 			new ItemOperation(operation),
 			new ItemName(name),
 			new ItemPrice(amount),
-			new ItemCategory(category),
-			new ItemSubcategory(subCategory),
+			new CategoryID(category),
+			new SubcategoryID(subCategory),
 			new AccountID(account),
 			new RecurrentItemNextDate(nextDate),
 			new RecurrrentItemFrequency(frequency),

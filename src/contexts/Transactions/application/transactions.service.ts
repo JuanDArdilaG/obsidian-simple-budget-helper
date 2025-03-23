@@ -1,0 +1,111 @@
+import { Logger } from "contexts/Shared/infrastructure";
+import {
+	ITransactionsRepository,
+	ITransactionsService,
+	Transaction,
+	TransactionCriteria,
+	TransactionID,
+	TransactionName,
+	TransactionOperation,
+} from "contexts/Transactions/domain";
+import {
+	Category,
+	CategoryID,
+	CategoryName,
+	ICategoriesService,
+} from "contexts/Categories/domain";
+import {
+	ISubCategoriesService,
+	SubcategoryName,
+} from "contexts/Subcategories/domain";
+import { AccountBalance, AccountID } from "contexts/Accounts/domain";
+import { AccountsService } from "contexts/Accounts/application";
+import { EntityNotFoundError } from "contexts/Shared";
+import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
+
+export class TransactionsService implements ITransactionsService {
+	constructor(
+		private _accountsService: AccountsService,
+		private _transactionsRepository: ITransactionsRepository,
+		private _categoriesService: ICategoriesService,
+		private _subCategoriesService: ISubCategoriesService
+	) {}
+
+	async getAll(): Promise<Transaction[]> {
+		return this._transactionsRepository.findAll();
+	}
+
+	async getByID(id: TransactionID): Promise<Transaction> {
+		const transaction = await this._transactionsRepository.findById(id);
+		if (!transaction) throw new EntityNotFoundError("Transaction", id);
+		return transaction;
+	}
+
+	async getByCategory(category: CategoryID): Promise<Transaction[]> {
+		return this._transactionsRepository.findByCriteria(
+			new TransactionCriteria().where("category", category.value)
+		);
+	}
+
+	async record(transaction: Transaction): Promise<void> {
+		Logger.debug("recording transaction", {
+			...transaction.toPrimitives(),
+		});
+
+		await this._accountsService.adjustOnTransaction(transaction);
+		await this._transactionsRepository.persist(transaction);
+
+		Logger.debug("transaction recorded");
+	}
+
+	async accountAdjustment(
+		accountID: AccountID,
+		newBalance: AccountBalance
+	): Promise<void> {
+		const account = await this._accountsService.getByID(accountID);
+
+		const amountDifference = account.balance.adjust(newBalance);
+		if (amountDifference.isZero()) return;
+
+		const category = await this._categoriesService.getByNameWithCreation(
+			new CategoryName("Adjustment")
+		);
+		const subCategory =
+			await this._subCategoriesService.getByNameWithCreation(
+				category.id,
+				new SubcategoryName("Adjustment")
+			);
+
+		const transaction = Transaction.createWithoutItem(
+			accountID,
+			new TransactionName(`Adjustment for ${account.name}`),
+			new TransactionOperation(
+				amountDifference
+					.times(
+						new PriceValueObject(account.type.isAsset() ? 1 : -1)
+					)
+					.isPositive()
+					? "income"
+					: "expense"
+			),
+			category.id,
+			subCategory.id,
+			amountDifference.abs()
+		);
+
+		await this.record(transaction);
+		await this._accountsService.update(account);
+	}
+
+	async delete(id: TransactionID): Promise<void> {
+		const transaction = await this.getByID(id);
+		const account = await this._accountsService.getByID(
+			transaction.account
+		);
+
+		await this._transactionsRepository.deleteById(id);
+		account.balance.adjustOnTransactionDeletion(transaction);
+
+		await this._accountsService.update(account);
+	}
+}

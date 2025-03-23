@@ -1,11 +1,15 @@
 import { ItemID } from "contexts/Items/domain/item-id.valueobject";
-import { Item } from "contexts/Items/domain/item.entity";
+import { Item, ItemPrimitives } from "contexts/Items/domain/item.entity";
 import { RecurrentItem } from "contexts/Items/domain/RecurrentItem/recurrent-item.entity";
 import { SimpleItem } from "contexts/Items/domain/simple-item.entity";
 import { SQLiteDB } from "contexts/Shared/infrastructure/persistence/sqlite/sqlite.db";
 import { SQLiteRepository } from "contexts/Shared/infrastructure/persistence/sqlite/sqlite.repository";
 
-export class ItemsSQLiteRepository extends SQLiteRepository<Item, ItemID> {
+export class ItemsSQLiteRepository extends SQLiteRepository<
+	ItemID,
+	Item,
+	ItemPrimitives
+> {
 	constructor(_db: SQLiteDB) {
 		super(_db, "items");
 		_db.query(`CREATE TABLE IF NOT EXISTS ${this._tableName} (

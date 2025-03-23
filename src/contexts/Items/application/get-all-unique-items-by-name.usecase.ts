@@ -12,7 +12,9 @@ export class GetAllUniqueItemsByNameUseCase
 		const items = await this._itemsRepository.findAll();
 		return items
 			.filter((item, index, self) => {
-				return index === self.findIndex((o) => o.name.equal(item.name));
+				return (
+					index === self.findIndex((o) => o.name.equalTo(item.name))
+				);
 			})
 			.sort((a, b) => a.name.value.localeCompare(b.name.value));
 	}

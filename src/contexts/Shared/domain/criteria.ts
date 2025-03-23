@@ -11,14 +11,14 @@ type Operator =
 	| "BETWEEN";
 
 interface FilterCriterion<T> {
-	value: T | T[];
+	value: string;
 	operator: Operator;
 }
 
 type Filter<T> = T | FilterCriterion<T>;
 
 function makeFilter<T>(
-	value: T,
+	value: string,
 	operator: Operator = "EQUAL"
 ): FilterCriterion<T> {
 	return { value, operator };
@@ -30,14 +30,14 @@ interface IOrder {
 }
 
 export class Criteria<T> {
-	readonly filters: Record<string, Filter<T>>;
+	readonly filters: Record<keyof T, Filter<T>>;
 	readonly orders: IOrder[];
 	limit?: number;
 	offset?: number;
 	readonly resultType: "ONE" | "MANY";
 
 	constructor(
-		filters: Record<string, Filter<T>> = {},
+		filters: Record<keyof T, Filter<T>> = {} as Record<keyof T, Filter<T>>,
 		orders: IOrder[] = [],
 		limit?: number,
 		offset?: number,
@@ -51,7 +51,7 @@ export class Criteria<T> {
 	}
 
 	where(
-		field: string,
+		field: keyof T,
 		value: any,
 		operator: Operator = "EQUAL"
 	): Criteria<T> {

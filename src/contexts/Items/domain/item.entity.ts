@@ -1,13 +1,13 @@
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { ItemBrand } from "./item-brand.valueobject";
-import { ItemCategory } from "./item-category.valueobject";
 import { ItemID } from "./item-id.valueobject";
 import { ItemName } from "./item-name.valueobject";
 import { ItemPrice } from "./item-price.valueobject";
 import { ItemStore } from "./item-store.valueobject";
-import { ItemSubcategory } from "./item-subcategory.valueobject";
 import { ItemOperation } from "./item-operation.valueobject";
 import { OperationType } from "contexts/Shared/domain/value-objects/operation.valueobject";
+import { CategoryID } from "contexts/Categories/domain";
+import { SubcategoryID } from "contexts/Subcategories";
 
 export class Item {
 	constructor(
@@ -15,8 +15,8 @@ export class Item {
 		protected _operation: ItemOperation,
 		protected _name: ItemName,
 		protected _amount: ItemPrice,
-		protected _category: ItemCategory,
-		protected _subCategory: ItemSubcategory,
+		protected _category: CategoryID,
+		protected _subCategory: SubcategoryID,
 		protected _account: AccountID,
 		protected _brand?: ItemBrand,
 		protected _store?: ItemStore,
@@ -27,8 +27,8 @@ export class Item {
 		name: ItemName,
 		amount: ItemPrice,
 		operation: ItemOperation,
-		category: ItemCategory,
-		subCategory: ItemSubcategory,
+		category: CategoryID,
+		subCategory: SubcategoryID,
 		account: AccountID,
 		brand?: ItemBrand,
 		store?: ItemStore
@@ -49,8 +49,8 @@ export class Item {
 	static createExpenseItem(
 		name: ItemName,
 		amount: ItemPrice,
-		category: ItemCategory,
-		subCategory: ItemSubcategory,
+		category: CategoryID,
+		subCategory: SubcategoryID,
 		account: AccountID,
 		brand?: ItemBrand,
 		store?: ItemStore
@@ -92,11 +92,11 @@ export class Item {
 		this._amount = amount;
 	}
 
-	get category(): ItemCategory {
+	get category(): CategoryID {
 		return this._category;
 	}
 
-	get subCategory(): ItemSubcategory {
+	get subCategory(): SubcategoryID {
 		return this._subCategory;
 	}
 
@@ -125,7 +125,7 @@ export class Item {
 	}: {
 		name?: ItemName;
 		amount?: ItemPrice;
-		category?: ItemCategory;
+		category?: CategoryID;
 		account?: AccountID;
 		toAccount?: AccountID;
 	}) {

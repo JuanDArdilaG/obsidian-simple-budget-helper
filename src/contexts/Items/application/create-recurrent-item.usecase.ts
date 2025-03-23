@@ -1,24 +1,28 @@
-import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
-import { ItemBrand } from "../domain/item-brand.valueobject";
-import { ItemCategory } from "../domain/item-category.valueobject";
-import { ItemName } from "../domain/item-name.valueobject";
-import { ItemPrice } from "../domain/item-price.valueobject";
-import { IItemsRepository } from "../domain/item-repository.interface";
-import { ItemStore } from "../domain/item-store.valueobject";
-import { ItemSubcategory } from "../domain/item-subcategory.valueobject";
-import { ItemOperation } from "../domain/item-operation.valueobject";
-import { RecurrrentItemFrequency } from "../domain/RecurrentItem/recurrent-item-frequency.valueobject";
-import { RecurrentItemNextDate } from "../domain/RecurrentItem/recurrent-item-nextdate.valueobject";
-import { RecurrentItem } from "../domain/RecurrentItem/recurrent-item.entity";
-import { ItemID } from "../domain/item-id.valueobject";
+import { AccountID } from "contexts/Accounts/domain";
+import {
+	RecurrrentItemFrequency,
+	RecurrentItemNextDate,
+	RecurrentItem,
+	ItemID,
+} from "contexts/Items/domain";
+import {
+	IItemsRepository,
+	ItemBrand,
+	ItemName,
+	ItemOperation,
+	ItemPrice,
+	ItemStore,
+} from "contexts/Items/domain";
+import { CategoryID } from "contexts/Categories/domain";
+import { SubcategoryID } from "contexts/Subcategories/domain";
 
 export type CreateRecurrentItemUseCaseInput = {
 	id: ItemID;
 	operation: ItemOperation;
 	name: ItemName;
 	amount: ItemPrice;
-	category: ItemCategory;
-	subCategory: ItemSubcategory;
+	category: CategoryID;
+	subCategory: SubcategoryID;
 	account: AccountID;
 	frequency: RecurrrentItemFrequency;
 	nextDate: RecurrentItemNextDate;

@@ -12,6 +12,7 @@ import {
 	CreateSimpleItemUseCase,
 } from "contexts/Items/application";
 import {
+	AccountsService,
 	GetAllAccountNamesUseCase,
 	GetAllAccountsUseCase,
 } from "contexts/Accounts/application";
@@ -23,11 +24,18 @@ import {
 	GetAllTransactionsUseCase,
 	UpdateTransactionUseCase,
 	RecordRecurrentItemUseCase,
+	RecordTransactionUseCase,
+	TransactionsService,
+	AdjustAccountUseCase,
 } from "contexts/Transactions/application";
 import { TransactionsDexieRepository } from "contexts/Transactions/infrastructure";
-import { GetAllCategoriesWithSubCategoriesUseCase } from "contexts/Categories/application";
-import { CategoriesDexieRepository } from "contexts/Categories";
-import { SubcategoriesDexieRepository } from "contexts/Subcategories";
+import {
+	GetAllCategoriesWithSubCategoriesUseCase,
+	CreateCategoryUseCase,
+	CategoriesService,
+} from "contexts/Categories/application";
+import { CategoriesDexieRepository } from "contexts/Categories/infrastructure";
+import { SubcategoriesDexieRepository } from "contexts/Subcategories/infrastructure";
 import {
 	GetAllUniqueItemBrandsUseCase,
 	GetAllUniqueItemStoresUseCase,
@@ -36,7 +44,12 @@ import {
 	GetAllTransactionsGroupedByDaysUseCase,
 	ReportsService,
 } from "contexts/Reports/application";
-import { DexieDB } from "../persistence";
+import { CreateAccountUseCase } from "contexts/Accounts/application/create-account.usecase";
+import { DexieDB } from "contexts/Shared/infrastructure";
+import {
+	CreateSubCategoryUseCase,
+	SubCategoriesService,
+} from "contexts/Subcategories/application";
 
 const container = createContainer({
 	injectionMode: InjectionMode.CLASSIC,
@@ -64,6 +77,8 @@ export function buildContainer(): AwilixContainer {
 
 	container.register({
 		_accountsRepository: asClass(AccountsDexieRepository).singleton(),
+		_accountsService: asClass(AccountsService).singleton(),
+		createAccountUseCase: asClass(CreateAccountUseCase).singleton(),
 		getAllAccountNamesUseCase: asClass(
 			GetAllAccountNamesUseCase
 		).singleton(),
@@ -74,15 +89,18 @@ export function buildContainer(): AwilixContainer {
 		_transactionsRepository: asClass(
 			TransactionsDexieRepository
 		).singleton(),
+		_transactionsService: asClass(TransactionsService).singleton(),
 		getAllTransactionsUseCase: asClass(
 			GetAllTransactionsUseCase
 		).singleton(),
+		recordTransactionUseCase: asClass(RecordTransactionUseCase).singleton(),
 		recordSimpleItemUseCase: asClass(RecordSimpleItemUseCase).singleton(),
 		recordRecurrentItemUseCase: asClass(
 			RecordRecurrentItemUseCase
 		).singleton(),
 		deleteTransactionUseCase: asClass(DeleteTransactionUseCase).singleton(),
 		updateTransactionUseCase: asClass(UpdateTransactionUseCase).singleton(),
+		adjustAccountUseCase: asClass(AdjustAccountUseCase).singleton(),
 	});
 
 	container.register({
@@ -90,6 +108,10 @@ export function buildContainer(): AwilixContainer {
 		_subCategoriesRepository: asClass(
 			SubcategoriesDexieRepository
 		).singleton(),
+		_categoriesService: asClass(CategoriesService).singleton(),
+		_subCategoriesService: asClass(SubCategoriesService).singleton(),
+		createCategoryUseCase: asClass(CreateCategoryUseCase).singleton(),
+		createSubCategoryUseCase: asClass(CreateSubCategoryUseCase).singleton(),
 		getAllCategoriesWithSubCategoriesUseCase: asClass(
 			GetAllCategoriesWithSubCategoriesUseCase
 		).singleton(),

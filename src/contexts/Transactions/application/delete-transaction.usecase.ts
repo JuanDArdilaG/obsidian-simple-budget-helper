@@ -1,17 +1,15 @@
 import { CommandUseCase } from "contexts/Shared/domain";
-import {
-	ITransactionsRepository,
-	TransactionID,
-} from "contexts/Transactions/domain";
+import { TransactionID } from "contexts/Transactions/domain";
+import { TransactionsService } from "contexts/Transactions/application";
 
 export type DeleteTransactionUseCaseInput = TransactionID;
 
 export class DeleteTransactionUseCase
 	implements CommandUseCase<DeleteTransactionUseCaseInput>
 {
-	constructor(private _transactionsRepository: ITransactionsRepository) {}
+	constructor(private _transactionsService: TransactionsService) {}
 
 	async execute(id: TransactionID): Promise<void> {
-		await this._transactionsRepository.deleteById(id);
+		await this._transactionsService.delete(id);
 	}
 }

@@ -1,10 +1,10 @@
-import { IDValueObject } from "./id.valueobject";
-import { InvalidArgumentError } from "../../errors/invalid-argument.error";
+import { IDValueObject } from "contexts/Shared/domain/value-objects/id";
 import { nanoid } from "nanoid";
+import { InvalidArgumentError } from "contexts/Shared/domain/errors";
 
 export class Nanoid extends IDValueObject {
-	constructor(private _name: string, value: string) {
-		super(value);
+	constructor(name: string, value: string) {
+		super(name, value, { minLength: 21, maxLength: 21 });
 		this.validate();
 	}
 

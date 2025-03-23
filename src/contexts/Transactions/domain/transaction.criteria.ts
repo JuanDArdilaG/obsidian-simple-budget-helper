@@ -1,4 +1,4 @@
 import { Criteria } from "contexts/Shared/domain/criteria";
-import { Transaction } from "./transaction.entity";
+import { TransactionPrimitives } from "contexts/Transactions/domain";
 
-export class TransactionCriteria extends Criteria<Transaction> {}
+export class TransactionCriteria extends Criteria<TransactionPrimitives> {}

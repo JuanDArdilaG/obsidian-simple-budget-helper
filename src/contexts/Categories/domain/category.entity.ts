@@ -5,6 +5,10 @@ import { CategoryName } from "./category-name.valueobject";
 export class Category implements IEntity<CategoryID, CategoryPrimitives> {
 	constructor(private _id: CategoryID, private _name: CategoryName) {}
 
+	static create(name: CategoryName): Category {
+		return new Category(CategoryID.generate(), name);
+	}
+
 	get id(): CategoryID {
 		return this._id;
 	}

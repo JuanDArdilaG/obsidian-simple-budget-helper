@@ -3,12 +3,10 @@ import SimpleBudgetHelperPlugin from "./main";
 
 export type SimpleBudgetHelperSettings = {
 	rootFolder: string;
-	openInNewTab: boolean;
 };
 
 export const DEFAULT_SETTINGS: SimpleBudgetHelperSettings = {
 	rootFolder: "Budget",
-	openInNewTab: false,
 };
 
 export class SettingTab extends PluginSettingTab {
@@ -33,17 +31,6 @@ export class SettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.rootFolder)
 					.onChange(async (value) => {
 						this.plugin.settings.rootFolder = value;
-						await this.plugin.saveSettings();
-					})
-			);
-		new Setting(containerEl)
-			.setName("Open files in new tab")
-			.setDesc("When clicking on a budget item, open it in a new tab")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.openInNewTab)
-					.onChange(async (value) => {
-						this.plugin.settings.openInNewTab = value;
 						await this.plugin.saveSettings();
 					})
 			);

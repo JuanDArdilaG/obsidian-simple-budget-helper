@@ -10,6 +10,10 @@ import {
 	TransactionCriteria,
 	ITransactionsRepository,
 } from "contexts/Transactions/domain";
+import { AccountID } from "contexts/Accounts/domain";
+import { CategoryID } from "contexts/Categories/domain";
+import { SubcategoryID } from "contexts/Subcategories/domain";
+import { TransactionsReport } from "../domain";
 
 export class ReportsService implements IReportsService {
 	constructor(private _transactionsRepository: ITransactionsRepository) {}
@@ -26,12 +30,12 @@ export class ReportsService implements IReportsService {
 		}[] = [];
 		for (const transaction of transactions) {
 			let i = result.findIndex((existing) =>
-				existing.category.equal(transaction.category)
+				existing.category.equalTo(transaction.categoryID)
 			);
 			if (i === -1) {
 				i = result.length;
 				result.push({
-					category: transaction.category,
+					category: transaction.categoryID,
 					transactions: [],
 				});
 			}
@@ -54,7 +58,7 @@ export class ReportsService implements IReportsService {
 		}[] = [];
 		for (const transaction of transactions) {
 			let i = result.findIndex((existing) =>
-				existing.subcategory.equal(transaction.subCategory)
+				existing.subcategory.equalTo(transaction.subCategory)
 			);
 			if (i === -1) {
 				i = result.length;
@@ -68,25 +72,48 @@ export class ReportsService implements IReportsService {
 		return result;
 	}
 
-	async groupTransactionsByYearMonthDay(
-		criteria?: TransactionCriteria
-	): Promise<GroupByYearMonthDay> {
-		const transactions = await this._transactionsRepository.findByCriteria(
-			criteria ?? new TransactionCriteria()
+	async groupTransactionsByYearMonthDay({
+		accountFilter,
+		categoryFilter,
+		subCategoryFilter,
+	}: {
+		accountFilter?: AccountID;
+		categoryFilter?: CategoryID;
+		subCategoryFilter?: SubcategoryID;
+	}): Promise<GroupByYearMonthDay> {
+		const filterCriteria = new TransactionCriteria();
+		if (accountFilter) filterCriteria.where("account", accountFilter.value);
+
+		if (categoryFilter)
+			filterCriteria.where("category", categoryFilter.value);
+
+		if (subCategoryFilter)
+			filterCriteria.where("subCategory", subCategoryFilter.value);
+
+		let transactions = await this._transactionsRepository.findByCriteria(
+			filterCriteria
 		);
 
-		return transactions.reduce((group, transaction) => {
-			const year = transaction.date.getYear();
-			const month = transaction.date.getMonthNameAbbreviation();
-			const day = transaction.date.getDay();
+		if (accountFilter) {
+			const filterCriteria = new TransactionCriteria();
+			if (accountFilter)
+				filterCriteria.where("toAccount", accountFilter.value);
 
-			if (!group[year]) group[year] = {};
-			if (!group[year][month]) group[year][month] = {};
-			if (!group[year][month][day]) group[year][month][day] = [];
-			group[year][month][day].push(transaction);
+			if (categoryFilter)
+				filterCriteria.where("category", categoryFilter.value);
 
-			return group;
-		}, {} as GroupByYearMonthDay);
+			if (subCategoryFilter)
+				filterCriteria.where("subCategory", subCategoryFilter.value);
+
+			const transactionsToAccount =
+				await this._transactionsRepository.findByCriteria(
+					filterCriteria
+				);
+
+			transactions.push(...transactionsToAccount);
+		}
+
+		return new TransactionsReport(transactions).groupByDays();
 	}
 
 	async getTransactionsBalance(
@@ -116,16 +143,4 @@ export class ReportsService implements IReportsService {
 				}, 0)
 		);
 	}
-
-	// static fromGroupByYearMonthDay(groupedByYearMonthDay: GroupByYearMonthDay) {
-	// 	return new BudgetHistory(
-	// 		(
-	// 			Object.values(
-	// 				Object.values(groupedByYearMonthDay) as object[]
-	// 			) as BudgetItemRecord[]
-	// 		)
-	// 			.flat()
-	// 			.flat()
-	// 	);
-	// }
 }

@@ -1,4 +1,4 @@
-import { DomainError } from "contexts/Shared/domain/errors";
+import { DomainError } from "contexts/Shared/domain/errors/domain-error";
 
 export class InvalidArgumentError extends DomainError {
 	constructor(entityName: string, value: string, reason: string) {

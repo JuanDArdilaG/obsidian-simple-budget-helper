@@ -1,17 +1,13 @@
-import { Item } from "contexts/Items/domain/item.entity";
+import { CategoryID, Category } from "contexts/Categories";
 import { TransactionID } from "./transaction-id.valueobject";
 import { Transaction } from "./transaction.entity";
-import { Criteria } from "../../Shared/domain/criteria";
 import { ITransactionsService } from "./transactions-service.interface";
+import { AccountID, AccountBalance } from "contexts/Accounts";
 
 export class TransactionsServiceMock implements ITransactionsService {
 	constructor(private _transactions: Transaction[]) {}
 
-	async recordItem(item: Item): Promise<Transaction> {
-		throw new Error("not implemented");
-	}
-
-	async update(transaction: Transaction): Promise<void> {
+	async getByID(id: TransactionID): Promise<Transaction> {
 		throw new Error("not implemented");
 	}
 
@@ -19,13 +15,22 @@ export class TransactionsServiceMock implements ITransactionsService {
 		throw new Error("not implemented");
 	}
 
-	async getAll(): Promise<Transaction[]> {
+	async record(transaction: Transaction): Promise<void> {
 		throw new Error("not implemented");
 	}
 
-	async getByCriteria(
-		criteria: Criteria<Transaction>
-	): Promise<Transaction[]> {
-		return this._transactions;
+	async accountAdjustment(
+		accountID: AccountID,
+		newBalance: AccountBalance
+	): Promise<void> {
+		throw new Error("not implemented");
+	}
+
+	async getByCategory(category: CategoryID): Promise<Transaction[]> {
+		throw new Error("not implemented");
+	}
+
+	async getAll(): Promise<Transaction[]> {
+		throw new Error("not implemented");
 	}
 }

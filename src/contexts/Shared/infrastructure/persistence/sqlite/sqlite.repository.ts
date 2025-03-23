@@ -3,9 +3,13 @@ import { IDValueObject } from "contexts/Shared/domain/value-objects/id/id.valueo
 import { SQLiteDB } from "./sqlite.db";
 import { Logger } from "../../logger";
 import { Criteria } from "contexts/Shared/domain/criteria";
+import { IEntity } from "contexts/Shared/domain";
 
-export abstract class SQLiteRepository<T, ID extends IDValueObject>
-	implements IRepository<T, ID>
+export abstract class SQLiteRepository<
+	ID extends IDValueObject,
+	T extends IEntity<ID, P>,
+	P extends Record<string, string | number | Date>
+> implements IRepository<ID, T, P>
 {
 	constructor(
 		protected readonly _db: SQLiteDB,
@@ -41,7 +45,7 @@ export abstract class SQLiteRepository<T, ID extends IDValueObject>
 		return result.rows.map((row: any) => this.mapToDomain(row));
 	}
 
-	async findByCriteria(criteria: Criteria<T>): Promise<T[]> {
+	async findByCriteria(criteria: Criteria<P>): Promise<T[]> {
 		throw new Error("not implemented");
 	}
 
