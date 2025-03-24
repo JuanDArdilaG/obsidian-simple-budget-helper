@@ -21,31 +21,33 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 	}
 
 	async exportDBBackup() {
-		try {
-			await this.app.vault.adapter.readBinary(
-				normalizePath(`${this.settings.rootFolder}/db/db.backup`)
+		const folder = normalizePath(`${this.settings.rootFolder}/db`);
+		const path = normalizePath(`${this.settings.rootFolder}/db/db.backup`);
+		const writeBackup = async () => {
+			const blob = await exportDB(this.db);
+			this.logger.debugB("writing backup", { folder, path }).log();
+			await this.app.vault.adapter.writeBinary(
+				path,
+				await blob.arrayBuffer()
 			);
+		};
+		try {
+			await writeBackup();
 		} catch (error) {
 			if (error.code === "ENOENT") {
-				console.log({ error: error.code });
-				await this.app.vault.adapter.mkdir(
-					`${this.settings.rootFolder}/db`
-				);
-				const blob = await exportDB(this.db);
-				await this.app.vault.adapter.writeBinary(
-					normalizePath(`${this.settings.rootFolder}/db/db.backup`),
-					await blob.arrayBuffer()
-				);
+				this.logger.debugB("creating backup directory").log();
+				await this.app.vault.adapter.mkdir(folder);
+				await writeBackup();
 			}
 		}
 	}
 
 	async onload() {
-		// await this.restoreDB();
 		await this.loadSettings();
 		const container = buildContainer();
 		// await this.migrateFromMarkdown(container);
 		this.db = (container.resolve("_db") as DexieDB).db;
+		// await this.exportDBBackup();
 
 		await initStoragePersistence();
 		const storageQuota = await showEstimatedQuota();
