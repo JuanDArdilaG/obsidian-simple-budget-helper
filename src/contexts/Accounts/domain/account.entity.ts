@@ -9,6 +9,8 @@ import { IEntity } from "contexts/Shared/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Transaction } from "contexts/Transactions/domain";
 
+const logger: Logger = new Logger("Account");
+
 export class Account implements IEntity<AccountID, AccountPrimitives> {
 	constructor(
 		private _id: AccountID,
@@ -43,7 +45,7 @@ export class Account implements IEntity<AccountID, AccountPrimitives> {
 	}
 
 	adjustFromTransaction(transaction: Transaction) {
-		Logger.debug("AccountBalance: adjustFromTransaction", {
+		logger.debug("AccountBalance: adjustFromTransaction", {
 			id: this._id.value,
 			type: this._type.value,
 			transaction: transaction.toPrimitives(),

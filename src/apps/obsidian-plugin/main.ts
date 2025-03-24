@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { App, Plugin, PluginManifest } from "obsidian";
 import Dexie from "dexie";
 import { exportDB, importDB } from "dexie-export-import";
 import { DEFAULT_SETTINGS, SimpleBudgetHelperSettings } from "./SettingTab";
@@ -7,21 +7,29 @@ import { Logger } from "../../contexts/Shared/infrastructure/logger";
 import { LeftMenuItems, SettingTab, views } from "apps/obsidian-plugin";
 import { RightSidebarReactViewRoot } from "apps/obsidian-plugin/views";
 import { DexieDB } from "contexts";
+import { MDMigration } from "contexts/Shared/infrastructure/migration/md.migration";
+import { AwilixContainer } from "awilix";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
 	db: Dexie;
+	logger: Logger;
+
+	constructor(app: App, manifest: PluginManifest) {
+		super(app, manifest);
+		this.logger = new Logger("main");
+	}
 
 	async onload() {
 		// await this.restoreDB();
+		await this.loadSettings();
 		await initStoragePersistence();
 		const storageQuota = await showEstimatedQuota();
-		Logger.debug("storage quota", { storageQuota });
+		this.logger.debug("storage quota", { storageQuota });
 
 		const container = buildContainer();
+		await this.migrateFromMarkdown(container);
 		this.db = (container.resolve("_db") as DexieDB).db;
-
-		await this.loadSettings();
 
 		const statusBarItem = this.addStatusBarItem();
 		this.registerView(
@@ -39,8 +47,26 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		LeftMenuItems.RightSidebarPanel(this);
 	}
 
+	async migrateFromMarkdown(container: AwilixContainer) {
+		const migrator = new MDMigration(
+			this.app.vault,
+			container.resolve("getAllAccountsUseCase"),
+			container.resolve("getAllCategoriesUseCase"),
+			container.resolve("getAllSubCategoriesUseCase"),
+			container.resolve("createAccountUseCase"),
+			container.resolve("createCategoryUseCase"),
+			container.resolve("createSubCategoryUseCase"),
+			container.resolve("recordTransactionUseCase")
+		);
+		this.logger.debug("transactions migrated", {
+			transactions: (
+				await migrator.migrate(this.settings.rootFolder)
+			).map((t) => t.toPrimitives()),
+		});
+	}
+
 	async onunload() {
-		Logger.debug("onunload");
+		this.logger.debug("onunload");
 		persist();
 		// await this.saveDB();
 	}
@@ -55,7 +81,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 			{ settings: DEFAULT_SETTINGS },
 			await this.loadData()
 		);
-		Logger.debug("loaded data", { data });
+		this.logger.debug("loaded data", { data });
 		this.settings = data.settings;
 	}
 
@@ -65,10 +91,10 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 			{ db: undefined },
 			await this.loadData()
 		);
-		Logger.debug("loaded data", { data });
+		this.logger.debug("loaded data", { data });
 		if (!data.db) return;
 		const db = importDB(new Blob([data.db], { type: "text/plain" }));
-		Logger.debug("db loaded", { db });
+		this.logger.debug("db loaded", { db });
 		return db;
 	}
 
@@ -92,7 +118,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		);
 		const blob = await exportDB(this.db);
 		const text = await blob.text();
-		Logger.debug("db blob", { blob, text });
+		this.logger.debug("db blob", { blob, text });
 		await this.saveData({
 			...data,
 			db: text,

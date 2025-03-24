@@ -1,11 +1,8 @@
 export class Logger {
-	static debug(
-		this: any,
-		title: string,
-		body?: Record<string, any>,
-		config?: { on: boolean }
-	) {
+	constructor(readonly name: string) {}
+
+	debug(title: string, body?: Record<string, any>, config?: { on: boolean }) {
 		if (config && config.on === false) return;
-		console.log({ _title: title, ...body });
+		console.log({ _title: `${this.name}: ${title}`, ...body });
 	}
 }

@@ -1,8 +1,10 @@
 import { Account, AccountID, AccountName, Logger } from "contexts";
 import { useState, useEffect, useContext, useCallback } from "react";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import { useLogger } from "./useLogger";
 
 export const useAccounts = () => {
+	const logger = useLogger("useAccounts");
 	const {
 		useCases: { getAllAccounts },
 	} = useContext(AccountsContext);
@@ -13,7 +15,7 @@ export const useAccounts = () => {
 	useEffect(() => {
 		if (updateAccounts) {
 			setUpdateAccounts(false);
-			Logger.debug("updating accounts", {
+			logger.debug("updating accounts", {
 				refreshAccounts: updateAccounts,
 				accounts,
 			});

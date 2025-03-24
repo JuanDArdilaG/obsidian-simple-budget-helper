@@ -5,6 +5,8 @@ import { Logger } from "../../logger";
 import { Criteria } from "contexts/Shared/domain/criteria";
 import { IEntity } from "contexts/Shared/domain";
 
+const logger = new Logger("SQLiteRepository");
+
 export abstract class SQLiteRepository<
 	ID extends IDValueObject,
 	T extends IEntity<ID, P>,
@@ -27,7 +29,7 @@ export abstract class SQLiteRepository<
       `;
 
 		const result = await this._db.query(query, { id: id.toString() });
-		Logger.debug("sqlite result", { result });
+		logger.debug("sqlite result", { result });
 
 		if (result.rows.length === 0) {
 			return null;

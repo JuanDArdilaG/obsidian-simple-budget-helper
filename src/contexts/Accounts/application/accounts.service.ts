@@ -1,19 +1,44 @@
+import { Logger } from "contexts/Shared/infrastructure";
 import {
 	Account,
 	AccountID,
+	AccountName,
 	IAccountsRepository,
 } from "contexts/Accounts/domain";
-import { EntityNotFoundError } from "contexts/Shared/domain";
-import { Logger } from "contexts/Shared/infrastructure";
+import {
+	EntityNotFoundError,
+	InvalidArgumentError,
+} from "contexts/Shared/domain";
 import { Transaction } from "contexts/Transactions/domain";
+
+const logger = new Logger("AccountsService");
 
 export class AccountsService {
 	constructor(private _accountsRepository: IAccountsRepository) {}
+
+	async create(account: Account): Promise<void> {
+		const existingAccount = await this._accountsRepository.findByName(
+			account.name
+		);
+		if (existingAccount)
+			throw new InvalidArgumentError(
+				"Account",
+				account.name.value,
+				`account with name ${account.name} already exists`
+			);
+		await this._accountsRepository.persist(account);
+	}
 
 	async getByID(id: AccountID): Promise<Account> {
 		const account = await this._accountsRepository.findById(id);
 		if (!account) throw new EntityNotFoundError("Account", id);
 		return account;
+	}
+
+	async getAllNames(): Promise<AccountName[]> {
+		return (await this._accountsRepository.findAll()).map(
+			(acc) => acc.name
+		);
 	}
 
 	async update(account: Account): Promise<void> {
@@ -27,20 +52,24 @@ export class AccountsService {
 			? await this.getByID(transaction.toAccount)
 			: undefined;
 
-		Logger.debug("adjusting account", { ...account.toPrimitives() });
+		logger.debug("adjusting account", {
+			account: account.toPrimitives(),
+			transaction: transaction.toPrimitives(),
+		});
 		account.adjustFromTransaction(transaction);
-		Logger.debug("adjusting account adjusted", {
+		logger.debug("adjusting account adjusted", {
 			...account.toPrimitives(),
 		});
 
 		await this.update(account);
 
 		if (toAccount) {
-			Logger.debug("adjusting toAccount", {
-				...toAccount.toPrimitives(),
+			logger.debug("adjusting toAccount", {
+				toAccount: toAccount.toPrimitives(),
+				transaction: transaction.toPrimitives(),
 			});
 			toAccount.adjustFromTransaction(transaction);
-			Logger.debug("adjusting toAccount adjusted", {
+			logger.debug("adjusting toAccount adjusted", {
 				...toAccount.toPrimitives(),
 			});
 			await this.update(toAccount);

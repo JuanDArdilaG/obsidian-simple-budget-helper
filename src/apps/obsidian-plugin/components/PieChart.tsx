@@ -3,10 +3,9 @@ import { useState, useCallback } from "react";
 import {
 	PieChart as RechartsPieChart,
 	Pie,
-	Sector,
 	ResponsiveContainer,
 } from "recharts";
-import { Logger } from "../../../contexts/Shared/infrastructure/logger";
+import { useLogger } from "../hooks/useLogger";
 
 export const PieChart = ({
 	data,
@@ -15,7 +14,8 @@ export const PieChart = ({
 	data?: { name: string; value: number }[] | undefined;
 	setSelectedCategory?: React.Dispatch<React.SetStateAction<string>>;
 }) => {
-	Logger.debug("PieChart", { data });
+	const logger = useLogger("PieChart");
+	logger.debug("data", { data });
 	const [activeIndex, setActiveIndex] = useState(0);
 	const onPieEnter = useCallback(
 		(a: any, index: number) => {

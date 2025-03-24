@@ -48,8 +48,10 @@ import { CreateAccountUseCase } from "contexts/Accounts/application/create-accou
 import { DexieDB } from "contexts/Shared/infrastructure";
 import {
 	CreateSubCategoryUseCase,
+	GetAllSubcategoriesUseCase,
 	SubCategoriesService,
 } from "contexts/Subcategories/application";
+import { GetAllCategoriesUseCase } from "contexts/Categories/application/get-all-categories.usecase";
 
 const container = createContainer({
 	injectionMode: InjectionMode.CLASSIC,
@@ -114,6 +116,10 @@ export function buildContainer(): AwilixContainer {
 		createSubCategoryUseCase: asClass(CreateSubCategoryUseCase).singleton(),
 		getAllCategoriesWithSubCategoriesUseCase: asClass(
 			GetAllCategoriesWithSubCategoriesUseCase
+		).singleton(),
+		getAllCategoriesUseCase: asClass(GetAllCategoriesUseCase).singleton(),
+		getAllSubCategoriesUseCase: asClass(
+			GetAllSubcategoriesUseCase
 		).singleton(),
 	});
 

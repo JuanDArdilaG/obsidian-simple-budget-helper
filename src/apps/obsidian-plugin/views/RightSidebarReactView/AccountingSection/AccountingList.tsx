@@ -19,6 +19,7 @@ import {
 	TransactionsReport,
 } from "contexts";
 import { Select } from "apps/obsidian-plugin/components";
+import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 
 export function AccountingList({
 	app,
@@ -27,6 +28,7 @@ export function AccountingList({
 	app: App;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) {
+	const logger = useLogger("AccountingList");
 	const {
 		useCases: { deleteTransaction },
 	} = useContext(TransactionsContext);
@@ -59,8 +61,8 @@ export function AccountingList({
 		const res = new TransactionsReport(
 			transactions
 		).withAccumulatedBalance();
-		Logger.debug(
-			"AccountingList: with accumulated balance transactions",
+		logger.debug(
+			"with accumulated balance transactions",
 			{
 				transactions: res.map((r) => ({
 					balance: r.balance.valueOf(),

@@ -1,5 +1,3 @@
-import { Logger } from "./contexts/Shared/infrastructure/logger";
-
 export class Validator<S, T> {
 	constructor(private _schema: { [K in keyof S]: (val: T) => boolean }) {}
 
@@ -9,7 +7,6 @@ export class Validator<S, T> {
 			result.set(key, this._schema[key](value));
 		}
 
-		Logger.debug("validating", result);
 		return result;
 	}
 

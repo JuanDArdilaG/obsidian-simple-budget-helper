@@ -12,6 +12,8 @@ import { ItemStore } from "../item-store.valueobject";
 import { CategoryID } from "contexts/Categories/domain";
 import { SubcategoryID } from "contexts/Subcategories/domain";
 
+const logger = new Logger("RecurrentItem");
+
 export class RecurrentItem extends Item {
 	constructor(
 		id: ItemID,
@@ -111,13 +113,13 @@ export class RecurrentItem extends Item {
 		const amount = isPermanent?.amount || this._amount;
 		const nextDate = this._nextDate.next(this._frequency);
 
-		Logger.debug("calculating next date", {
+		logger.debug("calculating next date", {
 			frequency: this._frequency,
 			prev: this._nextDate,
 			next: nextDate,
 		});
 
-		Logger.debug("checking permanent changes", {
+		logger.debug("checking permanent changes", {
 			isPermanent,
 			amount: {
 				change: !!amount,

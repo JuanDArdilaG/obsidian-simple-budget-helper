@@ -8,5 +8,5 @@ import { IRepository } from "contexts/Shared/domain";
 
 export interface IAccountsRepository
 	extends IRepository<AccountID, Account, AccountPrimitives> {
-	findAllNames(): Promise<AccountName[]>;
+	findByName(name: AccountName): Promise<Account | null>;
 }

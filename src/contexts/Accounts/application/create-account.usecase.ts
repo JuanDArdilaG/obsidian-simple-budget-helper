@@ -1,13 +1,15 @@
 import { CommandUseCase } from "contexts/Shared";
-import { Account, IAccountsRepository } from "contexts/Accounts/domain";
+import { Account } from "contexts/Accounts/domain";
+import { AccountsService } from "./accounts.service";
 
 export type CreateAccountUseCaseInput = Account;
 
 export class CreateAccountUseCase
 	implements CommandUseCase<CreateAccountUseCaseInput>
 {
-	constructor(private _accountsRepository: IAccountsRepository) {}
+	constructor(private _accountsService: AccountsService) {}
+
 	async execute(account: Account): Promise<void> {
-		return this._accountsRepository.persist(account);
+		await this._accountsService.create(account);
 	}
 }

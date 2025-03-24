@@ -21,19 +21,19 @@ export class ItemsDexieRepository
 
 	async findAllUniqueItemNames(): Promise<ItemName[]> {
 		return (await this._table.orderBy("name").uniqueKeys()).map(
-			(v) => new ItemName(v.toString())
+			(name) => new ItemName(name.toString())
 		);
 	}
 
 	async findAllUniqueItemBrands(): Promise<ItemBrand[]> {
 		return (await this._table.orderBy("brand").uniqueKeys()).map(
-			(v) => new ItemBrand(v.toString())
+			(brand) => new ItemBrand(brand.toString())
 		);
 	}
 
 	async findAllUniqueItemStores(): Promise<ItemStore[]> {
 		return (await this._table.orderBy("store").uniqueKeys()).map(
-			(v) => new ItemStore(v.toString())
+			(store) => new ItemStore(store.toString())
 		);
 	}
 

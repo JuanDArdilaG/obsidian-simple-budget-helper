@@ -13,6 +13,8 @@ import { InvalidArgumentError } from "contexts/Shared/domain/errors/invalid-argu
 import { RecurrentItemNextDate } from "contexts/Items/domain/RecurrentItem/recurrent-item-nextdate.valueobject";
 import { Logger } from "../../Shared/infrastructure/logger";
 
+const logger = new Logger("RecordRecurrentItemUseCase");
+
 export type RecordRecurrentItemUseCaseInput = {
 	itemID: ItemID;
 	date?: TransactionDate;
@@ -56,7 +58,7 @@ export class RecordRecurrentItemUseCase
 
 		const nextDate = item.nextDate.next(item.frequency);
 
-		Logger.debug("calculating next date", {
+		logger.debug("calculating next date", {
 			frequency: item.frequency,
 			prev: item.nextDate,
 			next: nextDate,

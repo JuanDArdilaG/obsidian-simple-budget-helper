@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Input } from "./Input";
 import { LockField } from "./LockField";
-import { Logger } from "contexts";
+import { useLogger } from "../hooks/useLogger";
 
 export const SelectWithCreation = <T extends Object>({
 	id,
@@ -30,6 +30,7 @@ export const SelectWithCreation = <T extends Object>({
 	isLocked?: boolean;
 	setIsLocked?: (value: boolean) => void;
 }) => {
+	const logger = useLogger("SelectWithCreation");
 	if (typeof item !== "string" && !getKey)
 		throw new Error(
 			"getKey is required for items that are not strings. id: " + id
@@ -77,7 +78,7 @@ export const SelectWithCreation = <T extends Object>({
 						(item) =>
 							(getKey ? getKey(item) : String(item)) === value
 					);
-					Logger.debug("selection with creation on select", {
+					logger.debug("selection with creation on select", {
 						value,
 						item,
 					});

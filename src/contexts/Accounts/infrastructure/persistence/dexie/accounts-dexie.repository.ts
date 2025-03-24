@@ -10,7 +10,6 @@ import {
 	DexieDB,
 	DexieRepository,
 } from "contexts/Shared/infrastructure";
-import { Logger } from "contexts/Shared/infrastructure";
 
 export class AccountsDexieRepository
 	extends DexieRepository<Account, AccountID, AccountPrimitives>
@@ -20,10 +19,14 @@ export class AccountsDexieRepository
 		super(_db, config.accountsTableName);
 	}
 
-	async findAllNames(): Promise<AccountName[]> {
-		return (await this._table.toArray()).map(
-			(r) => this.mapToDomain(r).name
-		);
+	async findByName(name: AccountName): Promise<Account | null> {
+		const record = await this._table
+			.where("name")
+			.equals(name.toString())
+			.limit(1)
+			.first();
+		if (!record) return null;
+		return this.mapToDomain(record);
 	}
 
 	protected mapToDomain(

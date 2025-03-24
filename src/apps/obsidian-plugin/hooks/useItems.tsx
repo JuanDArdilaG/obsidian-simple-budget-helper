@@ -1,8 +1,10 @@
 import { ItemBrand, ItemStore, Logger } from "contexts";
 import { useState, useEffect, useContext } from "react";
 import { ItemsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import { useLogger } from "./useLogger";
 
 export const useItems = () => {
+	const logger = useLogger("useItems");
 	const {
 		useCases: { getAllUniqueItemBrands, getAllUniqueItemStores },
 	} = useContext(ItemsContext);
@@ -16,7 +18,7 @@ export const useItems = () => {
 	useEffect(() => {
 		if (updateBrands) {
 			setUpdateBrands(false);
-			Logger.debug("updating brands", {
+			logger.debug("updating brands", {
 				brands,
 			});
 			getAllUniqueItemBrands
@@ -28,7 +30,7 @@ export const useItems = () => {
 	useEffect(() => {
 		if (updateStores) {
 			setUpdateStores(false);
-			Logger.debug("updating stores", {
+			logger.debug("updating stores", {
 				updateStores,
 				brands,
 			});

@@ -6,6 +6,8 @@ import { IEntity } from "contexts/Shared/domain/entity.interface";
 import { EntityTable } from "dexie";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 
+const logger = new Logger("DexieRepository");
+
 export abstract class DexieRepository<
 	T extends IEntity<ID, P>,
 	ID extends IDValueObject,
@@ -46,12 +48,12 @@ export abstract class DexieRepository<
 	async findByCriteria(criteria: Criteria<P>): Promise<T[]> {
 		//TODO: real implementation, actually just assume all operations are EQUAL
 		const table = this._table;
-		Logger.debug("findByCriteria dexie repository", {
+		logger.debug("findByCriteria dexie repository", {
 			criteria,
 		});
 		let collection = table.toCollection();
 		Object.keys(criteria.filters).forEach((field) => {
-			Logger.debug("new filter", {
+			logger.debug("new filter", {
 				filter: `where ${field} equals ${criteria.filters[field].value}`,
 			});
 			collection = table
@@ -59,7 +61,7 @@ export abstract class DexieRepository<
 				.equals(criteria.filters[field].value);
 		});
 		const res = await collection.toArray();
-		Logger.debug("findByCriteria res", { res });
+		logger.debug("findByCriteria res", { res });
 		return res.map((i) => this.mapToDomain(i));
 	}
 

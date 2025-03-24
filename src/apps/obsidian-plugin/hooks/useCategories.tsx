@@ -10,8 +10,10 @@ import {
 	SubcategoryName,
 } from "contexts";
 import { Logger } from "contexts/Shared";
+import { useLogger } from "./useLogger";
 
 export const useCategories = () => {
+	const logger = useLogger("useCategories");
 	const {
 		useCases: { getAllCategoriesWithSubCategories },
 	} = useContext(CategoriesContext);
@@ -22,7 +24,7 @@ export const useCategories = () => {
 	useEffect(() => {
 		if (updateCatWithSubs) {
 			setUpdateCatWithSubs(false);
-			Logger.debug("updating categories with subcategories", {
+			logger.debug("updating categories with subcategories", {
 				categoriesWithSubcategories,
 			});
 			getAllCategoriesWithSubCategories
@@ -38,7 +40,7 @@ export const useCategories = () => {
 	useEffect(() => {
 		if (updateCategories) {
 			setUpdateCategories(false);
-			Logger.debug("updating categories", {
+			logger.debug("updating categories", {
 				categories,
 			});
 			getAllCategoriesWithSubCategories
@@ -71,7 +73,11 @@ export const useCategories = () => {
 	const getCategoryByID = useCallback(
 		(id: CategoryID) => {
 			const cat = categories.find((cat) => cat.id.equalTo(id));
-			Logger.debug("searching category", { categories, id, cat });
+			logger.debug(
+				"searching category",
+				{ categories, id, cat },
+				{ on: false }
+			);
 			return cat;
 		},
 		[categories]

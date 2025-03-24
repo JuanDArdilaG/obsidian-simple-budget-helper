@@ -9,7 +9,6 @@ import {
 	TransactionOperation,
 } from "contexts/Transactions/domain";
 import {
-	Category,
 	CategoryID,
 	CategoryName,
 	ICategoriesService,
@@ -22,6 +21,8 @@ import { AccountBalance, AccountID } from "contexts/Accounts/domain";
 import { AccountsService } from "contexts/Accounts/application";
 import { EntityNotFoundError } from "contexts/Shared";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
+
+const logger = new Logger("TransactionsService");
 
 export class TransactionsService implements ITransactionsService {
 	constructor(
@@ -48,14 +49,14 @@ export class TransactionsService implements ITransactionsService {
 	}
 
 	async record(transaction: Transaction): Promise<void> {
-		Logger.debug("recording transaction", {
+		logger.debug("recording transaction", {
 			...transaction.toPrimitives(),
 		});
 
 		await this._accountsService.adjustOnTransaction(transaction);
 		await this._transactionsRepository.persist(transaction);
 
-		Logger.debug("transaction recorded");
+		logger.debug("transaction recorded");
 	}
 
 	async accountAdjustment(

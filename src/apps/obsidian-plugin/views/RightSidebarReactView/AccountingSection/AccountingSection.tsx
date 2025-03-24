@@ -7,7 +7,7 @@ import {
 import { AccountsList } from "./AccountsList";
 import { App } from "obsidian";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
-import { Logger } from "contexts/Shared/infrastructure";
+import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 
 export const AccountingSection = ({
 	app,
@@ -16,11 +16,12 @@ export const AccountingSection = ({
 	app: App;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) => {
+	const logger = useLogger("AccountingSection");
 	const [sectionSelection, setSectionSelection] =
 		useState<AccountingSectionSelection>("movements");
 
 	useEffect(() => {
-		Logger.debug(
+		logger.debug(
 			"section selection changed",
 			{ sectionSelection },
 			{ on: false }

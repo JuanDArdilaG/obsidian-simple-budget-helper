@@ -3,6 +3,8 @@ import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 import { GroupByYearMonthDay } from "./reports-service.interface";
 import { ReportBalance } from "./report-balance.valueobject";
 
+const logger = new Logger("TransactionsReport");
+
 export class TransactionsReport {
 	constructor(private _transactions: Transaction[]) {}
 
@@ -54,8 +56,8 @@ export class TransactionsReport {
 				accumulated[transaction.account.value] = accumulated[
 					transaction.account.value
 				].plus(transaction.realAmount);
-				Logger.debug(
-					"TransactionReport: accumulating transaction",
+				logger.debug(
+					"accumulating transaction",
 					{
 						transaction: transaction.toPrimitives(),
 						realAmount: transaction.realAmount.valueOf(),

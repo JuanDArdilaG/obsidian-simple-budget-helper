@@ -2,7 +2,7 @@ import { ReactMoneyInput } from "react-input-price";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { useEffect, useState } from "react";
 import { LockField } from "./LockField";
-import { Logger } from "contexts/Shared";
+import { useLogger } from "../hooks/useLogger";
 
 type InputValue = PriceValueObject | string | number | Date;
 export const Input = <T extends NonNullable<InputValue>>({
@@ -26,6 +26,7 @@ export const Input = <T extends NonNullable<InputValue>>({
 	setIsLocked?: (value: boolean) => void;
 	style?: React.CSSProperties;
 }) => {
+	const logger = useLogger("Input");
 	const [date, setDate] = useState<Date>(new Date());
 	useEffect(() => {
 		if (value instanceof Date) {
@@ -112,7 +113,7 @@ export const Input = <T extends NonNullable<InputValue>>({
 								0,
 								0
 							);
-							Logger.debug("modified time in date", {
+							logger.debug("modified time in date", {
 								timeValue: e.target.value,
 								date: dateWithTime,
 							});

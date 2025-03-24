@@ -34,8 +34,10 @@ import {
 	SubcategoryName,
 	TransactionDate,
 } from "contexts";
+import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 
 export const CreateBudgetItemPanel = ({ close }: { close: () => void }) => {
+	const logger = useLogger("CreateBudgetItemPanel");
 	const {
 		useCases: { createCategory, createSubCategory },
 	} = useContext(CategoriesContext);
@@ -81,7 +83,7 @@ export const CreateBudgetItemPanel = ({ close }: { close: () => void }) => {
 
 	useEffect(() => {
 		if (selectedItem) {
-			Logger.debug("selected item on creation", { selectedItem, locks });
+			logger.debug("selected item on creation", { selectedItem, locks });
 			const toUpdate: Partial<ItemPrimitives> = {};
 			if (!locks.operation) toUpdate.operation = selectedItem.operation;
 			if (!locks.name) toUpdate.name = selectedItem.name;
@@ -115,7 +117,7 @@ export const CreateBudgetItemPanel = ({ close }: { close: () => void }) => {
 			}
 			if (!locks.frequency) toUpdate.frequency = selectedItem.frequency;
 
-			Logger.debug("item to update on creation", {
+			logger.debug("item to update on creation", {
 				toUpdate,
 				isRecurrent: !!selectedItem.frequency,
 			});
@@ -127,7 +129,7 @@ export const CreateBudgetItemPanel = ({ close }: { close: () => void }) => {
 
 	const update = (newValues: Partial<ItemPrimitives>) => {
 		const newItem = { ...item };
-		Logger.debug("updating item to create", {
+		logger.debug("updating item to create", {
 			prevValues: newItem,
 			newValues,
 		});
@@ -149,7 +151,7 @@ export const CreateBudgetItemPanel = ({ close }: { close: () => void }) => {
 		if (newValues.account !== undefined)
 			newItem.account = newValues.account;
 
-		Logger.debug("item to create updated", {
+		logger.debug("item to create updated", {
 			isRecurrent,
 			newItem,
 		});
