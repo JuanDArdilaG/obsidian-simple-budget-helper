@@ -5,7 +5,7 @@ import { TransactionsService } from "contexts/Transactions/application";
 
 export type RecordSimpleItemUseCaseInput = {
 	item: Item;
-	date: TransactionDate;
+	date?: TransactionDate;
 };
 
 export class RecordSimpleItemUseCase
@@ -17,7 +17,10 @@ export class RecordSimpleItemUseCase
 	) {}
 
 	async execute({ item, date }: RecordSimpleItemUseCaseInput): Promise<void> {
-		const transaction = Transaction.fromItem(item, date);
+		const transaction = Transaction.fromItem(
+			item,
+			date ?? TransactionDate.now()
+		);
 
 		if (!(await this._itemsRepository.exists(item.id)))
 			await this._itemsRepository.persist(item);

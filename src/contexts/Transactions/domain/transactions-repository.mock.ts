@@ -1,5 +1,4 @@
 import { Criteria } from "contexts/Shared";
-import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
 import {
 	TransactionID,
 	Transaction,

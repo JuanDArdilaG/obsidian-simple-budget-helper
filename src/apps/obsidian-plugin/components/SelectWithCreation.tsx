@@ -30,7 +30,7 @@ export const SelectWithCreation = <T extends Object>({
 	isLocked?: boolean;
 	setIsLocked?: (value: boolean) => void;
 }) => {
-	const logger = useLogger("SelectWithCreation");
+	const logger = useLogger("SelectWithCreation", false);
 	if (typeof item !== "string" && !getKey)
 		throw new Error(
 			"getKey is required for items that are not strings. id: " + id
@@ -43,7 +43,7 @@ export const SelectWithCreation = <T extends Object>({
 	}, [item]);
 
 	useEffect(() => {
-		console.log({ title: "input changed", input });
+		logger.title("input changed").attr("input", input).on().log();
 		onChange(input);
 	}, [input]);
 
@@ -78,7 +78,7 @@ export const SelectWithCreation = <T extends Object>({
 						(item) =>
 							(getKey ? getKey(item) : String(item)) === value
 					);
-					logger.debug("selection with creation on select", {
+					logger.off().debug("selection with creation on select", {
 						value,
 						item,
 					});
@@ -89,7 +89,7 @@ export const SelectWithCreation = <T extends Object>({
 				style={{ width: "80%" }}
 				error={error}
 			/>
-			{isLocked !== undefined && (
+			{setIsLocked && (
 				<LockField setIsLocked={setIsLocked} isLocked={isLocked} />
 			)}
 		</div>

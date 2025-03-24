@@ -9,7 +9,6 @@ import {
 	SubcategoryID,
 	SubcategoryName,
 } from "contexts";
-import { Logger } from "contexts/Shared";
 import { useLogger } from "./useLogger";
 
 export const useCategories = () => {

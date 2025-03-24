@@ -1,5 +1,8 @@
 import { QueryUseCase } from "contexts/Shared/domain/query-use-case.interface";
 import { IItemsRepository, Item } from "../domain";
+import { Logger } from "contexts/Shared";
+
+const logger = new Logger("GetAllUniqueItemsByNameUseCase").off();
 
 export type GetAllUniqueItemsByNameUseCaseOutput = Item[];
 
@@ -10,6 +13,7 @@ export class GetAllUniqueItemsByNameUseCase
 
 	async execute(): Promise<GetAllUniqueItemsByNameUseCaseOutput> {
 		const items = await this._itemsRepository.findAll();
+		logger.debugB("get all items", { items }).log();
 		return items
 			.filter((item, index, self) => {
 				return (

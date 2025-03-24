@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState, use } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { Checkbox, FormControlLabel } from "@mui/material";
 import { SelectWithCreation } from "apps/obsidian-plugin/components/SelectWithCreation";
@@ -27,7 +27,6 @@ import {
 	Category,
 	CategoryID,
 	CategoryName,
-	Logger,
 	OperationType,
 	Subcategory,
 	SubcategoryID,
@@ -36,8 +35,8 @@ import {
 } from "contexts";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 
-export const CreateBudgetItemPanel = ({ close }: { close: () => void }) => {
-	const logger = useLogger("CreateBudgetItemPanel");
+export const CreateItemPanel = ({ close }: { close: () => void }) => {
+	const logger = useLogger("CreateItemPanel");
 	const {
 		useCases: { createCategory, createSubCategory },
 	} = useContext(CategoriesContext);
@@ -51,12 +50,16 @@ export const CreateBudgetItemPanel = ({ close }: { close: () => void }) => {
 
 	const { accounts, getAccountByID } = useAccounts();
 	const accountNames = useMemo(
-		() => accounts.map((acc) => acc.name.value),
+		() => accounts.map((acc) => acc.name.value).sort(),
 		[accounts]
 	);
 	const { updateTransactions } = useTransactions({});
-	const { subCategories, categories, getCategoryByID, getSubCategoryByID } =
-		useCategories();
+	const {
+		categories,
+		categoriesWithSubcategories,
+		getCategoryByID,
+		getSubCategoryByID,
+	} = useCategories();
 	const { brands, stores } = useItems();
 
 	const [items, setItems] = useState<Item[]>([]);
@@ -64,7 +67,22 @@ export const CreateBudgetItemPanel = ({ close }: { close: () => void }) => {
 		getAllUniqueItemsByName.execute().then((items) => setItems(items));
 	}, [getAllUniqueItemsByName]);
 
+	useEffect(() => {
+		logger.title("unique items for creation").obj({ items }).log();
+	}, [items]);
+
 	const [item, setItem] = useState<ItemPrimitives>(Item.emptyPrimitives());
+	const subCategories = useMemo(
+		() =>
+			item.category
+				? categoriesWithSubcategories.find((catWithSubs) =>
+						catWithSubs.category.name.equalTo(
+							new CategoryName(item.category)
+						)
+				  )?.subCategories ?? []
+				: [],
+		[item.category]
+	);
 
 	const [selectedItem, setSelectedItem] = useState<ItemPrimitives>();
 
@@ -208,6 +226,7 @@ export const CreateBudgetItemPanel = ({ close }: { close: () => void }) => {
 		updateTransactions();
 
 		if (withClose) close();
+		setSelectedItem(undefined);
 		setItem({
 			id: "",
 			account: locks.account ? item.account : accountNames[0],
@@ -225,7 +244,7 @@ export const CreateBudgetItemPanel = ({ close }: { close: () => void }) => {
 
 	return (
 		<div className="create-budget-item-modal">
-			<h1>Create Budget Item</h1>
+			<h1>Create Item</h1>
 			<SelectWithCreation<ItemPrimitives>
 				id="name"
 				label="Name"
@@ -276,7 +295,7 @@ export const CreateBudgetItemPanel = ({ close }: { close: () => void }) => {
 					label="Category"
 					style={{ flexGrow: 1 }}
 					item={item.category}
-					items={categories.map((cat) => cat.name.value)}
+					items={categories.map((cat) => cat.name.value).sort()}
 					onChange={(category) => update({ category })}
 					isLocked={locks.category}
 					setIsLocked={(value) => updateLock("category", value)}
@@ -287,7 +306,7 @@ export const CreateBudgetItemPanel = ({ close }: { close: () => void }) => {
 					label="SubCategory"
 					style={{ flexGrow: 1 }}
 					item={item.subCategory}
-					items={subCategories.map((sub) => sub.name.value)}
+					items={subCategories.map((sub) => sub.name.value).sort()}
 					onChange={(subCategory) => update({ subCategory })}
 					isLocked={locks.subCategory}
 					setIsLocked={(value) => updateLock("subCategory", value)}

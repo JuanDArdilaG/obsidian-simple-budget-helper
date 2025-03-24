@@ -9,15 +9,10 @@ import { useAccounts } from "apps/obsidian-plugin/hooks/useAccounts";
 import { useTransactions } from "apps/obsidian-plugin/hooks/useTransactions";
 import { useCategories } from "apps/obsidian-plugin/hooks/useCategories";
 import { Transaction } from "contexts/Transactions/domain";
-import { Category, CategoryName } from "contexts/Categories";
-import { Subcategory } from "contexts/Subcategories";
-import { Account, AccountName } from "contexts/Accounts";
-import {
-	Logger,
-	ReportBalance,
-	SubcategoryName,
-	TransactionsReport,
-} from "contexts";
+import { Category, CategoryID, CategoryName } from "contexts/Categories";
+import { Subcategory, SubcategoryID } from "contexts/Subcategories";
+import { Account, AccountID, AccountName } from "contexts/Accounts";
+import { ReportBalance, SubcategoryName, TransactionsReport } from "contexts";
 import { Select } from "apps/obsidian-plugin/components";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 
@@ -33,12 +28,14 @@ export function AccountingList({
 		useCases: { deleteTransaction },
 	} = useContext(TransactionsContext);
 
-	const { accounts, getAccountByName } = useAccounts();
+	const { accounts, getAccountByName, getAccountByID } = useAccounts();
 	const {
 		subCategories,
 		categories,
 		getCategoryByName,
 		getSubCategoryByName,
+		getCategoryByID,
+		getSubCategoryByID,
 	} = useCategories();
 
 	const [accountFilter, setAccountFilter] = useState<AccountName>();
@@ -147,7 +144,10 @@ export function AccountingList({
 				id="account-filter"
 				label="Account"
 				value={accountFilter?.value ?? ""}
-				values={["", ...accounts.map((acc) => acc.name.toString())]}
+				values={[
+					"",
+					...accounts.map((acc) => acc.name.toString()).sort(),
+				]}
 				onChange={(accountName) =>
 					setAccountFilter(
 						accountName ? new AccountName(accountName) : undefined
@@ -158,7 +158,10 @@ export function AccountingList({
 				id="category-filter"
 				label="Category"
 				value={categoryFilter?.value ?? ""}
-				values={["", ...categories.map((cat) => cat.name.toString())]}
+				values={[
+					"",
+					...categories.map((cat) => cat.name.toString()).sort(),
+				]}
 				onChange={(catName) =>
 					setCategoryFilter(
 						catName ? new CategoryName(catName) : undefined
@@ -169,7 +172,10 @@ export function AccountingList({
 				id="subcategory-filter"
 				label="SubCategory"
 				value={subCategoryFilter?.value ?? ""}
-				values={["", ...subCategories.map((sub) => sub.name.value)]}
+				values={[
+					"",
+					...subCategories.map((sub) => sub.name.value).sort(),
+				]}
 				onChange={(subName) =>
 					subName
 						? setSubCategoryFilter(new SubcategoryName(subName))
@@ -193,6 +199,12 @@ export function AccountingList({
 						date={date}
 						transactionsWithBalance={withBalanceTransactions}
 						selectedTransaction={selectedTransaction}
+						getAccountByID={getAccountByID}
+						getCategoryByID={getCategoryByID}
+						getSubCategoryByID={getSubCategoryByID}
+						selection={selection}
+						setSelection={setSelection}
+						setSelectedTransaction={setSelectedTransaction}
 					/>
 				)
 			)}
@@ -201,93 +213,77 @@ export function AccountingList({
 }
 
 const AccountingListRow = ({
-	transaction,
+	transactionWithBalance,
 	selectionActive,
 	selection,
 	setSelection,
-	setSelectedRecord,
-	isTransfer,
+	setSelectedTransaction,
 	setAction,
-	accumulatedBalance,
-	prevBalance,
+	getAccountByID,
+	getCategoryByID,
+	getSubCategoryByID,
 }: {
-	isTransfer?: boolean;
-	transaction: Transaction;
-	accumulatedBalance: ReportBalance;
-	prevBalance: ReportBalance;
+	transactionWithBalance: {
+		transaction: Transaction;
+		balance: ReportBalance;
+		prevBalance: ReportBalance;
+	};
 	selectionActive: boolean;
 	selection: Transaction[];
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
-	setSelectedRecord: React.Dispatch<React.SetStateAction<Transaction>>;
+	setSelectedTransaction: React.Dispatch<React.SetStateAction<Transaction>>;
 	setAction: React.Dispatch<React.SetStateAction<string>>;
+	getAccountByID: (id: AccountID) => Account | undefined;
+	getCategoryByID: (id: CategoryID) => Category | undefined;
+	getSubCategoryByID: (id: SubcategoryID) => Subcategory | undefined;
 }) => {
-	const { getCategoryByID, getSubCategoryByID } = useCategories();
-	const { getAccountByID } = useAccounts();
-
-	const modifiedTransaction = useMemo(() => {
-		if (!isTransfer) return transaction;
-		return new Transaction(
-			transaction.id,
-			transaction.account,
-			transaction.name,
-			transaction.operation,
-			transaction.categoryID,
-			transaction.subCategory,
-			transaction.date,
-			transaction.amount.negate(),
-			transaction.itemID,
-			transaction.toAccount
-		);
-	}, [transaction, isTransfer]);
-
+	const { transaction, balance, prevBalance } = transactionWithBalance;
 	return (
 		<li
 			key={transaction.id.value}
 			onClick={() => {
 				if (selectionActive)
 					setSelection((prevSelection) =>
-						prevSelection.includes(modifiedTransaction)
+						prevSelection.includes(transaction)
 							? prevSelection.filter(
-									(item) => item !== modifiedTransaction
+									(item) => item !== transaction
 							  )
-							: [...prevSelection, modifiedTransaction]
+							: [...prevSelection, transaction]
 					);
 			}}
 			onContextMenu={() => {
 				setAction("");
-				setSelectedRecord(modifiedTransaction);
+				setSelectedTransaction(transaction);
 			}}
 			className="accounting-list-item"
 			style={{
-				backgroundColor: selection.includes(modifiedTransaction)
-					? "gray"
+				backgroundColor: selection.includes(transaction)
+					? "var(--background-modifier-hover)"
 					: "",
 			}}
 		>
 			<span className="first-row">
 				<div>
 					<span style={{ fontSize: "0.7em" }}>
-						{modifiedTransaction.date.toPrettyFormatHour()}
+						{transaction.date.toPrettyFormatHour()}
 					</span>{" "}
-					{modifiedTransaction.name.toString()}
+					{transaction.name.toString()}
 				</div>
 				<div
 					style={{
-						color: modifiedTransaction.operation.isExpense()
+						color: transaction.operation.isIncome()
+							? "var(--color-green)"
+							: transaction.operation.isExpense()
 							? "var(--color-red)"
-							: modifiedTransaction.operation.isTransfer()
-							? "var(--color-blue)"
-							: "var(--color-green)",
+							: "var(--color-blue)",
 					}}
 				>
-					{modifiedTransaction.operation.isExpense() ||
-					(!isTransfer && modifiedTransaction.operation.isTransfer())
+					{transaction.operation.isExpense() ||
+					(transaction.operation.isTransfer() &&
+						transaction.amount.isPositive())
 						? "-"
 						: "+"}
-					{(!isTransfer
-						? modifiedTransaction.amount
-						: modifiedTransaction.amount.negate()
-					).toString()}
+					{transaction.amount.abs().toString()}
 				</div>
 			</span>
 			<span
@@ -298,26 +294,29 @@ const AccountingListRow = ({
 					<div style={{ marginBottom: "3px" }}>
 						<b>Category:</b>{" "}
 						{getCategoryByID(
-							modifiedTransaction.categoryID
+							transaction.categoryID
 						)?.name.toString() ?? ""}
 					</div>
 					<div>
 						<b>SubCategory:</b>{" "}
 						{
-							getSubCategoryByID(modifiedTransaction.subCategory)
-								?.name.value
+							getSubCategoryByID(transaction.subCategory)?.name
+								.value
 						}
 					</div>
 				</div>
 				<div style={{ textAlign: "right" }}>
 					<div style={{ marginBottom: "3px" }}>
 						{getAccountByID(
-							modifiedTransaction.account
+							transaction.operation.isTransfer() &&
+								transaction.toAccount &&
+								transaction.amount.isNegative()
+								? transaction.toAccount
+								: transaction.account
 						)?.name.toString() ?? ""}
 					</div>
 					<div>
-						{prevBalance.toString()} {"->"}{" "}
-						{accumulatedBalance.toString()}
+						{prevBalance.toString()} {"->"} {balance.toString()}
 					</div>
 				</div>
 			</span>
@@ -329,6 +328,12 @@ const AccountingListRowGroup = ({
 	date,
 	transactionsWithBalance,
 	selectedTransaction,
+	getAccountByID,
+	getCategoryByID,
+	getSubCategoryByID,
+	selection,
+	setSelection,
+	setSelectedTransaction,
 }: {
 	date: string;
 	transactionsWithBalance: {
@@ -337,17 +342,20 @@ const AccountingListRowGroup = ({
 		prevBalance: ReportBalance;
 	}[];
 	selectedTransaction?: Transaction;
+	getAccountByID: (id: AccountID) => Account | undefined;
+	getCategoryByID: (id: CategoryID) => Category | undefined;
+	getSubCategoryByID: (id: SubcategoryID) => Subcategory | undefined;
+	selection: Transaction[];
+	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
+	setSelectedTransaction: React.Dispatch<React.SetStateAction<Transaction>>;
 }) => {
-	const { getCategoryByID, getSubCategoryByID } = useCategories();
-	const { getAccountByID } = useAccounts();
 	return (
-		<div>
+		<div key={date}>
 			<div
 				style={{
 					paddingRight: "7px",
 					marginRight: "15px",
 					marginTop: "15px",
-					marginBottom: "7px",
 				}}
 			>
 				<b>{date}</b>
@@ -359,15 +367,14 @@ const AccountingListRowGroup = ({
 						<>
 							<AccountingListRow
 								setAction={() => {}}
-								transaction={transaction}
-								selection={[]}
-								selectionActive={false}
-								setSelection={() => {}}
-								setSelectedRecord={() => {}}
-								accumulatedBalance={
-									transactionWithBalance.balance
-								}
-								prevBalance={transactionWithBalance.prevBalance}
+								transactionWithBalance={transactionWithBalance}
+								selection={selection}
+								selectionActive={true}
+								setSelection={setSelection}
+								setSelectedTransaction={setSelectedTransaction}
+								getAccountByID={getAccountByID}
+								getCategoryByID={getCategoryByID}
+								getSubCategoryByID={getSubCategoryByID}
 							/>
 							{false &&
 								selectedTransaction?.id.equalTo(
@@ -379,41 +386,9 @@ const AccountingListRowGroup = ({
 											// updateTransactions();
 										}}
 										transaction={transaction}
-										category={
-											getCategoryByID(
-												transaction.categoryID
-											) ??
-											Category.fromPrimitives(
-												Category.emptyPrimitives()
-											)
-										}
-										subCategory={
-											getSubCategoryByID(
-												transaction.subCategory
-											) ??
-											Subcategory.fromPrimitives(
-												Subcategory.emptyPrimitives()
-											)
-										}
-										account={
-											getAccountByID(
-												transaction.account
-											) ??
-											Account.fromPrimitives(
-												Account.emptyPrimitives()
-											)
-										}
-										toAccount={
-											transaction.toAccount
-												? getAccountByID(
-														//@ts-ignore
-														transaction.toAccount
-												  ) ??
-												  Account.fromPrimitives(
-														Account.emptyPrimitives()
-												  )
-												: undefined
-										}
+										getCategoryByID={getCategoryByID}
+										getSubCategoryByID={getSubCategoryByID}
+										getAccountByID={getAccountByID}
 									/>
 								)}
 						</>

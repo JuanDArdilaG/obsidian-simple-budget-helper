@@ -19,12 +19,6 @@ export class ItemsDexieRepository
 		super(_db, config.itemsTableName);
 	}
 
-	async findAllUniqueItemNames(): Promise<ItemName[]> {
-		return (await this._table.orderBy("name").uniqueKeys()).map(
-			(name) => new ItemName(name.toString())
-		);
-	}
-
 	async findAllUniqueItemBrands(): Promise<ItemBrand[]> {
 		return (await this._table.orderBy("brand").uniqueKeys()).map(
 			(brand) => new ItemBrand(brand.toString())

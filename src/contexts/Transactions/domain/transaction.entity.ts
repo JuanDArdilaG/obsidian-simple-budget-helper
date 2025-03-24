@@ -75,6 +75,23 @@ export class Transaction
 		);
 	}
 
+	static copyWithNegativeAmount(transaction: Transaction): Transaction {
+		return new Transaction(
+			TransactionID.generate(),
+			transaction._account,
+			transaction._name,
+			transaction._operation,
+			transaction._category,
+			transaction._subCategory,
+			transaction._date,
+			transaction._amount.negate(),
+			transaction._item,
+			transaction._toAccount,
+			transaction._brand,
+			transaction._store
+		);
+	}
+
 	get id(): TransactionID {
 		return this._id;
 	}
@@ -111,14 +128,20 @@ export class Transaction
 		return this._amount;
 	}
 
-	get realAmount(): TransactionAmount {
+	getRealAmountForAccount(accountID: AccountID): TransactionAmount {
 		return new TransactionAmount(
-			this.amount.toNumber() *
-				(this._operation.isExpense()
-					? -1
-					: this._operation.isIncome()
-					? 1
-					: 0)
+			this.operation.isTransfer()
+				? (accountID.equalTo(this.account)
+						? -1
+						: (
+								this.toAccount
+									? accountID.equalTo(this.toAccount)
+									: false
+						  )
+						? 1
+						: 0) * this.amount.toNumber()
+				: this.amount.toNumber() *
+				  (this._operation.isExpense() ? -1 : 1)
 		);
 	}
 

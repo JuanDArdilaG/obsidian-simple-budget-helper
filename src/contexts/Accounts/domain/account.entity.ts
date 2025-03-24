@@ -45,28 +45,16 @@ export class Account implements IEntity<AccountID, AccountPrimitives> {
 	}
 
 	adjustFromTransaction(transaction: Transaction) {
-		logger.debug("AccountBalance: adjustFromTransaction", {
+		logger.debug("adjustFromTransaction", {
 			id: this._id.value,
 			type: this._type.value,
 			transaction: transaction.toPrimitives(),
 			balance: this._balance.valueOf(),
 		});
 		this._balance = new AccountBalance(
-			(this._balance.valueOf() +
-				(transaction.operation.isTransfer()
-					? (this._id.equalTo(transaction.account)
-							? -1
-							: (
-									transaction.toAccount
-										? this._id.equalTo(
-												transaction.toAccount
-										  )
-										: false
-							  )
-							? 1
-							: 0) * transaction.amount.valueOf()
-					: transaction.realAmount.valueOf())) *
-				(this._type.isAsset() ? 1 : -1)
+			this._balance.valueOf() +
+				transaction.getRealAmountForAccount(this._id).valueOf() *
+					(this._type.isAsset() ? 1 : -1)
 		);
 	}
 

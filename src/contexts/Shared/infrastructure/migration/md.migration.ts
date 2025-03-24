@@ -1,19 +1,19 @@
 import { TFile, Vault } from "obsidian";
 import {
+	RecordSimpleItemUseCase,
 	Transaction,
 	TransactionAmount,
 	TransactionDate,
 	TransactionID,
 	TransactionName,
-	TransactionOperation,
 } from "contexts/Transactions";
-import { CreateAccountUseCase } from "../../../Accounts/application/create-account.usecase";
 import {
 	Account,
 	AccountName,
 	AccountType,
 	AccountTypeType,
 	GetAllAccountsUseCase,
+	CreateAccountUseCase,
 } from "contexts/Accounts";
 import { OperationType } from "contexts/Shared/domain";
 import { GetAllCategoriesUseCase } from "contexts/Categories/application/get-all-categories.usecase";
@@ -25,7 +25,20 @@ import {
 } from "contexts/Subcategories";
 import { CreateCategoryUseCase } from "contexts/Categories/application";
 import { Category, CategoryName } from "contexts/Categories";
-import { ItemBrand, ItemStore } from "contexts/Items";
+import {
+	CreateRecurrentItemUseCase,
+	Item,
+	ItemBrand,
+	ItemID,
+	ItemName,
+	ItemOperation,
+	ItemPrice,
+	ItemStore,
+	RecurrentItem,
+	RecurrentItemNextDate,
+	RecurrrentItemFrequency,
+	SimpleItem,
+} from "contexts/Items";
 import { Logger } from "../logger";
 import { RecordTransactionUseCase } from "../../../Transactions/application/record-transaction.usecase";
 import { CategoryID } from "../../../Categories/domain/category-id.valueobject";
@@ -41,24 +54,48 @@ export class MDMigration {
 		readonly createAccountUseCase: CreateAccountUseCase,
 		readonly createCategoryUseCase: CreateCategoryUseCase,
 		readonly createSubCategoryUseCase: CreateSubCategoryUseCase,
-		readonly recordTransactionUseCase: RecordTransactionUseCase
+		readonly recordTransactionUseCase: RecordTransactionUseCase,
+		readonly recordSimpleItemUseCase: RecordSimpleItemUseCase,
+		readonly createRecurrentItemUseCase: CreateRecurrentItemUseCase
 	) {
 		this.logger = new Logger("MDMigration");
 	}
 
-	migrate = async (): Promise<Transaction[]> => {
-		const transactions = [];
-
+	migrate = async (): Promise<{
+		items: Item[];
+		transactions: Transaction[];
+	}> => {
 		const file = this.vault.getFileByPath(`${this.rootFolder}/Simple.md`);
-		if (file) {
-			const fileContent = await this.vault.cachedRead(file);
-			transactions.push(...(await this.#simpleTransactions(fileContent)));
+		if (!file) throw new Error("opening simple transactions file");
+
+		const fileContent = await this.vault.cachedRead(file);
+		const simpleItems = await this.#simpleItems(fileContent);
+		for (let { item, date } of simpleItems) {
+			await this.recordSimpleItemUseCase.execute({ item, date });
 		}
 
-		return transactions;
+		const recurrentItems = await this.#recurrentTransactions(
+			this.vault.cachedRead
+		);
+		for (let { item, transactions } of recurrentItems) {
+			for (let transaction of transactions) {
+				await this.recordTransactionUseCase.execute(transaction);
+			}
+			await this.createRecurrentItemUseCase.execute(item);
+		}
+
+		return {
+			items: [
+				...simpleItems.map((i) => i.item),
+				...recurrentItems.map((i) => i.item),
+			],
+			transactions: recurrentItems.map((i) => i.transactions).flat(),
+		};
 	};
 
-	#simpleTransactions = async (markdown: string): Promise<Transaction[]> => {
+	#simpleItems = async (
+		markdown: string
+	): Promise<{ item: SimpleItem; date: TransactionDate }[]> => {
 		const lines = markdown
 			.split("\n")
 			.filter((line) => !!line)
@@ -68,7 +105,7 @@ export class MDMigration {
 			markdown,
 			lines,
 		});
-		const transactions = [];
+		const items = [];
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i].split("|").map((item) => item.trim());
 			this.logger.debug("line", {
@@ -98,13 +135,19 @@ export class MDMigration {
 				[accountType, toAccountType] = accType.split(" - ");
 			}
 
-			const account = this.#getOrCreateAccount(accountType, accountName);
-			const toAccount = this.#getOrCreateToAccount(
+			const account = await this.#getOrCreateAccount(
+				accountType,
+				accountName
+			);
+			const toAccount = await this.#getOrCreateToAccount(
 				toAccountType,
 				toAccountName
 			);
-			const category = this.#getOrCreateCategory(cat);
-			const subCategory = this.#getOrCreateSubCategory(category.id, sub);
+			const category = await this.#getOrCreateCategory(cat);
+			const subCategory = await this.#getOrCreateSubCategory(
+				category.id,
+				sub
+			);
 
 			this.logger.debug("after get and create", {
 				account,
@@ -113,52 +156,55 @@ export class MDMigration {
 				subCategory,
 			});
 
-			transactions.push(
-				new Transaction(
-					new TransactionID(id),
-					account.id,
-					new TransactionName(name),
-					new TransactionOperation(type as OperationType),
-					category.id,
-					subCategory.id,
-					new TransactionDate(new Date(date)),
-					TransactionAmount.fromString(amount),
-					undefined,
-					toAccount?.id,
-					brand ? new ItemBrand(brand) : undefined,
-					store ? new ItemStore(store) : undefined
-				)
+			const item = new SimpleItem(
+				ItemID.generate(),
+				new ItemOperation(type as OperationType),
+				new ItemName(name),
+				ItemPrice.fromString(amount),
+				category.id,
+				subCategory.id,
+				account.id,
+				brand ? new ItemBrand(brand) : undefined,
+				store ? new ItemStore(store) : undefined,
+				toAccount?.id
 			);
+
+			items.push({ item, date: new TransactionDate(new Date(date)) });
 		}
 
-		transactions.forEach(async (transaction) => {
-			await this.recordTransactionUseCase.execute(transaction);
-		});
-
-		return transactions;
+		return items;
 	};
 
 	#recurrentTransactions = async (
 		fileReader: (file: TFile) => Promise<string>
-	): Promise<Transaction[]> => {
-		const transactions: Transaction[] = [];
+	): Promise<{ item: RecurrentItem; transactions: Transaction[] }[]> => {
 		const folder = this.vault.getFolderByPath(
 			`${this.rootFolder}/Recurrent`
 		);
 		if (!folder) throw new Error("recurrent folder not found");
+		const items = [];
 		for (const file of folder.children) {
 			if (file instanceof TFile) {
 				const fileContent = await fileReader(file);
-				const transactions =
-					this.#recurrentFromRawMarkdown(fileContent);
-				transactions.push(...transactions);
+				const item = await this.#recurrentFromRawMarkdown(fileContent);
+				this.logger.debug("recurrent file", {
+					fileContent,
+					item,
+				});
+				items.push(item);
 			}
 		}
 
-		return transactions;
+		this.logger.debug("recurrent files transactions", {
+			transactions: items,
+		});
+
+		return items;
 	};
 
-	#recurrentFromRawMarkdown = (rawMarkdown: string): Transaction[] => {
+	#recurrentFromRawMarkdown = async (
+		rawMarkdown: string
+	): Promise<{ item: RecurrentItem; transactions: Transaction[] }> => {
 		const propertiesRegex =
 			/id: (.*)\nname: (.*)\namount: (.*)\ncategory: (.*)\nsubCategory:(.*)\nbrand:(.*)\nstore:(.*)\ntype: (.*)\nnextDate: (.*)\nfrequency: (.*)\naccount: (.*)(?:\nto account: (.*))?/;
 		const match = propertiesRegex.exec(rawMarkdown);
@@ -179,47 +225,81 @@ export class MDMigration {
 			toAcc,
 		] = match;
 
+		const account = await this.#getOrCreateAccount("asset", acc);
+		const toAccount = await this.#getOrCreateToAccount(
+			"asset",
+			toAcc?.trim()
+		);
+		const category = await this.#getOrCreateCategory(cat.trim());
+		const subCategory = await this.#getOrCreateSubCategory(
+			category.id,
+			sub.trim() || "To Assign"
+		);
+
+		const item = new RecurrentItem(
+			new ItemID(id),
+			new ItemOperation(type.trim() as OperationType),
+			new ItemName(name),
+			ItemPrice.fromString(amount),
+			category.id,
+			subCategory.id,
+			account.id,
+			new RecurrentItemNextDate(new Date(nextDate)),
+			new RecurrrentItemFrequency(frequency),
+			brand?.trim() ? new ItemBrand(brand.trim()) : undefined,
+			store?.trim() ? new ItemStore(store.trim()) : undefined
+		);
+
 		const historyStr = rawMarkdown.split("# History\n");
 		let history = undefined;
 		if (historyStr[1]) history = historyStr[1].split("\n");
-
-		const account = this.#getOrCreateAccount("asset", acc);
-		const toAccount = this.#getOrCreateToAccount("asset", toAcc);
-		const category = this.#getOrCreateCategory(cat);
-		const subCategory = this.#getOrCreateSubCategory(category.id, sub);
+		let transactions: Transaction[] = [];
 
 		if (history) {
-			return history
-				.filter((r) => !!r)
-				.map((r) => {
-					return new Transaction(
-						new TransactionID(id),
-                        account.id,
-                        new TransactionName(name)
-						r,
-						type as "income" | "expense",
-						toAccount
-					);
-				});
+			transactions = await Promise.all(
+				history
+					.filter((r) => !!r)
+					.map(async (r) => {
+						const match =
+							/id: (.*)\. name: (.*)\. account: (.*)\. date: (.*)\. amount: (.*)(?:\. brand: (.*)\.(?: store: (.*)))?/.exec(
+								r
+							);
+						if (!match) throw new Error("Invalid raw markdown.");
+						const [, id, name, acc, date, amount, brand, store] =
+							match;
+						const account = await this.#getOrCreateAccount(
+							"asset",
+							acc
+						);
+
+						return new Transaction(
+							id.length === 21
+								? new TransactionID(id.trim())
+								: TransactionID.generate(),
+							account.id,
+							new TransactionName(name.trim()),
+							item.operation,
+							category.id,
+							subCategory.id,
+							new TransactionDate(new Date(date.trim())),
+							TransactionAmount.fromString(amount.trim()),
+							item.id,
+							toAccount?.id,
+							brand?.trim()
+								? new ItemBrand(brand.trim())
+								: undefined,
+							store?.trim()
+								? new ItemStore(store.trim())
+								: undefined
+						);
+					})
+			);
 		}
 
-		return new Transaction(
-			id,
-			name,
-			account,
-			parseInt(amount),
-			category,
-			subCategory,
-			brand,
-			store,
-			type as "expense" | "income",
-			new BudgetItemNextDate(new Date(nextDate), true),
-			path,
-			new FrequencyString(frequency)
-		);
+		return { transactions, item };
 	};
 
-	#getOrCreateAccount(accountType: string, accountName: string) {
+	async #getOrCreateAccount(accountType: string, accountName: string) {
 		const accounts = await this.getAllAccountsUseCase.execute();
 		let account = accounts.find((acc) =>
 			acc.name.equalTo(new AccountName(accountName))
@@ -234,10 +314,10 @@ export class MDMigration {
 		return account;
 	}
 
-	#getOrCreateToAccount(toAccountType: string, toAccountName: string) {
-		const accounts = await this.getAllAccountsUseCase.execute();
+	async #getOrCreateToAccount(toAccountType: string, toAccountName?: string) {
 		let toAccount: Account | undefined;
 		if (toAccountName) {
+			const accounts = await this.getAllAccountsUseCase.execute();
 			toAccount = accounts.find((acc) =>
 				acc.name.equalTo(new AccountName(toAccountName))
 			);
@@ -252,7 +332,7 @@ export class MDMigration {
 		return toAccount;
 	}
 
-	#getOrCreateCategory(categoryName: string) {
+	async #getOrCreateCategory(categoryName: string) {
 		const categories = await this.getAllCategoriesUseCase.execute();
 		let category = categories.find((category) =>
 			category.name.equalTo(new CategoryName(categoryName))
@@ -264,7 +344,10 @@ export class MDMigration {
 		return category;
 	}
 
-	#getOrCreateSubCategory(categoryID: CategoryID, subCategoryName: string) {
+	async #getOrCreateSubCategory(
+		categoryID: CategoryID,
+		subCategoryName: string
+	) {
 		const subCategories = await this.getAllSubCategoriesUseCase.execute();
 		let subCategory = subCategories.find((subCategory) =>
 			subCategory.name.equalTo(new SubcategoryName(subCategoryName))

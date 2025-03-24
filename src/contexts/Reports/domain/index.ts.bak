@@ -2,3 +2,4 @@
 
 export * from './report-balance.valueobject';
 export * from './reports-service.interface';
+export * from './transactions-report.entity';

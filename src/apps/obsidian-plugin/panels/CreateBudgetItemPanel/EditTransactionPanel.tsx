@@ -11,23 +11,21 @@ import {
 	TransactionDate,
 	TransactionName,
 } from "contexts/Transactions";
-import { Account, AccountName } from "contexts/Accounts";
+import { Account, AccountID, AccountName } from "contexts/Accounts";
 import { useAccounts, useCategories } from "apps/obsidian-plugin/hooks";
-import { Category, Subcategory } from "contexts";
+import { Category, CategoryID, Subcategory, SubcategoryID } from "contexts";
 
 export const EditTransactionPanel = ({
 	transaction,
-	category,
-	subCategory,
-	account,
-	toAccount,
+	getAccountByID,
+	getCategoryByID,
+	getSubCategoryByID,
 	onUpdate,
 }: {
 	transaction: Transaction;
-	category: Category;
-	subCategory: Subcategory;
-	account: Account;
-	toAccount?: Account;
+	getAccountByID: (id: AccountID) => Account | undefined;
+	getCategoryByID: (id: CategoryID) => Category | undefined;
+	getSubCategoryByID: (id: SubcategoryID) => Subcategory | undefined;
 	onUpdate: () => Promise<void>;
 }) => {
 	const {
@@ -40,13 +38,21 @@ export const EditTransactionPanel = ({
 	const [name, setName] = useState(transaction.name.value);
 	const [amount, setAmount] = useState(transaction.amount);
 	const [type, setType] = useState(transaction.operation.value);
-	const [categoryName, setCategoryName] = useState(category.name.value);
+	const [categoryName, setCategoryName] = useState(
+		getCategoryByID(transaction.categoryID)?.name.value
+	);
 	const [subCategoryName, setSubCategoryName] = useState(
-		subCategory.name.value
+		getSubCategoryByID(transaction.subCategory)?.name.value
 	);
 
-	const [accountName, setAccountName] = useState(account.name.value);
-	const [toAccountName, setToAccountName] = useState(toAccount?.name.value);
+	const [accountName, setAccountName] = useState(
+		getAccountByID(transaction.account)?.name.value
+	);
+	const [toAccountName, setToAccountName] = useState(
+		transaction.toAccount
+			? getAccountByID(transaction.toAccount)?.name.value
+			: undefined
+	);
 
 	const [date, setDate] = useState(transaction.date.valueOf());
 
@@ -103,7 +109,7 @@ export const EditTransactionPanel = ({
 			<SelectWithCreation
 				id="category"
 				label="Category"
-				item={categoryName}
+				item={categoryName ?? ""}
 				items={categories.map((cat) => cat.name.value)}
 				onChange={(category) => setCategoryName(category ?? "")}
 				// error={
@@ -113,7 +119,7 @@ export const EditTransactionPanel = ({
 			<SelectWithCreation
 				id="subcategory"
 				label="SubCategory"
-				item={subCategoryName}
+				item={subCategoryName ?? ""}
 				items={subCategories.map((sub) => sub.name.value)}
 				onChange={(category) => setSubCategoryName(category ?? "")}
 				// error={

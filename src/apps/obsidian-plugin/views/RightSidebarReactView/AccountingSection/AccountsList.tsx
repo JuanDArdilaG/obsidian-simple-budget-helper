@@ -36,16 +36,51 @@ export const AccountsList = () => {
 					}}
 				/>
 			)}
+			<h4>Assets</h4>
 			<ul>
-				{accounts.map((account, i) => (
-					<li
-						key={i}
-						onContextMenu={() => setSelectedAccount(account)}
-					>
-						{account.name.toString()}: {account.balance.toString()}
-						<hr />
-					</li>
-				))}
+				{accounts
+					.filter((acc) => acc.type.isAsset())
+					.sort(
+						(accA, accB) =>
+							accB.balance.toNumber() - accA.balance.toNumber()
+					)
+					.map((account, i) => (
+						<li
+							key={i}
+							onContextMenu={() => setSelectedAccount(account)}
+						>
+							{account.name.toString()}:{" "}
+							{account.balance.toString()}
+							<hr />
+						</li>
+					))}
+			</ul>
+			<div style={{ textAlign: "right" }}>
+				Total:{" "}
+				{/* {new PriceValueObject(
+					budget.getHistory().getBalance({
+						untilDate: new Date(),
+					})
+				).toString()} */}
+			</div>
+			<h4>Liabilities</h4>
+			<ul>
+				{accounts
+					.filter((acc) => acc.type.isLiability())
+					.sort(
+						(accA, accB) =>
+							accB.balance.toNumber() - accA.balance.toNumber()
+					)
+					.map((account, i) => (
+						<li
+							key={i}
+							onContextMenu={() => setSelectedAccount(account)}
+						>
+							{account.name.toString()}:{" "}
+							{account.balance.toString()}
+							<hr />
+						</li>
+					))}
 			</ul>
 			<div style={{ textAlign: "right" }}>
 				Total:{" "}

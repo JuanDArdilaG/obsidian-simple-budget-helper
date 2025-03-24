@@ -1,5 +1,6 @@
 import { AccountID } from "contexts/Accounts";
 import { CategoryID } from "contexts/Categories";
+import { Logger } from "contexts/Shared";
 import { QueryUseCase } from "contexts/Shared/domain";
 import { SubcategoryID } from "contexts/Subcategories";
 import {
@@ -7,6 +8,8 @@ import {
 	Transaction,
 	TransactionCriteria,
 } from "contexts/Transactions/domain";
+
+const logger = new Logger("GetAllTransactionsUseCase", false);
 
 export type GetAllTransactionsUseCaseInput = {
 	accountFilter?: AccountID;
@@ -42,6 +45,10 @@ export class GetAllTransactionsUseCase
 			filterCriteria
 		);
 
+		logger.debug("account transactions", {
+			transactions: transactions.map((t) => t.toPrimitives()),
+		});
+
 		if (accountFilter) {
 			const filterCriteria = new TransactionCriteria();
 			if (accountFilter)
@@ -57,6 +64,12 @@ export class GetAllTransactionsUseCase
 				await this._transactionsRepository.findByCriteria(
 					filterCriteria
 				);
+
+			logger.debug("toAccount transactions", {
+				transactions: transactionsToAccount.map((t) =>
+					t.toPrimitives()
+				),
+			});
 
 			transactions.push(...transactionsToAccount);
 		}

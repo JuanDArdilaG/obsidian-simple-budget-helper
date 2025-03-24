@@ -56,9 +56,9 @@ export abstract class DexieRepository<
 			logger.debug("new filter", {
 				filter: `where ${field} equals ${criteria.filters[field].value}`,
 			});
-			collection = table
-				.where(field)
-				.equals(criteria.filters[field].value);
+			collection = collection.and(
+				(p) => p[field] === criteria.filters[field].value
+			);
 		});
 		const res = await collection.toArray();
 		logger.debug("findByCriteria res", { res });

@@ -1,4 +1,3 @@
-import { Logger } from "contexts/Shared";
 import { GetAllTransactionsGroupedByDaysUseCaseInput } from "contexts/Reports";
 import { useState, useEffect, useContext } from "react";
 import { TransactionsContext } from "apps/obsidian-plugin/views";
@@ -32,7 +31,7 @@ export const useTransactions = ({
 						accountFilter,
 						categoryFilter,
 						subCategoryFilter,
-						transactions,
+						transactions: transactions.map((t) => t.toPrimitives()),
 					});
 					setTransactions(transactions);
 				});

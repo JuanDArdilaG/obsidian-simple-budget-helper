@@ -6,7 +6,7 @@ import {
 import { AccountingSection } from "./AccountingSection/AccountingSection";
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
 import { ActionButtons } from "../../components/ActionButtons";
-import { CreateBudgetItemPanel } from "apps/obsidian-plugin/panels";
+import { CreateItemPanel } from "apps/obsidian-plugin/panels";
 import { AwilixContainer } from "awilix";
 import { AppProviders } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { RecurrentItemsSection } from "apps/obsidian-plugin/views";
@@ -33,7 +33,7 @@ export const RightSidebarReactView = ({
 				isCreating={showCreateForm}
 			/>
 			{showCreateForm && (
-				<CreateBudgetItemPanel close={() => setShowCreateForm(false)} />
+				<CreateItemPanel close={() => setShowCreateForm(false)} />
 			)}
 			<SectionButtons
 				selected={sectionSelection}

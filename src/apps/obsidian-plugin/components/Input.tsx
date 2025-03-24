@@ -59,7 +59,7 @@ export const Input = <T extends NonNullable<InputValue>>({
 							}
 						/>
 					</div>
-					{isLocked !== undefined && (
+					{setIsLocked && (
 						<LockField
 							setIsLocked={setIsLocked}
 							isLocked={isLocked}
@@ -121,7 +121,7 @@ export const Input = <T extends NonNullable<InputValue>>({
 							onChange(dateWithTime as T);
 						}}
 					/>
-					{isLocked !== undefined && (
+					{setIsLocked && (
 						<LockField
 							setIsLocked={setIsLocked}
 							isLocked={isLocked}

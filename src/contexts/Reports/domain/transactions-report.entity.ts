@@ -49,28 +49,62 @@ export class TransactionsReport {
 		let accumulated: Record<string, ReportBalance> = {};
 		return sortedReport.transactions
 			.map((transaction) => {
+				const transactions: {
+					transaction: Transaction;
+					balance: ReportBalance;
+					prevBalance: ReportBalance;
+				}[] = [];
 				if (!accumulated[transaction.account.value])
 					accumulated[transaction.account.value] =
 						ReportBalance.zero();
 				const prevBalance = accumulated[transaction.account.value];
 				accumulated[transaction.account.value] = accumulated[
 					transaction.account.value
-				].plus(transaction.realAmount);
+				].plus(
+					transaction.getRealAmountForAccount(transaction.account)
+				);
 				logger.debug(
 					"accumulating transaction",
 					{
 						transaction: transaction.toPrimitives(),
-						realAmount: transaction.realAmount.valueOf(),
+						realAmount: transaction
+							.getRealAmountForAccount(transaction.account)
+							.valueOf(),
 						accumulated,
 					},
 					{ on: false }
 				);
-				return {
+				transactions.push({
 					transaction,
 					balance: accumulated[transaction.account.value],
 					prevBalance,
-				};
+				});
+				if (
+					transaction.operation.isTransfer() &&
+					transaction.toAccount
+				) {
+					if (!accumulated[transaction.toAccount.value])
+						accumulated[transaction.toAccount.value] =
+							ReportBalance.zero();
+					const prevBalance =
+						accumulated[transaction.toAccount.value];
+					accumulated[transaction.toAccount.value] = accumulated[
+						transaction.toAccount.value
+					].plus(
+						transaction.getRealAmountForAccount(
+							transaction.toAccount
+						)
+					);
+					transactions.push({
+						transaction:
+							Transaction.copyWithNegativeAmount(transaction),
+						balance: accumulated[transaction.toAccount.value],
+						prevBalance,
+					});
+				}
+				return transactions;
 			})
+			.flat()
 			.reverse();
 	}
 }

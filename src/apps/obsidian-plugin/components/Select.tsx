@@ -57,7 +57,7 @@ export const Select = <T extends string | number>({
 				{options}
 			</select>
 
-			{isLocked !== undefined && (
+			{setIsLocked && (
 				<LockField setIsLocked={setIsLocked} isLocked={isLocked} />
 			)}
 		</div>

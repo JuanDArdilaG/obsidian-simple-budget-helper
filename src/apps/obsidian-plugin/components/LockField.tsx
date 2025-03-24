@@ -5,7 +5,7 @@ export const LockField = ({
 	isLocked,
 }: {
 	setIsLocked?: (value: boolean) => void;
-	isLocked: boolean;
+	isLocked?: boolean;
 }) => {
 	return isLocked ? (
 		<Lock

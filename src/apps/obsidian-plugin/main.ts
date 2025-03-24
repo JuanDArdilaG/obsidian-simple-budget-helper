@@ -1,6 +1,6 @@
-import { App, Plugin, PluginManifest } from "obsidian";
 import Dexie from "dexie";
-import { exportDB, importDB } from "dexie-export-import";
+import { App, normalizePath, Plugin, PluginManifest } from "obsidian";
+import { exportDB } from "dexie-export-import";
 import { DEFAULT_SETTINGS, SimpleBudgetHelperSettings } from "./SettingTab";
 import { buildContainer } from "contexts/Shared/infrastructure/di/container";
 import { Logger } from "../../contexts/Shared/infrastructure/logger";
@@ -20,16 +20,36 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		this.logger = new Logger("main");
 	}
 
+	async exportDBBackup() {
+		try {
+			await this.app.vault.adapter.readBinary(
+				normalizePath(`${this.settings.rootFolder}/db/db.backup`)
+			);
+		} catch (error) {
+			if (error.code === "ENOENT") {
+				console.log({ error: error.code });
+				await this.app.vault.adapter.mkdir(
+					`${this.settings.rootFolder}/db`
+				);
+				const blob = await exportDB(this.db);
+				await this.app.vault.adapter.writeBinary(
+					normalizePath(`${this.settings.rootFolder}/db/db.backup`),
+					await blob.arrayBuffer()
+				);
+			}
+		}
+	}
+
 	async onload() {
 		// await this.restoreDB();
 		await this.loadSettings();
+		const container = buildContainer();
+		// await this.migrateFromMarkdown(container);
+		this.db = (container.resolve("_db") as DexieDB).db;
+
 		await initStoragePersistence();
 		const storageQuota = await showEstimatedQuota();
 		this.logger.debug("storage quota", { storageQuota });
-
-		const container = buildContainer();
-		await this.migrateFromMarkdown(container);
-		this.db = (container.resolve("_db") as DexieDB).db;
 
 		const statusBarItem = this.addStatusBarItem();
 		this.registerView(
@@ -50,79 +70,43 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 	async migrateFromMarkdown(container: AwilixContainer) {
 		const migrator = new MDMigration(
 			this.app.vault,
+			this.settings.rootFolder,
 			container.resolve("getAllAccountsUseCase"),
 			container.resolve("getAllCategoriesUseCase"),
 			container.resolve("getAllSubCategoriesUseCase"),
 			container.resolve("createAccountUseCase"),
 			container.resolve("createCategoryUseCase"),
 			container.resolve("createSubCategoryUseCase"),
-			container.resolve("recordTransactionUseCase")
+			container.resolve("recordTransactionUseCase"),
+			container.resolve("recordSimpleItemUseCase"),
+			container.resolve("createRecurrentItemUseCase")
 		);
+		const { items, transactions } = await migrator.migrate();
 		this.logger.debug("transactions migrated", {
-			transactions: (
-				await migrator.migrate(this.settings.rootFolder)
-			).map((t) => t.toPrimitives()),
+			migration: {
+				items: items.map((i) => i.toPrimitives()),
+				transactions: transactions.map((t) => t.toPrimitives()),
+			},
 		});
 	}
 
 	async onunload() {
 		this.logger.debug("onunload");
 		persist();
-		// await this.saveDB();
-	}
-
-	async restoreDB() {
-		this.loadDB();
 	}
 
 	async loadSettings() {
 		const data = Object.assign(
 			{},
-			{ settings: DEFAULT_SETTINGS },
+			{ ...DEFAULT_SETTINGS },
 			await this.loadData()
 		);
-		this.logger.debug("loaded data", { data });
-		this.settings = data.settings;
-	}
-
-	async loadDB(): Promise<Dexie | undefined> {
-		const data = Object.assign(
-			{},
-			{ db: undefined },
-			await this.loadData()
-		);
-		this.logger.debug("loaded data", { data });
-		if (!data.db) return;
-		const db = importDB(new Blob([data.db], { type: "text/plain" }));
-		this.logger.debug("db loaded", { db });
-		return db;
+		this.logger.debug("loaded settings", { data });
+		this.settings = data;
 	}
 
 	async saveSettings() {
-		const data = Object.assign(
-			{},
-			{ settings: DEFAULT_SETTINGS },
-			await this.loadData()
-		);
-		await this.saveData({
-			...data,
-			settings: this.settings,
-		});
-	}
-
-	async saveDB() {
-		const data = Object.assign(
-			{},
-			{ settings: DEFAULT_SETTINGS },
-			await this.loadData()
-		);
-		const blob = await exportDB(this.db);
-		const text = await blob.text();
-		this.logger.debug("db blob", { blob, text });
-		await this.saveData({
-			...data,
-			db: text,
-		});
+		await this.saveData(this.settings);
 	}
 }
 
@@ -133,7 +117,7 @@ async function persist() {
 }
 
 async function showEstimatedQuota(): Promise<
-	{ quota?: number; usage?: number; percentage?: number } | undefined
+	{ quota?: number; usage?: number; percentage?: string } | undefined
 > {
 	const estimation =
 		navigator.storage && navigator.storage.estimate
@@ -142,9 +126,15 @@ async function showEstimatedQuota(): Promise<
 	if (!estimation) return undefined;
 	return {
 		...estimation,
-		percentage: estimation.quota
-			? ((estimation.usage ?? 0) / estimation.quota) * 100
-			: 0,
+		percentage:
+			String(
+				estimation.quota
+					? (
+							((estimation.usage ?? 0) / estimation.quota) *
+							100
+					  ).toFixed(2)
+					: 0
+			) + "%",
 	};
 }
 
