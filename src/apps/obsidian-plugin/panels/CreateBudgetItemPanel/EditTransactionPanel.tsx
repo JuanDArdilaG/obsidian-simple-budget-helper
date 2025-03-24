@@ -35,7 +35,7 @@ export const EditTransactionPanel = ({
 	} = useContext(TransactionsContext);
 
 	const { subCategories, categories } = useCategories();
-	const { accounts, getAccountByID, getAccountByName } = useAccounts();
+	const { accounts, getAccountByName } = useAccounts();
 
 	const [name, setName] = useState(transaction.name.value);
 	const [amount, setAmount] = useState(transaction.amount);

@@ -16,13 +16,11 @@ export type GroupByYearMonthDay = {
 };
 
 export interface IReportsService {
-	groupTransactionsByYearMonthDay(
-		filters: {
-			accountFilter?: AccountID;
-			categoryFilter?: CategoryID;
-			subCategoryFilter?: SubcategoryID;
-		}
-	): Promise<GroupByYearMonthDay>;
+	groupTransactionsByYearMonthDay(filters: {
+		accountFilter?: AccountID;
+		categoryFilter?: CategoryID;
+		subCategoryFilter?: SubcategoryID;
+	}): Promise<GroupByYearMonthDay>;
 	groupTransactionsByCategories(criteria?: TransactionCriteria): Promise<
 		{
 			category: CategoryName;
@@ -35,7 +33,4 @@ export interface IReportsService {
 			transactions: Transaction[];
 		}[]
 	>;
-	getTransactionsBalance(
-		criteria?: TransactionCriteria
-	): Promise<ReportBalance>;
 }

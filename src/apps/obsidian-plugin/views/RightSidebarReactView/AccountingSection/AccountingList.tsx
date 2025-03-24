@@ -1,31 +1,24 @@
+import { App } from "obsidian";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { monthAbbrToIndex } from "../../../../../../utils/date";
 import { AccountingListContextMenu } from "./AccountingListContextMenu";
-import { App } from "obsidian";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
-import { Transaction } from "contexts/Transactions/domain";
 import { EditTransactionPanel } from "apps/obsidian-plugin/panels";
 import { TransactionsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { useAccounts } from "apps/obsidian-plugin/hooks/useAccounts";
 import { useTransactions } from "apps/obsidian-plugin/hooks/useTransactions";
 import { useCategories } from "apps/obsidian-plugin/hooks/useCategories";
-import {
-	Category,
-	CategoryID,
-	CategoryName,
-	GetAllCategoriesWithSubCategoriesUseCaseOutput,
-} from "contexts/Categories";
-import { Account, AccountID, AccountName } from "contexts/Accounts";
+import { Transaction } from "contexts/Transactions/domain";
+import { Category, CategoryName } from "contexts/Categories";
+import { Subcategory } from "contexts/Subcategories";
+import { Account, AccountName } from "contexts/Accounts";
 import {
 	Logger,
 	ReportBalance,
-	SubcategoryID,
 	SubcategoryName,
 	TransactionsReport,
 } from "contexts";
 import { Select } from "apps/obsidian-plugin/components";
-import { Subcategory } from "../../../../../contexts/Subcategories/domain/subcategory.entity";
 
 export function AccountingList({
 	app,
@@ -38,21 +31,29 @@ export function AccountingList({
 		useCases: { deleteTransaction },
 	} = useContext(TransactionsContext);
 
-	const { accounts, getAccountByID } = useAccounts();
+	const { accounts, getAccountByName } = useAccounts();
+	const {
+		subCategories,
+		categories,
+		getCategoryByName,
+		getSubCategoryByName,
+	} = useCategories();
 
-	const [accountFilter, setAccountFilter] = useState<AccountID>();
-	const [categoryFilter, setCategoryFilter] = useState<CategoryID>();
-	const [subCategoryFilter, setSubCategoryFilter] = useState<SubcategoryID>();
+	const [accountFilter, setAccountFilter] = useState<AccountName>();
+	const [categoryFilter, setCategoryFilter] = useState<CategoryName>();
+	const [subCategoryFilter, setSubCategoryFilter] =
+		useState<SubcategoryName>();
 	const { updateTransactions, transactions } = useTransactions({
-		accountFilter,
-		categoryFilter,
-		subCategoryFilter,
+		accountFilter: accountFilter
+			? getAccountByName(accountFilter)?.id
+			: undefined,
+		categoryFilter: categoryFilter
+			? getCategoryByName(categoryFilter)?.id
+			: undefined,
+		subCategoryFilter: subCategoryFilter
+			? getSubCategoryByName(subCategoryFilter)?.id
+			: undefined,
 	});
-
-	const groupedTransactionsByDay = useMemo(
-		() => new TransactionsReport(transactions).groupByDays(),
-		[transactions]
-	);
 
 	const withAccumulatedBalanceTransactions = useMemo(() => {
 		const res = new TransactionsReport(
@@ -63,6 +64,7 @@ export function AccountingList({
 			{
 				transactions: res.map((r) => ({
 					balance: r.balance.valueOf(),
+					prevBalance: r.prevBalance.valueOf(),
 					transaction: r.transaction.toPrimitives(),
 				})),
 			},
@@ -71,12 +73,23 @@ export function AccountingList({
 		return res;
 	}, [transactions]);
 
-	const {
-		categoriesWithSubcategories,
-		categories,
-		getCategoryByID,
-		getSubCategoryByID,
-	} = useCategories();
+	const withAccumulatedBalanceTransactionsGrouped = useMemo(() => {
+		const res: [
+			string,
+			{
+				transaction: Transaction;
+				balance: ReportBalance;
+				prevBalance: ReportBalance;
+			}[]
+		][] = [];
+		withAccumulatedBalanceTransactions.forEach((withBalanceTransaction) => {
+			const date =
+				withBalanceTransaction.transaction.date.toPrettyFormatDate();
+			if (!res.find((r) => r[0] === date)) res.push([date, []]);
+			res.last()?.[1].push(withBalanceTransaction);
+		});
+		return res;
+	}, [withAccumulatedBalanceTransactions]);
 
 	const [selectedTransaction, setSelectedTransaction] =
 		useState<Transaction>();
@@ -135,13 +148,7 @@ export function AccountingList({
 				values={["", ...accounts.map((acc) => acc.name.toString())]}
 				onChange={(accountName) =>
 					setAccountFilter(
-						accountName
-							? accounts.find((acc) =>
-									acc.name.equalTo(
-										new AccountName(accountName)
-									)
-							  )?.id
-							: undefined
+						accountName ? new AccountName(accountName) : undefined
 					)
 				}
 			/>
@@ -152,11 +159,7 @@ export function AccountingList({
 				values={["", ...categories.map((cat) => cat.name.toString())]}
 				onChange={(catName) =>
 					setCategoryFilter(
-						catName
-							? categories.find((cat) =>
-									cat.name.equalTo(new CategoryName(catName))
-							  )?.id
-							: undefined
+						catName ? new CategoryName(catName) : undefined
 					)
 				}
 			/>
@@ -164,29 +167,11 @@ export function AccountingList({
 				id="subcategory-filter"
 				label="SubCategory"
 				value={subCategoryFilter?.value ?? ""}
-				values={[
-					"",
-					...categoriesWithSubcategories
-						.map((catWithSubs) => catWithSubs.subCategories)
-						.flat()
-						.map((sub) => sub.name.toString()),
-				]}
+				values={["", ...subCategories.map((sub) => sub.name.value)]}
 				onChange={(subName) =>
-					setSubCategoryFilter(
-						subName
-							? categoriesWithSubcategories
-									.map(
-										(catWithSubs) =>
-											catWithSubs.subCategories
-									)
-									.flat()
-									.find((sub) =>
-										sub.name.equalTo(
-											new SubcategoryName(subName)
-										)
-									)?.id
-							: undefined
-					)
+					subName
+						? setSubCategoryFilter(new SubcategoryName(subName))
+						: undefined
 				}
 			/>
 			{selectedTransaction && (
@@ -200,390 +185,20 @@ export function AccountingList({
 					}}
 				/>
 			)}
-			{withAccumulatedBalanceTransactions.map(
-				(withBalanceTransaction) => (
-					<AccountingListRow
-						accounts={accounts}
-						categoriesWithSubcategories={
-							categoriesWithSubcategories
-						}
-						index={withBalanceTransaction.transaction.id.value}
-						setAction={setAction}
-						transaction={withBalanceTransaction.transaction}
-						selection={selection}
-						selectionActive={selectionActive}
-						setSelection={setSelection}
-						setSelectedRecord={setSelectedTransaction}
-						categories={categories}
-						accumulatedBalance={withBalanceTransaction.balance}
+			{withAccumulatedBalanceTransactionsGrouped.map(
+				([date, withBalanceTransactions]) => (
+					<AccountingListRowGroup
+						date={date}
+						transactionsWithBalance={withBalanceTransactions}
+						selectedTransaction={selectedTransaction}
 					/>
 				)
 			)}
-			{Object.keys(groupedTransactionsByDay)
-				.sort((a, b) => Number(b) - Number(a))
-				.map((year) => Number(year))
-				.map((year) => (
-					<div style={{ marginBottom: "50px" }} key={year}>
-						<h3>
-							{year}
-							<span
-								style={{
-									display: "flex",
-									flexDirection: "column",
-									float: "right",
-									textAlign: "right",
-								}}
-							>
-								<span
-									style={{
-										float: "right",
-										fontSize: "0.6em",
-										color: "var(--color-green)",
-									}}
-								>
-									Incomes:{" "}
-									{/* {new PriceValueObject(
-										budgetHistory.getBalance({
-											type: "income",
-											sinceDate: new Date(
-												Number(year),
-												0,
-												1
-											),
-											untilDate: new Date(
-												Number(year),
-												11,
-												31
-											),
-										})
-									).toString()} */}
-								</span>
-								<span
-									style={{
-										float: "right",
-										fontSize: "0.6em",
-										color: "var(--color-red)",
-									}}
-								>
-									Expenses:{" "}
-									{/* {new PriceValueObject(
-										budgetHistory.getBalance({
-											type: "expense",
-											sinceDate: new Date(
-												Number(year),
-												0,
-												1
-											),
-											untilDate: new Date(
-												Number(year),
-												11,
-												31
-											),
-										})
-									).toString()} */}
-								</span>
-								<span
-									style={{
-										float: "right",
-										fontSize: "0.6em",
-									}}
-								>
-									Balance:{" "}
-									{/* {new PriceValueObject(
-										budgetHistory.getBalance({
-											untilDate: new Date(
-												Number(year),
-												11,
-												31
-											),
-										})
-									).toString()} */}
-								</span>
-							</span>
-						</h3>
-						{Object.keys(groupedTransactionsByDay[year])
-							.sort(
-								(a, b) =>
-									monthAbbrToIndex(b) - monthAbbrToIndex(a)
-							)
-							.map((month) => {
-								return (
-									<div
-										key={`${year}-${month}`}
-										style={{ marginBottom: "40px" }}
-									>
-										<h4
-											style={{
-												marginTop: "40px",
-												marginBottom: "30px",
-											}}
-										>
-											{month}{" "}
-											<span
-												style={{
-													display: "flex",
-													flexDirection: "column",
-													float: "right",
-													textAlign: "right",
-												}}
-											>
-												<span
-													style={{
-														fontSize: "0.5em",
-														color: "var(--color-green)",
-													}}
-												>
-													Incomes:{" "}
-													{/* {new PriceValueObject(
-														budgetHistory.getBalance(
-															{
-																sinceDate:
-																	since,
-																untilDate:
-																	until,
-																type: "income",
-															}
-														)
-													).toString()} */}
-												</span>
-												<span
-													style={{
-														float: "right",
-														fontSize: "0.5em",
-														color: "var(--color-red)",
-													}}
-												>
-													Expenses:{" "}
-													{/* {new PriceValueObject(
-														budgetHistory.getBalance(
-															{
-																type: "expense",
-																sinceDate:
-																	since,
-																untilDate:
-																	until,
-															}
-														)
-													).toString()} */}
-												</span>
-												<span
-													style={{
-														float: "right",
-														fontSize: "0.5em",
-													}}
-												>
-													Balance:
-													{/* {new PriceValueObject(
-														budgetHistory.getBalance(
-															{
-																untilDate:
-																	until,
-															}
-														)
-													).toString()} */}
-												</span>
-											</span>
-										</h4>
-										<ul className="accounting-list">
-											{Object.keys(
-												groupedTransactionsByDay[year][
-													month
-												]
-											)
-												.map((day) => Number(day))
-												.sort((a, b) => b - a)
-												.map((day: number) => (
-													<div
-														key={day}
-														style={{
-															marginTop: "15px",
-														}}
-													>
-														<span
-															style={{
-																paddingRight:
-																	"7px",
-																marginRight:
-																	"15px",
-															}}
-														>
-															<b>
-																{day} / {month}{" "}
-																/ {year}
-															</b>
-														</span>
-														{groupedTransactionsByDay[
-															year
-														][month][day]
-															.sort(
-																(
-																	a: Transaction,
-																	b: Transaction
-																) =>
-																	b.date.compare(
-																		a.date
-																	)
-															)
-															.map(
-																(
-																	transaction: Transaction,
-																	index: number
-																) => {
-																	return (
-																		<div
-																			key={
-																				index
-																			}
-																		>
-																			{transaction.operation.isTransfer() && (
-																				<AccountingListRow
-																					accumulatedBalance={
-																						new PriceValueObject(
-																							0
-																						)
-																					}
-																					accounts={
-																						accounts
-																					}
-																					categoriesWithSubcategories={
-																						categoriesWithSubcategories
-																					}
-																					isTransfer
-																					index={
-																						transaction.id +
-																						"transfer"
-																					}
-																					setAction={
-																						setAction
-																					}
-																					transaction={
-																						transaction
-																					}
-																					selection={
-																						selection
-																					}
-																					selectionActive={
-																						selectionActive
-																					}
-																					setSelection={
-																						setSelection
-																					}
-																					setSelectedRecord={
-																						setSelectedTransaction
-																					}
-																					categories={
-																						categories
-																					}
-																				/>
-																			)}
-																			<AccountingListRow
-																				accumulatedBalance={
-																					new PriceValueObject(
-																						0
-																					)
-																				}
-																				accounts={
-																					accounts
-																				}
-																				categoriesWithSubcategories={
-																					categoriesWithSubcategories
-																				}
-																				index={
-																					transaction
-																						.id
-																						.value
-																				}
-																				setAction={
-																					setAction
-																				}
-																				transaction={
-																					transaction
-																				}
-																				selection={
-																					selection
-																				}
-																				selectionActive={
-																					selectionActive
-																				}
-																				setSelection={
-																					setSelection
-																				}
-																				setSelectedRecord={
-																					setSelectedTransaction
-																				}
-																				categories={
-																					categories
-																				}
-																			/>
-																			{action ===
-																				"edit" &&
-																				selectedTransaction?.id.equalTo(
-																					transaction.id
-																				) && (
-																					<EditTransactionPanel
-																						onUpdate={async () => {
-																							setAction(
-																								""
-																							);
-																							updateTransactions();
-																						}}
-																						transaction={
-																							transaction
-																						}
-																						category={
-																							getCategoryByID(
-																								transaction.categoryID
-																							) ??
-																							Category.fromPrimitives(
-																								Category.emptyPrimitives()
-																							)
-																						}
-																						subCategory={
-																							getSubCategoryByID(
-																								transaction.subCategory
-																							) ??
-																							Subcategory.fromPrimitives(
-																								Subcategory.emptyPrimitives()
-																							)
-																						}
-																						account={
-																							getAccountByID(
-																								transaction.account
-																							) ??
-																							Account.fromPrimitives(
-																								Account.emptyPrimitives()
-																							)
-																						}
-																						toAccount={
-																							transaction.toAccount
-																								? getAccountByID(
-																										transaction.toAccount
-																								  ) ??
-																								  Account.fromPrimitives(
-																										Account.emptyPrimitives()
-																								  )
-																								: undefined
-																						}
-																					/>
-																				)}
-																		</div>
-																	);
-																}
-															)}
-													</div>
-												))}
-										</ul>
-									</div>
-								);
-							})}
-					</div>
-				))}
 		</RightSidebarReactTab>
 	);
 }
 
 const AccountingListRow = ({
-	index,
 	transaction,
 	selectionActive,
 	selection,
@@ -591,23 +206,21 @@ const AccountingListRow = ({
 	setSelectedRecord,
 	isTransfer,
 	setAction,
-	accounts,
 	accumulatedBalance,
+	prevBalance,
 }: {
-	index: string;
 	isTransfer?: boolean;
 	transaction: Transaction;
 	accumulatedBalance: ReportBalance;
+	prevBalance: ReportBalance;
 	selectionActive: boolean;
 	selection: Transaction[];
-	accounts: Account[];
-	categories: Category[];
-	categoriesWithSubcategories: GetAllCategoriesWithSubCategoriesUseCaseOutput;
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
 	setSelectedRecord: React.Dispatch<React.SetStateAction<Transaction>>;
 	setAction: React.Dispatch<React.SetStateAction<string>>;
 }) => {
 	const { getCategoryByID, getSubCategoryByID } = useCategories();
+	const { getAccountByID } = useAccounts();
 
 	const modifiedTransaction = useMemo(() => {
 		if (!isTransfer) return transaction;
@@ -627,7 +240,7 @@ const AccountingListRow = ({
 
 	return (
 		<li
-			key={index}
+			key={transaction.id.value}
 			onClick={() => {
 				if (selectionActive)
 					setSelection((prevSelection) =>
@@ -649,9 +262,13 @@ const AccountingListRow = ({
 					: "",
 			}}
 		>
-			{transaction.date}
 			<span className="first-row">
-				<div>{modifiedTransaction.name.toString()}</div>
+				<div>
+					<span style={{ fontSize: "0.7em" }}>
+						{modifiedTransaction.date.toPrettyFormatHour()}
+					</span>{" "}
+					{modifiedTransaction.name.toString()}
+				</div>
 				<div
 					style={{
 						color: modifiedTransaction.operation.isExpense()
@@ -671,60 +288,136 @@ const AccountingListRow = ({
 					).toString()}
 				</div>
 			</span>
-			<span className="second-row light-text">
+			<span
+				className="second-row light-text"
+				style={{ marginTop: "5px" }}
+			>
 				<div className="category">
-					<b>Category:</b>{" "}
-					{getCategoryByID(
-						modifiedTransaction.categoryID
-					)?.name.toString() ?? ""}
+					<div style={{ marginBottom: "3px" }}>
+						<b>Category:</b>{" "}
+						{getCategoryByID(
+							modifiedTransaction.categoryID
+						)?.name.toString() ?? ""}
+					</div>
+					<div>
+						<b>SubCategory:</b>{" "}
+						{
+							getSubCategoryByID(modifiedTransaction.subCategory)
+								?.name.value
+						}
+					</div>
 				</div>
-				<span>
-					{accounts
-						.find((acc) =>
-							acc.id.equalTo(
-								new AccountID(
-									isTransfer
-										? modifiedTransaction.toAccount
-												?.value ?? ""
-										: modifiedTransaction.account.value
-								)
-							)
-						)
-						?.name.toString() ?? ""}
-				</span>
-			</span>
-			<span className="second-row light-text">
-				<div className="category">
-					<b>SubCategory:</b>{" "}
-					{
-						getSubCategoryByID(modifiedTransaction.subCategory)
-							?.name.value
-					}
-				</div>
-				{
-					<span>
+				<div style={{ textAlign: "right" }}>
+					<div style={{ marginBottom: "3px" }}>
+						{getAccountByID(
+							modifiedTransaction.account
+						)?.name.toString() ?? ""}
+					</div>
+					<div>
+						{prevBalance.toString()} {"->"}{" "}
 						{accumulatedBalance.toString()}
-						{/* {new PriceValueObject(
-						transactionsGrouped.getBalance({
-							account: isTransfer
-								? modifiedRecord.toAccount
-								: modifiedRecord.account,
-							untilID: modifiedRecord.id,
-							dropLast: true,
-						})
-					).toString()}{" "}
-					{" -> "}
-					{new PriceValueObject(
-						transactionsGrouped.getBalance({
-							account: isTransfer
-								? modifiedRecord.toAccount
-								: modifiedRecord.account,
-							untilID: modifiedRecord.id,
-						})
-					).toString()} */}
-					</span>
-				}
+					</div>
+				</div>
 			</span>
 		</li>
+	);
+};
+
+const AccountingListRowGroup = ({
+	date,
+	transactionsWithBalance,
+	selectedTransaction,
+}: {
+	date: string;
+	transactionsWithBalance: {
+		transaction: Transaction;
+		balance: ReportBalance;
+		prevBalance: ReportBalance;
+	}[];
+	selectedTransaction?: Transaction;
+}) => {
+	const { getCategoryByID, getSubCategoryByID } = useCategories();
+	const { getAccountByID } = useAccounts();
+	return (
+		<div>
+			<div
+				style={{
+					paddingRight: "7px",
+					marginRight: "15px",
+					marginTop: "15px",
+					marginBottom: "7px",
+				}}
+			>
+				<b>{date}</b>
+			</div>
+			<ul className="accounting-list">
+				{transactionsWithBalance.map((transactionWithBalance) => {
+					const transaction = transactionWithBalance.transaction;
+					return (
+						<>
+							<AccountingListRow
+								setAction={() => {}}
+								transaction={transaction}
+								selection={[]}
+								selectionActive={false}
+								setSelection={() => {}}
+								setSelectedRecord={() => {}}
+								accumulatedBalance={
+									transactionWithBalance.balance
+								}
+								prevBalance={transactionWithBalance.prevBalance}
+							/>
+							{false &&
+								selectedTransaction?.id.equalTo(
+									transaction.id
+								) && (
+									<EditTransactionPanel
+										onUpdate={async () => {
+											// setAction("");
+											// updateTransactions();
+										}}
+										transaction={transaction}
+										category={
+											getCategoryByID(
+												transaction.categoryID
+											) ??
+											Category.fromPrimitives(
+												Category.emptyPrimitives()
+											)
+										}
+										subCategory={
+											getSubCategoryByID(
+												transaction.subCategory
+											) ??
+											Subcategory.fromPrimitives(
+												Subcategory.emptyPrimitives()
+											)
+										}
+										account={
+											getAccountByID(
+												transaction.account
+											) ??
+											Account.fromPrimitives(
+												Account.emptyPrimitives()
+											)
+										}
+										toAccount={
+											transaction.toAccount
+												? getAccountByID(
+														//@ts-ignore
+														transaction.toAccount
+												  ) ??
+												  Account.fromPrimitives(
+														Account.emptyPrimitives()
+												  )
+												: undefined
+										}
+									/>
+								)}
+						</>
+					);
+				})}
+			</ul>
+		</div>
 	);
 };

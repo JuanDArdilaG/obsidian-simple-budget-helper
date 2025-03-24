@@ -3,9 +3,11 @@ import { CategoriesContext } from "apps/obsidian-plugin/views/RightSidebarReactV
 import {
 	Category,
 	CategoryID,
+	CategoryName,
 	GetAllCategoriesWithSubCategoriesUseCaseOutput,
 	Subcategory,
 	SubcategoryID,
+	SubcategoryName,
 } from "contexts";
 import { Logger } from "contexts/Shared";
 
@@ -75,13 +77,23 @@ export const useCategories = () => {
 		[categories]
 	);
 
+	const getCategoryByName = useCallback(
+		(name: CategoryName) => {
+			const cat = categories.find((cat) => cat.name.equalTo(name));
+			return cat;
+		},
+		[categories]
+	);
+
 	const getSubCategoryByID = useCallback(
-		(id: SubcategoryID) =>
-			categoriesWithSubcategories
-				.map((catWithSubs) => catWithSubs.subCategories)
-				.flat()
-				.find((sub) => sub.id.equalTo(id)),
-		[categoriesWithSubcategories]
+		(id: SubcategoryID) => subCategories.find((sub) => sub.id.equalTo(id)),
+		[subCategories]
+	);
+
+	const getSubCategoryByName = useCallback(
+		(name: SubcategoryName) =>
+			subCategories.find((sub) => sub.name.equalTo(name)),
+		[subCategories]
 	);
 
 	return {
@@ -92,6 +104,8 @@ export const useCategories = () => {
 		updateCategories: () => setUpdateCategories(true),
 		updateSubCategories: () => setUpdateSubCategories(true),
 		getCategoryByID,
+		getCategoryByName,
 		getSubCategoryByID,
+		getSubCategoryByName,
 	};
 };

@@ -4,7 +4,6 @@ import {
 } from "../domain/reports-service.interface";
 import { CategoryName } from "../../Categories/domain/category-name.valueobject";
 import { SubcategoryName } from "../../Subcategories/domain/subcategory-name.valueobject";
-import { ReportBalance } from "../domain/report-balance.valueobject";
 import {
 	Transaction,
 	TransactionCriteria,
@@ -114,33 +113,5 @@ export class ReportsService implements IReportsService {
 		}
 
 		return new TransactionsReport(transactions).groupByDays();
-	}
-
-	async getTransactionsBalance(
-		criteria?: TransactionCriteria
-	): Promise<ReportBalance> {
-		const transactions = await this._transactionsRepository.findByCriteria(
-			criteria ?? new TransactionCriteria()
-		);
-		// const untilIDIndex = config?.untilID
-		// 	? this._history.findIndex((item) => item.id === config?.untilID)
-		// 	: -1;
-		// const untilID =
-		// 	untilIDIndex !== -1 ? untilIDIndex : this.history.length - 1;
-		return new ReportBalance(
-			transactions
-				// .slice(0, config?.dropLast ? untilID : untilID + 1)
-				.reduce((total, transaction) => {
-					return (
-						total +
-						transaction.amount.toNumber() *
-							(transaction.operation.isExpense()
-								? -1
-								: transaction.operation.isIncome()
-								? 1
-								: 0)
-					);
-				}, 0)
-		);
 	}
 }

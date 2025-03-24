@@ -23,15 +23,17 @@ export const useTransactions = ({
 	useEffect(() => {
 		if (updateTransactions) {
 			setUpdateTransactions(false);
-			getAllTransactions.execute().then((transactions) => {
-				Logger.debug("updating transactions", {
-					accountFilter,
-					categoryFilter,
-					subCategoryFilter,
-					transactions,
+			getAllTransactions
+				.execute({ accountFilter, categoryFilter, subCategoryFilter })
+				.then((transactions) => {
+					Logger.debug("updating transactions", {
+						accountFilter,
+						categoryFilter,
+						subCategoryFilter,
+						transactions,
+					});
+					setTransactions(transactions);
 				});
-				setTransactions(transactions);
-			});
 		}
 	}, [updateTransactions]);
 

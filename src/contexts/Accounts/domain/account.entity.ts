@@ -6,6 +6,8 @@ import {
 	AccountTypeType,
 } from "contexts/Accounts/domain";
 import { IEntity } from "contexts/Shared/domain";
+import { Logger } from "contexts/Shared/infrastructure/logger";
+import { Transaction } from "contexts/Transactions/domain";
 
 export class Account implements IEntity<AccountID, AccountPrimitives> {
 	constructor(
@@ -38,6 +40,32 @@ export class Account implements IEntity<AccountID, AccountPrimitives> {
 
 	get balance(): AccountBalance {
 		return this._balance;
+	}
+
+	adjustFromTransaction(transaction: Transaction) {
+		Logger.debug("AccountBalance: adjustFromTransaction", {
+			id: this._id.value,
+			type: this._type.value,
+			transaction: transaction.toPrimitives(),
+			balance: this._balance.valueOf(),
+		});
+		this._balance = new AccountBalance(
+			(this._balance.valueOf() +
+				(transaction.operation.isTransfer()
+					? (this._id.equalTo(transaction.account)
+							? -1
+							: (
+									transaction.toAccount
+										? this._id.equalTo(
+												transaction.toAccount
+										  )
+										: false
+							  )
+							? 1
+							: 0) * transaction.amount.valueOf()
+					: transaction.realAmount.valueOf())) *
+				(this._type.isAsset() ? 1 : -1)
+		);
 	}
 
 	toPrimitives(): AccountPrimitives {

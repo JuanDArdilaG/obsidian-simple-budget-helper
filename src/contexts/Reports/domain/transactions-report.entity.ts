@@ -38,6 +38,7 @@ export class TransactionsReport {
 	withAccumulatedBalance(): {
 		transaction: Transaction;
 		balance: ReportBalance;
+		prevBalance: ReportBalance;
 	}[] {
 		if (!this._transactions.length) return [];
 
@@ -49,6 +50,7 @@ export class TransactionsReport {
 				if (!accumulated[transaction.account.value])
 					accumulated[transaction.account.value] =
 						ReportBalance.zero();
+				const prevBalance = accumulated[transaction.account.value];
 				accumulated[transaction.account.value] = accumulated[
 					transaction.account.value
 				].plus(transaction.realAmount);
@@ -64,6 +66,7 @@ export class TransactionsReport {
 				return {
 					transaction,
 					balance: accumulated[transaction.account.value],
+					prevBalance,
 				};
 			})
 			.reverse();

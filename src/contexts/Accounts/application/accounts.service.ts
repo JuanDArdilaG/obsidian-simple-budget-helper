@@ -28,11 +28,7 @@ export class AccountsService {
 			: undefined;
 
 		Logger.debug("adjusting account", { ...account.toPrimitives() });
-		account.balance.adjustFromTransaction(
-			account.id,
-			account.type,
-			transaction
-		);
+		account.adjustFromTransaction(transaction);
 		Logger.debug("adjusting account adjusted", {
 			...account.toPrimitives(),
 		});
@@ -43,11 +39,7 @@ export class AccountsService {
 			Logger.debug("adjusting toAccount", {
 				...toAccount.toPrimitives(),
 			});
-			toAccount.balance.adjustFromTransaction(
-				toAccount.id,
-				account.type,
-				transaction
-			);
+			toAccount.adjustFromTransaction(transaction);
 			Logger.debug("adjusting toAccount adjusted", {
 				...toAccount.toPrimitives(),
 			});

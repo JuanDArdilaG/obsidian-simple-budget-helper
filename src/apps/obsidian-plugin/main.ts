@@ -1,19 +1,25 @@
 import { Plugin } from "obsidian";
+import Dexie from "dexie";
+import { exportDB, importDB } from "dexie-export-import";
 import { DEFAULT_SETTINGS, SimpleBudgetHelperSettings } from "./SettingTab";
 import { buildContainer } from "contexts/Shared/infrastructure/di/container";
 import { Logger } from "../../contexts/Shared/infrastructure/logger";
 import { LeftMenuItems, SettingTab, views } from "apps/obsidian-plugin";
 import { RightSidebarReactViewRoot } from "apps/obsidian-plugin/views";
+import { DexieDB } from "contexts";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
+	db: Dexie;
 
 	async onload() {
+		// await this.restoreDB();
 		await initStoragePersistence();
 		const storageQuota = await showEstimatedQuota();
 		Logger.debug("storage quota", { storageQuota });
 
 		const container = buildContainer();
+		this.db = (container.resolve("_db") as DexieDB).db;
 
 		await this.loadSettings();
 
@@ -33,20 +39,64 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		LeftMenuItems.RightSidebarPanel(this);
 	}
 
-	onunload() {
+	async onunload() {
+		Logger.debug("onunload");
 		persist();
+		// await this.saveDB();
+	}
+
+	async restoreDB() {
+		this.loadDB();
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign(
+		const data = Object.assign(
 			{},
-			DEFAULT_SETTINGS,
+			{ settings: DEFAULT_SETTINGS },
 			await this.loadData()
 		);
+		Logger.debug("loaded data", { data });
+		this.settings = data.settings;
+	}
+
+	async loadDB(): Promise<Dexie | undefined> {
+		const data = Object.assign(
+			{},
+			{ db: undefined },
+			await this.loadData()
+		);
+		Logger.debug("loaded data", { data });
+		if (!data.db) return;
+		const db = importDB(new Blob([data.db], { type: "text/plain" }));
+		Logger.debug("db loaded", { db });
+		return db;
 	}
 
 	async saveSettings() {
-		await this.saveData(this.settings);
+		const data = Object.assign(
+			{},
+			{ settings: DEFAULT_SETTINGS },
+			await this.loadData()
+		);
+		await this.saveData({
+			...data,
+			settings: this.settings,
+		});
+	}
+
+	async saveDB() {
+		const data = Object.assign(
+			{},
+			{ settings: DEFAULT_SETTINGS },
+			await this.loadData()
+		);
+		const blob = await exportDB(this.db);
+		const text = await blob.text();
+		Logger.debug("db blob", { blob, text });
+		await this.saveData({
+			...data,
+			db: text,
+		});
 	}
 }
 

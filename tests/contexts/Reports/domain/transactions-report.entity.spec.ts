@@ -12,9 +12,7 @@ describe("sortByDate", () => {
 				{ date: new Date(2024, 0, 15, 13) },
 			],
 		});
-		const report = new TransactionsReport(transactions);
-
-		report.sortByDate("asc");
+		const report = new TransactionsReport(transactions).sortedByDate("asc");
 
 		expect(report.transactions.length).toBe(4);
 		expect(report.transactions[0].date.valueOf().getTime()).toBe(
@@ -40,9 +38,9 @@ describe("sortByDate", () => {
 				{ date: new Date(2024, 0, 15, 13) },
 			],
 		});
-		const report = new TransactionsReport(transactions);
-
-		report.sortByDate("desc");
+		const report = new TransactionsReport(transactions).sortedByDate(
+			"desc"
+		);
 
 		expect(report.transactions.length).toBe(4);
 		expect(report.transactions[0].date.valueOf().getTime()).toBe(
