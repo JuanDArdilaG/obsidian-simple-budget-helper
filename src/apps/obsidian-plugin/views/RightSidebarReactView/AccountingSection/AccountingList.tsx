@@ -10,8 +10,6 @@ import {
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { Transaction } from "contexts/Transactions/domain";
-import { Category, CategoryID } from "contexts/Categories";
-import { SubCategory, SubCategoryID } from "contexts/Subcategories";
 import { ReportBalance } from "contexts";
 import { useAccountSelect } from "apps/obsidian-plugin/components";
 import { useCategorySelect } from "apps/obsidian-plugin/components/Select/CategorySelect";
@@ -38,16 +36,13 @@ export function AccountingList({
 	const { CategorySelect, category } = useCategorySelect({});
 	const { SubCategorySelect, subCategory } = useSubCategorySelect({});
 
-	const { getCategoryByID, getSubCategoryByID } =
-		useContext(CategoriesContext);
-
 	useEffect(() => {
 		setFilters([account?.id, category?.id, subCategory?.id]);
 	}, [account, category, subCategory]);
 
 	const withAccumulatedBalanceTransactionsGrouped = useMemo(() => {
 		const res: [
-			string,
+			date: string,
 			{
 				transaction: Transaction;
 				balance: ReportBalance;
@@ -136,8 +131,6 @@ export function AccountingList({
 						date={date}
 						transactionsWithBalance={withBalanceTransactions}
 						selectedTransaction={selectedTransaction}
-						getCategoryByID={getCategoryByID}
-						getSubCategoryByID={getSubCategoryByID}
 						selection={selection}
 						setSelection={setSelection}
 						setSelectedTransaction={setSelectedTransaction}
@@ -155,8 +148,6 @@ const AccountingListRow = ({
 	setSelection,
 	setSelectedTransaction,
 	setAction,
-	getCategoryByID,
-	getSubCategoryByID,
 }: {
 	transactionWithBalance: {
 		transaction: Transaction;
@@ -168,11 +159,11 @@ const AccountingListRow = ({
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
 	setSelectedTransaction: React.Dispatch<React.SetStateAction<Transaction>>;
 	setAction: React.Dispatch<React.SetStateAction<string>>;
-	getCategoryByID: (id: CategoryID) => Category | undefined;
-	getSubCategoryByID: (id: SubCategoryID) => SubCategory | undefined;
 }) => {
 	const logger = useLogger("AccountingListRow");
 	const { getAccountByID } = useContext(AccountsContext);
+	const { getCategoryByID, getSubCategoryByID } =
+		useContext(CategoriesContext);
 	const account = useMemo(
 		() =>
 			getAccountByID(
@@ -278,8 +269,6 @@ const AccountingListRowGroup = ({
 	date,
 	transactionsWithBalance,
 	selectedTransaction,
-	getCategoryByID,
-	getSubCategoryByID,
 	selection,
 	setSelection,
 	setSelectedTransaction,
@@ -291,8 +280,6 @@ const AccountingListRowGroup = ({
 		prevBalance: ReportBalance;
 	}[];
 	selectedTransaction?: Transaction;
-	getCategoryByID: (id: CategoryID) => Category | undefined;
-	getSubCategoryByID: (id: SubCategoryID) => SubCategory | undefined;
 	selection: Transaction[];
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
 	setSelectedTransaction: React.Dispatch<React.SetStateAction<Transaction>>;
@@ -336,8 +323,6 @@ const AccountingListRowGroup = ({
 							selectionActive={true}
 							setSelection={setSelection}
 							setSelectedTransaction={setSelectedTransaction}
-							getCategoryByID={getCategoryByID}
-							getSubCategoryByID={getSubCategoryByID}
 						/>
 					);
 				})}

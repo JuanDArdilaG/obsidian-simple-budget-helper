@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useLogger } from "./useLogger";
 import {
 	Category,
 	CategoryID,
@@ -9,7 +10,6 @@ import {
 	SubCategoryID,
 	SubCategoryName,
 } from "contexts";
-import { useLogger } from "./useLogger";
 
 export const useCategories = ({
 	getAllCategoriesWithSubCategories,

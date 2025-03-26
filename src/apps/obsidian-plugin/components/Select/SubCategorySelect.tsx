@@ -6,17 +6,20 @@ import {
 	SubCategoryID,
 	SubCategoryName,
 } from "contexts/Subcategories";
+import { Category } from "contexts";
 
 export const useSubCategorySelect = ({
 	label,
 	initialValueName,
 	initialValueID,
+	category,
 	lock,
 	setLock,
 }: {
 	label?: string;
 	initialValueName?: SubCategoryName;
 	initialValueID?: SubCategoryID;
+	category?: Category;
 	lock?: boolean;
 	setLock?: (lock: boolean) => void;
 }) => {
@@ -25,9 +28,14 @@ export const useSubCategorySelect = ({
 	);
 	const [subCategory, setSubCategory] = useState<SubCategory>();
 
-	const { subCategories, getSubCategoryByID } = useContext(CategoriesContext);
+	const { subCategories, getSubCategoriesByCategory, getSubCategoryByID } =
+		useContext(CategoriesContext);
+
 	const subCategoriesNames = useMemo(
-		() => subCategories.map((acc) => acc.name.value).sort(),
+		() =>
+			(category ? getSubCategoriesByCategory(category) : subCategories)
+				.map((acc) => acc.name.value)
+				.sort(),
 		[subCategories]
 	);
 

@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useCallback } from "react";
 import { AwilixContainer } from "awilix";
 import {
 	Category,
@@ -29,6 +29,7 @@ export type CategoriesContextType = {
 	getSubCategoryByID: (id: SubCategoryID) => SubCategory | undefined;
 	getCategoryByName: (name: CategoryName) => Category | undefined;
 	getSubCategoryByName: (name: SubCategoryName) => SubCategory | undefined;
+	getSubCategoriesByCategory: (category: Category) => SubCategory[];
 };
 
 export const CategoriesContext = createContext<CategoriesContextType>({
@@ -45,6 +46,7 @@ export const CategoriesContext = createContext<CategoriesContextType>({
 	getSubCategoryByID: () => undefined,
 	getCategoryByName: () => undefined,
 	getSubCategoryByName: () => undefined,
+	getSubCategoriesByCategory: () => [],
 });
 
 export const getCategoriesContextDefault = (
@@ -66,6 +68,16 @@ export const getCategoriesContextDefault = (
 		getSubCategoryByName,
 	} = useCategories({ getAllCategoriesWithSubCategories });
 
+	const getSubCategoriesByCategory = useCallback(
+		(category: Category) =>
+			category
+				? categoriesWithSubcategories.find((catWithSubs) =>
+						catWithSubs.category.name.equalTo(category.name)
+				  )?.subCategories ?? []
+				: [],
+		[categoriesWithSubcategories]
+	);
+
 	return {
 		useCases: {
 			createCategory,
@@ -79,5 +91,6 @@ export const getCategoriesContextDefault = (
 		getSubCategoryByID,
 		getCategoryByName,
 		getSubCategoryByName,
+		getSubCategoriesByCategory,
 	};
 };
