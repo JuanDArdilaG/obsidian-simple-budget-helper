@@ -1,22 +1,20 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useState } from "react";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import {
 	ItemName,
 	RecurrentItem,
 	RecurrentItemNextDate,
 } from "contexts/Items/domain";
-import {
-	AccountsContext,
-	CategoriesContext,
-	ItemsContext,
-} from "apps/obsidian-plugin/views";
+import { ItemsContext } from "apps/obsidian-plugin/views";
 import {
 	Input,
 	Select,
 	SelectWithCreation,
+	useAccountSelect,
 } from "apps/obsidian-plugin/components";
 import { OperationType } from "contexts/Shared/domain";
-import { AccountName, CategoryName, SubCategoryName } from "contexts";
+import { useCategorySelect } from "apps/obsidian-plugin/components/Select/CategorySelect";
+import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/SubCategorySelect";
 
 export const EditRecurrentItemPanel = ({
 	item,
@@ -31,52 +29,19 @@ export const EditRecurrentItemPanel = ({
 		useCases: { updateItem },
 	} = useContext(ItemsContext);
 	const { brands, stores } = useContext(ItemsContext);
-	const {
-		categoriesWithSubcategories,
-		categories,
-		getCategoryByID,
-		getSubCategoryByID,
-		getCategoryByName,
-		getSubCategoryByName,
-	} = useContext(CategoriesContext);
 
-	const { accounts, getAccountByID, getAccountByName } =
-		useContext(AccountsContext);
-	const accountNames = useMemo(
-		() => accounts.map((acc) => acc.name.value).sort(),
-		[accounts]
-	);
-
-	const [category, setCategory] = useState(
-		getCategoryByID(item.category)?.name.value ?? ""
-	);
-	const subCategories = useMemo(
-		() =>
-			categoriesWithSubcategories.find(
-				(catWithSubs) => catWithSubs.category.name.value === category
-			)?.subCategories ?? [],
-		[category]
-	);
+	const { AccountSelect, account } = useAccountSelect({ label: "From" });
+	const { AccountSelect: ToAccountSelect, account: toAccount } =
+		useAccountSelect({ label: "From" });
+	const { CategorySelect, category } = useCategorySelect({});
+	const { SubCategorySelect, subCategory } = useSubCategorySelect({});
 
 	const [name, setName] = useState(item.name.value);
 	const [amount, setAmount] = useState(item.price);
 	const [type, setType] = useState(item.operation.value);
 
-	const [subCategory, setSubCategory] = useState(
-		getSubCategoryByID(item.subCategory)?.name.value ?? ""
-	);
-
 	const [brand, setBrand] = useState(item.brand?.value);
 	const [store, setStore] = useState(item.store?.value);
-
-	const [account, setAccount] = useState(
-		getAccountByID(item.account)?.name.value ?? ""
-	);
-
-	const [toAccount, setToAccount] = useState(
-		item.toAccount ? getAccountByID(item.toAccount)?.name.value : undefined
-	);
-
 	const [frequency, setFrequency] = useState(item.frequency.value);
 
 	const [date, setDate] = useState(item.nextDate.valueOf());
@@ -112,52 +77,10 @@ export const EditRecurrentItemPanel = ({
 					setType(type.toLowerCase() as OperationType)
 				}
 			/>
-			<Select
-				id="account"
-				label="From"
-				value={account}
-				values={["", ...accountNames]}
-				onChange={(account) => setAccount(account ?? "")}
-				error={
-					!validation || validation.account ? undefined : "required"
-				}
-			/>
-			{type === "transfer" && (
-				<Select
-					id="toAccount"
-					label="To"
-					value={toAccount ?? ""}
-					values={["", ...accountNames]}
-					onChange={(account) => setToAccount(account)}
-					error={
-						!validation || validation.account
-							? undefined
-							: "required"
-					}
-				/>
-			)}
-			<SelectWithCreation
-				id="category"
-				label="Category"
-				item={category}
-				items={categories.map((cat) => cat.name.value).sort()}
-				onChange={(category) => setCategory(category ?? "")}
-				error={
-					!validation || validation.category ? undefined : "required"
-				}
-			/>
-			<SelectWithCreation
-				id="subcategory"
-				label="SubCategory"
-				item={subCategory}
-				items={subCategories.map((sub) => sub.name.value).sort()}
-				onChange={(sub) => setSubCategory(sub ?? "")}
-				error={
-					!validation || validation.subCategory
-						? undefined
-						: "required"
-				}
-			/>
+			{AccountSelect}
+			{ToAccountSelect}
+			{CategorySelect}
+			{type === "transfer" ? SubCategorySelect : undefined}
 			<Input<Date>
 				id="date"
 				label="Date"
@@ -198,16 +121,11 @@ export const EditRecurrentItemPanel = ({
 
 					item.update({
 						name: new ItemName(name),
-						account: getAccountByName(new AccountName(account))?.id,
-						toAccount: toAccount
-							? getAccountByName(new AccountName(toAccount))?.id
-							: undefined,
+						account: account?.id,
+						toAccount: toAccount?.id,
 						amount,
-						category: getCategoryByName(new CategoryName(category))
-							?.id,
-						subCategory: getSubCategoryByName(
-							new SubCategoryName(subCategory)
-						)?.id,
+						category: category?.id,
+						subCategory: subCategory?.id,
 						nextDate: new RecurrentItemNextDate(date),
 					});
 
