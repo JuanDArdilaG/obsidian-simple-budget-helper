@@ -1,11 +1,11 @@
 import { CategoryID } from "contexts/Categories/domain";
-import { SubcategoryName } from "./subcategory-name.valueobject";
-import { Subcategory } from "./subcategory.entity";
+import { SubCategoryName } from "./subcategory-name.valueobject";
+import { SubCategory } from "./subcategory.entity";
 
 export interface ISubCategoriesService {
-	create(subCategory: Subcategory): Promise<void>;
+	create(subCategory: SubCategory): Promise<void>;
 	getByNameWithCreation(
 		categoryID: CategoryID,
-		name: SubcategoryName
-	): Promise<Subcategory>;
+		name: SubCategoryName
+	): Promise<SubCategory>;
 }

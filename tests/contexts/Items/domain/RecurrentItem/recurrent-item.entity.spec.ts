@@ -8,7 +8,7 @@ import { RecurrentItemNextDate } from "../../../../../src/contexts/Items/domain/
 import { RecurrrentItemFrequency } from "../../../../../src/contexts/Items/domain/RecurrentItem/recurrent-item-frequency.valueobject";
 import { AccountID } from "../../../../../src/contexts/Accounts/domain/account-id.valueobject";
 import { CategoryID } from "../../../../../src/contexts/Categories/domain/category-id.valueobject";
-import { SubcategoryID } from "../../../../../src/contexts/Subcategories/domain/subcategory-id.valueobject";
+import { SubCategoryID } from "../../../../../src/contexts/Subcategories/domain/subcategory-id.valueobject";
 
 describe("remainingDays", () => {
 	it("should calculate remaining future 7 days correctly", () => {
@@ -22,7 +22,7 @@ describe("remainingDays", () => {
 			new ItemName("test"),
 			new ItemPrice(100),
 			CategoryID.generate(),
-			SubcategoryID.generate(),
+			SubCategoryID.generate(),
 			AccountID.generate(),
 			itemDate,
 			new RecurrrentItemFrequency("1w")
@@ -45,7 +45,7 @@ describe("remainingDays", () => {
 			new ItemName("test"),
 			new ItemPrice(100),
 			CategoryID.generate(),
-			SubcategoryID.generate(),
+			SubCategoryID.generate(),
 			AccountID.generate(),
 			itemDate,
 			new RecurrrentItemFrequency("1w")
@@ -68,7 +68,7 @@ describe("remainingDays", () => {
 			new ItemName("test"),
 			new ItemPrice(100),
 			CategoryID.generate(),
-			SubcategoryID.generate(),
+			SubCategoryID.generate(),
 			AccountID.generate(),
 			itemDate,
 			new RecurrrentItemFrequency("1w")
@@ -91,7 +91,7 @@ describe("remainingDays", () => {
 			new ItemName("test"),
 			new ItemPrice(100),
 			CategoryID.generate(),
-			SubcategoryID.generate(),
+			SubCategoryID.generate(),
 			AccountID.generate(),
 			itemDate,
 			new RecurrrentItemFrequency("1w")
@@ -112,14 +112,13 @@ describe("createRecurretItemsBetweenDates", () => {
 			new ItemName("name"),
 			new ItemPrice(300),
 			CategoryID.generate(),
-			SubcategoryID.generate(),
+			SubCategoryID.generate(),
 			AccountID.generate(),
 			RecurrentItemNextDate.now(),
 			new RecurrrentItemFrequency("2d")
 		);
 
-		const items = recurrentItem.createRecurretItemsBetweenDates(
-			RecurrentItemNextDate.now(),
+		const items = recurrentItem.createRecurretItemsUntilDate(
 			RecurrentItemNextDate.now().addDays(7)
 		);
 

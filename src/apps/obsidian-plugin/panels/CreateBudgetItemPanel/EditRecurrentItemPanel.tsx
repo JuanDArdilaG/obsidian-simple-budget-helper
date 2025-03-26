@@ -1,50 +1,81 @@
 import { useContext, useMemo, useState } from "react";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { RecurrentItem } from "contexts/Items/domain";
-import { AppContext } from "apps/obsidian-plugin/views";
+import {
+	ItemName,
+	RecurrentItem,
+	RecurrentItemNextDate,
+} from "contexts/Items/domain";
+import {
+	AccountsContext,
+	CategoriesContext,
+	ItemsContext,
+} from "apps/obsidian-plugin/views";
 import {
 	Input,
 	Select,
 	SelectWithCreation,
 } from "apps/obsidian-plugin/components";
 import { OperationType } from "contexts/Shared/domain";
+import { AccountName, CategoryName, SubCategoryName } from "contexts";
 
-export const EditBudgetItemRecurrentPanel = ({
+export const EditRecurrentItemPanel = ({
 	item,
-	onEdit,
 	onClose,
+	setUpdateItems,
 }: {
 	item: RecurrentItem;
-	onEdit: (item: RecurrentItem) => Promise<void>;
 	onClose: () => void;
+	setUpdateItems: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
+	const {
+		useCases: { updateItem },
+	} = useContext(ItemsContext);
+	const { brands, stores } = useContext(ItemsContext);
 	const {
 		categoriesWithSubcategories,
 		categories,
-		accounts,
-		brands,
-		stores,
-	} = useContext(AppContext);
+		getCategoryByID,
+		getSubCategoryByID,
+		getCategoryByName,
+		getSubCategoryByName,
+	} = useContext(CategoriesContext);
 
-	const [category, setCategory] = useState(item.category.value);
+	const { accounts, getAccountByID, getAccountByName } =
+		useContext(AccountsContext);
+	const accountNames = useMemo(
+		() => accounts.map((acc) => acc.name.value).sort(),
+		[accounts]
+	);
+
+	const [category, setCategory] = useState(
+		getCategoryByID(item.category)?.name.value ?? ""
+	);
 	const subCategories = useMemo(
 		() =>
 			categoriesWithSubcategories.find(
-				(catWithSubs) => catWithSubs.category.id.value === category
+				(catWithSubs) => catWithSubs.category.name.value === category
 			)?.subCategories ?? [],
 		[category]
 	);
 
 	const [name, setName] = useState(item.name.value);
-	const [amount, setAmount] = useState(item.amount);
+	const [amount, setAmount] = useState(item.price);
 	const [type, setType] = useState(item.operation.value);
 
-	const [subCategory, setSubCategory] = useState(item.subCategory.value);
+	const [subCategory, setSubCategory] = useState(
+		getSubCategoryByID(item.subCategory)?.name.value ?? ""
+	);
 
 	const [brand, setBrand] = useState(item.brand?.value);
 	const [store, setStore] = useState(item.store?.value);
 
-	const [account, setAccount] = useState(item.account.value);
+	const [account, setAccount] = useState(
+		getAccountByID(item.account)?.name.value ?? ""
+	);
+
+	const [toAccount, setToAccount] = useState(
+		item.toAccount ? getAccountByID(item.toAccount)?.name.value : undefined
+	);
 
 	const [frequency, setFrequency] = useState(item.frequency.value);
 
@@ -76,30 +107,40 @@ export const EditBudgetItemRecurrentPanel = ({
 				id="type"
 				label="Type"
 				value={type}
-				values={{
-					expense: "Expense",
-					transfer: "Transfer",
-					income: "Income",
-				}}
+				values={["expense", "income", "transfer"]}
 				onChange={(type) =>
 					setType(type.toLowerCase() as OperationType)
 				}
 			/>
-			<SelectWithCreation
+			<Select
 				id="account"
 				label="From"
-				item={account}
-				items={accounts.map((acc) => acc.name.value)}
+				value={account}
+				values={["", ...accountNames]}
 				onChange={(account) => setAccount(account ?? "")}
 				error={
 					!validation || validation.account ? undefined : "required"
 				}
 			/>
+			{type === "transfer" && (
+				<Select
+					id="toAccount"
+					label="To"
+					value={toAccount ?? ""}
+					values={["", ...accountNames]}
+					onChange={(account) => setToAccount(account)}
+					error={
+						!validation || validation.account
+							? undefined
+							: "required"
+					}
+				/>
+			)}
 			<SelectWithCreation
 				id="category"
 				label="Category"
 				item={category}
-				items={categories.map((cat) => cat.name.value)}
+				items={categories.map((cat) => cat.name.value).sort()}
 				onChange={(category) => setCategory(category ?? "")}
 				error={
 					!validation || validation.category ? undefined : "required"
@@ -109,7 +150,7 @@ export const EditBudgetItemRecurrentPanel = ({
 				id="subcategory"
 				label="SubCategory"
 				item={subCategory}
-				items={subCategories.map((sub) => sub.name.value)}
+				items={subCategories.map((sub) => sub.name.value).sort()}
 				onChange={(sub) => setSubCategory(sub ?? "")}
 				error={
 					!validation || validation.subCategory
@@ -138,18 +179,40 @@ export const EditBudgetItemRecurrentPanel = ({
 				items={stores.map((s) => s.value)}
 				onChange={setStore}
 			/>
-			<Input
-				id="frequency"
-				label="Frequency"
-				value={frequency}
-				onChange={(freq) => setFrequency(freq ?? "")}
-				error={
-					!validation || validation.frequency ? undefined : "required"
-				}
-			/>
+			{type === "transfer" && (
+				<Input
+					id="frequency"
+					label="Frequency"
+					value={frequency}
+					onChange={(freq) => setFrequency(freq ?? "")}
+					error={
+						!validation || validation.frequency
+							? undefined
+							: "required"
+					}
+				/>
+			)}
 			<button
 				onClick={async () => {
 					date.setSeconds(0);
+
+					item.update({
+						name: new ItemName(name),
+						account: getAccountByName(new AccountName(account))?.id,
+						toAccount: toAccount
+							? getAccountByName(new AccountName(toAccount))?.id
+							: undefined,
+						amount,
+						category: getCategoryByName(new CategoryName(category))
+							?.id,
+						subCategory: getSubCategoryByName(
+							new SubCategoryName(subCategory)
+						)?.id,
+						nextDate: new RecurrentItemNextDate(date),
+					});
+
+					await updateItem.execute(item);
+					setUpdateItems(true);
 
 					onClose();
 				}}

@@ -1,21 +1,22 @@
-import { useState, useEffect, useContext, useCallback } from "react";
-import { CategoriesContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import { useState, useEffect, useCallback } from "react";
 import {
 	Category,
 	CategoryID,
 	CategoryName,
+	GetAllCategoriesWithSubCategoriesUseCase,
 	GetAllCategoriesWithSubCategoriesUseCaseOutput,
-	Subcategory,
-	SubcategoryID,
-	SubcategoryName,
+	SubCategory,
+	SubCategoryID,
+	SubCategoryName,
 } from "contexts";
 import { useLogger } from "./useLogger";
 
-export const useCategories = () => {
+export const useCategories = ({
+	getAllCategoriesWithSubCategories,
+}: {
+	getAllCategoriesWithSubCategories: GetAllCategoriesWithSubCategoriesUseCase;
+}) => {
 	const logger = useLogger("useCategories");
-	const {
-		useCases: { getAllCategoriesWithSubCategories },
-	} = useContext(CategoriesContext);
 
 	const [categoriesWithSubcategories, setCategoriesWithSubcategories] =
 		useState<GetAllCategoriesWithSubCategoriesUseCaseOutput>([]);
@@ -52,7 +53,7 @@ export const useCategories = () => {
 		}
 	}, [updateCategories]);
 
-	const [subCategories, setSubCategories] = useState<Subcategory[]>([]);
+	const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
 	const [updateSubCategories, setUpdateSubCategories] = useState(true);
 	useEffect(() => {
 		if (updateSubCategories) {
@@ -91,12 +92,12 @@ export const useCategories = () => {
 	);
 
 	const getSubCategoryByID = useCallback(
-		(id: SubcategoryID) => subCategories.find((sub) => sub.id.equalTo(id)),
+		(id: SubCategoryID) => subCategories.find((sub) => sub.id.equalTo(id)),
 		[subCategories]
 	);
 
 	const getSubCategoryByName = useCallback(
-		(name: SubcategoryName) =>
+		(name: SubCategoryName) =>
 			subCategories.find((sub) => sub.name.equalTo(name)),
 		[subCategories]
 	);

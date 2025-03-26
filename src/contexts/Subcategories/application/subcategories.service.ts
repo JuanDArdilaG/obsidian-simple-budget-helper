@@ -1,7 +1,7 @@
 import { InvalidArgumentError } from "contexts/Shared/domain/errors";
 import {
-	Subcategory,
-	SubcategoryName,
+	SubCategory,
+	SubCategoryName,
 	ISubCategoriesRepository,
 	ISubCategoriesService,
 } from "../domain";
@@ -10,7 +10,7 @@ import { CategoryID } from "contexts/Categories/domain/category-id.valueobject";
 export class SubCategoriesService implements ISubCategoriesService {
 	constructor(private _subCategoriesRepository: ISubCategoriesRepository) {}
 
-	async create(subCategory: Subcategory): Promise<void> {
+	async create(subCategory: SubCategory): Promise<void> {
 		const existingSubcategory =
 			await this._subCategoriesRepository.findByName(subCategory.name);
 		if (existingSubcategory)
@@ -24,13 +24,13 @@ export class SubCategoriesService implements ISubCategoriesService {
 
 	async getByNameWithCreation(
 		categoryID: CategoryID,
-		name: SubcategoryName
-	): Promise<Subcategory> {
+		name: SubCategoryName
+	): Promise<SubCategory> {
 		const existingSubcategory =
 			await this._subCategoriesRepository.findByName(name);
 		if (existingSubcategory) return existingSubcategory;
 
-		const subCategory = Subcategory.create(categoryID, name);
+		const subCategory = SubCategory.create(categoryID, name);
 		await this._subCategoriesRepository.persist(subCategory);
 
 		return subCategory;

@@ -1,6 +1,12 @@
 import { SectionButton } from "apps/obsidian-plugin/components";
 
-export type CalendarTimeframe = "month" | "2weeks" | "week" | "3days";
+export type CalendarTimeframe =
+	| "year"
+	| "3months"
+	| "month"
+	| "2weeks"
+	| "week"
+	| "3days";
 
 export const TimeframeButtons = ({
 	selected,
@@ -34,6 +40,18 @@ export const TimeframeButtons = ({
 				label="1mo"
 				selected={selected}
 				onClick={() => setSelected("month")}
+			/>
+			<SectionButton
+				type="3months"
+				label="3mo"
+				selected={selected}
+				onClick={() => setSelected("3months")}
+			/>
+			<SectionButton
+				type="year"
+				label="1y"
+				selected={selected}
+				onClick={() => setSelected("year")}
 			/>
 		</div>
 	);

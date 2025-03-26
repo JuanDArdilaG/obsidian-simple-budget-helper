@@ -1,4 +1,4 @@
-import { createContext } from "react";
+import { createContext, useMemo } from "react";
 import { AwilixContainer } from "awilix";
 import {
 	RecordTransactionUseCase,
@@ -6,8 +6,15 @@ import {
 	AdjustAccountUseCase,
 	UpdateTransactionUseCase,
 	GetAllTransactionsUseCase,
+	Transaction,
 } from "contexts/Transactions";
-import { GetAllTransactionsGroupedByDaysUseCase } from "contexts/Reports";
+import {
+	GetAllTransactionsGroupedByDaysUseCase,
+	GetAllTransactionsGroupedByDaysUseCaseInput,
+	TransactionsReport,
+} from "contexts/Reports";
+import { useTransactions } from "apps/obsidian-plugin/hooks";
+import { AccountID, CategoryID, SubCategoryID } from "contexts";
 
 export type TransactionsContextType = {
 	useCases: {
@@ -18,6 +25,21 @@ export type TransactionsContextType = {
 		getAllTransactionsGroupedByDays: GetAllTransactionsGroupedByDaysUseCase;
 		adjustAccount: AdjustAccountUseCase;
 	};
+	transactions: Transaction[];
+	transactionsReport: TransactionsReport;
+	updateTransactions: () => void;
+	filteredTransactions: Transaction[];
+	setFilters: React.Dispatch<
+		React.SetStateAction<
+			[
+				account?: AccountID | undefined,
+				category?: CategoryID | undefined,
+				subCategory?: SubCategoryID | undefined
+			]
+		>
+	>;
+	filteredTransactionsReport: TransactionsReport;
+	updateFilteredTransactions: () => void;
 };
 
 export const TransactionsContext = createContext<TransactionsContextType>({
@@ -30,6 +52,13 @@ export const TransactionsContext = createContext<TransactionsContextType>({
 			{} as GetAllTransactionsGroupedByDaysUseCase,
 		adjustAccount: {} as AdjustAccountUseCase,
 	},
+	transactions: [],
+	updateTransactions: () => {},
+	transactionsReport: {} as TransactionsReport,
+	filteredTransactions: [],
+	setFilters: () => {},
+	filteredTransactionsReport: {} as TransactionsReport,
+	updateFilteredTransactions: () => {},
 });
 
 export const getTransactionsContextValues = (
@@ -52,6 +81,26 @@ export const getTransactionsContextValues = (
 		"updateTransactionUseCase"
 	);
 
+	const {
+		transactions,
+		updateTransactions,
+		filteredTransactions,
+		setFilters,
+		updateFilteredTransactions,
+	} = useTransactions({
+		getAllTransactions,
+	});
+
+	const transactionsReport = useMemo(
+		() => new TransactionsReport(transactions),
+		[transactions]
+	);
+
+	const filteredTransactionsReport = useMemo(
+		() => new TransactionsReport(filteredTransactions),
+		[filteredTransactions]
+	);
+
 	return {
 		useCases: {
 			recordTransaction,
@@ -61,5 +110,12 @@ export const getTransactionsContextValues = (
 			getAllTransactions,
 			getAllTransactionsGroupedByDays,
 		},
+		transactions,
+		transactionsReport,
+		updateTransactions,
+		filteredTransactions,
+		setFilters,
+		filteredTransactionsReport,
+		updateFilteredTransactions,
 	};
 };

@@ -2,3 +2,4 @@
 
 export * from './CreateAccountPanel';
 export * from './CreateBudgetItemPanel';
+export * from './RecordRecurrentItemPanel';

@@ -1,45 +1,21 @@
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
-import { BudgetItemsList } from "../BudgetItemsList";
+import { RecurrentItemsList } from "../RecurrentItemsList";
 import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
-import { App } from "obsidian";
 import { BudgetItemsListContextMenu } from "../BudgetItemsListContextMenu";
 import { RecurrentItem } from "contexts/Items";
 
-export const CalendarRightSidebarReactTab = ({
-	onRecord,
-	app,
-}: {
-	onRecord: (item: RecurrentItem) => void;
-	app: App;
-}) => {
+export const CalendarRightSidebarReactTab = ({}: {}) => {
 	const [timeframe, setTimeframe] = useState<CalendarTimeframe>("3days");
-	// const [budgetItems, setBudgetItems] = useState<
-	// 	{ item: BudgetItemRecurrent; dates: Date[] }[]
-	// >([]);
 
 	const [selectedItem, setSelectedItem] = useState<RecurrentItem>();
-	const [editionIsActive, setEditionIsActive] = useState(false);
-
-	// useEffect(() => {
-	// 	setBudgetItems(
-	// 		budget.getNDaysItems(
-	// 			timeframe === "month"
-	// 				? 30
-	// 				: timeframe === "2weeks"
-	// 				? 14
-	// 				: timeframe === "week"
-	// 				? 7
-	// 				: 3
-	// 		)
-	// 	);
-	// }, [budget, timeframe]);
+	const [action, setAction] = useState<"edit" | "record">();
 
 	return (
 		<>
 			{selectedItem && (
 				<BudgetItemsListContextMenu
-					setEditionIsActive={setEditionIsActive}
+					setAction={setAction}
 					item={selectedItem}
 				/>
 			)}
@@ -59,9 +35,12 @@ export const CalendarRightSidebarReactTab = ({
 					selected={timeframe}
 					setSelected={setTimeframe}
 				/>
-				<BudgetItemsList
-					editionIsActive={editionIsActive}
-					setEditionIsActive={setEditionIsActive}
+				<RecurrentItemsList
+					timeframe={timeframe}
+					selectedItem={selectedItem}
+					setSelectedItem={setSelectedItem}
+					action={action}
+					setAction={setAction}
 				/>
 			</RightSidebarReactTab>
 		</>

@@ -1,5 +1,5 @@
+import { LockField } from "apps/obsidian-plugin/components";
 import { JSX, useEffect, useState } from "react";
-import { LockField } from "./LockField";
 
 export const Select = <T extends string | number>({
 	id,
@@ -31,20 +31,20 @@ export const Select = <T extends string | number>({
 				  ))
 				: Object.keys(values).map(
 						(key) => (
-							<option key={value} value={key}>
+							<option key={key} value={key}>
 								{values[key]}
 							</option>
 						),
 						[]
 				  )
 		);
-	}, [values, value]);
+	}, [values]);
 
 	return (
 		<div style={{ display: "flex", flexDirection: "column" }}>
 			<label htmlFor={`${id}-input`}>{label}</label>
 			<select
-				defaultValue={value}
+				value={value}
 				onChange={(e) =>
 					onChange(
 						(typeof value === "string"

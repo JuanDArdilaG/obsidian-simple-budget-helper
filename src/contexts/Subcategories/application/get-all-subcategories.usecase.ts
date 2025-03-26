@@ -1,8 +1,8 @@
 import { QueryUseCase } from "contexts/Shared/domain/query-use-case.interface";
 import { ISubCategoriesRepository } from "../domain/subcategories-repository.interface";
-import { Subcategory } from "contexts/Subcategories/domain";
+import { SubCategory } from "contexts/Subcategories/domain";
 
-export type GetAllSubcategoriesUseCaseOutput = Subcategory[];
+export type GetAllSubcategoriesUseCaseOutput = SubCategory[];
 
 export class GetAllSubcategoriesUseCase
 	implements QueryUseCase<void, GetAllSubcategoriesUseCaseOutput>

@@ -1,23 +1,21 @@
-import {
-	DEFAULT_SETTINGS,
-	SimpleBudgetHelperSettings,
-} from "apps/obsidian-plugin";
+import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
 import { AwilixContainer } from "awilix";
 import { createContext } from "react";
 
 export type AppContextType = {
-	settings: SimpleBudgetHelperSettings;
+	plugin: SimpleBudgetHelperPlugin;
 	container: AwilixContainer;
 };
 
-export const AppContext = createContext({
-	settings: DEFAULT_SETTINGS,
+export const AppContext = createContext<AppContextType>({
+	plugin: {} as SimpleBudgetHelperPlugin,
 	container: {} as AwilixContainer,
 });
 
 export const getAppContextDefault = (
-	container: AwilixContainer
+	container: AwilixContainer,
+	plugin: SimpleBudgetHelperPlugin
 ): AppContextType => ({
-	settings: DEFAULT_SETTINGS,
+	plugin,
 	container,
 });

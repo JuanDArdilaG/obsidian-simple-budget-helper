@@ -1,7 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { Checkbox, FormControlLabel } from "@mui/material";
-import { SelectWithCreation } from "apps/obsidian-plugin/components/SelectWithCreation";
 import {
 	Item,
 	ItemID,
@@ -11,16 +10,15 @@ import {
 } from "contexts/Items/domain";
 import { Input } from "apps/obsidian-plugin/components/Input";
 import {
+	AccountsContext,
 	CategoriesContext,
 	ItemsContext,
+	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import {
-	useAccounts,
-	useCategories,
-	useItems,
-	useTransactions,
-} from "apps/obsidian-plugin/hooks";
-import { Select } from "apps/obsidian-plugin/components";
+	Select,
+	SelectWithCreation,
+} from "apps/obsidian-plugin/components/Select";
 import {
 	AccountID,
 	AccountName,
@@ -28,12 +26,14 @@ import {
 	CategoryID,
 	CategoryName,
 	OperationType,
-	Subcategory,
-	SubcategoryID,
-	SubcategoryName,
+	SubCategory,
+	SubCategoryID,
+	SubCategoryName,
 	TransactionDate,
 } from "contexts";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
+import { RecurrentItem } from "../../../../contexts/Items/domain/RecurrentItem/recurrent-item.entity";
+import { useAccountSelect } from "apps/obsidian-plugin/components/Select/AccountSelect";
 
 export const CreateItemPanel = ({ close }: { close: () => void }) => {
 	const logger = useLogger("CreateItemPanel");
@@ -41,26 +41,23 @@ export const CreateItemPanel = ({ close }: { close: () => void }) => {
 		useCases: { createCategory, createSubCategory },
 	} = useContext(CategoriesContext);
 	const {
-		useCases: {
-			getAllUniqueItemsByName,
-			createSimpleItem,
-			recordSimpleItem,
-		},
+		useCases: { getAllUniqueItemsByName, createItem, recordSimpleItem },
 	} = useContext(ItemsContext);
 
-	const { accounts, getAccountByID } = useAccounts();
+	const { accounts, getAccountByID, updateAccounts } =
+		useContext(AccountsContext);
 	const accountNames = useMemo(
 		() => accounts.map((acc) => acc.name.value).sort(),
 		[accounts]
 	);
-	const { updateTransactions } = useTransactions({});
+	const { updateTransactions } = useContext(TransactionsContext);
 	const {
 		categories,
 		categoriesWithSubcategories,
 		getCategoryByID,
 		getSubCategoryByID,
-	} = useCategories();
-	const { brands, stores } = useItems();
+	} = useContext(CategoriesContext);
+	const { brands, stores } = useContext(ItemsContext);
 
 	const [items, setItems] = useState<Item[]>([]);
 	useEffect(() => {
@@ -71,7 +68,22 @@ export const CreateItemPanel = ({ close }: { close: () => void }) => {
 		logger.title("unique items for creation").obj({ items }).log();
 	}, [items]);
 
+	const [locks, setLocks] = useState<{
+		[K in keyof ItemPrimitives]?: boolean;
+	}>({});
+	const updateLock = (key: keyof ItemPrimitives, value: boolean) => {
+		setLocks({
+			...locks,
+			[key]: value,
+		});
+	};
 	const [item, setItem] = useState<ItemPrimitives>(Item.emptyPrimitives());
+	const { AccountSelect, account } = useAccountSelect({
+		label: "Account: From",
+		initialValueID: item.account ? new AccountID(item.account) : undefined,
+		lock: locks.account,
+		setLock: (lock) => updateLock("account", lock),
+	});
 	const subCategories = useMemo(
 		() =>
 			item.category
@@ -86,15 +98,6 @@ export const CreateItemPanel = ({ close }: { close: () => void }) => {
 
 	const [selectedItem, setSelectedItem] = useState<ItemPrimitives>();
 
-	const [locks, setLocks] = useState<{
-		[K in keyof ItemPrimitives]?: boolean;
-	}>({});
-	const updateLock = (key: keyof ItemPrimitives, value: boolean) => {
-		setLocks({
-			...locks,
-			[key]: value,
-		});
-	};
 	const [isRecurrent, setIsRecurrent] = useState(false);
 
 	const operation = useMemo(() => item.operation, [item.operation]);
@@ -114,7 +117,7 @@ export const CreateItemPanel = ({ close }: { close: () => void }) => {
 			}
 			if (!locks.subCategory) {
 				const subCategory = getSubCategoryByID(
-					new SubcategoryID(selectedItem.subCategory)
+					new SubCategoryID(selectedItem.subCategory)
 				);
 				toUpdate.subCategory = subCategory?.name.value;
 			}
@@ -186,19 +189,14 @@ export const CreateItemPanel = ({ close }: { close: () => void }) => {
 			await createCategory.execute(category);
 		}
 
-		const subCategoryName = new SubcategoryName(item.subCategory);
+		const subCategoryName = new SubCategoryName(item.subCategory);
 		let subCategory = subCategories.find((sub) =>
 			sub.name.equalTo(subCategoryName)
 		);
 		if (!subCategory) {
-			subCategory = Subcategory.create(category.id, subCategoryName);
+			subCategory = SubCategory.create(category.id, subCategoryName);
 			await createSubCategory.execute(subCategory);
 		}
-
-		const account =
-			accounts.find((acc) =>
-				acc.name.equalTo(new AccountName(item.account))
-			)?.id.value ?? "";
 
 		const toAccount = item.toAccount
 			? accounts.find((acc) =>
@@ -206,22 +204,31 @@ export const CreateItemPanel = ({ close }: { close: () => void }) => {
 			  )?.id.value
 			: undefined;
 
+		const date = item.nextDate ?? new Date();
+		let itemToPersist: Item;
+		const itemPrimitives = {
+			...item,
+			id: ItemID.generate().value,
+			category: category.id.value,
+			subCategory: subCategory.id.value,
+			account: account?.id.value ?? "",
+			toAccount,
+		};
 		if (isRecurrent) {
+			itemToPersist = RecurrentItem.fromPrimitives({
+				...itemPrimitives,
+				nextDate: date,
+				frequency: item.frequency ?? "",
+			});
 		} else {
-			const simpleItem = SimpleItem.fromPrimitives({
-				...item,
-				id: ItemID.generate().value,
-				category: category.id.value,
-				subCategory: subCategory.id.value,
-				account,
-				toAccount,
-			});
-			await createSimpleItem.execute(simpleItem);
+			itemToPersist = SimpleItem.fromPrimitives(itemPrimitives);
 			await recordSimpleItem.execute({
-				item: simpleItem,
-				date: new TransactionDate(item.nextDate ?? new Date()),
+				item: itemToPersist,
+				date: new TransactionDate(date),
 			});
+			updateAccounts();
 		}
+		await createItem.execute(itemToPersist);
 
 		updateTransactions();
 
@@ -255,8 +262,12 @@ export const CreateItemPanel = ({ close }: { close: () => void }) => {
 					const label = `${
 						getAccountByID(new AccountID(item.account))?.name.value
 					}${
-						item.operation === "transfer"
-							? ` -> ${item.toAccount} - `
+						item.operation === "transfer" && item.toAccount
+							? ` -> ${
+									getAccountByID(
+										new AccountID(item.toAccount)
+									)?.name.value
+							  } - `
 							: ""
 					}${
 						item.amount === 0
@@ -334,6 +345,7 @@ export const CreateItemPanel = ({ close }: { close: () => void }) => {
 					gap: "10px",
 				}}
 			>
+				{AccountSelect}
 				<Select
 					id="account"
 					label="Account: From"

@@ -11,7 +11,7 @@ import {
 	Transaction,
 } from "../../../../src/contexts/Transactions/domain/transaction.entity";
 import { CategoryID } from "../../../../src/contexts/Categories/domain/category-id.valueobject";
-import { SubcategoryID } from "../../../../src/contexts/Subcategories/domain/subcategory-id.valueobject";
+import { SubCategoryID } from "../../../../src/contexts/Subcategories/domain/subcategory-id.valueobject";
 
 describe("toString", () => {
 	let mockTransaction: Transaction;
@@ -23,7 +23,7 @@ describe("toString", () => {
 			new ItemName("name"),
 			new TransactionOperation("expense"),
 			CategoryID.generate(),
-			SubcategoryID.generate(),
+			SubCategoryID.generate(),
 			new TransactionDate(new Date(2024, 0, 1, 15, 35)),
 			new TransactionAmount(100)
 		);

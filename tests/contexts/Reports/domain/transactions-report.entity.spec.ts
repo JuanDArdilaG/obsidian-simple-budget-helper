@@ -4,14 +4,12 @@ import { buildTestTransactions } from "./buildTestTransactions";
 
 describe("sortByDate", () => {
 	it("should sort transactions by date in ascending order", () => {
-		const transactions = buildTestTransactions({
-			transactions: [
-				{ date: new Date(2024, 0, 15) },
-				{ date: new Date(2024, 0, 12) },
-				{ date: new Date(2024, 0, 23) },
-				{ date: new Date(2024, 0, 15, 13) },
-			],
-		});
+		const transactions = buildTestTransactions([
+			{ date: new Date(2024, 0, 15) },
+			{ date: new Date(2024, 0, 12) },
+			{ date: new Date(2024, 0, 23) },
+			{ date: new Date(2024, 0, 15, 13) },
+		]);
 		const report = new TransactionsReport(transactions).sortedByDate("asc");
 
 		expect(report.transactions.length).toBe(4);
@@ -30,14 +28,12 @@ describe("sortByDate", () => {
 	});
 
 	it("should sort transactions by date in descending order", () => {
-		const transactions = buildTestTransactions({
-			transactions: [
-				{ date: new Date(2024, 0, 15) },
-				{ date: new Date(2024, 0, 12) },
-				{ date: new Date(2024, 0, 23) },
-				{ date: new Date(2024, 0, 15, 13) },
-			],
-		});
+		const transactions = buildTestTransactions([
+			{ date: new Date(2024, 0, 15) },
+			{ date: new Date(2024, 0, 12) },
+			{ date: new Date(2024, 0, 23) },
+			{ date: new Date(2024, 0, 15, 13) },
+		]);
 		const report = new TransactionsReport(transactions).sortedByDate(
 			"desc"
 		);

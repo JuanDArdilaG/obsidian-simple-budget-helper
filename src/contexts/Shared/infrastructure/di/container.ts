@@ -9,8 +9,9 @@ import { ItemsDexieRepository } from "contexts/Items/infrastructure";
 import { Config } from "../config/config";
 import {
 	GetAllUniqueItemsByNameUseCase,
-	CreateSimpleItemUseCase,
 	CreateRecurrentItemUseCase,
+	GetRecurrentItemsUntilDateUseCase,
+	CreateItemUseCase,
 } from "contexts/Items/application";
 import {
 	AccountsService,
@@ -53,6 +54,8 @@ import {
 	SubCategoriesService,
 } from "contexts/Subcategories/application";
 import { GetAllCategoriesUseCase } from "contexts/Categories/application/get-all-categories.usecase";
+import { DeleteItemUseCase } from "contexts/Items/application/delete-item.usecase";
+import { UpdateItemUseCase } from "contexts/Items/application/update-item.usecase";
 
 const container = createContainer({
 	injectionMode: InjectionMode.CLASSIC,
@@ -67,7 +70,7 @@ export function buildContainer(): AwilixContainer {
 	// ITEMS
 	container.register({
 		_itemsRepository: asClass(ItemsDexieRepository).singleton(),
-		createSimpleItemUseCase: asClass(CreateSimpleItemUseCase).singleton(),
+		createItemUseCase: asClass(CreateItemUseCase).singleton(),
 		createRecurrentItemUseCase: asClass(
 			CreateRecurrentItemUseCase
 		).singleton(),
@@ -80,6 +83,11 @@ export function buildContainer(): AwilixContainer {
 		getAllUniqueItemStoresUseCase: asClass(
 			GetAllUniqueItemStoresUseCase
 		).singleton(),
+		getRecurrentItemsUntilDateUseCase: asClass(
+			GetRecurrentItemsUntilDateUseCase
+		).singleton(),
+		deleteItemUseCase: asClass(DeleteItemUseCase).singleton(),
+		updateItemUseCase: asClass(UpdateItemUseCase).singleton(),
 	});
 
 	// ACCOUNTS

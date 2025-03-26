@@ -1,6 +1,6 @@
 import Dexie from "dexie";
 import { App, normalizePath, Plugin, PluginManifest } from "obsidian";
-import { exportDB } from "dexie-export-import";
+import { exportDB, importDB } from "dexie-export-import";
 import { DEFAULT_SETTINGS, SimpleBudgetHelperSettings } from "./SettingTab";
 import { buildContainer } from "contexts/Shared/infrastructure/di/container";
 import { Logger } from "../../contexts/Shared/infrastructure/logger";
@@ -38,8 +38,16 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 				this.logger.debugB("creating backup directory").log();
 				await this.app.vault.adapter.mkdir(folder);
 				await writeBackup();
+				return;
 			}
+			throw error;
 		}
+	}
+
+	async importDBBackup() {
+		const path = normalizePath(`${this.settings.rootFolder}/db/db.backup`);
+		const buffer = await this.app.vault.adapter.readBinary(path);
+		this.db = await importDB(new Blob([buffer]));
 	}
 
 	async onload() {
@@ -47,6 +55,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		const container = buildContainer();
 		// await this.migrateFromMarkdown(container);
 		this.db = (container.resolve("_db") as DexieDB).db;
+		// await this.importDBBackup();
 		// await this.exportDBBackup();
 
 		await initStoragePersistence();

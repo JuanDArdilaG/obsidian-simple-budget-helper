@@ -58,6 +58,12 @@ export class Account implements IEntity<AccountID, AccountPrimitives> {
 		);
 	}
 
+	adjustOnTransactionDeletion(transaction: Transaction) {
+		this._balance = this._balance.sustract(
+			transaction.getRealAmountForAccount(this.id)
+		);
+	}
+
 	toPrimitives(): AccountPrimitives {
 		return {
 			id: this._id.value,

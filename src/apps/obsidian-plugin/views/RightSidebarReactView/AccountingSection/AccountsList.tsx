@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { ActionButtons } from "apps/obsidian-plugin/components";
 import { AccountsListContextMenu } from "./AccountsListContextMenu";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { Account } from "contexts/Accounts/domain";
 import { CreateAccountPanel } from "apps/obsidian-plugin/panels";
-import { useAccounts } from "apps/obsidian-plugin/hooks/useAccounts";
+import { AccountsContext, TransactionsContext } from "../Contexts";
+import { AccountsReport } from "contexts/Reports/domain/accounts-report.entity";
 
 export const AccountsList = () => {
-	const { accounts, updateAccounts } = useAccounts();
+	const { accounts, updateAccounts } = useContext(AccountsContext);
+	const report = useMemo(() => new AccountsReport(accounts), [accounts]);
+	const { updateTransactions } = useContext(TransactionsContext);
 
 	const [selectedAccount, setSelectedAccount] = useState<Account>();
 
@@ -18,7 +21,10 @@ export const AccountsList = () => {
 			{selectedAccount && (
 				<AccountsListContextMenu
 					account={selectedAccount}
-					onAdjust={async () => updateAccounts()}
+					onAdjust={async () => {
+						updateAccounts();
+						updateTransactions();
+					}}
 				/>
 			)}
 
@@ -36,7 +42,18 @@ export const AccountsList = () => {
 					}}
 				/>
 			)}
-			<h4>Assets</h4>
+			<h4>
+				Assets
+				<span
+					style={{
+						fontSize: "0.7em",
+						fontWeight: "normal",
+						paddingLeft: "5px",
+					}}
+				>
+					Total: {report.getTotalForAssets().toString()}
+				</span>
+			</h4>
 			<ul>
 				{accounts
 					.filter((acc) => acc.type.isAsset())
@@ -55,15 +72,18 @@ export const AccountsList = () => {
 						</li>
 					))}
 			</ul>
-			<div style={{ textAlign: "right" }}>
-				Total:{" "}
-				{/* {new PriceValueObject(
-					budget.getHistory().getBalance({
-						untilDate: new Date(),
-					})
-				).toString()} */}
-			</div>
-			<h4>Liabilities</h4>
+			<h4>
+				Liabilities
+				<span
+					style={{
+						fontSize: "0.7em",
+						fontWeight: "normal",
+						paddingLeft: "5px",
+					}}
+				>
+					Total: {report.getTotalForLiabilites().toString()}
+				</span>
+			</h4>
 			<ul>
 				{accounts
 					.filter((acc) => acc.type.isLiability())
@@ -82,14 +102,8 @@ export const AccountsList = () => {
 						</li>
 					))}
 			</ul>
-			<div style={{ textAlign: "right" }}>
-				Total:{" "}
-				{/* {new PriceValueObject(
-					budget.getHistory().getBalance({
-						untilDate: new Date(),
-					})
-				).toString()} */}
-			</div>
+			<br />
+			<div>Total: {report.getTotal().toString()}</div>
 		</RightSidebarReactTab>
 	);
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	SectionButtons,
 	MainSidebarSections,
@@ -21,11 +21,15 @@ export const RightSidebarReactView = ({
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) => {
 	const [sectionSelection, setSectionSelection] =
-		useState<MainSidebarSections>("accounting");
+		useState<MainSidebarSections>(plugin.settings.lastTab.main);
+	useEffect(() => {
+		plugin.settings.lastTab.main = sectionSelection;
+		plugin.saveSettings();
+	}, [sectionSelection]);
 	const [showCreateForm, setShowCreateForm] = useState(false);
 
 	return (
-		<AppProviders container={container}>
+		<AppProviders container={container} plugin={plugin}>
 			<ActionButtons
 				handleCreateClick={async () =>
 					setShowCreateForm(!showCreateForm)
@@ -41,7 +45,7 @@ export const RightSidebarReactView = ({
 			/>
 
 			{sectionSelection === "recurrentItems" && (
-				<RecurrentItemsSection onRecord={() => {}} app={plugin.app} />
+				<RecurrentItemsSection app={plugin.app} />
 			)}
 			{sectionSelection === "accounting" && (
 				<AccountingSection

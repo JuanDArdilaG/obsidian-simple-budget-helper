@@ -1,37 +1,29 @@
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
-import { BudgetItemsList } from "../BudgetItemsList";
+import { RecurrentItemsList } from "../RecurrentItemsList";
 import { App } from "obsidian";
 import { useState } from "react";
 import { BudgetItemsListContextMenu } from "../BudgetItemsListContextMenu";
 import { RecurrentItem } from "contexts";
 
-export const AllItemsRightSidebarReactTab = ({
-	onRecord,
-	app,
-}: {
-	onRecord: (item: RecurrentItem) => void;
-	app: App;
-}) => {
+export const AllItemsRightSidebarReactTab = ({ app }: { app: App }) => {
 	const [selectedItem, setSelectedItem] = useState<RecurrentItem>();
 
 	return (
 		<>
 			{selectedItem && (
 				<BudgetItemsListContextMenu
-					setEditionIsActive={() => {}}
+					setAction={() => {}}
 					item={selectedItem}
 				/>
 			)}
 			<RightSidebarReactTab title="All Items" subtitle>
-				<BudgetItemsList
-					editionIsActive={false}
-					// setSelectedItem={setSelectedItem}
-					// budgetItems={budget.onlyRecurrent().items.map((item) => ({
-					// 	item,
-					// 	dates: [item.nextDate],
-					// }))}
-					// onRecord={onRecord}
-					totalPerMonth
+				<RecurrentItemsList
+				// setSelectedItem={setSelectedItem}
+				// budgetItems={budget.onlyRecurrent().items.map((item) => ({
+				// 	item,
+				// 	dates: [item.nextDate],
+				// }))}
+				// onRecord={onRecord}
 				/>
 			</RightSidebarReactTab>
 		</>

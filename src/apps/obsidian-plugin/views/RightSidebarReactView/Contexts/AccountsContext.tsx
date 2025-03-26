@@ -1,12 +1,23 @@
 import { createContext } from "react";
 import { AwilixContainer } from "awilix";
-import { CreateAccountUseCase, GetAllAccountsUseCase } from "contexts/Accounts";
+import {
+	Account,
+	AccountID,
+	AccountName,
+	CreateAccountUseCase,
+	GetAllAccountsUseCase,
+} from "contexts/Accounts";
+import { useAccounts } from "apps/obsidian-plugin/hooks";
 
 export type AccountsContextType = {
 	useCases: {
 		getAllAccounts: GetAllAccountsUseCase;
 		createAccount: CreateAccountUseCase;
 	};
+	accounts: Account[];
+	updateAccounts: () => void;
+	getAccountByID: (id: AccountID) => Account | undefined;
+	getAccountByName: (name: AccountName) => Account | undefined;
 };
 
 export const AccountsContext = createContext<AccountsContextType>({
@@ -14,6 +25,10 @@ export const AccountsContext = createContext<AccountsContextType>({
 		getAllAccounts: {} as GetAllAccountsUseCase,
 		createAccount: {} as CreateAccountUseCase,
 	},
+	accounts: [],
+	updateAccounts: () => {},
+	getAccountByID: () => undefined,
+	getAccountByName: () => undefined,
 });
 
 export const getAccountsContextValues = (
@@ -26,10 +41,19 @@ export const getAccountsContextValues = (
 		"getAllAccountsUseCase"
 	);
 
+	const { accounts, updateAccounts, getAccountByID, getAccountByName } =
+		useAccounts({
+			getAllAccounts,
+		});
+
 	return {
 		useCases: {
 			createAccount,
 			getAllAccounts,
 		},
+		accounts,
+		updateAccounts,
+		getAccountByID,
+		getAccountByName,
 	};
 };

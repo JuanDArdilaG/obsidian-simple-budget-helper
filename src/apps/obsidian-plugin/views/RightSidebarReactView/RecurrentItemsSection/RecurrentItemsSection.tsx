@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
 	RecurrentItemsSectionSelection,
 	RecurrentItemsSectionButtons,
@@ -8,17 +8,16 @@ import { CalendarRightSidebarReactTab } from "./Tabs/CalendarRightSidebarReactVi
 import { App } from "obsidian";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { PerCategoryRightSidebarReactTab } from "./PerCategoryRightSidebarReactTab";
-import { RecurrentItem } from "contexts";
+import { AppContext } from "../Contexts/";
 
-export const RecurrentItemsSection = ({
-	onRecord,
-	app,
-}: {
-	onRecord: (item: RecurrentItem) => void;
-	app: App;
-}) => {
+export const RecurrentItemsSection = ({ app }: { app: App }) => {
+	const { plugin } = useContext(AppContext);
 	const [sectionSelection, setSectionSelection] =
-		useState<RecurrentItemsSectionSelection>("perCategory");
+		useState<RecurrentItemsSectionSelection>("calendar");
+	useEffect(() => {
+		plugin.settings.lastTab.recurrent = sectionSelection;
+		plugin.saveSettings();
+	}, [sectionSelection]);
 
 	return (
 		<RightSidebarReactTab title="Recurrent Items">
@@ -28,10 +27,10 @@ export const RecurrentItemsSection = ({
 			/>
 
 			{sectionSelection === "calendar" && (
-				<CalendarRightSidebarReactTab onRecord={onRecord} app={app} />
+				<CalendarRightSidebarReactTab />
 			)}
 			{sectionSelection === "list" && (
-				<AllItemsRightSidebarReactTab onRecord={onRecord} app={app} />
+				<AllItemsRightSidebarReactTab app={app} />
 			)}
 			{sectionSelection === "perCategory" && (
 				<PerCategoryRightSidebarReactTab />

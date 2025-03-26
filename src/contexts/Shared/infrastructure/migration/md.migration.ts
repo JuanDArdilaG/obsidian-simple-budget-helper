@@ -20,8 +20,8 @@ import { GetAllCategoriesUseCase } from "contexts/Categories/application/get-all
 import {
 	CreateSubCategoryUseCase,
 	GetAllSubcategoriesUseCase,
-	Subcategory,
-	SubcategoryName,
+	SubCategory,
+	SubCategoryName,
 } from "contexts/Subcategories";
 import { CreateCategoryUseCase } from "contexts/Categories/application";
 import { Category, CategoryName } from "contexts/Categories";
@@ -350,12 +350,12 @@ export class MDMigration {
 	) {
 		const subCategories = await this.getAllSubCategoriesUseCase.execute();
 		let subCategory = subCategories.find((subCategory) =>
-			subCategory.name.equalTo(new SubcategoryName(subCategoryName))
+			subCategory.name.equalTo(new SubCategoryName(subCategoryName))
 		);
 		if (!subCategory) {
-			subCategory = Subcategory.create(
+			subCategory = SubCategory.create(
 				categoryID,
-				new SubcategoryName(subCategoryName)
+				new SubCategoryName(subCategoryName)
 			);
 			await this.createSubCategoryUseCase.execute(subCategory);
 		}

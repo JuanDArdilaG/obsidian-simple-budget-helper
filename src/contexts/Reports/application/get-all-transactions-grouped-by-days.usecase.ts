@@ -1,13 +1,13 @@
 import { QueryUseCase } from "contexts/Shared/domain";
 import { GroupByYearMonthDay, IReportsService } from "contexts/Reports/domain";
-import { SubcategoryID } from "contexts/Subcategories/domain";
+import { SubCategoryID } from "contexts/Subcategories/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import { AccountID } from "contexts/Accounts/domain";
 
 export type GetAllTransactionsGroupedByDaysUseCaseInput = {
 	accountFilter?: AccountID;
 	categoryFilter?: CategoryID;
-	subCategoryFilter?: SubcategoryID;
+	subCategoryFilter?: SubCategoryID;
 };
 export type GetAllTransactionsGroupedByDaysUseCaseOutput = GroupByYearMonthDay;
 

@@ -15,7 +15,7 @@ import {
 } from "contexts/Categories/domain";
 import {
 	ISubCategoriesService,
-	SubcategoryName,
+	SubCategoryName,
 } from "contexts/Subcategories/domain";
 import { AccountBalance, AccountID } from "contexts/Accounts/domain";
 import { AccountsService } from "contexts/Accounts/application";
@@ -64,8 +64,15 @@ export class TransactionsService implements ITransactionsService {
 		newBalance: AccountBalance
 	): Promise<void> {
 		const account = await this._accountsService.getByID(accountID);
-
 		const amountDifference = account.balance.adjust(newBalance);
+
+		logger
+			.debugB("accountAdjustment", {
+				account: account.toPrimitives(),
+				newBalance: newBalance.toString(),
+				amountDifference: amountDifference.toString(),
+			})
+			.log();
 		if (amountDifference.isZero()) return;
 
 		const category = await this._categoriesService.getByNameWithCreation(
@@ -74,7 +81,7 @@ export class TransactionsService implements ITransactionsService {
 		const subCategory =
 			await this._subCategoriesService.getByNameWithCreation(
 				category.id,
-				new SubcategoryName("Adjustment")
+				new SubCategoryName("Adjustment")
 			);
 
 		const transaction = Transaction.createWithoutItem(
@@ -95,7 +102,6 @@ export class TransactionsService implements ITransactionsService {
 		);
 
 		await this.record(transaction);
-		await this._accountsService.update(account);
 	}
 
 	async delete(id: TransactionID): Promise<void> {
@@ -105,7 +111,7 @@ export class TransactionsService implements ITransactionsService {
 		);
 
 		await this._transactionsRepository.deleteById(id);
-		account.balance.adjustOnTransactionDeletion(transaction);
+		account.adjustOnTransactionDeletion(transaction);
 
 		await this._accountsService.update(account);
 	}

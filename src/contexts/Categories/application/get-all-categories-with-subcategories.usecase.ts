@@ -1,13 +1,13 @@
 import { QueryUseCase } from "contexts/Shared/domain";
 import { Category, ICategoriesRepository } from "contexts/Categories/domain";
 import {
-	Subcategory,
+	SubCategory,
 	ISubCategoriesRepository,
 } from "contexts/Subcategories/domain";
 
 export type GetAllCategoriesWithSubCategoriesUseCaseOutput = {
 	category: Category;
-	subCategories: Subcategory[];
+	subCategories: SubCategory[];
 }[];
 
 export class GetAllCategoriesWithSubCategoriesUseCase

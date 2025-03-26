@@ -3,7 +3,7 @@ import {
 	IReportsService,
 } from "../domain/reports-service.interface";
 import { CategoryName } from "../../Categories/domain/category-name.valueobject";
-import { SubcategoryName } from "../../Subcategories/domain/subcategory-name.valueobject";
+import { SubCategoryName } from "../../Subcategories/domain/subcategory-name.valueobject";
 import {
 	Transaction,
 	TransactionCriteria,
@@ -11,7 +11,7 @@ import {
 } from "contexts/Transactions/domain";
 import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
-import { SubcategoryID } from "contexts/Subcategories/domain";
+import { SubCategoryID } from "contexts/Subcategories/domain";
 import { TransactionsReport } from "../domain";
 
 export class ReportsService implements IReportsService {
@@ -46,13 +46,13 @@ export class ReportsService implements IReportsService {
 	async groupTransactionsBySubcategories(
 		criteria?: TransactionCriteria
 	): Promise<
-		{ subcategory: SubcategoryName; transactions: Transaction[] }[]
+		{ subcategory: SubCategoryName; transactions: Transaction[] }[]
 	> {
 		const transactions = await this._transactionsRepository.findByCriteria(
 			criteria ?? new TransactionCriteria()
 		);
 		const result: {
-			subcategory: SubcategoryName;
+			subcategory: SubCategoryName;
 			transactions: Transaction[];
 		}[] = [];
 		for (const transaction of transactions) {
@@ -78,7 +78,7 @@ export class ReportsService implements IReportsService {
 	}: {
 		accountFilter?: AccountID;
 		categoryFilter?: CategoryID;
-		subCategoryFilter?: SubcategoryID;
+		subCategoryFilter?: SubCategoryID;
 	}): Promise<GroupByYearMonthDay> {
 		const filterCriteria = new TransactionCriteria();
 		if (accountFilter) filterCriteria.where("account", accountFilter.value);

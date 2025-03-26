@@ -1,14 +1,18 @@
-import { Account, AccountID, AccountName, Logger } from "contexts";
-import { useState, useEffect, useContext, useCallback } from "react";
-import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import {
+	Account,
+	AccountID,
+	AccountName,
+	GetAllAccountsUseCase,
+} from "contexts";
+import { useState, useEffect, useCallback } from "react";
 import { useLogger } from "./useLogger";
 
-export const useAccounts = () => {
+export const useAccounts = ({
+	getAllAccounts,
+}: {
+	getAllAccounts: GetAllAccountsUseCase;
+}) => {
 	const logger = useLogger("useAccounts");
-	const {
-		useCases: { getAllAccounts },
-	} = useContext(AccountsContext);
-
 	const [accounts, setAccounts] = useState<Account[]>([]);
 	const [updateAccounts, setUpdateAccounts] = useState(true);
 

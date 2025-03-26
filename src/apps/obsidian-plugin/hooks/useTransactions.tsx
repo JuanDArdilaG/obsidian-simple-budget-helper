@@ -1,45 +1,88 @@
 import { GetAllTransactionsGroupedByDaysUseCaseInput } from "contexts/Reports";
-import { useState, useEffect, useContext } from "react";
-import { TransactionsContext } from "apps/obsidian-plugin/views";
-import { Transaction } from "contexts";
+import { useState, useEffect } from "react";
+import {
+	AccountID,
+	CategoryID,
+	GetAllTransactionsUseCase,
+	SubCategoryID,
+	Transaction,
+} from "contexts";
 import { useLogger } from "./useLogger";
 
 export const useTransactions = ({
-	accountFilter,
-	categoryFilter,
-	subCategoryFilter,
-}: GetAllTransactionsGroupedByDaysUseCaseInput) => {
+	getAllTransactions,
+}: {
+	getAllTransactions: GetAllTransactionsUseCase;
+}) => {
 	const logger = useLogger("useTransactions");
-	const {
-		useCases: { getAllTransactions },
-	} = useContext(TransactionsContext);
 
 	const [transactions, setTransactions] = useState<Transaction[]>([]);
+	const [filteredTransactions, setFilteredTransactions] = useState<
+		Transaction[]
+	>([]);
 	const [updateTransactions, setUpdateTransactions] = useState(true);
-
-	useEffect(() => {
-		setUpdateTransactions(true);
-	}, [accountFilter, categoryFilter, subCategoryFilter]);
+	const [filters, setFilters] = useState<
+		[
+			account?: AccountID,
+			category?: CategoryID,
+			subCategory?: SubCategoryID
+		]
+	>([undefined, undefined, undefined]);
+	const [updateFilteredTransactions, setUpdateFilteredTransactions] =
+		useState(true);
 
 	useEffect(() => {
 		if (updateTransactions) {
-			setUpdateTransactions(false);
-			getAllTransactions
-				.execute({ accountFilter, categoryFilter, subCategoryFilter })
-				.then((transactions) => {
-					logger.debug("updating transactions", {
-						accountFilter,
-						categoryFilter,
-						subCategoryFilter,
-						transactions: transactions.map((t) => t.toPrimitives()),
-					});
-					setTransactions(transactions);
+			setUpdateFilteredTransactions(false);
+			getAllTransactions.execute({}).then((transactions) => {
+				logger.debug("updating transactions", {
+					transactions: transactions.map((t) => t.toPrimitives()),
 				});
+				setTransactions(transactions);
+			});
 		}
 	}, [updateTransactions]);
 
+	useEffect(() => {
+		getAllTransactions
+			.execute({
+				accountFilter: filters[0],
+				categoryFilter: filters[1],
+				subCategoryFilter: filters[2],
+			})
+			.then((transactions) => {
+				logger.debug("updating filtered transactions", {
+					filters,
+					transactions: transactions.map((t) => t.toPrimitives()),
+				});
+				setFilteredTransactions(transactions);
+			});
+	}, [filters]);
+
+	useEffect(() => {
+		if (updateTransactions) {
+			setUpdateFilteredTransactions(false);
+			getAllTransactions
+				.execute({
+					accountFilter: filters[0],
+					categoryFilter: filters[1],
+					subCategoryFilter: filters[2],
+				})
+				.then((transactions) => {
+					logger.debug("updating filtered transactions", {
+						filters,
+						transactions: transactions.map((t) => t.toPrimitives()),
+					});
+					setFilteredTransactions(transactions);
+				});
+		}
+	}, [updateFilteredTransactions]);
+
 	return {
 		transactions,
+		filteredTransactions,
+		setFilters,
 		updateTransactions: () => setUpdateTransactions(true),
+		updateFilteredTransactions: () => setUpdateFilteredTransactions(true),
 	};
 };

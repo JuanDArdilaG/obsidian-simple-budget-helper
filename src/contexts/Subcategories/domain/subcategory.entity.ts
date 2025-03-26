@@ -1,25 +1,25 @@
 import { IEntity } from "contexts/Shared/domain";
-import { SubcategoryID, SubcategoryName } from "contexts/Subcategories/domain";
+import { SubCategoryID, SubCategoryName } from "contexts/Subcategories/domain";
 import { CategoryID } from "contexts/Categories/domain";
 
-export class Subcategory
-	implements IEntity<SubcategoryID, SubcategoryPrimitives>
+export class SubCategory
+	implements IEntity<SubCategoryID, SubcategoryPrimitives>
 {
 	constructor(
-		private _id: SubcategoryID,
+		private _id: SubCategoryID,
 		private _category: CategoryID,
-		private _name: SubcategoryName
+		private _name: SubCategoryName
 	) {}
 
-	static create(category: CategoryID, name: SubcategoryName): Subcategory {
-		return new Subcategory(SubcategoryID.generate(), category, name);
+	static create(category: CategoryID, name: SubCategoryName): SubCategory {
+		return new SubCategory(SubCategoryID.generate(), category, name);
 	}
 
-	get id(): SubcategoryID {
+	get id(): SubCategoryID {
 		return this._id;
 	}
 
-	get name(): SubcategoryName {
+	get name(): SubCategoryName {
 		return this._name;
 	}
 
@@ -35,11 +35,11 @@ export class Subcategory
 		id,
 		category,
 		name,
-	}: SubcategoryPrimitives): Subcategory {
-		return new Subcategory(
-			new SubcategoryID(id),
+	}: SubcategoryPrimitives): SubCategory {
+		return new SubCategory(
+			new SubCategoryID(id),
 			new CategoryID(category),
-			new SubcategoryName(name)
+			new SubCategoryName(name)
 		);
 	}
 

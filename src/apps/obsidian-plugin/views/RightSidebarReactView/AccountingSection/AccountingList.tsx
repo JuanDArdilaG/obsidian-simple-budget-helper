@@ -1,20 +1,21 @@
 import { App } from "obsidian";
 import { useContext, useEffect, useMemo, useState } from "react";
+import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { AccountingListContextMenu } from "./AccountingListContextMenu";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
-import { EditTransactionPanel } from "apps/obsidian-plugin/panels";
-import { TransactionsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { useAccounts } from "apps/obsidian-plugin/hooks/useAccounts";
-import { useTransactions } from "apps/obsidian-plugin/hooks/useTransactions";
-import { useCategories } from "apps/obsidian-plugin/hooks/useCategories";
+import {
+	AccountsContext,
+	CategoriesContext,
+	TransactionsContext,
+} from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { Transaction } from "contexts/Transactions/domain";
-import { Category, CategoryID, CategoryName } from "contexts/Categories";
-import { Subcategory, SubcategoryID } from "contexts/Subcategories";
-import { Account, AccountID, AccountName } from "contexts/Accounts";
-import { ReportBalance, SubcategoryName, TransactionsReport } from "contexts";
-import { Select } from "apps/obsidian-plugin/components";
-import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
+import { Category, CategoryID } from "contexts/Categories";
+import { SubCategory, SubCategoryID } from "contexts/Subcategories";
+import { ReportBalance } from "contexts";
+import { useAccountSelect } from "apps/obsidian-plugin/components";
+import { useCategorySelect } from "apps/obsidian-plugin/components/Select/CategorySelect";
+import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/SubCategorySelect";
 
 export function AccountingList({
 	app,
@@ -27,50 +28,22 @@ export function AccountingList({
 	const {
 		useCases: { deleteTransaction },
 	} = useContext(TransactionsContext);
-
-	const { accounts, getAccountByName, getAccountByID } = useAccounts();
 	const {
-		subCategories,
-		categories,
-		getCategoryByName,
-		getSubCategoryByName,
-		getCategoryByID,
-		getSubCategoryByID,
-	} = useCategories();
+		setFilters,
+		filteredTransactionsReport,
+		updateFilteredTransactions,
+	} = useContext(TransactionsContext);
 
-	const [accountFilter, setAccountFilter] = useState<AccountName>();
-	const [categoryFilter, setCategoryFilter] = useState<CategoryName>();
-	const [subCategoryFilter, setSubCategoryFilter] =
-		useState<SubcategoryName>();
-	const { updateTransactions, transactions } = useTransactions({
-		accountFilter: accountFilter
-			? getAccountByName(accountFilter)?.id
-			: undefined,
-		categoryFilter: categoryFilter
-			? getCategoryByName(categoryFilter)?.id
-			: undefined,
-		subCategoryFilter: subCategoryFilter
-			? getSubCategoryByName(subCategoryFilter)?.id
-			: undefined,
-	});
+	const { AccountSelect, account } = useAccountSelect({});
+	const { CategorySelect, category } = useCategorySelect({});
+	const { SubCategorySelect, subCategory } = useSubCategorySelect({});
 
-	const withAccumulatedBalanceTransactions = useMemo(() => {
-		const res = new TransactionsReport(
-			transactions
-		).withAccumulatedBalance();
-		logger.debug(
-			"with accumulated balance transactions",
-			{
-				transactions: res.map((r) => ({
-					balance: r.balance.valueOf(),
-					prevBalance: r.prevBalance.valueOf(),
-					transaction: r.transaction.toPrimitives(),
-				})),
-			},
-			{ on: false }
-		);
-		return res;
-	}, [transactions]);
+	const { getCategoryByID, getSubCategoryByID } =
+		useContext(CategoriesContext);
+
+	useEffect(() => {
+		setFilters([account?.id, category?.id, subCategory?.id]);
+	}, [account, category, subCategory]);
 
 	const withAccumulatedBalanceTransactionsGrouped = useMemo(() => {
 		const res: [
@@ -81,14 +54,16 @@ export function AccountingList({
 				prevBalance: ReportBalance;
 			}[]
 		][] = [];
-		withAccumulatedBalanceTransactions.forEach((withBalanceTransaction) => {
-			const date =
-				withBalanceTransaction.transaction.date.toPrettyFormatDate();
-			if (!res.find((r) => r[0] === date)) res.push([date, []]);
-			res.last()?.[1].push(withBalanceTransaction);
-		});
+		filteredTransactionsReport
+			.withAccumulatedBalance()
+			.forEach((withBalanceTransaction) => {
+				const date =
+					withBalanceTransaction.transaction.date.toPrettyFormatDate();
+				if (!res.find((r) => r[0] === date)) res.push([date, []]);
+				res.last()?.[1].push(withBalanceTransaction);
+			});
 		return res;
-	}, [withAccumulatedBalanceTransactions]);
+	}, [filteredTransactionsReport]);
 
 	const [selectedTransaction, setSelectedTransaction] =
 		useState<Transaction>();
@@ -140,48 +115,9 @@ export function AccountingList({
 
 	return (
 		<RightSidebarReactTab title="Accounting" subtitle>
-			<Select
-				id="account-filter"
-				label="Account"
-				value={accountFilter?.value ?? ""}
-				values={[
-					"",
-					...accounts.map((acc) => acc.name.toString()).sort(),
-				]}
-				onChange={(accountName) =>
-					setAccountFilter(
-						accountName ? new AccountName(accountName) : undefined
-					)
-				}
-			/>
-			<Select
-				id="category-filter"
-				label="Category"
-				value={categoryFilter?.value ?? ""}
-				values={[
-					"",
-					...categories.map((cat) => cat.name.toString()).sort(),
-				]}
-				onChange={(catName) =>
-					setCategoryFilter(
-						catName ? new CategoryName(catName) : undefined
-					)
-				}
-			/>
-			<Select
-				id="subcategory-filter"
-				label="SubCategory"
-				value={subCategoryFilter?.value ?? ""}
-				values={[
-					"",
-					...subCategories.map((sub) => sub.name.value).sort(),
-				]}
-				onChange={(subName) =>
-					subName
-						? setSubCategoryFilter(new SubcategoryName(subName))
-						: undefined
-				}
-			/>
+			{AccountSelect}
+			{CategorySelect}
+			{SubCategorySelect}
 			{selectedTransaction && (
 				<AccountingListContextMenu
 					app={app}
@@ -189,17 +125,17 @@ export function AccountingList({
 					onEdit={async () => setAction("edit")}
 					onDelete={async () => {
 						await deleteTransaction.execute(selectedTransaction.id);
-						updateTransactions();
+						updateFilteredTransactions();
 					}}
 				/>
 			)}
 			{withAccumulatedBalanceTransactionsGrouped.map(
 				([date, withBalanceTransactions]) => (
 					<AccountingListRowGroup
+						key={date}
 						date={date}
 						transactionsWithBalance={withBalanceTransactions}
 						selectedTransaction={selectedTransaction}
-						getAccountByID={getAccountByID}
 						getCategoryByID={getCategoryByID}
 						getSubCategoryByID={getSubCategoryByID}
 						selection={selection}
@@ -213,13 +149,12 @@ export function AccountingList({
 }
 
 const AccountingListRow = ({
-	transactionWithBalance,
+	transactionWithBalance: { transaction, balance, prevBalance },
 	selectionActive,
 	selection,
 	setSelection,
 	setSelectedTransaction,
 	setAction,
-	getAccountByID,
 	getCategoryByID,
 	getSubCategoryByID,
 }: {
@@ -233,14 +168,35 @@ const AccountingListRow = ({
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
 	setSelectedTransaction: React.Dispatch<React.SetStateAction<Transaction>>;
 	setAction: React.Dispatch<React.SetStateAction<string>>;
-	getAccountByID: (id: AccountID) => Account | undefined;
 	getCategoryByID: (id: CategoryID) => Category | undefined;
-	getSubCategoryByID: (id: SubcategoryID) => Subcategory | undefined;
+	getSubCategoryByID: (id: SubCategoryID) => SubCategory | undefined;
 }) => {
-	const { transaction, balance, prevBalance } = transactionWithBalance;
+	const logger = useLogger("AccountingListRow");
+	const { getAccountByID } = useContext(AccountsContext);
+	const account = useMemo(
+		() =>
+			getAccountByID(
+				transaction.operation.isTransfer() &&
+					transaction.toAccount &&
+					transaction.amount.isNegative()
+					? transaction.toAccount
+					: transaction.account
+			),
+		[transaction]
+	);
+	if (!account) {
+		logger
+			.debugB("not account for transaction row", {
+				transaction: transaction.toPrimitives(),
+			})
+			.on()
+			.log();
+		return <></>;
+	}
+
 	return (
 		<li
-			key={transaction.id.value}
+			key={transaction.id.toString()}
 			onClick={() => {
 				if (selectionActive)
 					setSelection((prevSelection) =>
@@ -278,12 +234,12 @@ const AccountingListRow = ({
 							: "var(--color-blue)",
 					}}
 				>
-					{transaction.operation.isExpense() ||
+					{/* {transaction.operation.isExpense() ||
 					(transaction.operation.isTransfer() &&
 						transaction.amount.isPositive())
 						? "-"
-						: "+"}
-					{transaction.amount.abs().toString()}
+						: "+"} */}
+					{transaction.getRealAmountForAccount(account.id).toString()}
 				</div>
 			</span>
 			<span
@@ -307,13 +263,7 @@ const AccountingListRow = ({
 				</div>
 				<div style={{ textAlign: "right" }}>
 					<div style={{ marginBottom: "3px" }}>
-						{getAccountByID(
-							transaction.operation.isTransfer() &&
-								transaction.toAccount &&
-								transaction.amount.isNegative()
-								? transaction.toAccount
-								: transaction.account
-						)?.name.toString() ?? ""}
+						{account?.name.toString() ?? ""}
 					</div>
 					<div>
 						{prevBalance.toString()} {"->"} {balance.toString()}
@@ -328,7 +278,6 @@ const AccountingListRowGroup = ({
 	date,
 	transactionsWithBalance,
 	selectedTransaction,
-	getAccountByID,
 	getCategoryByID,
 	getSubCategoryByID,
 	selection,
@@ -342,15 +291,15 @@ const AccountingListRowGroup = ({
 		prevBalance: ReportBalance;
 	}[];
 	selectedTransaction?: Transaction;
-	getAccountByID: (id: AccountID) => Account | undefined;
 	getCategoryByID: (id: CategoryID) => Category | undefined;
-	getSubCategoryByID: (id: SubcategoryID) => Subcategory | undefined;
+	getSubCategoryByID: (id: SubCategoryID) => SubCategory | undefined;
 	selection: Transaction[];
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
 	setSelectedTransaction: React.Dispatch<React.SetStateAction<Transaction>>;
 }) => {
+	const logger = useLogger("AccountingListRowGroup").off();
 	return (
-		<div key={date}>
+		<div>
 			<div
 				style={{
 					paddingRight: "7px",
@@ -363,35 +312,33 @@ const AccountingListRowGroup = ({
 			<ul className="accounting-list">
 				{transactionsWithBalance.map((transactionWithBalance) => {
 					const transaction = transactionWithBalance.transaction;
+					// false &&
+					// 			selectedTransaction?.id.equalTo(
+					// 				transaction.id
+					// 			) && (
+					// 				<EditTransactionPanel
+					// 					onUpdate={async () => {
+					// 						// setAction("");
+					// 						// updateTransactions();
+					// 					}}
+					// 					transaction={transaction}
+					// 					getCategoryByID={getCategoryByID}
+					// 					getSubCategoryByID={getSubCategoryByID}
+					// 					getAccountByID={getAccountByID}
+					// 				/>
+					// 			)
 					return (
-						<>
-							<AccountingListRow
-								setAction={() => {}}
-								transactionWithBalance={transactionWithBalance}
-								selection={selection}
-								selectionActive={true}
-								setSelection={setSelection}
-								setSelectedTransaction={setSelectedTransaction}
-								getAccountByID={getAccountByID}
-								getCategoryByID={getCategoryByID}
-								getSubCategoryByID={getSubCategoryByID}
-							/>
-							{false &&
-								selectedTransaction?.id.equalTo(
-									transaction.id
-								) && (
-									<EditTransactionPanel
-										onUpdate={async () => {
-											// setAction("");
-											// updateTransactions();
-										}}
-										transaction={transaction}
-										getCategoryByID={getCategoryByID}
-										getSubCategoryByID={getSubCategoryByID}
-										getAccountByID={getAccountByID}
-									/>
-								)}
-						</>
+						<AccountingListRow
+							key={transaction.id.toString()}
+							setAction={() => {}}
+							transactionWithBalance={transactionWithBalance}
+							selection={selection}
+							selectionActive={true}
+							setSelection={setSelection}
+							setSelectedTransaction={setSelectedTransaction}
+							getCategoryByID={getCategoryByID}
+							getSubCategoryByID={getSubCategoryByID}
+						/>
 					);
 				})}
 			</ul>

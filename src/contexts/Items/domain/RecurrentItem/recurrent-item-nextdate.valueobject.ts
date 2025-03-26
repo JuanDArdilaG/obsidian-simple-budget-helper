@@ -7,6 +7,14 @@ export class RecurrentItemNextDate extends DateValueObject {
 		super(value);
 	}
 
+	static now(): RecurrentItemNextDate {
+		return new RecurrentItemNextDate(super.now().valueOf());
+	}
+
+	copy(): RecurrentItemNextDate {
+		return new RecurrentItemNextDate(this.valueOf());
+	}
+
 	getRemainingDays(): number {
 		const date = new Date(this._value.getTime());
 		const now = new Date();
@@ -17,16 +25,16 @@ export class RecurrentItemNextDate extends DateValueObject {
 		return daysToDate;
 	}
 
-	next(frequency: RecurrrentItemFrequency): RecurrentItemNextDate {
+	next(frequency: RecurrrentItemFrequency): void {
 		const frequencyObject = frequency.toObject();
-		if (!frequencyObject) return this;
+		if (!frequencyObject) return;
 
 		const nextDate = new Date(this._value.getTime());
 		nextDate.setFullYear(nextDate.getFullYear() + frequencyObject.years);
 		nextDate.setMonth(nextDate.getMonth() + frequencyObject.months);
 		nextDate.setDate(nextDate.getDate() + frequencyObject.days);
 
-		return new RecurrentItemNextDate(nextDate);
+		this._value = nextDate;
 	}
 
 	compare(other: RecurrentItemNextDate): number {
@@ -38,10 +46,6 @@ export class RecurrentItemNextDate extends DateValueObject {
 		b.setHours(0, 0, 0, 0);
 
 		return a.getTime() - b.getTime();
-	}
-
-	static now(): RecurrentItemNextDate {
-		return new RecurrentItemNextDate(super.now().valueOf());
 	}
 
 	addDays(days: number): RecurrentItemNextDate {

@@ -31,9 +31,13 @@ export class ItemsDexieRepository
 		);
 	}
 
-	protected mapToDomain(record: RecurrentItemPrimitives): Item {
+	protected mapToDomain(record: ItemPrimitives): Item {
 		return record.nextDate
-			? RecurrentItem.fromPrimitives(record)
+			? RecurrentItem.fromPrimitives({
+					nextDate: new Date(),
+					frequency: "",
+					...record,
+			  })
 			: SimpleItem.fromPrimitives(record);
 	}
 }

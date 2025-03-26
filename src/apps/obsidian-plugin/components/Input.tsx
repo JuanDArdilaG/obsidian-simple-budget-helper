@@ -26,7 +26,7 @@ export const Input = <T extends NonNullable<InputValue>>({
 	setIsLocked?: (value: boolean) => void;
 	style?: React.CSSProperties;
 }) => {
-	const logger = useLogger("Input");
+	const logger = useLogger("Input", false);
 	const [date, setDate] = useState<Date>(new Date());
 	useEffect(() => {
 		if (value instanceof Date) {

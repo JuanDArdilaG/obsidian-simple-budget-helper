@@ -2,19 +2,19 @@ import { AccountID } from "contexts/Accounts";
 import { CategoryID } from "contexts/Categories";
 import { Logger } from "contexts/Shared";
 import { QueryUseCase } from "contexts/Shared/domain";
-import { SubcategoryID } from "contexts/Subcategories";
+import { SubCategoryID } from "contexts/Subcategories";
 import {
 	ITransactionsRepository,
 	Transaction,
 	TransactionCriteria,
 } from "contexts/Transactions/domain";
 
-const logger = new Logger("GetAllTransactionsUseCase", false);
+const logger = new Logger("GetAllTransactionsUseCase").off();
 
 export type GetAllTransactionsUseCaseInput = {
 	accountFilter?: AccountID;
 	categoryFilter?: CategoryID;
-	subCategoryFilter?: SubcategoryID;
+	subCategoryFilter?: SubCategoryID;
 };
 export type GetAllTransactionsUseCaseOutput = Transaction[];
 

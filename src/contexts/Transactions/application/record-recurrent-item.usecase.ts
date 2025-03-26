@@ -1,17 +1,16 @@
 import { ItemID } from "contexts/Items/domain/item-id.valueobject";
 import { IItemsRepository } from "contexts/Items/domain/item-repository.interface";
-import { ITransactionsRepository } from "../domain/transactions-repository.interface";
 import { Transaction } from "../domain/transaction.entity";
 import { EntityNotFoundError } from "contexts/Shared/domain/errors/not-found.error";
 import { TransactionDate } from "../domain/transaction-date.valueobject";
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { TransactionAmount } from "../domain/transaction-amount.valueobject";
 import { CommandUseCase } from "../../Shared/domain/command-use-case.interface";
-import { BooleanValueObject } from "@juandardilag/value-objects/BooleanValueObject";
 import { RecurrentItem } from "contexts/Items/domain/RecurrentItem/recurrent-item.entity";
 import { InvalidArgumentError } from "contexts/Shared/domain/errors/invalid-argument.error";
 import { RecurrentItemNextDate } from "contexts/Items/domain/RecurrentItem/recurrent-item-nextdate.valueobject";
 import { Logger } from "../../Shared/infrastructure/logger";
+import { TransactionsService } from "./transactions.service";
 
 const logger = new Logger("RecordRecurrentItemUseCase");
 
@@ -20,14 +19,14 @@ export type RecordRecurrentItemUseCaseInput = {
 	date?: TransactionDate;
 	amount?: TransactionAmount;
 	account?: AccountID;
-	permanentChanges?: BooleanValueObject;
+	permanentChanges?: boolean;
 };
 
 export class RecordRecurrentItemUseCase
 	implements CommandUseCase<RecordRecurrentItemUseCaseInput>
 {
 	constructor(
-		private _transactionsRepository: ITransactionsRepository,
+		private _transactionsService: TransactionsService,
 		private _itemsRepository: IItemsRepository
 	) {}
 
@@ -47,21 +46,22 @@ export class RecordRecurrentItemUseCase
 				`item with id ${itemID} is not recurrent`
 			);
 
-		if (permanentChanges?.eval()) {
+		if (permanentChanges) {
 			item.nextDate = new RecurrentItemNextDate(
 				(date ?? item.nextDate).valueOf()
 			);
 
-			item.amount = amount ?? item.amount;
+			item.price = amount ?? item.price;
 			item.account = account ?? item.account;
 		}
 
-		const nextDate = item.nextDate.next(item.frequency);
+		const prev = item.nextDate.copy();
+		item.nextNextDate();
 
 		logger.debug("calculating next date", {
 			frequency: item.frequency,
-			prev: item.nextDate,
-			next: nextDate,
+			prev: prev,
+			next: item.nextDate,
 		});
 
 		const transaction = Transaction.fromItem(
@@ -69,6 +69,7 @@ export class RecordRecurrentItemUseCase
 			date ?? TransactionDate.now()
 		);
 
-		await this._transactionsRepository.persist(transaction);
+		await this._itemsRepository.persist(item);
+		await this._transactionsService.record(transaction);
 	}
 }

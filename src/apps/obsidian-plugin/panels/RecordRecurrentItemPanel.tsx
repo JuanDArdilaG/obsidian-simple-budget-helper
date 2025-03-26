@@ -1,44 +1,30 @@
 import { useContext, useState, useEffect } from "react";
 import { ReactMoneyInput } from "react-input-price";
 import { RecurrentItem } from "contexts/Items";
-import { Input, SelectWithCreation } from "apps/obsidian-plugin/components";
+import { Input, useAccountSelect } from "apps/obsidian-plugin/components";
+import { TransactionAmount, TransactionDate } from "contexts";
 import {
-	Account,
-	AccountID,
-	TransactionAmount,
-	TransactionDate,
-} from "contexts";
-import { BooleanValueObject } from "@juandardilag/value-objects/BooleanValueObject";
-import { ItemsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+	AccountsContext,
+	ItemsContext,
+	TransactionsContext,
+} from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 
-export const RecordBudgetItemPanel = ({
+export const RecordRecurrentItemPanel = ({
 	item,
-	onRecord,
 	onClose,
 }: {
 	item: RecurrentItem;
-	onRecord: (item: RecurrentItem) => void;
 	onClose: () => void;
 }) => {
-	const accounts: Account[] = [];
 	const {
 		useCases: { recordRecurrentItem },
 	} = useContext(ItemsContext);
-
-	const nowDate = new Date();
-	const dateDate = item.nextDate.valueOf();
-	const [date, setDate] = useState<Date>(
-		new Date(
-			dateDate.getFullYear(),
-			dateDate.getMonth(),
-			dateDate.getDate(),
-			nowDate.getHours(),
-			nowDate.getMinutes(),
-			0,
-			0
-		)
-	);
-	const [account, setAccount] = useState(item.account.value);
+	const { updateAccounts } = useContext(AccountsContext);
+	const { updateTransactions } = useContext(TransactionsContext);
+	const { AccountSelect, account } = useAccountSelect({
+		label: "Account",
+		initialValueID: item.account,
+	});
 	useEffect(() => {
 		console.log({
 			accountChanged: account,
@@ -46,29 +32,14 @@ export const RecordBudgetItemPanel = ({
 			accountFromItem: item.account,
 		});
 	}, [account, item]);
+	const [date, setDate] = useState<Date>(item.nextDate.valueOf());
 	const [amount, setAmount] = useState(0);
 	const [isPermanent, setIsPermanent] = useState(false);
 
 	return (
 		<div className="record-budget-item-modal">
 			<h3>Record:</h3>
-			<SelectWithCreation
-				id="account"
-				label="Account"
-				item={account}
-				items={accounts.map((acc) => acc.name.value)}
-				setSelectedItem={setAccount}
-				onChange={(acc) => {
-					if (acc !== undefined && acc !== account) {
-						console.log({
-							title: "setting account",
-							old: account,
-							new: acc,
-						});
-						setAccount(acc);
-					}
-				}}
-			/>
+			{AccountSelect}
 			<Input<Date>
 				id="date"
 				label="Date"
@@ -77,7 +48,7 @@ export const RecordBudgetItemPanel = ({
 			/>
 			<ReactMoneyInput
 				id="amount-input-react"
-				initialValue={item.amount.toNumber()}
+				initialValue={item.price.toNumber()}
 				onValueChange={(priceVO) => setAmount(priceVO.toNumber())}
 			/>
 			<div style={{ display: "flex", alignItems: "center" }}>
@@ -95,12 +66,13 @@ export const RecordBudgetItemPanel = ({
 				onClick={async () => {
 					await recordRecurrentItem.execute({
 						itemID: item.id,
-						account: new AccountID(account),
+						account: account?.id,
 						amount: new TransactionAmount(amount),
 						date: new TransactionDate(date),
-						permanentChanges: new BooleanValueObject(isPermanent),
+						permanentChanges: isPermanent,
 					});
-					onRecord(item);
+					updateAccounts();
+					updateTransactions();
 					onClose();
 				}}
 			>

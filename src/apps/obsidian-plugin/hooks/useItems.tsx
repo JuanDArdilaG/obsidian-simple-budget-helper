@@ -1,13 +1,20 @@
-import { ItemBrand, ItemStore, Logger } from "contexts";
-import { useState, useEffect, useContext } from "react";
-import { ItemsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import {
+	GetAllUniqueItemBrandsUseCase,
+	GetAllUniqueItemStoresUseCase,
+	ItemBrand,
+	ItemStore,
+} from "contexts";
+import { useState, useEffect } from "react";
 import { useLogger } from "./useLogger";
 
-export const useItems = () => {
+export const useItems = ({
+	getAllUniqueItemBrands,
+	getAllUniqueItemStores,
+}: {
+	getAllUniqueItemBrands: GetAllUniqueItemBrandsUseCase;
+	getAllUniqueItemStores: GetAllUniqueItemStoresUseCase;
+}) => {
 	const logger = useLogger("useItems");
-	const {
-		useCases: { getAllUniqueItemBrands, getAllUniqueItemStores },
-	} = useContext(ItemsContext);
 
 	const [brands, setBrands] = useState<ItemBrand[]>([]);
 	const [updateBrands, setUpdateBrands] = useState(true);

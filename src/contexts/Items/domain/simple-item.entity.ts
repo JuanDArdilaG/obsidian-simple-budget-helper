@@ -7,7 +7,7 @@ import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { ItemBrand } from "./item-brand.valueobject";
 import { ItemName } from "./item-name.valueobject";
 import { ItemStore } from "./item-store.valueobject";
-import { SubcategoryID } from "contexts/Subcategories/domain";
+import { SubCategoryID } from "contexts/Subcategories/domain";
 import { CategoryID } from "contexts/Categories/domain";
 
 export class SimpleItem extends Item {
@@ -20,7 +20,7 @@ export class SimpleItem extends Item {
 		amount: ItemPrice,
 		operation: ItemOperation,
 		category: CategoryID,
-		subCategory: SubcategoryID,
+		subCategory: SubCategoryID,
 		account: AccountID,
 		brand?: ItemBrand,
 		store?: ItemStore
@@ -42,7 +42,7 @@ export class SimpleItem extends Item {
 		amount?: ItemPrice;
 		date?: DateValueObject;
 	}): void {
-		if (isPermanent?.amount) this._amount = isPermanent.amount;
+		if (isPermanent?.amount) this._price = isPermanent.amount;
 	}
 
 	static fromPrimitives({
@@ -63,7 +63,7 @@ export class SimpleItem extends Item {
 			new ItemName(name),
 			new ItemPrice(amount),
 			new CategoryID(category),
-			new SubcategoryID(subCategory),
+			new SubCategoryID(subCategory),
 			new AccountID(account),
 			brand ? new ItemBrand(brand) : undefined,
 			store ? new ItemStore(store) : undefined,

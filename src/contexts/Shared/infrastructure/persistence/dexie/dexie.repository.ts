@@ -6,7 +6,7 @@ import { IEntity } from "contexts/Shared/domain/entity.interface";
 import { EntityTable } from "dexie";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 
-const logger = new Logger("DexieRepository");
+const logger = new Logger("DexieRepository").off();
 
 export abstract class DexieRepository<
 	T extends IEntity<ID, P>,
@@ -46,19 +46,28 @@ export abstract class DexieRepository<
 	}
 
 	async findByCriteria(criteria: Criteria<P>): Promise<T[]> {
-		//TODO: real implementation, actually just assume all operations are EQUAL
+		//TODO: complete implementation
 		const table = this._table;
 		logger.debug("findByCriteria dexie repository", {
 			criteria,
 		});
 		let collection = table.toCollection();
 		Object.keys(criteria.filters).forEach((field) => {
+			const filter = criteria.filters[field];
 			logger.debug("new filter", {
-				filter: `where ${field} equals ${criteria.filters[field].value}`,
+				filter: `where ${field} ${filter.operator} ${filter.value}`,
 			});
-			collection = collection.and(
-				(p) => p[field] === criteria.filters[field].value
-			);
+			collection = collection.and((p) => {
+				const value = p[field];
+				logger.debug("evaluating filter", {
+					value: p[field],
+				});
+				return filter.operator === "EQUAL"
+					? value === filter.value
+					: filter.operator === "LESS_THAN_OR_EQUAL" && filter.value
+					? value <= filter.value
+					: false;
+			});
 		});
 		const res = await collection.toArray();
 		logger.debug("findByCriteria res", { res });

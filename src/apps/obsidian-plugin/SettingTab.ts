@@ -1,12 +1,22 @@
 import { PluginSettingTab, App, Setting } from "obsidian";
 import SimpleBudgetHelperPlugin from "./main";
+import { MainSidebarSections } from "./components";
+import { RecurrentItemsSectionSelection } from "./views";
 
 export type SimpleBudgetHelperSettings = {
 	rootFolder: string;
+	lastTab: {
+		main: MainSidebarSections;
+		recurrent: RecurrentItemsSectionSelection;
+	};
 };
 
 export const DEFAULT_SETTINGS: SimpleBudgetHelperSettings = {
 	rootFolder: "Budget",
+	lastTab: {
+		main: "accounting",
+		recurrent: "calendar",
+	},
 };
 
 export class SettingTab extends PluginSettingTab {

@@ -52,7 +52,7 @@ export const SectionButton = ({
 			disabled={selected === type}
 		>
 			{icon}
-			{!icon || selected === type ? " " + label : ""}
+			{label}
 		</button>
 	);
 };

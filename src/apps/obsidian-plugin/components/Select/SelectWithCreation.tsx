@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Input } from "./Input";
-import { LockField } from "./LockField";
-import { useLogger } from "../hooks/useLogger";
+import { Input, LockField } from "apps/obsidian-plugin/components";
+import { useLogger } from "apps/obsidian-plugin/hooks";
 
 export const SelectWithCreation = <T extends Object>({
 	id,

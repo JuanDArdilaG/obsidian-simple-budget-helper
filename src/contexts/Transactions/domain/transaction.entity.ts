@@ -11,7 +11,7 @@ import { TransactionName } from "./item-name.valueobject";
 import { IEntity } from "../../Shared/domain/entity.interface";
 import { OperationType } from "contexts/Shared";
 import { CategoryID } from "contexts/Categories/domain";
-import { SubcategoryID } from "contexts/Subcategories/domain";
+import { SubCategoryID } from "contexts/Subcategories/domain";
 
 export class Transaction
 	implements IEntity<TransactionID, TransactionPrimitives>
@@ -22,7 +22,7 @@ export class Transaction
 		private _name: TransactionName,
 		private _operation: TransactionOperation,
 		private _category: CategoryID,
-		private _subCategory: SubcategoryID,
+		private _subCategory: SubCategoryID,
 		private _date: TransactionDate,
 		private _amount: TransactionAmount,
 		private _item?: ItemID,
@@ -40,7 +40,7 @@ export class Transaction
 			item.category,
 			item.subCategory,
 			date,
-			item.amount,
+			item.price,
 			item.id,
 			item.operation.isTransfer() ? item.toAccount : undefined,
 			item.brand,
@@ -53,7 +53,7 @@ export class Transaction
 		name: TransactionName,
 		operation: TransactionOperation,
 		category: CategoryID,
-		subCategory: SubcategoryID,
+		subCategory: SubCategoryID,
 		amount: TransactionAmount,
 		toAccount?: AccountID,
 		brand?: ItemBrand,
@@ -120,7 +120,7 @@ export class Transaction
 		return this._category;
 	}
 
-	get subCategory(): SubcategoryID {
+	get subCategory(): SubCategoryID {
 		return this._subCategory;
 	}
 
@@ -210,7 +210,7 @@ export class Transaction
 			new TransactionName(name),
 			new TransactionOperation(operation),
 			new CategoryID(category),
-			new SubcategoryID(subCategory),
+			new SubCategoryID(subCategory),
 			new TransactionDate(date),
 			new TransactionAmount(amount),
 			item ? new ItemID(item) : undefined,

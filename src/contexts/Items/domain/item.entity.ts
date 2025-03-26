@@ -7,16 +7,16 @@ import { ItemStore } from "./item-store.valueobject";
 import { ItemOperation } from "./item-operation.valueobject";
 import { OperationType } from "contexts/Shared/domain/value-objects/operation.valueobject";
 import { CategoryID } from "contexts/Categories/domain";
-import { SubcategoryID } from "contexts/Subcategories";
+import { SubCategoryID } from "contexts/Subcategories";
 
 export class Item {
 	constructor(
 		protected _id: ItemID,
 		protected _operation: ItemOperation,
 		protected _name: ItemName,
-		protected _amount: ItemPrice,
+		protected _price: ItemPrice,
 		protected _category: CategoryID,
-		protected _subCategory: SubcategoryID,
+		protected _subCategory: SubCategoryID,
 		protected _account: AccountID,
 		protected _brand?: ItemBrand,
 		protected _store?: ItemStore,
@@ -28,7 +28,7 @@ export class Item {
 		amount: ItemPrice,
 		operation: ItemOperation,
 		category: CategoryID,
-		subCategory: SubcategoryID,
+		subCategory: SubCategoryID,
 		account: AccountID,
 		brand?: ItemBrand,
 		store?: ItemStore
@@ -50,7 +50,7 @@ export class Item {
 		name: ItemName,
 		amount: ItemPrice,
 		category: CategoryID,
-		subCategory: SubcategoryID,
+		subCategory: SubCategoryID,
 		account: AccountID,
 		brand?: ItemBrand,
 		store?: ItemStore
@@ -65,6 +65,21 @@ export class Item {
 			account,
 			brand,
 			store
+		);
+	}
+
+	static copyWithNegativeAmount(item: Item): Item {
+		return new Item(
+			ItemID.generate(),
+			item._operation,
+			item._name,
+			item._price.negate(),
+			item._category,
+			item._subCategory,
+			item._account,
+			item._brand,
+			item._store,
+			item._toAccount
 		);
 	}
 
@@ -84,19 +99,42 @@ export class Item {
 		return this._toAccount;
 	}
 
-	get amount(): ItemPrice {
-		return this._amount;
+	get price(): ItemPrice {
+		return this._price;
 	}
 
-	set amount(amount: ItemPrice) {
-		this._amount = amount;
+	get realPrice(): ItemPrice {
+		return this._operation.isIncome() || this._operation.isTransfer()
+			? this._price
+			: this._price.negate();
+	}
+
+	getRealPriceForAccount(accountID: AccountID): ItemPrice {
+		return new ItemPrice(
+			this._operation.isTransfer()
+				? (accountID.equalTo(this._account)
+						? -1
+						: (
+								this._toAccount
+									? accountID.equalTo(this._toAccount)
+									: false
+						  )
+						? 1
+						: 0) * this._price.toNumber()
+				: this._price.toNumber() *
+				  (this._operation.isExpense() ? -1 : 1)
+		);
+	}
+
+	set price(amount: ItemPrice) {
+		this._price = amount;
 	}
 
 	get category(): CategoryID {
 		return this._category;
 	}
 
-	get subCategory(): SubcategoryID {
+	get subCategory(): SubCategoryID {
 		return this._subCategory;
 	}
 
@@ -120,18 +158,21 @@ export class Item {
 		name,
 		amount,
 		category,
+		subCategory,
 		account,
 		toAccount,
 	}: {
 		name?: ItemName;
 		amount?: ItemPrice;
 		category?: CategoryID;
+		subCategory?: SubCategoryID;
 		account?: AccountID;
 		toAccount?: AccountID;
 	}) {
 		if (name) this._name = name;
-		if (amount) this._amount = amount;
+		if (amount) this._price = amount;
 		if (category) this._category = category;
+		if (subCategory) this._subCategory = subCategory;
 		if (account) this._account = account;
 		if (toAccount) this._toAccount = toAccount;
 	}
@@ -141,7 +182,7 @@ export class Item {
 			id: this._id.value,
 			operation: this._operation.value,
 			name: this._name.value,
-			amount: this._amount.valueOf(),
+			amount: this._price.valueOf(),
 			category: this._category.value,
 			subCategory: this._subCategory.value,
 			brand: this._brand?.value,

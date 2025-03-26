@@ -10,35 +10,35 @@ type Operator =
 	| "LIKE"
 	| "BETWEEN";
 
-interface FilterCriterion<T> {
-	value: string;
+interface FilterCriterion {
+	value: string | number | Date | undefined;
 	operator: Operator;
 }
 
-type Filter<T> = T | FilterCriterion<T>;
+type Filter = FilterCriterion;
 
-function makeFilter<T>(
-	value: string,
+function makeFilter(
+	value: string | number | Date | undefined,
 	operator: Operator = "EQUAL"
-): FilterCriterion<T> {
+): FilterCriterion {
 	return { value, operator };
 }
 
-interface IOrder {
-	field: string;
+interface IOrder<T> {
+	field: keyof T;
 	direction: "ASC" | "DESC" | "NONE";
 }
 
 export class Criteria<T> {
-	readonly filters: Record<keyof T, Filter<T>>;
-	readonly orders: IOrder[];
+	readonly filters: Record<keyof T, Filter>;
+	readonly orders: IOrder<T>[];
 	limit?: number;
 	offset?: number;
 	readonly resultType: "ONE" | "MANY";
 
 	constructor(
-		filters: Record<keyof T, Filter<T>> = {} as Record<keyof T, Filter<T>>,
-		orders: IOrder[] = [],
+		filters: Record<keyof T, Filter> = {} as Record<keyof T, Filter>,
+		orders: IOrder<T>[] = [],
 		limit?: number,
 		offset?: number,
 		resultType: "ONE" | "MANY" = "MANY"
@@ -52,7 +52,7 @@ export class Criteria<T> {
 
 	where(
 		field: keyof T,
-		value: any,
+		value: string | number | Date | undefined,
 		operator: Operator = "EQUAL"
 	): Criteria<T> {
 		const filter = makeFilter(value, operator);
@@ -61,7 +61,7 @@ export class Criteria<T> {
 	}
 
 	orderBy(
-		field: string,
+		field: keyof T,
 		direction: "ASC" | "DESC" | "NONE" = "ASC"
 	): Criteria<T> {
 		if (direction === "NONE") this.orders.push({ field, direction });

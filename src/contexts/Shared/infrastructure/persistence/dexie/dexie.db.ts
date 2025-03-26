@@ -4,7 +4,7 @@ import { Config } from "contexts/Shared/infrastructure";
 import { Account } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
 import { Item } from "contexts/Items";
-import { Subcategory } from "contexts/Subcategories/domain";
+import { SubCategory } from "contexts/Subcategories/domain";
 import { Transaction } from "contexts/Transactions";
 
 export class DexieDB extends DB {
@@ -31,7 +31,7 @@ export class DexieDB extends DB {
 				Item.emptyPrimitives()
 			).join(", "),
 			[this.config.subCategoriesTableName]: Object.keys(
-				Subcategory.emptyPrimitives()
+				SubCategory.emptyPrimitives()
 			).join(", "),
 			[this.config.transactionsTableName]: Object.keys(
 				Transaction.emptyPrimitives()

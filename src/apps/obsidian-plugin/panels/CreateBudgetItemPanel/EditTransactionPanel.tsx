@@ -1,6 +1,10 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useState } from "react";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { TransactionsContext } from "apps/obsidian-plugin/views";
+import {
+	AccountsContext,
+	CategoriesContext,
+	TransactionsContext,
+} from "apps/obsidian-plugin/views";
 import {
 	Input,
 	Select,
@@ -12,8 +16,7 @@ import {
 	TransactionName,
 } from "contexts/Transactions";
 import { Account, AccountID, AccountName } from "contexts/Accounts";
-import { useAccounts, useCategories } from "apps/obsidian-plugin/hooks";
-import { Category, CategoryID, Subcategory, SubcategoryID } from "contexts";
+import { Category, CategoryID, SubCategory, SubCategoryID } from "contexts";
 
 export const EditTransactionPanel = ({
 	transaction,
@@ -25,15 +28,15 @@ export const EditTransactionPanel = ({
 	transaction: Transaction;
 	getAccountByID: (id: AccountID) => Account | undefined;
 	getCategoryByID: (id: CategoryID) => Category | undefined;
-	getSubCategoryByID: (id: SubcategoryID) => Subcategory | undefined;
+	getSubCategoryByID: (id: SubCategoryID) => SubCategory | undefined;
 	onUpdate: () => Promise<void>;
 }) => {
 	const {
 		useCases: { updateTransaction },
 	} = useContext(TransactionsContext);
 
-	const { subCategories, categories } = useCategories();
-	const { accounts, getAccountByName } = useAccounts();
+	const { subCategories, categories } = useContext(CategoriesContext);
+	const { accounts, getAccountByName } = useContext(AccountsContext);
 
 	const [name, setName] = useState(transaction.name.value);
 	const [amount, setAmount] = useState(transaction.amount);
