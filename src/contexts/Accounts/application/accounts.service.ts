@@ -1,4 +1,4 @@
-import { Logger } from "contexts/Shared/infrastructure";
+import { Logger } from "contexts/Shared/infrastructure/logger";
 import {
 	Account,
 	AccountID,
@@ -11,9 +11,8 @@ import {
 } from "contexts/Shared/domain";
 import { Transaction } from "contexts/Transactions/domain";
 
-const logger = new Logger("AccountsService");
-
 export class AccountsService {
+	#logger = new Logger("AccountsService");
 	constructor(private _accountsRepository: IAccountsRepository) {}
 
 	async create(account: Account): Promise<void> {
@@ -52,24 +51,24 @@ export class AccountsService {
 			? await this.getByID(transaction.toAccount)
 			: undefined;
 
-		logger.debug("adjusting account", {
+		this.#logger.debug("adjusting account", {
 			account: account.toPrimitives(),
 			transaction: transaction.toPrimitives(),
 		});
 		account.adjustFromTransaction(transaction);
-		logger.debug("adjusting account adjusted", {
+		this.#logger.debug("adjusting account adjusted", {
 			...account.toPrimitives(),
 		});
 
 		await this.update(account);
 
 		if (toAccount) {
-			logger.debug("adjusting toAccount", {
+			this.#logger.debug("adjusting toAccount", {
 				toAccount: toAccount.toPrimitives(),
 				transaction: transaction.toPrimitives(),
 			});
 			toAccount.adjustFromTransaction(transaction);
-			logger.debug("adjusting toAccount adjusted", {
+			this.#logger.debug("adjusting toAccount adjusted", {
 				...toAccount.toPrimitives(),
 			});
 			await this.update(toAccount);

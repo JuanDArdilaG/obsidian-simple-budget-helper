@@ -52,7 +52,15 @@ export const RecurrentItemsList = ({
 							: 3
 					)
 				)
-				.then((items) => setItems(items));
+				.then((items) => {
+					logger
+						.debugB("getRecurrentItemsUntilDate", {
+							timeframe,
+							items,
+						})
+						.log();
+					setItems(items);
+				});
 	}, [timeframe, updateItems]);
 	const itemsReport = useMemo(() => new RecurrentItemsReport(items), [items]);
 	const [showPanel, setShowPanel] = useState<{
@@ -61,11 +69,13 @@ export const RecurrentItemsList = ({
 	}>();
 
 	useEffect(() => {
-		logger.debug("item selected for action", {
-			selectedItem,
-			action,
-		});
-		if (selectedItem) setShowPanel({ item: selectedItem, action });
+		if (selectedItem) {
+			logger.debug("item selected for action", {
+				selectedItem,
+				action,
+			});
+			setShowPanel({ item: selectedItem, action });
+		}
 	}, [action, selectedItem]);
 
 	useEffect(() => {
@@ -191,7 +201,6 @@ export const RecurrentItemsList = ({
 												setShowPanel(undefined);
 												setUpdateItems(true);
 											}}
-											setUpdateItems={setUpdateItems}
 										/>
 									) : undefined
 								) : undefined}

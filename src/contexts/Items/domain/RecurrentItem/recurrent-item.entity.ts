@@ -45,10 +45,10 @@ export class RecurrentItem extends Item {
 
 	createRecurretItemsUntilDate(to: RecurrentItemNextDate): RecurrentItem[] {
 		const items = [];
-		let nextDate = this.nextDate;
+		let nextDate = this.nextDate.copy();
 		while (nextDate.isLessOrEqualThan(to)) {
 			const itemCopy = RecurrentItem.copy(this);
-			itemCopy._nextDate = nextDate;
+			itemCopy._nextDate = nextDate.copy();
 			items.push(itemCopy);
 			nextDate.next(this._frequency);
 		}

@@ -19,22 +19,27 @@ import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/Sub
 export const EditRecurrentItemPanel = ({
 	item,
 	onClose,
-	setUpdateItems,
 }: {
 	item: RecurrentItem;
 	onClose: () => void;
-	setUpdateItems: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
 	const {
 		useCases: { updateItem },
 	} = useContext(ItemsContext);
 	const { brands, stores } = useContext(ItemsContext);
 
-	const { AccountSelect, account } = useAccountSelect({ label: "From" });
+	const { AccountSelect, account } = useAccountSelect({
+		label: "From",
+		initialValueID: item.account,
+	});
 	const { AccountSelect: ToAccountSelect, account: toAccount } =
-		useAccountSelect({ label: "From" });
-	const { CategorySelect, category } = useCategorySelect({});
-	const { SubCategorySelect, subCategory } = useSubCategorySelect({});
+		useAccountSelect({ label: "To", initialValueID: item.toAccount });
+	const { CategorySelect, category } = useCategorySelect({
+		initialValueID: item.category,
+	});
+	const { SubCategorySelect, subCategory } = useSubCategorySelect({
+		initialValueID: item.subCategory,
+	});
 
 	const [name, setName] = useState(item.name.value);
 	const [amount, setAmount] = useState(item.price);
@@ -51,7 +56,7 @@ export const EditRecurrentItemPanel = ({
 
 	return (
 		<div className="create-budget-item-modal">
-			<h3>Edit Account Record</h3>
+			<h3>Edit Recurrent Item</h3>
 			<Input
 				id="name"
 				label="Name"
@@ -78,9 +83,9 @@ export const EditRecurrentItemPanel = ({
 				}
 			/>
 			{AccountSelect}
-			{ToAccountSelect}
+			{type === "transfer" ? ToAccountSelect : undefined}
 			{CategorySelect}
-			{type === "transfer" ? SubCategorySelect : undefined}
+			{SubCategorySelect}
 			<Input<Date>
 				id="date"
 				label="Date"
@@ -130,7 +135,6 @@ export const EditRecurrentItemPanel = ({
 					});
 
 					await updateItem.execute(item);
-					setUpdateItems(true);
 
 					onClose();
 				}}

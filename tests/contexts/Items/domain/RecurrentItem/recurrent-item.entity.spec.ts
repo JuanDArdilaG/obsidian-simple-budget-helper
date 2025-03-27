@@ -123,17 +123,17 @@ describe("createRecurretItemsBetweenDates", () => {
 		);
 
 		expect(items.length).toBe(4);
-		expect(items[0].nextDate.valueOf().getTime()).toBe(
-			recurrentItem.nextDate.valueOf().getTime()
+		expect(items[0].nextDate.valueOf()).toEqual(
+			recurrentItem.nextDate.valueOf()
 		);
-		expect(items[1].nextDate.valueOf().getTime()).toBe(
-			recurrentItem.nextDate.valueOf().getTime() + 2 * 24 * 60 * 60 * 1000
+		expect(items[1].nextDate.valueOf()).toEqual(
+			recurrentItem.nextDate.addDays(2).valueOf()
 		);
-		expect(items[2].nextDate.valueOf().getTime()).toBe(
-			recurrentItem.nextDate.valueOf().getTime() + 4 * 24 * 60 * 60 * 1000
+		expect(items[2].nextDate.valueOf()).toEqual(
+			recurrentItem.nextDate.addDays(2).valueOf()
 		);
-		expect(items[3].nextDate.valueOf().getTime()).toBe(
-			recurrentItem.nextDate.valueOf().getTime() + 6 * 24 * 60 * 60 * 1000
+		expect(items[3].nextDate.valueOf()).toEqual(
+			recurrentItem.nextDate.addDays(2).valueOf()
 		);
 	});
 });

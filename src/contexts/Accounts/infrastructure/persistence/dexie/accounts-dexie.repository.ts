@@ -6,10 +6,10 @@ import {
 	IAccountsRepository,
 } from "contexts/Accounts/domain";
 import {
-	Config,
 	DexieDB,
 	DexieRepository,
-} from "contexts/Shared/infrastructure";
+} from "contexts/Shared/infrastructure/persistence";
+import { Config } from "contexts/Shared/infrastructure/config";
 
 export class AccountsDexieRepository
 	extends DexieRepository<Account, AccountID, AccountPrimitives>

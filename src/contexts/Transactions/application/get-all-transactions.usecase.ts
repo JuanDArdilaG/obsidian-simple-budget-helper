@@ -9,8 +9,6 @@ import {
 	TransactionCriteria,
 } from "contexts/Transactions/domain";
 
-const logger = new Logger("GetAllTransactionsUseCase").off();
-
 export type GetAllTransactionsUseCaseInput = {
 	accountFilter?: AccountID;
 	categoryFilter?: CategoryID;
@@ -25,6 +23,7 @@ export class GetAllTransactionsUseCase
 			GetAllTransactionsUseCaseOutput
 		>
 {
+	#logger = new Logger("GetAllTransactionsUseCase").off();
 	constructor(private _transactionsRepository: ITransactionsRepository) {}
 
 	async execute({
@@ -45,7 +44,7 @@ export class GetAllTransactionsUseCase
 			filterCriteria
 		);
 
-		logger.debug("account transactions", {
+		this.#logger.debug("account transactions", {
 			transactions: transactions.map((t) => t.toPrimitives()),
 		});
 
@@ -65,7 +64,7 @@ export class GetAllTransactionsUseCase
 					filterCriteria
 				);
 
-			logger.debug("toAccount transactions", {
+			this.#logger.debug("toAccount transactions", {
 				transactions: transactionsToAccount.map((t) =>
 					t.toPrimitives()
 				),

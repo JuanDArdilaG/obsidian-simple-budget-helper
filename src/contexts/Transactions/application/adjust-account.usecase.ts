@@ -3,8 +3,6 @@ import { AccountBalance, AccountID } from "contexts/Accounts/domain";
 import { TransactionsService } from "contexts/Transactions/application";
 import { Logger } from "contexts/Shared";
 
-const logger = new Logger("AdjustAccountUseCase");
-
 export type AdjustAccountUseCaseInput = {
 	accountID: AccountID;
 	newBalance: AccountBalance;
@@ -13,13 +11,14 @@ export type AdjustAccountUseCaseInput = {
 export class AdjustAccountUseCase
 	implements CommandUseCase<AdjustAccountUseCaseInput>
 {
+	#logger = new Logger("AdjustAccountUseCase");
 	constructor(private _transactionsService: TransactionsService) {}
 
 	async execute({
 		accountID,
 		newBalance,
 	}: AdjustAccountUseCaseInput): Promise<void> {
-		logger
+		this.#logger
 			.debugB("accountAdjustment", {
 				accountID: accountID.value,
 				newBalance: newBalance.toString(),

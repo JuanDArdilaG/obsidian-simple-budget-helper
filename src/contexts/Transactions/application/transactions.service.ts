@@ -22,9 +22,8 @@ import { AccountsService } from "contexts/Accounts/application";
 import { EntityNotFoundError } from "contexts/Shared";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 
-const logger = new Logger("TransactionsService");
-
 export class TransactionsService implements ITransactionsService {
+	#logger = new Logger("TransactionsService");
 	constructor(
 		private _accountsService: AccountsService,
 		private _transactionsRepository: ITransactionsRepository,
@@ -49,14 +48,14 @@ export class TransactionsService implements ITransactionsService {
 	}
 
 	async record(transaction: Transaction): Promise<void> {
-		logger.debug("recording transaction", {
+		this.#logger.debug("recording transaction", {
 			...transaction.toPrimitives(),
 		});
 
 		await this._accountsService.adjustOnTransaction(transaction);
 		await this._transactionsRepository.persist(transaction);
 
-		logger.debug("transaction recorded");
+		this.#logger.debug("transaction recorded");
 	}
 
 	async accountAdjustment(
@@ -66,7 +65,7 @@ export class TransactionsService implements ITransactionsService {
 		const account = await this._accountsService.getByID(accountID);
 		const amountDifference = account.balance.adjust(newBalance);
 
-		logger
+		this.#logger
 			.debugB("accountAdjustment", {
 				account: account.toPrimitives(),
 				newBalance: newBalance.toString(),
