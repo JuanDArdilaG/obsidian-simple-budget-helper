@@ -1,8 +1,8 @@
-import { StringValueObject, DomainError } from "contexts/Shared/domain";
+import { DomainError } from "contexts/Shared/domain";
 
 export class EntityNotFoundError extends DomainError {
-	constructor(entityName: string, id: StringValueObject) {
-		super(`${entityName} with id ${id.toString()} not found`);
+	constructor(entityName: string, id: string) {
+		super(`${entityName} with id ${id} not found`);
 	}
 
 	public errorType(): string {

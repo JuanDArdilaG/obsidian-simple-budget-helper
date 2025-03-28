@@ -1,15 +1,15 @@
 import { QueryUseCase } from "contexts/Shared/domain/query-use-case.interface";
-import { IItemsRepository } from "../domain/item-repository.interface";
-import { Item } from "../domain";
+import { Item } from "contexts/Items/domain";
+import { ItemsService } from "contexts/Items/application";
 
 export type GetAllItemsUseCaseOutput = Item[];
 
 export class GetAllItemsUseCase
 	implements QueryUseCase<void, GetAllItemsUseCaseOutput>
 {
-	constructor(private _itemsRepository: IItemsRepository) {}
+	constructor(private _itemsService: ItemsService) {}
 
 	async execute(): Promise<GetAllItemsUseCaseOutput> {
-		return await this._itemsRepository.findAll();
+		return await this._itemsService.getAll();
 	}
 }

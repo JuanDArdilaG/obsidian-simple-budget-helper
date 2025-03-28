@@ -17,19 +17,21 @@ export const useCategorySelect = ({
 	setLock?: (lock: boolean) => void;
 }) => {
 	const [categoryName, setCategoryName] = useState(
-		initialValueName?.value ?? ""
+		initialValueName?.valueOf() ?? ""
 	);
 	const [category, setCategory] = useState<Category>();
 
 	const { categories, getCategoryByID } = useContext(CategoriesContext);
 	const categoriesNames = useMemo(
-		() => categories.map((acc) => acc.name.value).sort(),
+		() => categories.map((acc) => acc.name.valueOf()).sort(),
 		[categories]
 	);
 
 	useEffect(() => {
 		if (initialValueID)
-			setCategoryName(getCategoryByID(initialValueID)?.name.value ?? "");
+			setCategoryName(
+				getCategoryByID(initialValueID)?.name.valueOf() ?? ""
+			);
 	}, [initialValueID]);
 
 	useEffect(() => {

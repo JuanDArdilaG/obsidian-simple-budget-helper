@@ -1,7 +1,7 @@
-import { DATE_RELATIONS } from "apps/obsidian-plugin/config";
 import { StringValueObject } from "contexts/Shared/domain/value-objects/string.valueobject";
 
 export class RecurrrentItemFrequency extends StringValueObject {
+	static readonly MONTH_DAYS_RELATION = 30.4167;
 	constructor(value: string) {
 		super("Recurrent Item Frequency", value);
 	}
@@ -22,7 +22,8 @@ export class RecurrrentItemFrequency extends StringValueObject {
 		if (!frequencyObject) return 0;
 		return (
 			frequencyObject.years * 365 +
-			frequencyObject.months * DATE_RELATIONS.MONTH_DAYS +
+			frequencyObject.months *
+				RecurrrentItemFrequency.MONTH_DAYS_RELATION +
 			frequencyObject.days
 		);
 	}

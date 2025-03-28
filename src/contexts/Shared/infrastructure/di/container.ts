@@ -12,6 +12,8 @@ import {
 	CreateRecurrentItemUseCase,
 	GetRecurrentItemsUntilDateUseCase,
 	CreateItemUseCase,
+	GetAllRecurrentItemsUseCase,
+	ItemsService,
 } from "contexts/Items/application";
 import {
 	AccountsService,
@@ -70,9 +72,13 @@ export function buildContainer(): AwilixContainer {
 	// ITEMS
 	container.register({
 		_itemsRepository: asClass(ItemsDexieRepository).singleton(),
+		_itemsService: asClass(ItemsService).singleton(),
 		createItemUseCase: asClass(CreateItemUseCase).singleton(),
 		createRecurrentItemUseCase: asClass(
 			CreateRecurrentItemUseCase
+		).singleton(),
+		getAllRecurrentItemsUseCase: asClass(
+			GetAllRecurrentItemsUseCase
 		).singleton(),
 		getAllUniqueItemsByNameUseCase: asClass(
 			GetAllUniqueItemsByNameUseCase

@@ -15,9 +15,11 @@ export const Input = <T extends NonNullable<InputValue>>({
 	isLocked,
 	setIsLocked,
 	style,
+	dateWithTime,
 }: {
 	id: string;
 	label: string;
+	dateWithTime?: boolean;
 	value?: T;
 	onChange: (value: T) => void;
 	error?: string;
@@ -96,31 +98,34 @@ export const Input = <T extends NonNullable<InputValue>>({
 							onChange(newDate as T);
 						}}
 					/>
-					<input
-						type="time"
-						value={date
-							.toTimeString()
-							.split(" ")[0]
-							.split(":")
-							.slice(0, 2)
-							.join(":")}
-						onChange={(e) => {
-							const dateWithTime = new Date(date.getTime());
-							const [hour, minute] = e.target.value.split(":");
-							dateWithTime.setHours(
-								parseInt(hour),
-								parseInt(minute),
-								0,
-								0
-							);
-							logger.debug("modified time in date", {
-								timeValue: e.target.value,
-								date: dateWithTime,
-							});
-							setDate(date);
-							onChange(dateWithTime as T);
-						}}
-					/>
+					{dateWithTime ? (
+						<input
+							type="time"
+							value={date
+								.toTimeString()
+								.split(" ")[0]
+								.split(":")
+								.slice(0, 2)
+								.join(":")}
+							onChange={(e) => {
+								const dateWithTime = new Date(date.getTime());
+								const [hour, minute] =
+									e.target.value.split(":");
+								dateWithTime.setHours(
+									parseInt(hour),
+									parseInt(minute),
+									0,
+									0
+								);
+								logger.debug("modified time in date", {
+									timeValue: e.target.value,
+									date: dateWithTime,
+								});
+								setDate(date);
+								onChange(dateWithTime as T);
+							}}
+						/>
+					) : undefined}
 					{setIsLocked && (
 						<LockField
 							setIsLocked={setIsLocked}

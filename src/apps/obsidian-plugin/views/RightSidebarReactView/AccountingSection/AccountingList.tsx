@@ -10,10 +10,11 @@ import {
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { Transaction } from "contexts/Transactions/domain";
-import { ReportBalance } from "contexts";
+import { TransactionWithAccumulatedBalance } from "contexts";
 import { useAccountSelect } from "apps/obsidian-plugin/components";
 import { useCategorySelect } from "apps/obsidian-plugin/components/Select/CategorySelect";
 import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/SubCategorySelect";
+import { EditTransactionPanel } from "apps/obsidian-plugin/panels";
 
 export function AccountingList({
 	app,
@@ -25,8 +26,6 @@ export function AccountingList({
 	const logger = useLogger("AccountingList");
 	const {
 		useCases: { deleteTransaction },
-	} = useContext(TransactionsContext);
-	const {
 		setFilters,
 		filteredTransactionsReport,
 		updateFilteredTransactions,
@@ -41,14 +40,7 @@ export function AccountingList({
 	}, [account, category, subCategory]);
 
 	const withAccumulatedBalanceTransactionsGrouped = useMemo(() => {
-		const res: [
-			date: string,
-			{
-				transaction: Transaction;
-				balance: ReportBalance;
-				prevBalance: ReportBalance;
-			}[]
-		][] = [];
+		const res: [date: string, TransactionWithAccumulatedBalance[]][] = [];
 		filteredTransactionsReport
 			.withAccumulatedBalance()
 			.forEach((withBalanceTransaction) => {
@@ -62,7 +54,7 @@ export function AccountingList({
 
 	const [selectedTransaction, setSelectedTransaction] =
 		useState<Transaction>();
-	const [action, setAction] = useState("");
+	const [action, setAction] = useState<"edit" | "delete">();
 
 	const [selectionActive, setSelectionActive] = useState(false);
 	const [selection, setSelection] = useState<Transaction[]>([]);
@@ -134,6 +126,8 @@ export function AccountingList({
 						selection={selection}
 						setSelection={setSelection}
 						setSelectedTransaction={setSelectedTransaction}
+						setAction={setAction}
+						action={action}
 					/>
 				)
 			)}
@@ -146,24 +140,27 @@ const AccountingListRow = ({
 	selectionActive,
 	selection,
 	setSelection,
+	selectedTransaction,
 	setSelectedTransaction,
+	action,
 	setAction,
 }: {
-	transactionWithBalance: {
-		transaction: Transaction;
-		balance: ReportBalance;
-		prevBalance: ReportBalance;
-	};
+	transactionWithBalance: TransactionWithAccumulatedBalance;
 	selectionActive: boolean;
 	selection: Transaction[];
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
+	selectedTransaction?: Transaction;
 	setSelectedTransaction: React.Dispatch<React.SetStateAction<Transaction>>;
-	setAction: React.Dispatch<React.SetStateAction<string>>;
+	action?: "edit" | "delete";
+	setAction: React.Dispatch<
+		React.SetStateAction<"edit" | "delete" | undefined>
+	>;
 }) => {
 	const logger = useLogger("AccountingListRow");
-	const { getAccountByID } = useContext(AccountsContext);
+	const { updateAccounts, getAccountByID } = useContext(AccountsContext);
 	const { getCategoryByID, getSubCategoryByID } =
 		useContext(CategoriesContext);
+	const { updateTransactions } = useContext(TransactionsContext);
 	const account = useMemo(
 		() =>
 			getAccountByID(
@@ -199,7 +196,7 @@ const AccountingListRow = ({
 					);
 			}}
 			onContextMenu={() => {
-				setAction("");
+				setAction(undefined);
 				setSelectedTransaction(transaction);
 			}}
 			className="accounting-list-item"
@@ -246,10 +243,9 @@ const AccountingListRow = ({
 					</div>
 					<div>
 						<b>SubCategory:</b>{" "}
-						{
-							getSubCategoryByID(transaction.subCategory)?.name
-								.value
-						}
+						{getSubCategoryByID(
+							transaction.subCategory
+						)?.name.valueOf()}
 					</div>
 				</div>
 				<div style={{ textAlign: "right" }}>
@@ -261,6 +257,20 @@ const AccountingListRow = ({
 					</div>
 				</div>
 			</span>
+			{action === "edit" &&
+				selectedTransaction?.id.equalTo(transaction.id) && (
+					<EditTransactionPanel
+						onUpdate={async () => {
+							setAction(undefined);
+							updateTransactions();
+							updateAccounts();
+						}}
+						transaction={transaction}
+						getCategoryByID={getCategoryByID}
+						getSubCategoryByID={getSubCategoryByID}
+						getAccountByID={getAccountByID}
+					/>
+				)}
 		</li>
 	);
 };
@@ -272,17 +282,19 @@ const AccountingListRowGroup = ({
 	selection,
 	setSelection,
 	setSelectedTransaction,
+	action,
+	setAction,
 }: {
 	date: string;
-	transactionsWithBalance: {
-		transaction: Transaction;
-		balance: ReportBalance;
-		prevBalance: ReportBalance;
-	}[];
+	transactionsWithBalance: TransactionWithAccumulatedBalance[];
 	selectedTransaction?: Transaction;
 	selection: Transaction[];
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
 	setSelectedTransaction: React.Dispatch<React.SetStateAction<Transaction>>;
+	action?: "edit" | "delete";
+	setAction: React.Dispatch<
+		React.SetStateAction<"edit" | "delete" | undefined>
+	>;
 }) => {
 	const logger = useLogger("AccountingListRowGroup").off();
 	return (
@@ -299,29 +311,16 @@ const AccountingListRowGroup = ({
 			<ul className="accounting-list">
 				{transactionsWithBalance.map((transactionWithBalance) => {
 					const transaction = transactionWithBalance.transaction;
-					// false &&
-					// 			selectedTransaction?.id.equalTo(
-					// 				transaction.id
-					// 			) && (
-					// 				<EditTransactionPanel
-					// 					onUpdate={async () => {
-					// 						// setAction("");
-					// 						// updateTransactions();
-					// 					}}
-					// 					transaction={transaction}
-					// 					getCategoryByID={getCategoryByID}
-					// 					getSubCategoryByID={getSubCategoryByID}
-					// 					getAccountByID={getAccountByID}
-					// 				/>
-					// 			)
 					return (
 						<AccountingListRow
 							key={transaction.id.toString()}
-							setAction={() => {}}
+							action={action}
+							setAction={setAction}
 							transactionWithBalance={transactionWithBalance}
 							selection={selection}
 							selectionActive={true}
 							setSelection={setSelection}
+							selectedTransaction={selectedTransaction}
 							setSelectedTransaction={setSelectedTransaction}
 						/>
 					);

@@ -3,7 +3,6 @@
 export * from './Tabs';
 export * from './BudgetItemsListContextMenu';
 export * from './PerCategoryRightSidebarReactTab';
-export * from './RecurrentItemsList';
 export * from './RecurrentItemsSection';
 export * from './RecurrentItemsSectionButtons';
 export * from './TimeframeButtons';

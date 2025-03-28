@@ -3,7 +3,7 @@ import { RecurrrentItemFrequency } from "./recurrent-item-frequency.valueobject"
 
 export class RecurrentItemNextDate extends DateValueObject {
 	constructor(value: Date) {
-		value.setHours(0, 0, 0, 0);
+		value.setSeconds(0, 0);
 		super(value);
 	}
 
@@ -15,7 +15,7 @@ export class RecurrentItemNextDate extends DateValueObject {
 		return new RecurrentItemNextDate(this.valueOf());
 	}
 
-	getRemainingDays(): number {
+	get remainingDays(): number {
 		const date = new Date(this._value.getTime());
 		const now = new Date();
 		now.setHours(0, 0, 0, 0);
@@ -23,6 +23,13 @@ export class RecurrentItemNextDate extends DateValueObject {
 			(date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
 		);
 		return daysToDate;
+	}
+
+	get remainingDaysStr(): string {
+		const daysToDate = this.remainingDays;
+		return daysToDate === 1 || daysToDate === -1
+			? `${daysToDate} day`
+			: `${daysToDate} days`;
 	}
 
 	next(frequency: RecurrrentItemFrequency): void {

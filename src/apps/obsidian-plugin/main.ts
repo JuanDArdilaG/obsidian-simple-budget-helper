@@ -7,7 +7,7 @@ import { Logger } from "../../contexts/Shared/infrastructure/logger";
 import { LeftMenuItems, SettingTab, views } from "apps/obsidian-plugin";
 import { RightSidebarReactViewRoot } from "apps/obsidian-plugin/views";
 import { DexieDB } from "contexts";
-// import { MDMigration } from "apps/obsidian-plugin/migration/md.migration";
+import { MDMigration } from "apps/obsidian-plugin/migration/md.migration";
 import { AwilixContainer } from "awilix";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
@@ -78,28 +78,28 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		LeftMenuItems.RightSidebarPanel(this);
 	}
 
-	// async migrateFromMarkdown(container: AwilixContainer) {
-	// 	const migrator = new MDMigration(
-	// 		this.app.vault,
-	// 		this.settings.rootFolder,
-	// 		container.resolve("getAllAccountsUseCase"),
-	// 		container.resolve("getAllCategoriesUseCase"),
-	// 		container.resolve("getAllSubCategoriesUseCase"),
-	// 		container.resolve("createAccountUseCase"),
-	// 		container.resolve("createCategoryUseCase"),
-	// 		container.resolve("createSubCategoryUseCase"),
-	// 		container.resolve("recordTransactionUseCase"),
-	// 		container.resolve("recordSimpleItemUseCase"),
-	// 		container.resolve("createRecurrentItemUseCase")
-	// 	);
-	// 	const { items, transactions } = await migrator.migrate();
-	// 	this.logger.debug("transactions migrated", {
-	// 		migration: {
-	// 			items: items.map((i) => i.toPrimitives()),
-	// 			transactions: transactions.map((t) => t.toPrimitives()),
-	// 		},
-	// 	});
-	// }
+	async migrateFromMarkdown(container: AwilixContainer) {
+		const migrator = new MDMigration(
+			this.app.vault,
+			this.settings.rootFolder,
+			container.resolve("getAllAccountsUseCase"),
+			container.resolve("getAllCategoriesUseCase"),
+			container.resolve("getAllSubCategoriesUseCase"),
+			container.resolve("createAccountUseCase"),
+			container.resolve("createCategoryUseCase"),
+			container.resolve("createSubCategoryUseCase"),
+			container.resolve("recordTransactionUseCase"),
+			container.resolve("recordSimpleItemUseCase"),
+			container.resolve("createRecurrentItemUseCase")
+		);
+		const { items, transactions } = await migrator.migrate();
+		this.logger.debug("transactions migrated", {
+			migration: {
+				items: items.map((i) => i.toPrimitives()),
+				transactions: transactions.map((t) => t.toPrimitives()),
+			},
+		});
+	}
 
 	async onunload() {
 		this.logger.debug("onunload");
@@ -117,6 +117,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 	}
 
 	async saveSettings() {
+		this.logger.debugB("saving settings", { data: this.settings }).log();
 		await this.saveData(this.settings);
 	}
 }

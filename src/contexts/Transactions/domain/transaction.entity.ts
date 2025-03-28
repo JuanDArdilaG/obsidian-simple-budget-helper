@@ -75,20 +75,37 @@ export class Transaction
 		);
 	}
 
-	static copyWithNegativeAmount(transaction: Transaction): Transaction {
+	copy(): Transaction {
 		return new Transaction(
 			TransactionID.generate(),
-			transaction._account,
-			transaction._name,
-			transaction._operation,
-			transaction._category,
-			transaction._subCategory,
-			transaction._date,
-			transaction._amount.negate(),
-			transaction._item,
-			transaction._toAccount,
-			transaction._brand,
-			transaction._store
+			this._account,
+			this._name,
+			this._operation,
+			this._category,
+			this._subCategory,
+			this._date,
+			this._amount,
+			this._item,
+			this._toAccount,
+			this._brand,
+			this._store
+		);
+	}
+
+	copyWithNegativeAmount(): Transaction {
+		return new Transaction(
+			TransactionID.generate(),
+			this._account,
+			this._name,
+			this._operation,
+			this._category,
+			this._subCategory,
+			this._date,
+			this._amount.negate(),
+			this._item,
+			this._toAccount,
+			this._brand,
+			this._store
 		);
 	}
 
@@ -104,16 +121,40 @@ export class Transaction
 		return this._name;
 	}
 
+	updateName(name: TransactionName): void {
+		this._name = name;
+	}
+
 	get date(): TransactionDate {
 		return this._date;
+	}
+
+	updateDate(date: TransactionDate): void {
+		this._date = date;
 	}
 
 	get operation(): TransactionOperation {
 		return this._operation;
 	}
 
+	updateOperation(operation: TransactionOperation): void {
+		this._operation = operation;
+	}
+
 	get account(): AccountID {
 		return this._account;
+	}
+
+	get toAccount(): AccountID | undefined {
+		return this._toAccount;
+	}
+
+	updateAccount(account: AccountID): void {
+		this._account = account;
+	}
+
+	updateToAccount(toAccount?: AccountID): void {
+		this._toAccount = toAccount;
 	}
 
 	get categoryID(): CategoryID {
@@ -126,6 +167,10 @@ export class Transaction
 
 	get amount(): TransactionAmount {
 		return this._amount;
+	}
+
+	updateAmount(amount: TransactionAmount) {
+		this._amount = amount;
 	}
 
 	getRealAmountForAccount(accountID: AccountID): TransactionAmount {
@@ -143,24 +188,6 @@ export class Transaction
 				: this.amount.toNumber() *
 				  (this._operation.isExpense() ? -1 : 1)
 		);
-	}
-
-	get toAccount(): AccountID | undefined {
-		return this._toAccount;
-	}
-
-	update(
-		name: TransactionName,
-		account: AccountID,
-		date: TransactionDate,
-		type: TransactionOperation,
-		amount: TransactionAmount
-	) {
-		this._name = name;
-		this._account = account;
-		this._date = date;
-		this._operation = type;
-		this._amount = amount;
 	}
 
 	toString(): string {

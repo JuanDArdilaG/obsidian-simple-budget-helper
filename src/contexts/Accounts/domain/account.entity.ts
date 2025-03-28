@@ -1,3 +1,4 @@
+import { NumberValueObject } from "@juandardilag/value-objects/NumberValueObject";
 import {
 	AccountBalance,
 	AccountID,
@@ -51,11 +52,26 @@ export class Account implements IEntity<AccountID, AccountPrimitives> {
 			transaction: transaction.toPrimitives(),
 			balance: this._balance.valueOf(),
 		});
-		this._balance = new AccountBalance(
-			this._balance.valueOf() +
-				transaction.getRealAmountForAccount(this._id).valueOf() *
-					(this._type.isAsset() ? 1 : -1)
+		this._balance = this._balance.plus(
+			transaction
+				.getRealAmountForAccount(this._id)
+				.times(new NumberValueObject(this._type.isAsset() ? 1 : -1))
 		);
+	}
+
+	adjustOnTransactionUpdate(
+		prevTransaction: Transaction,
+		transaction: Transaction
+	) {
+		if (
+			prevTransaction
+				.getRealAmountForAccount(this.id)
+				.equalTo(transaction.getRealAmountForAccount(this.id))
+		)
+			return;
+		this._balance = this._balance
+			.sustract(prevTransaction.getRealAmountForAccount(this.id))
+			.plus(transaction.getRealAmountForAccount(this.id));
 	}
 
 	adjustOnTransactionDeletion(transaction: Transaction) {

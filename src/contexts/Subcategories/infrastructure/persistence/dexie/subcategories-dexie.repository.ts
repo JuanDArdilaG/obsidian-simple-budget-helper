@@ -5,12 +5,10 @@ import {
 	ISubCategoriesRepository,
 	SubCategoryName,
 } from "contexts/Subcategories/domain";
-import {
-	DexieDB,
-	DexieRepository,
-} from "contexts/Shared/infrastructure/persistence";
+import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.db";
+import { DexieRepository } from "contexts/Shared/infrastructure/persistence/dexie/dexie.repository";
 import { CategoryID } from "contexts/Categories";
-import { Config } from "contexts/Shared/infrastructure";
+import { Config } from "contexts/Shared/infrastructure/config";
 
 export class SubcategoriesDexieRepository
 	extends DexieRepository<SubCategory, SubCategoryID, SubcategoryPrimitives>

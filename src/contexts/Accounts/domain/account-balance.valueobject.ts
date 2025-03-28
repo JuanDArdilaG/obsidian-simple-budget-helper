@@ -5,6 +5,10 @@ export class AccountBalance extends PriceValueObject {
 		return new AccountBalance(0);
 	}
 
+	plus(other: PriceValueObject): AccountBalance {
+		return new AccountBalance(super.plus(other).valueOf());
+	}
+
 	sustract(other: PriceValueObject): AccountBalance {
 		return new AccountBalance(super.sustract(other).valueOf());
 	}

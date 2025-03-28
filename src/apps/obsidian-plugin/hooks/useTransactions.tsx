@@ -1,4 +1,3 @@
-import { GetAllTransactionsGroupedByDaysUseCaseInput } from "contexts/Reports";
 import { useState, useEffect } from "react";
 import {
 	AccountID,
@@ -14,7 +13,7 @@ export const useTransactions = ({
 }: {
 	getAllTransactions: GetAllTransactionsUseCase;
 }) => {
-	const logger = useLogger("useTransactions");
+	const logger = useLogger("useTransactions", false);
 
 	const [transactions, setTransactions] = useState<Transaction[]>([]);
 	const [filteredTransactions, setFilteredTransactions] = useState<
@@ -82,7 +81,10 @@ export const useTransactions = ({
 		transactions,
 		filteredTransactions,
 		setFilters,
-		updateTransactions: () => setUpdateTransactions(true),
+		updateTransactions: () => {
+			setUpdateTransactions(true);
+			setUpdateFilteredTransactions(true);
+		},
 		updateFilteredTransactions: () => setUpdateFilteredTransactions(true),
 	};
 };

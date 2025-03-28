@@ -6,14 +6,13 @@ import { IEntity } from "contexts/Shared/domain/entity.interface";
 import { EntityTable } from "dexie";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 
-const logger = new Logger("DexieRepository").off();
-
 export abstract class DexieRepository<
 	T extends IEntity<ID, P>,
 	ID extends IDValueObject,
 	P extends Record<string, string | number | Date>
 > implements IRepository<ID, T, P>
 {
+	#logger = new Logger("DexieRepository").off();
 	protected readonly _table: EntityTable<P, "id">;
 
 	constructor(
@@ -48,29 +47,31 @@ export abstract class DexieRepository<
 	async findByCriteria(criteria: Criteria<P>): Promise<T[]> {
 		//TODO: complete implementation
 		const table = this._table;
-		logger.debug("findByCriteria dexie repository", {
+		this.#logger.debug("findByCriteria dexie repository", {
 			criteria,
 		});
 		let collection = table.toCollection();
 		Object.keys(criteria.filters).forEach((field) => {
 			const filter = criteria.filters[field];
-			logger.debug("new filter", {
+			this.#logger.debug("new filter", {
 				filter: `where ${field} ${filter.operator} ${filter.value}`,
 			});
 			collection = collection.and((p) => {
 				const value = p[field];
-				logger.debug("evaluating filter", {
+				this.#logger.debug("evaluating filter", {
 					value: p[field],
 				});
 				return filter.operator === "EQUAL"
 					? value === filter.value
 					: filter.operator === "LESS_THAN_OR_EQUAL" && filter.value
 					? value <= filter.value
+					: filter.operator === "NOT_EQUAL"
+					? value !== filter.value
 					: false;
 			});
 		});
 		const res = await collection.toArray();
-		logger.debug("findByCriteria res", { res });
+		this.#logger.debug("findByCriteria res", { res });
 		return res.map((i) => this.mapToDomain(i));
 	}
 

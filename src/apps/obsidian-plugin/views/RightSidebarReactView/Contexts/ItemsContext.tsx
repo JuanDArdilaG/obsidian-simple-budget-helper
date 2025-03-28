@@ -8,6 +8,8 @@ import {
 	GetRecurrentItemsUntilDateUseCase,
 	ItemStore,
 	ItemBrand,
+	GetAllRecurrentItemsUseCase,
+	RecurrentItem,
 } from "contexts/Items";
 import {
 	RecordRecurrentItemUseCase,
@@ -28,16 +30,20 @@ export type ItemsContextType = {
 		recordSimpleItem: RecordSimpleItemUseCase;
 		recordRecurrentItem: RecordRecurrentItemUseCase;
 		getRecurrentItemsUntilDate: GetRecurrentItemsUntilDateUseCase;
+		getAllRecurrentItems: GetAllRecurrentItemsUseCase;
 	};
+	recurrentItems: RecurrentItem[];
+	updateRecurrentItems: () => void;
 	brands: ItemBrand[];
-	stores: ItemStore[];
 	updateBrands: () => void;
+	stores: ItemStore[];
 	updateStores: () => void;
 };
 
 export const ItemsContext = createContext<ItemsContextType>({
 	useCases: {
 		createItem: {} as CreateItemUseCase,
+		getAllRecurrentItems: {} as GetAllRecurrentItemsUseCase,
 		getAllUniqueItemsByName: {} as GetAllUniqueItemsByNameUseCase,
 		getAllUniqueItemBrands: {} as GetAllUniqueItemBrandsUseCase,
 		getAllUniqueItemStores: {} as GetAllUniqueItemStoresUseCase,
@@ -47,15 +53,20 @@ export const ItemsContext = createContext<ItemsContextType>({
 		deleteItem: {} as DeleteItemUseCase,
 		updateItem: {} as UpdateItemUseCase,
 	},
+	recurrentItems: [],
+	updateRecurrentItems: () => {},
 	brands: [],
-	stores: [],
 	updateBrands: () => {},
+	stores: [],
 	updateStores: () => {},
 });
 
 export const getItemsContextDefault = (
 	container: AwilixContainer
 ): ItemsContextType => {
+	const getAllRecurrentItems = container.resolve(
+		"getAllRecurrentItemsUseCase"
+	);
 	const getAllUniqueItemBrands = container.resolve(
 		"getAllUniqueItemBrandsUseCase"
 	);
@@ -70,7 +81,15 @@ export const getItemsContextDefault = (
 	const deleteItem = container.resolve("deleteItemUseCase");
 	const updateItem = container.resolve("updateItemUseCase");
 
-	const { brands, stores, updateBrands, updateStores } = useItems({
+	const {
+		recurrentItems,
+		brands,
+		stores,
+		updateRecurrentItems,
+		updateBrands,
+		updateStores,
+	} = useItems({
+		getAllRecurrentItems,
 		getAllUniqueItemBrands,
 		getAllUniqueItemStores,
 	});
@@ -78,6 +97,7 @@ export const getItemsContextDefault = (
 	return {
 		useCases: {
 			createItem: container.resolve("createItemUseCase"),
+			getAllRecurrentItems,
 			getAllUniqueItemsByName: container.resolve(
 				"getAllUniqueItemsByNameUseCase"
 			),
@@ -89,9 +109,11 @@ export const getItemsContextDefault = (
 			deleteItem,
 			updateItem,
 		},
+		recurrentItems,
+		updateRecurrentItems,
 		brands,
-		stores,
 		updateBrands,
+		stores,
 		updateStores,
 	};
 };

@@ -2,6 +2,7 @@
 
 export * from './components';
 export * from './hooks';
+export * from './migration';
 export * from './panels';
 export * from './views';
 export * from './SettingTab';

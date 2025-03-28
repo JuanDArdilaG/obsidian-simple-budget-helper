@@ -19,12 +19,12 @@ export class ReportsService implements IReportsService {
 
 	async groupTransactionsByCategories(
 		criteria?: TransactionCriteria
-	): Promise<{ category: CategoryName; transactions: Transaction[] }[]> {
+	): Promise<{ category: CategoryID; transactions: Transaction[] }[]> {
 		const transactions = await this._transactionsRepository.findByCriteria(
 			criteria ?? new TransactionCriteria()
 		);
 		const result: {
-			category: CategoryName;
+			category: CategoryID;
 			transactions: Transaction[];
 		}[] = [];
 		for (const transaction of transactions) {
@@ -45,14 +45,12 @@ export class ReportsService implements IReportsService {
 
 	async groupTransactionsBySubcategories(
 		criteria?: TransactionCriteria
-	): Promise<
-		{ subcategory: SubCategoryName; transactions: Transaction[] }[]
-	> {
+	): Promise<{ subcategory: SubCategoryID; transactions: Transaction[] }[]> {
 		const transactions = await this._transactionsRepository.findByCriteria(
 			criteria ?? new TransactionCriteria()
 		);
 		const result: {
-			subcategory: SubCategoryName;
+			subcategory: SubCategoryID;
 			transactions: Transaction[];
 		}[] = [];
 		for (const transaction of transactions) {

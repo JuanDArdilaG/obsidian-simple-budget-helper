@@ -16,7 +16,7 @@ export const useCategories = ({
 }: {
 	getAllCategoriesWithSubCategories: GetAllCategoriesWithSubCategoriesUseCase;
 }) => {
-	const logger = useLogger("useCategories");
+	const logger = useLogger("useCategories", false);
 
 	const [categoriesWithSubcategories, setCategoriesWithSubcategories] =
 		useState<GetAllCategoriesWithSubCategoriesUseCaseOutput>([]);

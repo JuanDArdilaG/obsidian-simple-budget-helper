@@ -15,7 +15,3 @@ export const views = {
 		icon: "dice",
 	},
 } as const;
-
-export const DATE_RELATIONS = {
-	MONTH_DAYS: 30.4167,
-};

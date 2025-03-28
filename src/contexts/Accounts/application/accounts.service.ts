@@ -4,14 +4,15 @@ import {
 	AccountID,
 	AccountName,
 	IAccountsRepository,
+	IAccountsService,
 } from "contexts/Accounts/domain";
 import {
 	EntityNotFoundError,
 	InvalidArgumentError,
-} from "contexts/Shared/domain";
-import { Transaction } from "contexts/Transactions/domain";
+} from "contexts/Shared/domain/errors";
+import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 
-export class AccountsService {
+export class AccountsService implements IAccountsService {
 	#logger = new Logger("AccountsService");
 	constructor(private _accountsRepository: IAccountsRepository) {}
 
@@ -30,7 +31,7 @@ export class AccountsService {
 
 	async getByID(id: AccountID): Promise<Account> {
 		const account = await this._accountsRepository.findById(id);
-		if (!account) throw new EntityNotFoundError("Account", id);
+		if (!account) throw new EntityNotFoundError("Account", id.toString());
 		return account;
 	}
 

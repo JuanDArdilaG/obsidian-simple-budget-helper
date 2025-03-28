@@ -5,11 +5,9 @@ import {
 	CategoryPrimitives,
 	ICategoriesRepository,
 } from "contexts/Categories/domain";
-import { Config } from "contexts/Shared/infrastructure";
-import {
-	DexieDB,
-	DexieRepository,
-} from "contexts/Shared/infrastructure/persistence";
+import { Config } from "contexts/Shared/infrastructure/config";
+import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.db";
+import { DexieRepository } from "contexts/Shared/infrastructure/persistence/dexie/dexie.repository";
 
 export class CategoriesDexieRepository
 	extends DexieRepository<Category, CategoryID, CategoryPrimitives>

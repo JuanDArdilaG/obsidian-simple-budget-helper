@@ -1,7 +1,3 @@
-import { StringValueObject } from "contexts/Shared/domain/value-objects/string.valueobject";
+import { StringValueObject } from "@juandardilag/value-objects/StringValueObject";
 
-export class SubCategoryName extends StringValueObject {
-	constructor(value: string) {
-		super("SubCategory Name", value);
-	}
-}
+export class SubCategoryName extends StringValueObject {}

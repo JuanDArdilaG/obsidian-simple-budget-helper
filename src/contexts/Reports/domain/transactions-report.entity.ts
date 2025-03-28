@@ -5,6 +5,12 @@ import { ReportBalance } from "./report-balance.valueobject";
 
 const logger = new Logger("TransactionsReport");
 
+export type TransactionWithAccumulatedBalance = {
+	transaction: Transaction;
+	balance: ReportBalance;
+	prevBalance: ReportBalance;
+};
+
 export class TransactionsReport {
 	constructor(private _transactions: Transaction[]) {}
 
@@ -37,11 +43,7 @@ export class TransactionsReport {
 		}, {} as GroupByYearMonthDay);
 	}
 
-	withAccumulatedBalance(): {
-		transaction: Transaction;
-		balance: ReportBalance;
-		prevBalance: ReportBalance;
-	}[] {
+	withAccumulatedBalance(): TransactionWithAccumulatedBalance[] {
 		if (!this._transactions.length) return [];
 
 		const sortedReport = this.sortedByDate("asc");
@@ -49,11 +51,7 @@ export class TransactionsReport {
 		let accumulated: Record<string, ReportBalance> = {};
 		return sortedReport.transactions
 			.map((transaction) => {
-				const transactions: {
-					transaction: Transaction;
-					balance: ReportBalance;
-					prevBalance: ReportBalance;
-				}[] = [];
+				const transactions: TransactionWithAccumulatedBalance[] = [];
 				if (!accumulated[transaction.account.value])
 					accumulated[transaction.account.value] =
 						ReportBalance.zero();
@@ -96,8 +94,7 @@ export class TransactionsReport {
 						)
 					);
 					transactions.push({
-						transaction:
-							Transaction.copyWithNegativeAmount(transaction),
+						transaction: transaction.copyWithNegativeAmount(),
 						balance: accumulated[transaction.toAccount.value],
 						prevBalance,
 					});

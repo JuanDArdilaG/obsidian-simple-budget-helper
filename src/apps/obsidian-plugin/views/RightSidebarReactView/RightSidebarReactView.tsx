@@ -10,6 +10,7 @@ import { CreateItemPanel } from "apps/obsidian-plugin/panels";
 import { AwilixContainer } from "awilix";
 import { AppProviders } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { RecurrentItemsSection } from "apps/obsidian-plugin/views";
+import { DBSection } from "./DBSection";
 
 export const RightSidebarReactView = ({
 	container,
@@ -23,36 +24,27 @@ export const RightSidebarReactView = ({
 	const [sectionSelection, setSectionSelection] =
 		useState<MainSidebarSections>(plugin.settings.lastTab.main);
 	useEffect(() => {
-		plugin.settings.lastTab.main = sectionSelection;
-		plugin.saveSettings();
+		if (plugin.settings.lastTab.main !== sectionSelection) {
+			plugin.settings.lastTab.main = sectionSelection;
+			plugin.saveSettings();
+		}
 	}, [sectionSelection]);
-	const [showCreateForm, setShowCreateForm] = useState(false);
 
 	return (
 		<AppProviders container={container} plugin={plugin}>
-			<ActionButtons
-				handleCreateClick={async () =>
-					setShowCreateForm(!showCreateForm)
-				}
-				isCreating={showCreateForm}
-			/>
-			{showCreateForm && (
-				<CreateItemPanel close={() => setShowCreateForm(false)} />
-			)}
 			<SectionButtons
 				selected={sectionSelection}
 				setSelected={setSectionSelection}
 			/>
 
-			{sectionSelection === "recurrentItems" && (
-				<RecurrentItemsSection app={plugin.app} />
-			)}
+			{sectionSelection === "recurrentItems" && <RecurrentItemsSection />}
 			{sectionSelection === "accounting" && (
 				<AccountingSection
 					app={plugin.app}
 					statusBarAddText={statusBarAddText}
 				/>
 			)}
+			{sectionSelection === "DB" && <DBSection />}
 		</AppProviders>
 	);
 };

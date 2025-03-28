@@ -41,6 +41,7 @@ export const RecordRecurrentItemPanel = ({
 			<h3>Record:</h3>
 			{AccountSelect}
 			<Input<Date>
+				dateWithTime
 				id="date"
 				label="Date"
 				value={date}

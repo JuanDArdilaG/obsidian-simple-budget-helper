@@ -38,7 +38,7 @@ export class RecordRecurrentItemUseCase
 		permanentChanges,
 	}: RecordRecurrentItemUseCaseInput): Promise<void> {
 		const item = await this._itemsRepository.findById(itemID);
-		if (!item) throw new EntityNotFoundError("Item", itemID);
+		if (!item) throw new EntityNotFoundError("Item", itemID.toString());
 		if (!RecurrentItem.IsRecurrent(item))
 			throw new InvalidArgumentError(
 				"Item",

@@ -3,37 +3,51 @@ import {
 	RecurrentItemsSectionSelection,
 	RecurrentItemsSectionButtons,
 } from "./RecurrentItemsSectionButtons";
-import { AllItemsRightSidebarReactTab } from "./Tabs/AllItemsRightSidebarReactView";
-import { CalendarRightSidebarReactTab } from "./Tabs/CalendarRightSidebarReactView";
-import { App } from "obsidian";
+import { AllRecurrentItemsTab } from "./Tabs/AllRecurrentItemsTab";
+import { CalendarRecurrentItemsTab } from "./Tabs/CalendarRecurrentItemsTab";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
-import { PerCategoryRightSidebarReactTab } from "./PerCategoryRightSidebarReactTab";
 import { AppContext } from "../Contexts/";
+import { PerCategoryRecurrentItemsTab } from "./Tabs/PerCategoryRecurrentItemsTab";
+import { ActionButtons } from "apps/obsidian-plugin/components/ActionButtons";
+import { CreateRecurrentItemPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/CreateRecurrentItemPanel";
 
-export const RecurrentItemsSection = ({ app }: { app: App }) => {
+export const RecurrentItemsSection = () => {
 	const { plugin } = useContext(AppContext);
 	const [sectionSelection, setSectionSelection] =
-		useState<RecurrentItemsSectionSelection>("calendar");
+		useState<RecurrentItemsSectionSelection>(
+			plugin.settings.lastTab.recurrent
+		);
+	const [showCreateForm, setShowCreateForm] = useState(false);
+
 	useEffect(() => {
-		plugin.settings.lastTab.recurrent = sectionSelection;
-		plugin.saveSettings();
+		if (plugin.settings.lastTab.recurrent !== sectionSelection) {
+			plugin.settings.lastTab.recurrent = sectionSelection;
+			plugin.saveSettings();
+		}
 	}, [sectionSelection]);
 
 	return (
 		<RightSidebarReactTab title="Recurrent Items">
+			<ActionButtons
+				handleCreateClick={async () =>
+					setShowCreateForm(!showCreateForm)
+				}
+				isCreating={showCreateForm}
+			/>
+			{showCreateForm && (
+				<CreateRecurrentItemPanel
+					close={() => setShowCreateForm(false)}
+				/>
+			)}
 			<RecurrentItemsSectionButtons
 				selected={sectionSelection}
 				setSelected={setSectionSelection}
 			/>
 
-			{sectionSelection === "calendar" && (
-				<CalendarRightSidebarReactTab />
-			)}
-			{sectionSelection === "list" && (
-				<AllItemsRightSidebarReactTab app={app} />
-			)}
+			{sectionSelection === "calendar" && <CalendarRecurrentItemsTab />}
+			{sectionSelection === "list" && <AllRecurrentItemsTab />}
 			{sectionSelection === "perCategory" && (
-				<PerCategoryRightSidebarReactTab />
+				<PerCategoryRecurrentItemsTab />
 			)}
 		</RightSidebarReactTab>
 	);

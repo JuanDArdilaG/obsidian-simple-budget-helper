@@ -21,6 +21,7 @@ export const BudgetItemsListContextMenu = ({
 	const { plugin } = useContext(AppContext);
 	const {
 		useCases: { deleteItem: deleteItemUseCase },
+		updateRecurrentItems,
 	} = useContext(ItemsContext);
 
 	return (
@@ -74,6 +75,7 @@ export const BudgetItemsListContextMenu = ({
 										);
 								}
 							).open();
+							updateRecurrentItems();
 						}}
 					>
 						Delete

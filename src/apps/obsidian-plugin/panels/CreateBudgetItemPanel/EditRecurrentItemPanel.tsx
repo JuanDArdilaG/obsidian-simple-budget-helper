@@ -15,6 +15,7 @@ import {
 import { OperationType } from "contexts/Shared/domain";
 import { useCategorySelect } from "apps/obsidian-plugin/components/Select/CategorySelect";
 import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/SubCategorySelect";
+import { Checkbox, FormControlLabel } from "@mui/material";
 
 export const EditRecurrentItemPanel = ({
 	item,
@@ -47,9 +48,11 @@ export const EditRecurrentItemPanel = ({
 
 	const [brand, setBrand] = useState(item.brand?.value);
 	const [store, setStore] = useState(item.store?.value);
-	const [frequency, setFrequency] = useState(item.frequency.value);
+	const [frequency, setFrequency] = useState(item.frequency?.value);
 
 	const [date, setDate] = useState(item.nextDate.valueOf());
+	const [untilDate, setUntilDate] = useState(item.untilDate?.valueOf());
+	const [withUntilDate, setWithUntilDate] = useState(!!item.untilDate);
 	const [validation, setValidation] = useState<
 		Record<string, boolean> | undefined
 	>(undefined);
@@ -87,12 +90,41 @@ export const EditRecurrentItemPanel = ({
 			{CategorySelect}
 			{SubCategorySelect}
 			<Input<Date>
+				dateWithTime={false}
 				id="date"
-				label="Date"
+				label="Next Date"
 				value={date}
 				onChange={setDate}
 				error={!validation || validation.date ? undefined : "required"}
 			/>
+
+			<FormControlLabel
+				control={
+					<Checkbox
+						checked={withUntilDate}
+						onChange={(e) => {
+							const checked = e.target.checked;
+							setUntilDate(checked ? new Date() : undefined);
+							setWithUntilDate(checked);
+						}}
+					/>
+				}
+				label="With Until Date"
+			/>
+			{withUntilDate ? (
+				<Input<Date>
+					dateWithTime={false}
+					id="date"
+					label="Until Date"
+					value={untilDate}
+					onChange={setUntilDate}
+					error={
+						!validation || validation.untilDate
+							? undefined
+							: "required"
+					}
+				/>
+			) : undefined}
 			<SelectWithCreation
 				id="brand"
 				label="Brand"
@@ -108,11 +140,11 @@ export const EditRecurrentItemPanel = ({
 				onChange={setStore}
 			/>
 			{type === "transfer" && (
-				<Input
+				<Input<string>
 					id="frequency"
 					label="Frequency"
-					value={frequency}
-					onChange={(freq) => setFrequency(freq ?? "")}
+					value={frequency ?? ""}
+					onChange={setFrequency}
 					error={
 						!validation || validation.frequency
 							? undefined
@@ -133,6 +165,10 @@ export const EditRecurrentItemPanel = ({
 						subCategory: subCategory?.id,
 						nextDate: new RecurrentItemNextDate(date),
 					});
+					if (withUntilDate)
+						item.updateUntilDate(
+							new RecurrentItemNextDate(untilDate ?? new Date())
+						);
 
 					await updateItem.execute(item);
 

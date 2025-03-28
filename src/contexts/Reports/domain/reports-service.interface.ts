@@ -1,7 +1,4 @@
-import { CategoryName } from "contexts/Categories/domain/category-name.valueobject";
-import { SubCategoryName } from "contexts/Subcategories/domain/subcategory-name.valueobject";
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
-import { ReportBalance } from "./report-balance.valueobject";
 import { TransactionCriteria } from "contexts/Transactions/domain/transaction.criteria";
 import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
@@ -23,13 +20,13 @@ export interface IReportsService {
 	}): Promise<GroupByYearMonthDay>;
 	groupTransactionsByCategories(criteria?: TransactionCriteria): Promise<
 		{
-			category: CategoryName;
+			category: CategoryID;
 			transactions: Transaction[];
 		}[]
 	>;
 	groupTransactionsBySubcategories(criteria?: TransactionCriteria): Promise<
 		{
-			subcategory: SubCategoryName;
+			subcategory: SubCategoryID;
 			transactions: Transaction[];
 		}[]
 	>;

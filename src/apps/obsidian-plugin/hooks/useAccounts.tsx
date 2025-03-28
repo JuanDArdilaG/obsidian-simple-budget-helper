@@ -12,7 +12,7 @@ export const useAccounts = ({
 }: {
 	getAllAccounts: GetAllAccountsUseCase;
 }) => {
-	const logger = useLogger("useAccounts");
+	const logger = useLogger("useAccounts", false);
 	const [accounts, setAccounts] = useState<Account[]>([]);
 	const [updateAccounts, setUpdateAccounts] = useState(true);
 

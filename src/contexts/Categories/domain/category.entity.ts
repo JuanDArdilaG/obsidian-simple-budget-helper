@@ -20,7 +20,7 @@ export class Category implements IEntity<CategoryID, CategoryPrimitives> {
 	toPrimitives(): CategoryPrimitives {
 		return {
 			id: this._id.value,
-			name: this._name.value,
+			name: this._name.valueOf(),
 		};
 	}
 

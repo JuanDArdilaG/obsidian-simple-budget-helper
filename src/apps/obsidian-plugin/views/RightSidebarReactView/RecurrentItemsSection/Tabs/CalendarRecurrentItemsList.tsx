@@ -1,21 +1,21 @@
 import { useLogger } from "apps/obsidian-plugin/hooks";
-import { RecurrentItem, RecurrentItemNextDate } from "contexts";
+import { RecurrentItem } from "contexts";
 import { Forward } from "lucide-react";
 import { useState, useEffect, useMemo, useContext } from "react";
-import { RecordRecurrentItemPanel } from "../../../panels/RecordRecurrentItemPanel";
+import { RecordRecurrentItemPanel } from "../../../../panels/RecordRecurrentItemPanel";
 import { EditRecurrentItemPanel } from "apps/obsidian-plugin/panels";
 import { RecurrentItemsReport } from "contexts/Reports/domain/recurrent-items-report.entity";
-import { AccountsContext, ItemsContext } from "../Contexts";
-import { CalendarTimeframe } from "./TimeframeButtons";
+import { AccountsContext } from "../../Contexts";
 
-export const RecurrentItemsList = ({
-	timeframe,
+export const CalendarRecurrentItemsList = ({
+	items,
 	selectedItem,
 	setSelectedItem,
 	action,
 	setAction,
+	updateItems,
 }: {
-	timeframe: CalendarTimeframe;
+	items: RecurrentItem[];
 	selectedItem?: RecurrentItem;
 	setSelectedItem: React.Dispatch<
 		React.SetStateAction<RecurrentItem | undefined>
@@ -24,44 +24,11 @@ export const RecurrentItemsList = ({
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
+	updateItems: () => void;
 }) => {
-	const logger = useLogger("RecurrentItemsList");
+	const logger = useLogger("CalendarRecurrentItemsList", false);
 	const { getAccountByID, accounts } = useContext(AccountsContext);
 
-	const {
-		useCases: { getRecurrentItemsUntilDate },
-	} = useContext(ItemsContext);
-
-	const [items, setItems] = useState<RecurrentItem[]>([]);
-	const [updateItems, setUpdateItems] = useState(true);
-	useEffect(() => {
-		if (updateItems)
-			getRecurrentItemsUntilDate
-				.execute(
-					RecurrentItemNextDate.now().addDays(
-						timeframe === "year"
-							? 365
-							: timeframe === "3months"
-							? 90
-							: timeframe === "month"
-							? 30
-							: timeframe === "2weeks"
-							? 14
-							: timeframe === "week"
-							? 7
-							: 3
-					)
-				)
-				.then((items) => {
-					logger
-						.debugB("getRecurrentItemsUntilDate", {
-							timeframe,
-							items,
-						})
-						.log();
-					setItems(items);
-				});
-	}, [timeframe, updateItems]);
 	const itemsReport = useMemo(() => new RecurrentItemsReport(items), [items]);
 	const [showPanel, setShowPanel] = useState<{
 		item: RecurrentItem;
@@ -97,6 +64,7 @@ export const RecurrentItemsList = ({
 								? item.toAccount
 								: item.account
 						);
+						const remainingDays = item.nextDate.remainingDays;
 						return (
 							<div key={index}>
 								<li
@@ -113,7 +81,8 @@ export const RecurrentItemsList = ({
 										<span>
 											{item.name.value}{" "}
 											<span className="light-text">
-												{item.frequency.value}
+												{item.frequency?.value ??
+													undefined}
 											</span>
 											<br />
 											<span
@@ -127,24 +96,27 @@ export const RecurrentItemsList = ({
 												<span
 													style={{
 														color:
-															item.remainingDays
-																.color === "red"
+															remainingDays < -3
 																? "var(--color-red)"
-																: item
-																		.remainingDays
-																		.color ===
-																  "yellow"
+																: Math.abs(
+																		remainingDays
+																  ) <= 3
 																? "var(--color-yellow)"
 																: "var(--color-green)",
 														marginLeft: "15px",
 													}}
 												>
-													{item.remainingDays.str}
+													{
+														item.nextDate
+															.remainingDaysStr
+													}
 												</span>
 											</span>
 										</span>
 										<span style={{ textAlign: "right" }}>
-											{item.realPrice.toString()}
+											{item.operation.isTransfer()
+												? item.price.negate().toString()
+												: item.realPrice.toString()}
 											<span
 												style={{
 													marginLeft: "8px",
@@ -191,7 +163,7 @@ export const RecurrentItemsList = ({
 											item={item}
 											onClose={() => {
 												setShowPanel(undefined);
-												setUpdateItems(true);
+												updateItems();
 											}}
 										/>
 									) : showPanel.action === "edit" ? (
@@ -199,7 +171,7 @@ export const RecurrentItemsList = ({
 											item={item}
 											onClose={() => {
 												setShowPanel(undefined);
-												setUpdateItems(true);
+												updateItems();
 											}}
 										/>
 									) : undefined

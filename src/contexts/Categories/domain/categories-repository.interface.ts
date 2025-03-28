@@ -4,7 +4,7 @@ import {
 	CategoryID,
 	CategoryName,
 	CategoryPrimitives,
-} from "contexts/Categories/domain";
+} from "../domain";
 
 export interface ICategoriesRepository
 	extends IRepository<CategoryID, Category, CategoryPrimitives> {

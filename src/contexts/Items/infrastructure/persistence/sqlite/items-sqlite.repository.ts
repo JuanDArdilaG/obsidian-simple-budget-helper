@@ -50,6 +50,10 @@ export class ItemsSQLiteRepository extends SQLiteRepository<
 			nextDate: RecurrentItem.IsRecurrent(item)
 				? String(item.nextDate.valueOf().getTime())
 				: null,
+			untilDate:
+				RecurrentItem.IsRecurrent(item) && item.untilDate
+					? String(item.untilDate.valueOf().getTime())
+					: null,
 		});
 		console.log(res);
 	}

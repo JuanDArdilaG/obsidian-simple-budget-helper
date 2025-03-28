@@ -24,7 +24,7 @@ export const useSubCategorySelect = ({
 	setLock?: (lock: boolean) => void;
 }) => {
 	const [subCategoryName, setSubCategoryName] = useState(
-		initialValueName?.value ?? ""
+		initialValueName?.valueOf() ?? ""
 	);
 	const [subCategory, setSubCategory] = useState<SubCategory>();
 
@@ -34,7 +34,7 @@ export const useSubCategorySelect = ({
 	const subCategoriesNames = useMemo(
 		() =>
 			(category ? getSubCategoriesByCategory(category) : subCategories)
-				.map((acc) => acc.name.value)
+				.map((acc) => acc.name.valueOf())
 				.sort(),
 		[subCategories]
 	);
@@ -42,7 +42,7 @@ export const useSubCategorySelect = ({
 	useEffect(() => {
 		if (initialValueID)
 			setSubCategoryName(
-				getSubCategoryByID(initialValueID)?.name.value ?? ""
+				getSubCategoryByID(initialValueID)?.name.valueOf() ?? ""
 			);
 	}, [initialValueID]);
 

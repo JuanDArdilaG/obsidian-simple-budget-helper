@@ -27,7 +27,7 @@ export class SubCategory
 		return {
 			id: this._id.value,
 			category: this._category.value,
-			name: this._name.value,
+			name: this._name.valueOf(),
 		};
 	}
 

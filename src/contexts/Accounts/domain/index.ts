@@ -6,3 +6,4 @@ export * from './account-name.valueobject';
 export * from './account-type.valueobject';
 export * from './account.entity';
 export * from './accounts-repository.interface';
+export * from './accounts-service.interface';

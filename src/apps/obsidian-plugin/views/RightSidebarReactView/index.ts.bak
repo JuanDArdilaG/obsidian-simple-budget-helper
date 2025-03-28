@@ -3,6 +3,7 @@
 export * from './AccountingSection';
 export * from './Contexts';
 export * from './RecurrentItemsSection';
+export * from './DBSection';
 export * from './RightSidebarReactTab';
 export * from './RightSidebarReactView';
 export * from './RightSidebarReactViewRoot';

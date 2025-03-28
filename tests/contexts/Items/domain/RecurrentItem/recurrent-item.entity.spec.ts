@@ -28,9 +28,8 @@ describe("remainingDays", () => {
 			new RecurrrentItemFrequency("1w")
 		);
 
-		const { color, str } = item.remainingDays;
+		const str = item.nextDate.remainingDaysStr;
 
-		expect(color).toBe("green");
 		expect(str).toBe("7 days");
 	});
 
@@ -51,9 +50,8 @@ describe("remainingDays", () => {
 			new RecurrrentItemFrequency("1w")
 		);
 
-		const { color, str } = item.remainingDays;
+		const str = item.nextDate.remainingDaysStr;
 
-		expect(color).toBe("red");
 		expect(str).toBe("-7 days");
 	});
 
@@ -74,9 +72,8 @@ describe("remainingDays", () => {
 			new RecurrrentItemFrequency("1w")
 		);
 
-		const { color, str } = item.remainingDays;
+		const str = item.nextDate.remainingDaysStr;
 
-		expect(color).toBe("yellow");
 		expect(str).toBe("1 day");
 	});
 
@@ -97,9 +94,8 @@ describe("remainingDays", () => {
 			new RecurrrentItemFrequency("1w")
 		);
 
-		const { color, str } = item.remainingDays;
+		const str = item.nextDate.remainingDaysStr;
 
-		expect(color).toBe("yellow");
 		expect(str).toBe("-1 day");
 	});
 });

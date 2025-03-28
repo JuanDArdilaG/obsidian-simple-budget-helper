@@ -17,15 +17,18 @@ import {
 	ISubCategoriesService,
 	SubCategoryName,
 } from "contexts/Subcategories/domain";
-import { AccountBalance, AccountID } from "contexts/Accounts/domain";
-import { AccountsService } from "contexts/Accounts/application";
+import {
+	AccountBalance,
+	AccountID,
+	IAccountsService,
+} from "contexts/Accounts/domain";
 import { EntityNotFoundError } from "contexts/Shared";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 
 export class TransactionsService implements ITransactionsService {
 	#logger = new Logger("TransactionsService");
 	constructor(
-		private _accountsService: AccountsService,
+		private _accountsService: IAccountsService,
 		private _transactionsRepository: ITransactionsRepository,
 		private _categoriesService: ICategoriesService,
 		private _subCategoriesService: ISubCategoriesService
@@ -37,7 +40,8 @@ export class TransactionsService implements ITransactionsService {
 
 	async getByID(id: TransactionID): Promise<Transaction> {
 		const transaction = await this._transactionsRepository.findById(id);
-		if (!transaction) throw new EntityNotFoundError("Transaction", id);
+		if (!transaction)
+			throw new EntityNotFoundError("Transaction", id.toString());
 		return transaction;
 	}
 
@@ -101,6 +105,52 @@ export class TransactionsService implements ITransactionsService {
 		);
 
 		await this.record(transaction);
+	}
+
+	async update(transaction: Transaction): Promise<void> {
+		const prevTransaction = await this.getByID(transaction.id);
+		const account = await this._accountsService.getByID(
+			transaction.account
+		);
+		if (prevTransaction.account.equalTo(transaction.account)) {
+			account.adjustOnTransactionUpdate(prevTransaction, transaction);
+		} else {
+			const prevAccount = await this._accountsService.getByID(
+				prevTransaction.account
+			);
+			prevAccount.adjustOnTransactionDeletion(prevTransaction);
+			account.adjustFromTransaction(transaction);
+
+			await this._accountsService.update(prevAccount);
+		}
+
+		await this._accountsService.update(account);
+
+		const toAccount = transaction.toAccount
+			? await this._accountsService.getByID(transaction.toAccount)
+			: undefined;
+		if (toAccount && transaction.toAccount)
+			if (
+				prevTransaction.toAccount?.value === transaction.toAccount.value
+			) {
+				toAccount.adjustOnTransactionUpdate(
+					prevTransaction,
+					transaction
+				);
+			} else {
+				const prevToAccount = prevTransaction.toAccount
+					? await this._accountsService.getByID(
+							prevTransaction.toAccount
+					  )
+					: undefined;
+				prevToAccount?.adjustOnTransactionDeletion(transaction);
+				toAccount.adjustFromTransaction(transaction);
+
+				if (prevToAccount)
+					await this._accountsService.update(prevToAccount);
+			}
+
+		await this._transactionsRepository.persist(transaction);
 	}
 
 	async delete(id: TransactionID): Promise<void> {

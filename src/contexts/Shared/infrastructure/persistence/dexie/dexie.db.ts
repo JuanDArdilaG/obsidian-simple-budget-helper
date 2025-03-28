@@ -20,7 +20,7 @@ export class DexieDB extends DB {
 	}
 
 	#initializeTables() {
-		this.db.version(1).stores({
+		this.db.version(2).stores({
 			[this.config.accountsTableName]: Object.keys(
 				Account.emptyPrimitives()
 			).join(", "),

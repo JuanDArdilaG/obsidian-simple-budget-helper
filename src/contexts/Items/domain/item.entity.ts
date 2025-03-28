@@ -8,8 +8,9 @@ import { ItemOperation } from "./item-operation.valueobject";
 import { OperationType } from "contexts/Shared/domain/value-objects/operation.valueobject";
 import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories";
+import { IEntity } from "contexts/Shared";
 
-export class Item {
+export class Item implements IEntity<ItemID, ItemPrimitives> {
 	constructor(
 		protected _id: ItemID,
 		protected _operation: ItemOperation,
@@ -104,9 +105,11 @@ export class Item {
 	}
 
 	get realPrice(): ItemPrice {
-		return this._operation.isIncome() || this._operation.isTransfer()
+		return this._operation.isIncome()
 			? this._price
-			: this._price.negate();
+			: this._operation.isExpense()
+			? this._price.negate()
+			: ItemPrice.zero();
 	}
 
 	getRealPriceForAccount(accountID: AccountID): ItemPrice {
@@ -206,6 +209,7 @@ export class Item {
 			nextDate: new Date(),
 			store: "",
 			toAccount: "",
+			untilDate: undefined,
 		};
 	}
 }
@@ -223,6 +227,7 @@ export type ItemPrimitives = {
 	toAccount?: string;
 	nextDate?: Date;
 	frequency?: string;
+	untilDate?: Date;
 };
 
 // export class BudgetItemValidator extends Validator<TBudgetItem, BudgetItem> {

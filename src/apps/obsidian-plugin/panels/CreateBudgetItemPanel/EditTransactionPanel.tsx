@@ -9,6 +9,7 @@ import {
 	Input,
 	Select,
 	SelectWithCreation,
+	useAccountSelect,
 } from "apps/obsidian-plugin/components";
 import {
 	Transaction,
@@ -42,20 +43,20 @@ export const EditTransactionPanel = ({
 	const [amount, setAmount] = useState(transaction.amount);
 	const [type, setType] = useState(transaction.operation.value);
 	const [categoryName, setCategoryName] = useState(
-		getCategoryByID(transaction.categoryID)?.name.value
+		getCategoryByID(transaction.categoryID)?.name.valueOf()
 	);
 	const [subCategoryName, setSubCategoryName] = useState(
-		getSubCategoryByID(transaction.subCategory)?.name.value
+		getSubCategoryByID(transaction.subCategory)?.name.valueOf()
 	);
-
-	const [accountName, setAccountName] = useState(
-		getAccountByID(transaction.account)?.name.value
-	);
-	const [toAccountName, setToAccountName] = useState(
-		transaction.toAccount
-			? getAccountByID(transaction.toAccount)?.name.value
-			: undefined
-	);
+	const { AccountSelect, account } = useAccountSelect({
+		label: "From",
+		initialValueID: transaction.account,
+	});
+	const { AccountSelect: ToAccountSelect, account: toAccount } =
+		useAccountSelect({
+			label: "To",
+			initialValueID: transaction.toAccount,
+		});
 
 	const [date, setDate] = useState(transaction.date.valueOf());
 
@@ -85,35 +86,13 @@ export const EditTransactionPanel = ({
 				values={["expense", "transfer", "income"]}
 				onChange={(type) => setType(type)}
 			/>
-			<SelectWithCreation
-				id="account"
-				label="From"
-				item={accountName ?? ""}
-				items={accounts.map((acc) => acc.name.value)}
-				onChange={(account) => setAccountName(account ?? "")}
-				// error={
-				// !validation || validation.account ? undefined : "required"
-				// }
-			/>
-			{type === "transfer" && (
-				<SelectWithCreation
-					id="to-account"
-					label="To"
-					item={toAccountName ?? ""}
-					items={accounts.map((acc) => acc.name.value)}
-					onChange={(account) => setToAccountName(account ?? "")}
-					// error={
-					// !validation || validation.toAccount
-					// 		? undefined
-					// 		: "required"
-					// }
-				/>
-			)}
+			{AccountSelect}
+			{type === "transfer" && ToAccountSelect}
 			<SelectWithCreation
 				id="category"
 				label="Category"
 				item={categoryName ?? ""}
-				items={categories.map((cat) => cat.name.value)}
+				items={categories.map((cat) => cat.name.valueOf())}
 				onChange={(category) => setCategoryName(category ?? "")}
 				// error={
 				// !validation || validation.category ? undefined : "required"
@@ -123,7 +102,7 @@ export const EditTransactionPanel = ({
 				id="subcategory"
 				label="SubCategory"
 				item={subCategoryName ?? ""}
-				items={subCategories.map((sub) => sub.name.value)}
+				items={subCategories.map((sub) => sub.name.valueOf())}
 				onChange={(category) => setSubCategoryName(category ?? "")}
 				// error={
 				// !validation || validation.subCategory
@@ -132,6 +111,7 @@ export const EditTransactionPanel = ({
 				// }
 			/>
 			<Input<Date>
+				dateWithTime
 				id="date"
 				label="Date"
 				value={date}
@@ -142,19 +122,14 @@ export const EditTransactionPanel = ({
 				onClick={async () => {
 					date.setSeconds(0);
 
-					const account = getAccountByName(
-						new AccountName(accountName ?? "")
-					);
+					if (!account) return console.error("account not selected");
 
-					if (!account) return;
-
-					transaction.update(
-						new TransactionName(name),
-						account.id,
-						new TransactionDate(date),
-						transaction.operation,
-						amount
-					);
+					transaction.updateName(new TransactionName(name));
+					transaction.updateDate(new TransactionDate(date));
+					transaction.updateOperation(transaction.operation);
+					transaction.updateAmount(amount);
+					transaction.updateAccount(account.id);
+					transaction.updateToAccount(toAccount?.id);
 
 					await updateTransaction.execute(transaction);
 					await onUpdate();
