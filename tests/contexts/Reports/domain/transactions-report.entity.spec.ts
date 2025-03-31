@@ -13,16 +13,16 @@ describe("sortByDate", () => {
 		const report = new TransactionsReport(transactions).sortedByDate("asc");
 
 		expect(report.transactions.length).toBe(4);
-		expect(report.transactions[0].date.valueOf().getTime()).toBe(
+		expect(report.transactions[0].date.getTime()).toBe(
 			new Date(2024, 0, 12).getTime()
 		);
-		expect(report.transactions[1].date.valueOf().getTime()).toBe(
+		expect(report.transactions[1].date.getTime()).toBe(
 			new Date(2024, 0, 15).getTime()
 		);
-		expect(report.transactions[2].date.valueOf().getTime()).toBe(
+		expect(report.transactions[2].date.getTime()).toBe(
 			new Date(2024, 0, 15, 13).getTime()
 		);
-		expect(report.transactions[3].date.valueOf().getTime()).toBe(
+		expect(report.transactions[3].date.getTime()).toBe(
 			new Date(2024, 0, 23).getTime()
 		);
 	});
@@ -39,16 +39,16 @@ describe("sortByDate", () => {
 		);
 
 		expect(report.transactions.length).toBe(4);
-		expect(report.transactions[0].date.valueOf().getTime()).toBe(
+		expect(report.transactions[0].date.getTime()).toBe(
 			new Date(2024, 0, 23).getTime()
 		);
-		expect(report.transactions[1].date.valueOf().getTime()).toBe(
+		expect(report.transactions[1].date.getTime()).toBe(
 			new Date(2024, 0, 15, 13).getTime()
 		);
-		expect(report.transactions[2].date.valueOf().getTime()).toBe(
+		expect(report.transactions[2].date.getTime()).toBe(
 			new Date(2024, 0, 15).getTime()
 		);
-		expect(report.transactions[3].date.valueOf().getTime()).toBe(
+		expect(report.transactions[3].date.getTime()).toBe(
 			new Date(2024, 0, 12).getTime()
 		);
 	});

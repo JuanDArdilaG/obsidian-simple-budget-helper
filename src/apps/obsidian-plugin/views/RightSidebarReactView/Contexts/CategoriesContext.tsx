@@ -1,20 +1,18 @@
 import { createContext, useCallback } from "react";
 import { AwilixContainer } from "awilix";
+import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
 import {
-	Category,
-	CategoryID,
-	CategoryName,
-	CreateCategoryUseCase,
-	GetAllCategoriesWithSubCategoriesUseCase,
-	GetAllCategoriesWithSubCategoriesUseCaseOutput,
-} from "contexts/Categories";
-import {
-	CreateSubCategoryUseCase,
 	SubCategory,
 	SubCategoryID,
 	SubCategoryName,
-} from "contexts/Subcategories";
+} from "contexts/Subcategories/domain";
 import { useCategories } from "apps/obsidian-plugin/hooks";
+import { CreateCategoryUseCase } from "contexts/Categories/application/create-category.usecase";
+import {
+	GetAllCategoriesWithSubCategoriesUseCase,
+	GetAllCategoriesWithSubCategoriesUseCaseOutput,
+} from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
+import { CreateSubCategoryUseCase } from "contexts/Subcategories/application/create-subcategory.usecase";
 
 export type CategoriesContextType = {
 	useCases: {
@@ -30,6 +28,7 @@ export type CategoriesContextType = {
 	getCategoryByName: (name: CategoryName) => Category | undefined;
 	getSubCategoryByName: (name: SubCategoryName) => SubCategory | undefined;
 	getSubCategoriesByCategory: (category: Category) => SubCategory[];
+	updateCategoriesWithSubcategories: () => void;
 };
 
 export const CategoriesContext = createContext<CategoriesContextType>({
@@ -47,6 +46,7 @@ export const CategoriesContext = createContext<CategoriesContextType>({
 	getCategoryByName: () => undefined,
 	getSubCategoryByName: () => undefined,
 	getSubCategoriesByCategory: () => [],
+	updateCategoriesWithSubcategories: () => {},
 });
 
 export const getCategoriesContextDefault = (
@@ -66,6 +66,7 @@ export const getCategoriesContextDefault = (
 		getSubCategoryByID,
 		getCategoryByName,
 		getSubCategoryByName,
+		updateCategoriesWithSubcategories,
 	} = useCategories({ getAllCategoriesWithSubCategories });
 
 	const getSubCategoriesByCategory = useCallback(
@@ -92,5 +93,6 @@ export const getCategoriesContextDefault = (
 		getCategoryByName,
 		getSubCategoryByName,
 		getSubCategoriesByCategory,
+		updateCategoriesWithSubcategories,
 	};
 };

@@ -19,8 +19,7 @@ export class GetCategoryByNameUseCase
 
 	async execute(name: CategoryName): Promise<Category> {
 		const category = await this._categoriesRepository.findByName(name);
-		if (!category)
-			throw new EntityNotFoundError("Category", name.valueOf());
+		if (!category) throw new EntityNotFoundError("Category", name);
 		return category;
 	}
 }

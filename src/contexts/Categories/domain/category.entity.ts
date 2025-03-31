@@ -1,9 +1,11 @@
-import { IEntity } from "contexts/Shared/domain/entity.interface";
 import { CategoryID } from "./category-id.valueobject";
 import { CategoryName } from "./category-name.valueobject";
+import { Entity } from "contexts/Shared/domain/entity.abstract";
 
-export class Category implements IEntity<CategoryID, CategoryPrimitives> {
-	constructor(private _id: CategoryID, private _name: CategoryName) {}
+export class Category extends Entity<CategoryID, CategoryPrimitives> {
+	constructor(id: CategoryID, private _name: CategoryName) {
+		super(id);
+	}
 
 	static create(name: CategoryName): Category {
 		return new Category(CategoryID.generate(), name);

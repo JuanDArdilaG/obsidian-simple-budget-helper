@@ -1,23 +1,21 @@
-import { ItemID } from "contexts/Items/domain/item-id.valueobject";
+import { ItemID } from "contexts/SimpleItems/domain/item-id.valueobject";
 import { TransactionID } from "./transaction-id.valueobject";
 import { TransactionOperation } from "./transaction-operation.valueobject";
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { TransactionDate } from "./transaction-date.valueobject";
 import { TransactionAmount } from "./transaction-amount.valueobject";
-import { ItemBrand } from "contexts/Items/domain/item-brand.valueobject";
-import { ItemStore } from "contexts/Items/domain/item-store.valueobject";
-import { Item } from "contexts/Items/domain/item.entity";
+import { ItemBrand } from "contexts/SimpleItems/domain/item-brand.valueobject";
+import { ItemStore } from "contexts/SimpleItems/domain/item-store.valueobject";
+import { Item } from "contexts/SimpleItems/domain/item.entity";
 import { TransactionName } from "./item-name.valueobject";
-import { IEntity } from "../../Shared/domain/entity.interface";
-import { OperationType } from "contexts/Shared";
+import { OperationType } from "contexts/Shared/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
+import { Entity } from "contexts/Shared/domain/entity.abstract";
 
-export class Transaction
-	implements IEntity<TransactionID, TransactionPrimitives>
-{
+export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	constructor(
-		private _id: TransactionID,
+		id: TransactionID,
 		private _account: AccountID,
 		private _name: TransactionName,
 		private _operation: TransactionOperation,
@@ -29,7 +27,9 @@ export class Transaction
 		private _toAccount?: AccountID,
 		private _brand?: ItemBrand,
 		private _store?: ItemStore
-	) {}
+	) {
+		super(id);
+	}
 
 	static fromItem(item: Item, date: TransactionDate): Transaction {
 		return new Transaction(
@@ -66,7 +66,7 @@ export class Transaction
 			operation,
 			category,
 			subCategory,
-			TransactionDate.now(),
+			TransactionDate.createNowDate(),
 			amount,
 			undefined,
 			toAccount,
@@ -208,7 +208,7 @@ export class Transaction
 			account: this._account.value,
 			toAccount: this._toAccount?.value,
 			operation: this._operation.value,
-			date: this._date.valueOf(),
+			date: this._date,
 			amount: this._amount.valueOf(),
 			brand: this._brand?.value,
 			store: this._store?.value,

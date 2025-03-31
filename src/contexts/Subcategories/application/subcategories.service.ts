@@ -13,7 +13,10 @@ export class SubCategoriesService implements ISubCategoriesService {
 	async create(subCategory: SubCategory): Promise<void> {
 		const existingSubcategory =
 			await this._subCategoriesRepository.findByName(subCategory.name);
-		if (existingSubcategory)
+		if (
+			existingSubcategory &&
+			existingSubcategory.category.equalTo(subCategory.category)
+		)
 			throw new InvalidArgumentError(
 				"Subcategory",
 				subCategory.name.toString(),

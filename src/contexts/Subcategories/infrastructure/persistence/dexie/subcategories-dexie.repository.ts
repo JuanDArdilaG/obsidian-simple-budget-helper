@@ -7,8 +7,8 @@ import {
 } from "contexts/Subcategories/domain";
 import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.db";
 import { DexieRepository } from "contexts/Shared/infrastructure/persistence/dexie/dexie.repository";
-import { CategoryID } from "contexts/Categories";
-import { Config } from "contexts/Shared/infrastructure/config";
+import { CategoryID } from "contexts/Categories/domain";
+import { Config } from "contexts/Shared/infrastructure/config/config";
 
 export class SubcategoriesDexieRepository
 	extends DexieRepository<SubCategory, SubCategoryID, SubcategoryPrimitives>

@@ -4,11 +4,10 @@ import {
 	AccountingSectionButtons,
 	AccountingSectionSelection,
 } from "./AccountingSectionButtons";
-import { AccountsList } from "./AccountsList";
 import { App } from "obsidian";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
-import { ActionButtons } from "apps/obsidian-plugin/components";
+import { ActionButtons } from "apps/obsidian-plugin/components/ActionButtons";
 import { CreateItemPanel } from "apps/obsidian-plugin/panels";
 
 export const AccountingSection = ({
@@ -24,11 +23,7 @@ export const AccountingSection = ({
 		useState<AccountingSectionSelection>("movements");
 
 	useEffect(() => {
-		logger.debug(
-			"section selection changed",
-			{ sectionSelection },
-			{ on: false }
-		);
+		logger.debug("section selection changed", { sectionSelection });
 	}, [sectionSelection]);
 
 	return (
@@ -49,7 +44,6 @@ export const AccountingSection = ({
 			{sectionSelection === "movements" && (
 				<AccountingList app={app} statusBarAddText={statusBarAddText} />
 			)}
-			{sectionSelection === "accounts" && <AccountsList />}
 		</RightSidebarReactTab>
 	);
 };

@@ -1,20 +1,17 @@
 import { createContext, useMemo } from "react";
 import { AwilixContainer } from "awilix";
-import {
-	RecordTransactionUseCase,
-	DeleteTransactionUseCase,
-	AdjustAccountUseCase,
-	UpdateTransactionUseCase,
-	GetAllTransactionsUseCase,
-	Transaction,
-} from "contexts/Transactions";
-import {
-	GetAllTransactionsGroupedByDaysUseCase,
-	GetAllTransactionsGroupedByDaysUseCaseInput,
-	TransactionsReport,
-} from "contexts/Reports";
 import { useTransactions } from "apps/obsidian-plugin/hooks";
-import { AccountID, CategoryID, SubCategoryID } from "contexts";
+import { AccountID } from "contexts/Accounts/domain";
+import { CategoryID } from "contexts/Categories/domain";
+import { GetAllTransactionsGroupedByDaysUseCase } from "contexts/Reports/application/get-all-transactions-grouped-by-days.usecase";
+import { TransactionsReport } from "contexts/Reports/domain";
+import { SubCategoryID } from "contexts/Subcategories/domain";
+import { AdjustAccountUseCase } from "contexts/Transactions/application/adjust-account.usecase";
+import { DeleteTransactionUseCase } from "contexts/Transactions/application/delete-transaction.usecase";
+import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
+import { RecordTransactionUseCase } from "contexts/Transactions/application/record-transaction.usecase";
+import { UpdateTransactionUseCase } from "contexts/Transactions/application/update-transaction.usecase";
+import { Transaction } from "contexts/Transactions/domain";
 
 export type TransactionsContextType = {
 	useCases: {

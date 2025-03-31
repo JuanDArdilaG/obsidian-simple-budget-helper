@@ -1,19 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { buildTestTransactions } from "../../Reports/domain/buildTestTransactions";
+import { AccountsServiceMock } from "../../Accounts/application/accounts-service.mock";
 import {
 	Account,
-	AccountBalance,
 	AccountID,
-	AccountName,
 	AccountType,
-	CategoriesService,
-	SubCategoriesService,
-	Transaction,
-	TransactionOperation,
-	TransactionsRepositoryMock,
-	TransactionsService,
-} from "contexts";
-import { AccountsServiceMock } from "../../Accounts/application/accounts-service.mock";
+	AccountName,
+	AccountBalance,
+} from "contexts/Accounts/domain";
+import { CategoriesService } from "contexts/Categories/application/categories.service";
+import { SubCategoriesService } from "contexts/Subcategories/application/subcategories.service";
+import { TransactionsService } from "contexts/Transactions/application/transactions.service";
+import { Transaction } from "contexts/Transactions/domain";
+import { TransactionsRepositoryMock } from "../domain/transactions-repository.mock";
 
 describe("update", () => {
 	it("should update from account for transfer transaction", async () => {
@@ -73,4 +72,8 @@ describe("update", () => {
 		expect(transactions[0].toAccount?.value).toEqual(accounts[2].id.value);
 		expect(transactions[0].amount.valueOf()).toEqual(10);
 	});
+});
+
+describe("record", () => {
+	it("should record transfer transaction", async () => {});
 });

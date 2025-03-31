@@ -1,13 +1,9 @@
 import { createContext } from "react";
 import { AwilixContainer } from "awilix";
-import {
-	Account,
-	AccountID,
-	AccountName,
-	CreateAccountUseCase,
-	GetAllAccountsUseCase,
-} from "contexts/Accounts";
+import { Account, AccountID, AccountName } from "contexts/Accounts/domain";
 import { useAccounts } from "apps/obsidian-plugin/hooks";
+import { CreateAccountUseCase } from "contexts/Accounts/application/create-account.usecase";
+import { GetAllAccountsUseCase } from "contexts/Accounts/application/get-all-accounts.usecase";
 
 export type AccountsContextType = {
 	useCases: {

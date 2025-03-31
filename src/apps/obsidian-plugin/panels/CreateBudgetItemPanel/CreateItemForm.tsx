@@ -1,10 +1,4 @@
-import {
-	useContext,
-	useEffect,
-	useMemo,
-	useState,
-	PropsWithChildren,
-} from "react";
+import { useContext, useEffect, useState, PropsWithChildren } from "react";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import {
 	Item,
@@ -12,8 +6,7 @@ import {
 	ItemPrice,
 	ItemPrimitives,
 	SimpleItem,
-} from "contexts/Items/domain";
-import { Input } from "apps/obsidian-plugin/components/Input";
+} from "contexts/SimpleItems/domain";
 import {
 	AccountsContext,
 	ItemsContext,
@@ -24,10 +17,12 @@ import {
 	useCategorySelect,
 	useSubCategorySelect,
 } from "apps/obsidian-plugin/components/Select";
-import { AccountID, CategoryID, OperationType, SubCategoryID } from "contexts";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
-import { useAccountSelect } from "apps/obsidian-plugin/components/Select/AccountSelect";
+import { useAccountSelect } from "apps/obsidian-plugin/components/Select/useAccountSelect";
 import { DateValueObject } from "@juandardilag/value-objects/DateValueObject";
+import { AccountID } from "contexts/Accounts/domain";
+import { OperationType } from "contexts/Shared/domain";
+import { Input } from "apps/obsidian-plugin/components/Input/Input";
 
 export const CreateItemForm = ({
 	items,
@@ -36,55 +31,41 @@ export const CreateItemForm = ({
 	children,
 }: PropsWithChildren<{
 	items: Item[];
-	onSubmit: (item: SimpleItem, date: DateValueObject) => Promise<void>;
+	onSubmit: (item: SimpleItem) => Promise<void>;
 	close: () => void;
 }>) => {
-	const logger = useLogger("CreateItemForm");
+	const { logger } = useLogger("CreateItemForm");
 
 	const { getAccountByID } = useContext(AccountsContext);
 	const { brands, stores } = useContext(ItemsContext);
 
-	useEffect(() => {
-		logger.title("unique items for creation").obj({ items }).log();
-	}, [items]);
-
 	const [locks, setLocks] = useState<{
 		[K in keyof ItemPrimitives]?: boolean;
 	}>({});
-	const [internalItem, setInternalItem] = useState<ItemPrimitives>(
-		Item.emptyPrimitives()
-	);
+	const [item, setItem] = useState<ItemPrimitives>(Item.emptyPrimitives());
 	const [selectedItem, setSelectedItem] = useState<ItemPrimitives>();
 
 	const { AccountSelect, account } = useAccountSelect({
 		label: "From",
-		initialValueID: internalItem.account
-			? new AccountID(internalItem.account)
-			: undefined,
+		initialValueID: item.account,
 		lock: locks.account,
 		setLock: (lock) => updateLock("account", lock),
 	});
 	const { AccountSelect: ToAccountSelect, account: toAccount } =
 		useAccountSelect({
 			label: "To",
-			initialValueID: internalItem.toAccount
-				? new AccountID(internalItem.toAccount)
-				: undefined,
+			initialValueID: item.toAccount,
 			lock: locks.toAccount,
 			setLock: (lock) => updateLock("toAccount", lock),
 		});
 	const { CategorySelect, category } = useCategorySelect({
-		initialValueID: internalItem.category
-			? new CategoryID(internalItem.category)
-			: undefined,
+		initialValueID: item.category,
 		lock: locks.category,
 		setLock: (lock) => updateLock("category", lock),
 	});
 	const { SubCategorySelect, subCategory } = useSubCategorySelect({
 		category,
-		initialValueID: internalItem.subCategory
-			? new SubCategoryID(internalItem.subCategory)
-			: undefined,
+		initialValueID: item.subCategory,
 		lock: locks.subCategory,
 		setLock: (lock) => updateLock("subCategory", lock),
 	});
@@ -108,18 +89,10 @@ export const CreateItemForm = ({
 				toAccount: !locks.toAccount
 					? selectedItem.toAccount
 					: undefined,
-				nextDate: !locks.nextDate ? selectedItem.nextDate : undefined,
-				frequency: !locks.frequency
-					? selectedItem.frequency
-					: undefined,
-				untilDate: !locks.untilDate
-					? selectedItem.untilDate
-					: undefined,
 			};
 
 			logger.debug("item to update on creation", {
 				toUpdate,
-				isRecurrent: !!selectedItem.frequency,
 			});
 			update(toUpdate);
 		}
@@ -133,7 +106,7 @@ export const CreateItemForm = ({
 	};
 
 	const update = (newValues: Partial<ItemPrimitives>) => {
-		const newItem = { ...internalItem };
+		const newItem = { ...item };
 		logger.debug("updating item to create", {
 			prevValues: newItem,
 			newValues,
@@ -152,25 +125,18 @@ export const CreateItemForm = ({
 		if (newValues.account !== undefined)
 			newItem.account = newValues.account;
 
-		if (newValues.nextDate !== undefined)
-			newItem.nextDate = newValues.nextDate;
-		if (newValues.frequency !== undefined)
-			newItem.frequency = newValues.frequency;
-		if (newValues.untilDate !== undefined)
-			newItem.untilDate = newValues.untilDate;
-
 		logger.debug("item to create updated", {
 			newItem,
 		});
 
-		setInternalItem(newItem);
+		setItem(newItem);
 	};
 
 	const handleSubmit = (withClose: boolean) => async () => {
-		if (!internalItem) return;
+		if (!item) return;
 
 		let itemToPersist = SimpleItem.fromPrimitives({
-			...internalItem,
+			...item,
 			id: ItemID.generate().value,
 			category: category?.id.value ?? "",
 			subCategory: subCategory?.id.value ?? "",
@@ -178,29 +144,21 @@ export const CreateItemForm = ({
 			toAccount: toAccount?.id.value,
 		});
 
-		await onSubmit(
-			itemToPersist,
-			internalItem.nextDate
-				? new DateValueObject(internalItem.nextDate)
-				: DateValueObject.now()
-		);
+		await onSubmit(itemToPersist);
 
 		if (withClose) return close();
 		setSelectedItem(undefined);
-		setInternalItem({
+		setItem({
 			id: "",
-			account: locks.account ? internalItem.account : "",
-			name: locks.name ? internalItem.name : "",
-			amount: locks.amount ? internalItem.amount : 0,
-			category: locks.category ? internalItem.category : "",
-			subCategory: locks.subCategory ? internalItem.subCategory : "",
-			brand: locks.brand ? internalItem.brand : "",
-			store: locks.store ? internalItem.store : "",
-			operation: locks.operation ? internalItem.operation : "expense",
-			toAccount: locks.toAccount ? internalItem.toAccount : "",
-			nextDate: locks.nextDate ? internalItem.nextDate : new Date(),
-			frequency: locks.frequency ? internalItem.frequency : undefined,
-			untilDate: locks.untilDate ? internalItem.untilDate : undefined,
+			account: locks.account ? item.account : "",
+			name: locks.name ? item.name : "",
+			amount: locks.amount ? item.amount : 0,
+			category: locks.category ? item.category : "",
+			subCategory: locks.subCategory ? item.subCategory : "",
+			brand: locks.brand ? item.brand : "",
+			store: locks.store ? item.store : "",
+			operation: locks.operation ? item.operation : "expense",
+			toAccount: locks.toAccount ? item.toAccount : "",
 		});
 	};
 
@@ -210,7 +168,7 @@ export const CreateItemForm = ({
 			<SelectWithCreation<ItemPrimitives>
 				id="name"
 				label="Name"
-				item={internalItem}
+				item={item}
 				items={items.map((item) => item.toPrimitives())}
 				getLabel={(item) => {
 					if (!item) return "";
@@ -251,7 +209,7 @@ export const CreateItemForm = ({
 					id="amount"
 					label="Amount"
 					style={{ flexGrow: 1 }}
-					value={new PriceValueObject(internalItem.amount)}
+					value={new PriceValueObject(item.amount)}
 					onChange={(amount) => update({ amount: amount.toNumber() })}
 					isLocked={locks.amount}
 					setIsLocked={(value) => updateLock("amount", value)}
@@ -263,7 +221,7 @@ export const CreateItemForm = ({
 			<Select
 				id="type"
 				label="Type"
-				value={internalItem.operation}
+				value={item.operation}
 				values={["expense", "income", "transfer"]}
 				onChange={(operation) => {
 					update({
@@ -282,25 +240,15 @@ export const CreateItemForm = ({
 				}}
 			>
 				{AccountSelect}
-				{internalItem.operation === "transfer" && ToAccountSelect}
+				{item.operation === "transfer" && ToAccountSelect}
 			</div>
-			<Input<Date>
-				dateWithTime
-				id="date"
-				label="Date"
-				value={internalItem.nextDate ?? new Date()}
-				onChange={(nextDate) => update({ nextDate })}
-				isLocked={locks.nextDate}
-				setIsLocked={(value) => updateLock("nextDate", value)}
-				// error={validation.check("nextDate") ?? undefined}
-			/>
-			{internalItem.operation === "expense" && (
+			{item.operation === "expense" && (
 				<>
 					<SelectWithCreation
 						id="brand"
 						label="Brand"
 						style={{ flexGrow: 1 }}
-						item={internalItem.brand ?? ""}
+						item={item.brand ?? ""}
 						items={brands.map((brand) => brand.value)}
 						onChange={(brand) => update({ brand })}
 						isLocked={locks.brand}
@@ -311,7 +259,7 @@ export const CreateItemForm = ({
 						id="store"
 						label="Store"
 						style={{ flexGrow: 1 }}
-						item={internalItem.store ?? ""}
+						item={item.store ?? ""}
 						items={stores.map((store) => store.value)}
 						onChange={(store) => update({ store })}
 						isLocked={locks.store}

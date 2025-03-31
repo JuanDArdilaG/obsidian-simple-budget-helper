@@ -2,17 +2,17 @@ import { IRepository } from "contexts/Shared/domain/persistence/repository.inter
 import { IDValueObject } from "contexts/Shared/domain/value-objects/id/id.valueobject";
 import { Criteria } from "contexts/Shared/domain/criteria";
 import { DexieDB } from "./dexie.db";
-import { IEntity } from "contexts/Shared/domain/entity.interface";
 import { EntityTable } from "dexie";
 import { Logger } from "contexts/Shared/infrastructure/logger";
+import { Entity, EntityComposedValue } from "contexts/Shared/domain";
 
 export abstract class DexieRepository<
-	T extends IEntity<ID, P>,
+	T extends Entity<ID, P>,
 	ID extends IDValueObject,
-	P extends Record<string, string | number | Date>
+	P extends EntityComposedValue
 > implements IRepository<ID, T, P>
 {
-	#logger = new Logger("DexieRepository").off();
+	#logger = new Logger("DexieRepository");
 	protected readonly _table: EntityTable<P, "id">;
 
 	constructor(
@@ -63,7 +63,9 @@ export abstract class DexieRepository<
 				});
 				return filter.operator === "EQUAL"
 					? value === filter.value
-					: filter.operator === "LESS_THAN_OR_EQUAL" && filter.value
+					: filter.operator === "LESS_THAN_OR_EQUAL" &&
+					  filter.value &&
+					  value
 					? value <= filter.value
 					: filter.operator === "NOT_EQUAL"
 					? value !== filter.value
@@ -120,7 +122,5 @@ export abstract class DexieRepository<
 	 * Map a database record to a domain entity
 	 * Must be implemented by subclasses
 	 */
-	protected abstract mapToDomain(
-		record: Record<string, string | number | Date>
-	): T;
+	protected abstract mapToDomain(record: EntityComposedValue): T;
 }

@@ -24,6 +24,10 @@ export class Operation extends EnumValueObject<OperationType> {
 		return new Operation("transfer");
 	}
 
+	copy(): Operation {
+		return new Operation(this.value);
+	}
+
 	isExpense(): boolean {
 		return this.value === "expense";
 	}

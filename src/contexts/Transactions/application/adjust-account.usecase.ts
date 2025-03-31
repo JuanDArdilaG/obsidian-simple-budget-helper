@@ -1,7 +1,7 @@
 import { CommandUseCase } from "contexts/Shared/domain";
 import { AccountBalance, AccountID } from "contexts/Accounts/domain";
-import { TransactionsService } from "contexts/Transactions/application";
-import { Logger } from "contexts/Shared";
+import { TransactionsService } from "contexts/Transactions/application/transactions.service";
+import { Logger } from "contexts/Shared/infrastructure/logger";
 
 export type AdjustAccountUseCaseInput = {
 	accountID: AccountID;

@@ -3,8 +3,8 @@ import {
 	AccountID,
 	AccountName,
 	IAccountsService,
-	Transaction,
-} from "contexts";
+} from "contexts/Accounts/domain";
+import { Transaction } from "contexts/Transactions/domain";
 
 export class AccountsServiceMock implements IAccountsService {
 	constructor(private _accounts: Account[]) {}

@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { AccountID } from "../../../../src/contexts/Accounts/domain/account-id.valueobject";
-import { ItemID } from "../../../../src/contexts/Items/domain/item-id.valueobject";
-import { ItemName } from "../../../../src/contexts/Items/domain/item-name.valueobject";
+import { ItemID } from "../../../../src/contexts/SimpleItems/domain/item-id.valueobject";
+import { ItemName } from "../../../../src/contexts/SimpleItems/domain/item-name.valueobject";
 import { TransactionAmount } from "../../../../src/contexts/Transactions/domain/transaction-amount.valueobject";
 import { TransactionDate } from "../../../../src/contexts/Transactions/domain/transaction-date.valueobject";
 import { TransactionID } from "../../../../src/contexts/Transactions/domain/transaction-id.valueobject";

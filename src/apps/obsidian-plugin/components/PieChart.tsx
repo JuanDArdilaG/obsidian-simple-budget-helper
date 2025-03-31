@@ -14,8 +14,8 @@ export const PieChart = ({
 	data?: { name: string; value: number }[] | undefined;
 	setSelectedCategory?: React.Dispatch<React.SetStateAction<string>>;
 }) => {
-	const logger = useLogger("PieChart");
-	logger.debug("data", { data });
+	const { debug } = useLogger("PieChart");
+	debug("data", { data });
 	const [activeIndex, setActiveIndex] = useState(0);
 	const onPieEnter = useCallback(
 		(a: any, index: number) => {

@@ -1,4 +1,4 @@
-import { LockField } from "apps/obsidian-plugin/components";
+import { LockField } from "apps/obsidian-plugin/components/LockField";
 import { JSX, useEffect, useState } from "react";
 
 export const Select = <T extends string | number>({

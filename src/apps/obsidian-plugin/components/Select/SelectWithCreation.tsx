@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Input, LockField } from "apps/obsidian-plugin/components";
+import { LockField } from "apps/obsidian-plugin/components/LockField";
 import { useLogger } from "apps/obsidian-plugin/hooks";
+import { Input } from "apps/obsidian-plugin/components/Input/Input";
 
 export const SelectWithCreation = <T extends Object>({
 	id,
@@ -29,7 +30,7 @@ export const SelectWithCreation = <T extends Object>({
 	isLocked?: boolean;
 	setIsLocked?: (value: boolean) => void;
 }) => {
-	const logger = useLogger("SelectWithCreation", false);
+	const { logger } = useLogger("SelectWithCreation");
 	if (typeof item !== "string" && !getKey)
 		throw new Error(
 			"getKey is required for items that are not strings. id: " + id
@@ -42,7 +43,7 @@ export const SelectWithCreation = <T extends Object>({
 	}, [item]);
 
 	useEffect(() => {
-		logger.title("input changed").attr("input", input).on().log();
+		logger.title("input changed").attr("input", input).log();
 		onChange(input);
 	}, [input]);
 
@@ -77,7 +78,7 @@ export const SelectWithCreation = <T extends Object>({
 						(item) =>
 							(getKey ? getKey(item) : String(item)) === value
 					);
-					logger.off().debug("selection with creation on select", {
+					logger.debug("selection with creation on select", {
 						value,
 						item,
 					});

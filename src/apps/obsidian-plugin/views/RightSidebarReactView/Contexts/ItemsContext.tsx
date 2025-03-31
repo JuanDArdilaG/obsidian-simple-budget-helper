@@ -1,39 +1,42 @@
-import { createContext, useContext } from "react";
+import { createContext } from "react";
 import { AwilixContainer } from "awilix";
-import {
-	CreateItemUseCase,
-	GetAllUniqueItemsByNameUseCase,
-	GetAllUniqueItemBrandsUseCase,
-	GetAllUniqueItemStoresUseCase,
-	GetRecurrentItemsUntilDateUseCase,
-	ItemStore,
-	ItemBrand,
-	GetAllRecurrentItemsUseCase,
-	RecurrentItem,
-} from "contexts/Items";
-import {
-	RecordRecurrentItemUseCase,
-	RecordSimpleItemUseCase,
-} from "contexts/Transactions";
-import { DeleteItemUseCase } from "contexts/Items/application/delete-item.usecase";
-import { UpdateItemUseCase } from "contexts/Items/application/update-item.usecase";
+import { ItemStore, ItemBrand } from "contexts/SimpleItems/domain";
+import { DeleteSimpleItemUseCase } from "contexts/SimpleItems/application/delete-simple-item.usecase";
+import { UpdateSimpleItemUseCase } from "contexts/SimpleItems/application/update-simple-item.usecase";
 import { useItems } from "apps/obsidian-plugin/hooks";
+import { CreateItemUseCase } from "contexts/SimpleItems/application/create-simple-item.usecase";
+import { GetAllUniqueItemBrandsUseCase } from "contexts/SimpleItems/application/get-all-unique-item-brands.usecase";
+import { GetAllUniqueItemStoresUseCase } from "contexts/SimpleItems/application/get-all-unique-item-stores.usecase";
+import { GetAllUniqueItemsByNameUseCase } from "contexts/SimpleItems/application/get-all-unique-items-by-name.usecase";
+import { RecordSimpleItemUseCase } from "contexts/Transactions/application/record-simple-item.usecase";
+import { GetAllScheduledItemsUseCase } from "contexts/ScheduledItems/application/get-all-scheduled-items.usecase";
+import { GetScheduledItemsUntilDateUseCase } from "contexts/ScheduledItems/application/get-scheduled-items-until-date.usecase";
+import { RecordScheduledItemUseCase } from "contexts/Transactions/application/record-scheduled-item.usecase";
+import { ScheduledItem } from "contexts/ScheduledItems/domain";
+import { ModifyNScheduledItemRecurrenceUseCase } from "contexts/ScheduledItems/application/modify-n-scheduled-item-recurrence.usecase";
+import { CreateScheduledItemUseCase } from "contexts/ScheduledItems/application/create-scheduled-item.usecase";
+import { UpdateScheduledItemUseCase } from "contexts/ScheduledItems/application/update-scheduled-item.usecase";
+import { DeleteScheduledItemUseCase } from "contexts/ScheduledItems/application/delete-scheduled-item.usecase";
 
 export type ItemsContextType = {
 	useCases: {
 		createItem: CreateItemUseCase;
-		deleteItem: DeleteItemUseCase;
-		updateItem: UpdateItemUseCase;
+		createScheduledItem: CreateScheduledItemUseCase;
+		deleteItem: DeleteSimpleItemUseCase;
+		deleteScheduledItem: DeleteScheduledItemUseCase;
+		updateItem: UpdateSimpleItemUseCase;
+		updateScheduledItemUseCase: UpdateScheduledItemUseCase;
+		modifyNScheduledItemRecurrence: ModifyNScheduledItemRecurrenceUseCase;
 		getAllUniqueItemsByName: GetAllUniqueItemsByNameUseCase;
 		getAllUniqueItemBrands: GetAllUniqueItemBrandsUseCase;
 		getAllUniqueItemStores: GetAllUniqueItemStoresUseCase;
 		recordSimpleItem: RecordSimpleItemUseCase;
-		recordRecurrentItem: RecordRecurrentItemUseCase;
-		getRecurrentItemsUntilDate: GetRecurrentItemsUntilDateUseCase;
-		getAllRecurrentItems: GetAllRecurrentItemsUseCase;
+		recordScheduledItem: RecordScheduledItemUseCase;
+		getScheduledItemsUntilDate: GetScheduledItemsUntilDateUseCase;
+		getAllScheduledItems: GetAllScheduledItemsUseCase;
 	};
-	recurrentItems: RecurrentItem[];
-	updateRecurrentItems: () => void;
+	scheduledItems: ScheduledItem[];
+	updateScheduledItems: () => void;
 	brands: ItemBrand[];
 	updateBrands: () => void;
 	stores: ItemStore[];
@@ -43,18 +46,23 @@ export type ItemsContextType = {
 export const ItemsContext = createContext<ItemsContextType>({
 	useCases: {
 		createItem: {} as CreateItemUseCase,
-		getAllRecurrentItems: {} as GetAllRecurrentItemsUseCase,
+		createScheduledItem: {} as CreateScheduledItemUseCase,
+		getAllScheduledItems: {} as GetAllScheduledItemsUseCase,
 		getAllUniqueItemsByName: {} as GetAllUniqueItemsByNameUseCase,
 		getAllUniqueItemBrands: {} as GetAllUniqueItemBrandsUseCase,
 		getAllUniqueItemStores: {} as GetAllUniqueItemStoresUseCase,
-		recordRecurrentItem: {} as RecordRecurrentItemUseCase,
+		recordScheduledItem: {} as RecordScheduledItemUseCase,
 		recordSimpleItem: {} as RecordSimpleItemUseCase,
-		getRecurrentItemsUntilDate: {} as GetRecurrentItemsUntilDateUseCase,
-		deleteItem: {} as DeleteItemUseCase,
-		updateItem: {} as UpdateItemUseCase,
+		getScheduledItemsUntilDate: {} as GetScheduledItemsUntilDateUseCase,
+		deleteItem: {} as DeleteSimpleItemUseCase,
+		deleteScheduledItem: {} as DeleteScheduledItemUseCase,
+		updateItem: {} as UpdateSimpleItemUseCase,
+		updateScheduledItemUseCase: {} as UpdateScheduledItemUseCase,
+		modifyNScheduledItemRecurrence:
+			{} as ModifyNScheduledItemRecurrenceUseCase,
 	},
-	recurrentItems: [],
-	updateRecurrentItems: () => {},
+	scheduledItems: [],
+	updateScheduledItems: () => {},
 	brands: [],
 	updateBrands: () => {},
 	stores: [],
@@ -64,8 +72,8 @@ export const ItemsContext = createContext<ItemsContextType>({
 export const getItemsContextDefault = (
 	container: AwilixContainer
 ): ItemsContextType => {
-	const getAllRecurrentItems = container.resolve(
-		"getAllRecurrentItemsUseCase"
+	const getAllScheduledItems = container.resolve(
+		"getAllScheduledItemsUseCase"
 	);
 	const getAllUniqueItemBrands = container.resolve(
 		"getAllUniqueItemBrandsUseCase"
@@ -73,23 +81,26 @@ export const getItemsContextDefault = (
 	const getAllUniqueItemStores = container.resolve(
 		"getAllUniqueItemStoresUseCase"
 	);
-	const recordRecurrentItem = container.resolve("recordRecurrentItemUseCase");
+	const recordScheduledItem = container.resolve("recordScheduledItemUseCase");
 	const recordSimpleItem = container.resolve("recordSimpleItemUseCase");
-	const getRecurrentItemsUntilDate = container.resolve(
-		"getRecurrentItemsUntilDateUseCase"
+	const getScheduledItemsUntilDate = container.resolve(
+		"getScheduledItemsUntilDateUseCase"
+	);
+	const modifyNScheduledItemRecurrence = container.resolve(
+		"modifyNScheduledItemRecurrenceUseCase"
 	);
 	const deleteItem = container.resolve("deleteItemUseCase");
 	const updateItem = container.resolve("updateItemUseCase");
 
 	const {
-		recurrentItems,
+		scheduledItems,
 		brands,
 		stores,
-		updateRecurrentItems,
+		updateScheduledItems,
 		updateBrands,
 		updateStores,
 	} = useItems({
-		getAllRecurrentItems,
+		getAllScheduledItems,
 		getAllUniqueItemBrands,
 		getAllUniqueItemStores,
 	});
@@ -97,20 +108,30 @@ export const getItemsContextDefault = (
 	return {
 		useCases: {
 			createItem: container.resolve("createItemUseCase"),
-			getAllRecurrentItems,
+			createScheduledItem: container.resolve(
+				"createScheduledItemUseCase"
+			),
+			getAllScheduledItems,
 			getAllUniqueItemsByName: container.resolve(
 				"getAllUniqueItemsByNameUseCase"
 			),
 			getAllUniqueItemBrands,
 			getAllUniqueItemStores,
-			getRecurrentItemsUntilDate,
-			recordRecurrentItem,
+			getScheduledItemsUntilDate,
+			recordScheduledItem,
 			recordSimpleItem,
 			deleteItem,
+			deleteScheduledItem: container.resolve(
+				"deleteScheduledItemUseCase"
+			),
 			updateItem,
+			updateScheduledItemUseCase: container.resolve(
+				"updateScheduledItemUseCase"
+			),
+			modifyNScheduledItemRecurrence,
 		},
-		recurrentItems,
-		updateRecurrentItems,
+		scheduledItems,
+		updateScheduledItems,
 		brands,
 		updateBrands,
 		stores,

@@ -1,45 +1,60 @@
-import { useContext, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import {
-	ItemName,
-	RecurrentItem,
-	RecurrentItemNextDate,
-} from "contexts/Items/domain";
+import { ItemName } from "contexts/SimpleItems/domain";
 import { ItemsContext } from "apps/obsidian-plugin/views";
 import {
-	Input,
 	Select,
 	SelectWithCreation,
 	useAccountSelect,
-} from "apps/obsidian-plugin/components";
+} from "apps/obsidian-plugin/components/Select";
 import { OperationType } from "contexts/Shared/domain";
-import { useCategorySelect } from "apps/obsidian-plugin/components/Select/CategorySelect";
-import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/SubCategorySelect";
+import { useCategorySelect } from "apps/obsidian-plugin/components/Select/useCategorySelect";
+import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/useSubCategorySelect";
 import { Checkbox, FormControlLabel } from "@mui/material";
+import {
+	ScheduledItem,
+	ScheduledItemDate,
+	ScheduledItemNextDate,
+} from "contexts/ScheduledItems/domain";
+import { NumberValueObject } from "@juandardilag/value-objects/NumberValueObject";
+import { Input } from "apps/obsidian-plugin/components/Input/Input";
 
-export const EditRecurrentItemPanel = ({
-	item,
+export const EditScheduledItemPanel = ({
+	recurrence,
 	onClose,
 }: {
-	item: RecurrentItem;
+	recurrence: { item: ScheduledItem; n: NumberValueObject } | ScheduledItem;
 	onClose: () => void;
 }) => {
 	const {
-		useCases: { updateItem },
+		useCases: {
+			updateScheduledItemUseCase,
+			modifyNScheduledItemRecurrence,
+		},
+		updateScheduledItems,
 	} = useContext(ItemsContext);
 	const { brands, stores } = useContext(ItemsContext);
 
+	const item = useMemo(
+		() =>
+			recurrence instanceof ScheduledItem ? recurrence : recurrence.item,
+		[recurrence]
+	);
+
 	const { AccountSelect, account } = useAccountSelect({
 		label: "From",
-		initialValueID: item.account,
+		initialValueID: item.account.value,
 	});
 	const { AccountSelect: ToAccountSelect, account: toAccount } =
-		useAccountSelect({ label: "To", initialValueID: item.toAccount });
+		useAccountSelect({
+			label: "To",
+			initialValueID: item.toAccount?.value,
+		});
 	const { CategorySelect, category } = useCategorySelect({
-		initialValueID: item.category,
+		initialValueID: item.category.value,
 	});
 	const { SubCategorySelect, subCategory } = useSubCategorySelect({
-		initialValueID: item.subCategory,
+		initialValueID: item.subCategory.value,
 	});
 
 	const [name, setName] = useState(item.name.value);
@@ -48,18 +63,24 @@ export const EditRecurrentItemPanel = ({
 
 	const [brand, setBrand] = useState(item.brand?.value);
 	const [store, setStore] = useState(item.store?.value);
-	const [frequency, setFrequency] = useState(item.frequency?.value);
+	const [frequency, setFrequency] = useState(
+		item.recurrence?.frequency.value
+	);
 
-	const [date, setDate] = useState(item.nextDate.valueOf());
-	const [untilDate, setUntilDate] = useState(item.untilDate?.valueOf());
-	const [withUntilDate, setWithUntilDate] = useState(!!item.untilDate);
+	const [date, setDate] = useState(item.date.value);
+	const [untilDate, setUntilDate] = useState(
+		item.recurrence?.untilDate?.value
+	);
+	const [withUntilDate, setWithUntilDate] = useState(
+		!!item.recurrence?.untilDate
+	);
 	const [validation, setValidation] = useState<
 		Record<string, boolean> | undefined
 	>(undefined);
 
 	return (
 		<div className="create-budget-item-modal">
-			<h3>Edit Recurrent Item</h3>
+			<h3>Edit Scheduled Item</h3>
 			<Input
 				id="name"
 				label="Name"
@@ -156,21 +177,60 @@ export const EditRecurrentItemPanel = ({
 				onClick={async () => {
 					date.setSeconds(0);
 
-					item.update({
-						name: new ItemName(name),
-						account: account?.id,
-						toAccount: toAccount?.id,
-						amount,
-						category: category?.id,
-						subCategory: subCategory?.id,
-						nextDate: new RecurrentItemNextDate(date),
-					});
-					if (withUntilDate)
-						item.updateUntilDate(
-							new RecurrentItemNextDate(untilDate ?? new Date())
-						);
+					if (recurrence instanceof ScheduledItem) {
+						account &&
+							!account.id.equalTo(item.account) &&
+							item.updateAccount(account.id);
+						toAccount &&
+							item.toAccount &&
+							toAccount.id.equalTo(item.toAccount) &&
+							item.updateToAccount(toAccount?.id);
+						!amount.equalTo(item.price) && item.updatePrice(amount);
+						name !== item.name.value &&
+							item.updateName(new ItemName(name));
+						category &&
+							!category.id.equalTo(item.category) &&
+							item.updateCategory(category.id);
+						subCategory &&
+							!subCategory.id.equalTo(item.subCategory) &&
+							item.updateSubCategory(subCategory.id);
+						date !== item.date.value &&
+							item.updateDate(new ScheduledItemDate(date));
 
-					await updateItem.execute(item);
+						if (withUntilDate)
+							item.recurrence?.updateUntilDate(
+								new ScheduledItemNextDate(
+									untilDate ?? new Date()
+								)
+							);
+						await updateScheduledItemUseCase.execute(item);
+					} else {
+						await modifyNScheduledItemRecurrence.execute({
+							id: item.id,
+							n: recurrence.n,
+							modifications: {
+								date:
+									date !== item.date.value
+										? new ScheduledItemDate(date)
+										: undefined,
+								account:
+									account && !account.id.equalTo(item.account)
+										? account?.id
+										: undefined,
+								toAccount:
+									toAccount &&
+									item.toAccount &&
+									toAccount.id.equalTo(item.toAccount)
+										? toAccount.id
+										: undefined,
+								price: !amount.equalTo(item.price)
+									? amount
+									: undefined,
+							},
+						});
+					}
+
+					updateScheduledItems();
 
 					onClose();
 				}}

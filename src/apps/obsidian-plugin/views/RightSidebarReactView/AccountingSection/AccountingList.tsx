@@ -10,10 +10,10 @@ import {
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { Transaction } from "contexts/Transactions/domain";
-import { TransactionWithAccumulatedBalance } from "contexts";
-import { useAccountSelect } from "apps/obsidian-plugin/components";
-import { useCategorySelect } from "apps/obsidian-plugin/components/Select/CategorySelect";
-import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/SubCategorySelect";
+import { TransactionWithAccumulatedBalance } from "contexts/Reports/domain";
+import { useAccountSelect } from "apps/obsidian-plugin/components/Select/useAccountSelect";
+import { useCategorySelect } from "apps/obsidian-plugin/components/Select/useCategorySelect";
+import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/useSubCategorySelect";
 import { EditTransactionPanel } from "apps/obsidian-plugin/panels";
 
 export function AccountingList({
@@ -23,7 +23,7 @@ export function AccountingList({
 	app: App;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) {
-	const logger = useLogger("AccountingList");
+	const { logger } = useLogger("AccountingList");
 	const {
 		useCases: { deleteTransaction },
 		setFilters,
@@ -156,7 +156,7 @@ const AccountingListRow = ({
 		React.SetStateAction<"edit" | "delete" | undefined>
 	>;
 }) => {
-	const logger = useLogger("AccountingListRow");
+	const { logger } = useLogger("AccountingListRow");
 	const { updateAccounts, getAccountByID } = useContext(AccountsContext);
 	const { getCategoryByID, getSubCategoryByID } =
 		useContext(CategoriesContext);
@@ -177,7 +177,6 @@ const AccountingListRow = ({
 			.debugB("not account for transaction row", {
 				transaction: transaction.toPrimitives(),
 			})
-			.on()
 			.log();
 		return <></>;
 	}
@@ -296,7 +295,7 @@ const AccountingListRowGroup = ({
 		React.SetStateAction<"edit" | "delete" | undefined>
 	>;
 }) => {
-	const logger = useLogger("AccountingListRowGroup").off();
+	const logger = useLogger("AccountingListRowGroup");
 	return (
 		<div>
 			<div

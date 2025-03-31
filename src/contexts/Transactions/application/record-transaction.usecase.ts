@@ -1,6 +1,6 @@
 import { CommandUseCase } from "contexts/Shared/domain";
 import { Transaction } from "contexts/Transactions/domain";
-import { TransactionsService } from "contexts/Transactions/application";
+import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 
 export type RecordTransactionUseCaseInput = Transaction;
 

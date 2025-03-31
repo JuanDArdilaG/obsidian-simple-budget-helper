@@ -1,14 +1,19 @@
 import Dexie from "dexie";
-import { App, normalizePath, Plugin, PluginManifest } from "obsidian";
 import { exportDB, importDB } from "dexie-export-import";
+import { App, normalizePath, Plugin, PluginManifest } from "obsidian";
 import { DEFAULT_SETTINGS, SimpleBudgetHelperSettings } from "./SettingTab";
 import { buildContainer } from "contexts/Shared/infrastructure/di/container";
 import { Logger } from "../../contexts/Shared/infrastructure/logger";
 import { LeftMenuItems, SettingTab, views } from "apps/obsidian-plugin";
 import { RightSidebarReactViewRoot } from "apps/obsidian-plugin/views";
-import { DexieDB } from "contexts";
+import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.db";
 import { MDMigration } from "apps/obsidian-plugin/migration/md.migration";
 import { AwilixContainer } from "awilix";
+import { IItemsRepository, SimpleItem } from "contexts/SimpleItems/domain";
+import {
+	IScheduledItemsRepository,
+	ScheduledItem,
+} from "contexts/ScheduledItems/domain";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
@@ -44,6 +49,24 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		}
 	}
 
+	async migrateRecurrentItems(
+		container: AwilixContainer<any>
+	): Promise<void> {
+		const itemsRepo = container.resolve<IItemsRepository>(
+			"_oldItemsRepository"
+		);
+		const sItemsRepo =
+			container.resolve<IItemsRepository>("_itemsRepository");
+
+		const items = await itemsRepo.findAll();
+		const simpleItems = items.filter((item) => SimpleItem.IsSimple(item));
+		this.logger.debug("simple items", {
+			items,
+			recurrentItems: simpleItems,
+		});
+		await Promise.all(simpleItems.map((item) => sItemsRepo.persist(item)));
+	}
+
 	async importDBBackup() {
 		const path = normalizePath(`${this.settings.rootFolder}/db/db.backup`);
 		const buffer = await this.app.vault.adapter.readBinary(path);
@@ -57,6 +80,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		this.db = (container.resolve("_db") as DexieDB).db;
 		// await this.importDBBackup();
 		// await this.exportDBBackup();
+		// await this.migrateRecurrentItems(container);
 
 		await initStoragePersistence();
 		const storageQuota = await showEstimatedQuota();
@@ -90,7 +114,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 			container.resolve("createSubCategoryUseCase"),
 			container.resolve("recordTransactionUseCase"),
 			container.resolve("recordSimpleItemUseCase"),
-			container.resolve("createRecurrentItemUseCase")
+			container.resolve("createScheduledItemUseCase")
 		);
 		const { items, transactions } = await migrator.migrate();
 		this.logger.debug("transactions migrated", {

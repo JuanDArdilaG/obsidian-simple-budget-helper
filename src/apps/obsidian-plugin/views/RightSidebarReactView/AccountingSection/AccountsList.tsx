@@ -1,5 +1,5 @@
 import { useContext, useMemo, useState } from "react";
-import { ActionButtons } from "apps/obsidian-plugin/components";
+import { ActionButtons } from "apps/obsidian-plugin/components/ActionButtons";
 import { AccountsListContextMenu } from "./AccountsListContextMenu";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { Account } from "contexts/Accounts/domain";

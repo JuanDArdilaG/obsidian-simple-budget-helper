@@ -1,10 +1,11 @@
 import { useContext, useEffect, useState } from "react";
-import { ContextMenu, Input } from "apps/obsidian-plugin/components";
+import { ContextMenu } from "apps/obsidian-plugin/components/ContextMenu";
 import { CheckCircle, CircleX, EqualNot } from "lucide-react";
-import { Account, AccountBalance } from "contexts/Accounts";
+import { Account, AccountBalance } from "contexts/Accounts/domain";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { TransactionsContext } from "../Contexts";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
+import { Input } from "apps/obsidian-plugin/components/Input/Input";
 
 export const AccountsListContextMenu = ({
 	account,
@@ -13,7 +14,7 @@ export const AccountsListContextMenu = ({
 	account: Account;
 	onAdjust: () => Promise<void>;
 }) => {
-	const logger = useLogger("AccountsListContextMenu");
+	const { logger } = useLogger("AccountsListContextMenu");
 	const {
 		useCases: { adjustAccount },
 	} = useContext(TransactionsContext);
@@ -51,13 +52,9 @@ export const AccountsListContextMenu = ({
 			hookProps={{
 				lock: askForNewAmount,
 				invalidClickChecker: (e: any) => {
-					logger.debug(
-						"invalidClickChecker",
-						{
-							innerText: (e.target as HTMLElement)?.innerText,
-						},
-						{ on: false }
-					);
+					logger.debug("invalidClickChecker", {
+						innerText: (e.target as HTMLElement)?.innerText,
+					});
 					return (
 						(e.target as HTMLElement)?.innerText?.trim() ===
 						"Adjust"

@@ -1,7 +1,7 @@
-import { Landmark, List, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { SectionButton } from "../../../components/SectionButtons";
 
-export type AccountingSectionSelection = "movements" | "accounts";
+export type AccountingSectionSelection = "movements";
 
 export const AccountingSectionButtons = ({
 	selected,
@@ -19,13 +19,6 @@ export const AccountingSectionButtons = ({
 					icon={<Menu size={16} />}
 					selected={selected}
 					onClick={() => setSelected("movements")}
-				/>
-				<SectionButton
-					type="accounts"
-					label="Accounts"
-					icon={<Landmark size={16} />}
-					selected={selected}
-					onClick={() => setSelected("accounts")}
 				/>
 			</div>
 		</>

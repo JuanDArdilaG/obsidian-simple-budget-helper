@@ -1,16 +1,15 @@
 import { useContext, useEffect, useState } from "react";
-import { Item } from "contexts/Items/domain";
+import { Item } from "contexts/SimpleItems/domain";
 import {
 	AccountsContext,
 	ItemsContext,
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { TransactionDate } from "contexts";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 import { CreateItemForm } from "./CreateItemForm";
 
 export const CreateItemPanel = ({ close }: { close: () => void }) => {
-	const logger = useLogger("CreateItemPanel", false);
+	const { logger } = useLogger("CreateItemPanel");
 	const {
 		useCases: { getAllUniqueItemsByName, recordSimpleItem },
 	} = useContext(ItemsContext);
@@ -32,10 +31,9 @@ export const CreateItemPanel = ({ close }: { close: () => void }) => {
 		<>
 			<CreateItemForm
 				items={items}
-				onSubmit={async (item, date) => {
+				onSubmit={async (item) => {
 					await recordSimpleItem.execute({
 						item,
-						date,
 					});
 					updateAccounts();
 					updateTransactions();

@@ -1,5 +1,5 @@
 import { Criteria } from "../criteria";
-import { IEntity } from "../entity.interface";
+import { Entity, EntityComposedValue } from "../entity.abstract";
 import { IDValueObject } from "../value-objects/id/id.valueobject";
 
 /**
@@ -8,8 +8,8 @@ import { IDValueObject } from "../value-objects/id/id.valueobject";
  */
 export interface IRepository<
 	ID extends IDValueObject,
-	T extends IEntity<ID, P>,
-	P extends Record<string, string | number | Date>
+	T extends Entity<ID, P>,
+	P extends EntityComposedValue
 > {
 	/**
 	 * Find entity by its ID

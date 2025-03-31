@@ -1,10 +1,8 @@
 import { App } from "obsidian";
-import {
-	ContextMenu,
-	ConfirmationModal,
-} from "apps/obsidian-plugin/components";
+import { ContextMenu } from "apps/obsidian-plugin/components/ContextMenu";
 import { Pencil, Trash2 } from "lucide-react";
 import { Transaction } from "contexts/Transactions/domain";
+import { ConfirmationModal } from "apps/obsidian-plugin/components/ConfirmationModal";
 
 export const AccountingListContextMenu = ({
 	transaction,

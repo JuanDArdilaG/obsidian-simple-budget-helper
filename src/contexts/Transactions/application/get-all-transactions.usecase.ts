@@ -1,8 +1,8 @@
-import { AccountID } from "contexts/Accounts";
-import { CategoryID } from "contexts/Categories";
-import { Logger } from "contexts/Shared";
+import { AccountID } from "contexts/Accounts/domain";
+import { CategoryID } from "contexts/Categories/domain";
 import { QueryUseCase } from "contexts/Shared/domain";
-import { SubCategoryID } from "contexts/Subcategories";
+import { Logger } from "contexts/Shared/infrastructure/logger";
+import { SubCategoryID } from "contexts/Subcategories/domain";
 import {
 	ITransactionsRepository,
 	Transaction,
@@ -23,7 +23,7 @@ export class GetAllTransactionsUseCase
 			GetAllTransactionsUseCaseOutput
 		>
 {
-	#logger = new Logger("GetAllTransactionsUseCase").off();
+	#logger = new Logger("GetAllTransactionsUseCase");
 	constructor(private _transactionsRepository: ITransactionsRepository) {}
 
 	async execute({

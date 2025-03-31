@@ -1,49 +1,46 @@
 import { TFile, Vault } from "obsidian";
 import {
-	RecordSimpleItemUseCase,
-	Transaction,
-	TransactionAmount,
-	TransactionDate,
-	TransactionID,
-	TransactionName,
-	RecordTransactionUseCase,
-} from "contexts/Transactions";
-import {
 	Account,
 	AccountName,
 	AccountType,
 	AccountTypeType,
-	GetAllAccountsUseCase,
-	CreateAccountUseCase,
-} from "contexts/Accounts";
-import { OperationType, Logger } from "contexts/Shared";
+} from "contexts/Accounts/domain";
+import { ItemOperation, OperationType } from "contexts/Shared/domain";
+import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
+import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
 import {
-	CreateSubCategoryUseCase,
-	GetAllSubcategoriesUseCase,
-	SubCategory,
-	SubCategoryName,
-} from "contexts/Subcategories";
-import {
-	Category,
-	CategoryID,
-	CategoryName,
-	GetAllCategoriesUseCase,
-	CreateCategoryUseCase,
-} from "contexts/Categories";
-import {
-	CreateRecurrentItemUseCase,
 	Item,
 	ItemBrand,
 	ItemID,
 	ItemName,
-	ItemOperation,
 	ItemPrice,
 	ItemStore,
-	RecurrentItem,
-	RecurrentItemNextDate,
-	RecurrrentItemFrequency,
 	SimpleItem,
-} from "contexts/Items";
+} from "contexts/SimpleItems/domain";
+import { CreateAccountUseCase } from "contexts/Accounts/application/create-account.usecase";
+import { GetAllAccountsUseCase } from "contexts/Accounts/application/get-all-accounts.usecase";
+import { CreateCategoryUseCase } from "contexts/Categories/application/create-category.usecase";
+import { GetAllCategoriesUseCase } from "contexts/Categories/application/get-all-categories.usecase";
+import { CreateScheduledItemUseCase } from "contexts/ScheduledItems/application/create-scheduled-item.usecase";
+import { Logger } from "contexts/Shared/infrastructure/logger";
+import { CreateSubCategoryUseCase } from "contexts/Subcategories/application/create-subcategory.usecase";
+import { GetAllSubcategoriesUseCase } from "contexts/Subcategories/application/get-all-subcategories.usecase";
+import { RecordSimpleItemUseCase } from "contexts/Transactions/application/record-simple-item.usecase";
+import { RecordTransactionUseCase } from "contexts/Transactions/application/record-transaction.usecase";
+import {
+	TransactionDate,
+	Transaction,
+	TransactionID,
+	TransactionName,
+	TransactionAmount,
+} from "contexts/Transactions/domain";
+import {
+	ScheduledItem,
+	ScheduledItemNextDate,
+	ScheduledItemFrequency,
+	ScheduledItemRecurrence,
+} from "contexts/ScheduledItems/domain";
+import { DateValueObject } from "@juandardilag/value-objects/DateValueObject";
 
 export class MDMigration {
 	readonly logger: Logger;
@@ -58,7 +55,7 @@ export class MDMigration {
 		readonly createSubCategoryUseCase: CreateSubCategoryUseCase,
 		readonly recordTransactionUseCase: RecordTransactionUseCase,
 		readonly recordSimpleItemUseCase: RecordSimpleItemUseCase,
-		readonly createRecurrentItemUseCase: CreateRecurrentItemUseCase
+		readonly createScheduledItemUseCase: CreateScheduledItemUseCase
 	) {
 		this.logger = new Logger("MDMigration");
 	}
@@ -76,22 +73,22 @@ export class MDMigration {
 			await this.recordSimpleItemUseCase.execute({ item, date });
 		}
 
-		const recurrentItems = await this.#recurrentTransactions(
+		const scheduledItems = await this.#scheduledTransactions(
 			this.vault.cachedRead
 		);
-		for (let { item, transactions } of recurrentItems) {
+		for (let { item, transactions } of scheduledItems) {
 			for (let transaction of transactions) {
 				await this.recordTransactionUseCase.execute(transaction);
 			}
-			await this.createRecurrentItemUseCase.execute(item);
+			await this.createScheduledItemUseCase.execute(item);
 		}
 
 		return {
 			items: [
 				...simpleItems.map((i) => i.item),
-				...recurrentItems.map((i) => i.item),
+				...scheduledItems.map((i) => i.item),
 			],
-			transactions: recurrentItems.map((i) => i.transactions).flat(),
+			transactions: scheduledItems.map((i) => i.transactions).flat(),
 		};
 	};
 
@@ -177,19 +174,19 @@ export class MDMigration {
 		return items;
 	};
 
-	#recurrentTransactions = async (
+	#scheduledTransactions = async (
 		fileReader: (file: TFile) => Promise<string>
-	): Promise<{ item: RecurrentItem; transactions: Transaction[] }[]> => {
+	): Promise<{ item: ScheduledItem; transactions: Transaction[] }[]> => {
 		const folder = this.vault.getFolderByPath(
-			`${this.rootFolder}/Recurrent`
+			`${this.rootFolder}/Scheduled`
 		);
-		if (!folder) throw new Error("recurrent folder not found");
+		if (!folder) throw new Error("scheduled folder not found");
 		const items = [];
 		for (const file of folder.children) {
 			if (file instanceof TFile) {
 				const fileContent = await fileReader(file);
-				const item = await this.#recurrentFromRawMarkdown(fileContent);
-				this.logger.debug("recurrent file", {
+				const item = await this.#scheduledFromRawMarkdown(fileContent);
+				this.logger.debug("scheduled file", {
 					fileContent,
 					item,
 				});
@@ -197,16 +194,16 @@ export class MDMigration {
 			}
 		}
 
-		this.logger.debug("recurrent files transactions", {
+		this.logger.debug("scheduled files transactions", {
 			transactions: items,
 		});
 
 		return items;
 	};
 
-	#recurrentFromRawMarkdown = async (
+	#scheduledFromRawMarkdown = async (
 		rawMarkdown: string
-	): Promise<{ item: RecurrentItem; transactions: Transaction[] }> => {
+	): Promise<{ item: ScheduledItem; transactions: Transaction[] }> => {
 		const propertiesRegex =
 			/id: (.*)\nname: (.*)\namount: (.*)\ncategory: (.*)\nsubCategory:(.*)\nbrand:(.*)\nstore:(.*)\ntype: (.*)\nnextDate: (.*)\nfrequency: (.*)\naccount: (.*)(?:\nto account: (.*))?/;
 		const match = propertiesRegex.exec(rawMarkdown);
@@ -238,7 +235,7 @@ export class MDMigration {
 			sub.trim() || "To Assign"
 		);
 
-		const item = new RecurrentItem(
+		const item = new ScheduledItem(
 			new ItemID(id),
 			new ItemOperation(type.trim() as OperationType),
 			new ItemName(name),
@@ -246,8 +243,12 @@ export class MDMigration {
 			category.id,
 			subCategory.id,
 			account.id,
-			new RecurrentItemNextDate(new Date(nextDate)),
-			new RecurrrentItemFrequency(frequency),
+			new ScheduledItemNextDate(new Date(nextDate)),
+			new ScheduledItemRecurrence(
+				new ItemID(id),
+				new DateValueObject(new Date(nextDate)),
+				new ScheduledItemFrequency(frequency)
+			),
 			undefined,
 			brand?.trim() ? new ItemBrand(brand.trim()) : undefined,
 			store?.trim() ? new ItemStore(store.trim()) : undefined

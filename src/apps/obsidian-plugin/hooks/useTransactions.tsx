@@ -1,19 +1,17 @@
 import { useState, useEffect } from "react";
-import {
-	AccountID,
-	CategoryID,
-	GetAllTransactionsUseCase,
-	SubCategoryID,
-	Transaction,
-} from "contexts";
 import { useLogger } from "./useLogger";
+import { AccountID } from "contexts/Accounts/domain";
+import { CategoryID } from "contexts/Categories/domain";
+import { SubCategoryID } from "contexts/Subcategories/domain";
+import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
+import { Transaction } from "contexts/Transactions/domain";
 
 export const useTransactions = ({
 	getAllTransactions,
 }: {
 	getAllTransactions: GetAllTransactionsUseCase;
 }) => {
-	const logger = useLogger("useTransactions", false);
+	const { logger } = useLogger("useTransactions");
 
 	const [transactions, setTransactions] = useState<Transaction[]>([]);
 	const [filteredTransactions, setFilteredTransactions] = useState<

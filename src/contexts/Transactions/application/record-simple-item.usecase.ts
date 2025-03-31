@@ -1,10 +1,10 @@
-import { IItemsRepository, Item } from "contexts/Items/domain";
+import { IItemsRepository, SimpleItem } from "contexts/SimpleItems/domain";
 import { CommandUseCase } from "../../Shared/domain/command-use-case.interface";
 import { Transaction, TransactionDate } from "contexts/Transactions/domain";
-import { TransactionsService } from "contexts/Transactions/application";
+import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 
 export type RecordSimpleItemUseCaseInput = {
-	item: Item;
+	item: SimpleItem;
 	date?: TransactionDate;
 };
 
@@ -19,7 +19,7 @@ export class RecordSimpleItemUseCase
 	async execute({ item, date }: RecordSimpleItemUseCaseInput): Promise<void> {
 		const transaction = Transaction.fromItem(
 			item,
-			date ?? TransactionDate.now()
+			date ?? TransactionDate.createNowDate()
 		);
 
 		if (!(await this._itemsRepository.exists(item.id)))

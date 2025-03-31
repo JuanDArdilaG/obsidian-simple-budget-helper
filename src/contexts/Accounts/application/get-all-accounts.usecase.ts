@@ -1,6 +1,5 @@
 import { QueryUseCase } from "contexts/Shared/domain";
 import { Account, IAccountsRepository } from "contexts/Accounts/domain";
-import { Logger } from "contexts/Shared";
 
 export type GetAllAccountsUseCaseOutput = Account[];
 

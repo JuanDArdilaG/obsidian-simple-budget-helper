@@ -1,7 +1,12 @@
-import { DomainError } from "contexts/Shared/domain";
+import { StringValueObject as LibStringValueObject } from "@juandardilag/value-objects/StringValueObject";
+import { DomainError } from "../errors";
+import { StringValueObject } from "../value-objects";
 
 export class EntityNotFoundError extends DomainError {
-	constructor(entityName: string, id: string) {
+	constructor(
+		entityName: string,
+		id: LibStringValueObject | StringValueObject
+	) {
 		super(`${entityName} with id ${id} not found`);
 	}
 

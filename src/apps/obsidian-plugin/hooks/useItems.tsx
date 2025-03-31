@@ -1,27 +1,24 @@
-import {
-	GetAllRecurrentItemsUseCase,
-	GetAllUniqueItemBrandsUseCase,
-	GetAllUniqueItemStoresUseCase,
-	ItemBrand,
-	ItemStore,
-	RecurrentItem,
-} from "contexts/Items";
+import { ItemBrand, ItemStore } from "contexts/SimpleItems/domain";
 import { useState, useEffect } from "react";
 import { useLogger } from "./useLogger";
+import { GetAllScheduledItemsUseCase } from "contexts/ScheduledItems/application/get-all-scheduled-items.usecase";
+import { GetAllUniqueItemBrandsUseCase } from "contexts/SimpleItems/application/get-all-unique-item-brands.usecase";
+import { GetAllUniqueItemStoresUseCase } from "contexts/SimpleItems/application/get-all-unique-item-stores.usecase";
+import { ScheduledItem } from "contexts/ScheduledItems/domain";
 
 export const useItems = ({
-	getAllRecurrentItems,
+	getAllScheduledItems,
 	getAllUniqueItemBrands,
 	getAllUniqueItemStores,
 }: {
-	getAllRecurrentItems: GetAllRecurrentItemsUseCase;
+	getAllScheduledItems: GetAllScheduledItemsUseCase;
 	getAllUniqueItemBrands: GetAllUniqueItemBrandsUseCase;
 	getAllUniqueItemStores: GetAllUniqueItemStoresUseCase;
 }) => {
-	const logger = useLogger("useItems", false);
+	const { logger } = useLogger("useItems");
 
-	const [recurrentItems, setRecurrentItems] = useState<RecurrentItem[]>([]);
-	const [updateRecurrentItems, setUpdateRecurrentItems] = useState(true);
+	const [scheduledItems, setScheduledItems] = useState<ScheduledItem[]>([]);
+	const [updateScheduledItems, setUpdateScheduledItems] = useState(true);
 
 	const [brands, setBrands] = useState<ItemBrand[]>([]);
 	const [updateBrands, setUpdateBrands] = useState(true);
@@ -30,16 +27,16 @@ export const useItems = ({
 	const [updateStores, setUpdateStores] = useState(true);
 
 	useEffect(() => {
-		if (updateRecurrentItems) {
-			setUpdateRecurrentItems(false);
-			getAllRecurrentItems.execute().then((items) => {
-				logger.debug("updating recurrent items", {
+		if (updateScheduledItems) {
+			setUpdateScheduledItems(false);
+			getAllScheduledItems.execute().then((items) => {
+				logger.debug("updating scheduled items", {
 					items,
 				});
-				setRecurrentItems(items);
+				setScheduledItems(items);
 			});
 		}
-	}, [updateRecurrentItems]);
+	}, [updateScheduledItems]);
 
 	useEffect(() => {
 		if (updateBrands) {
@@ -67,8 +64,8 @@ export const useItems = ({
 	}, [updateStores]);
 
 	return {
-		recurrentItems,
-		updateRecurrentItems: () => setUpdateRecurrentItems(true),
+		scheduledItems,
+		updateScheduledItems: () => setUpdateScheduledItems(true),
 		brands,
 		updateBrands: () => setUpdateBrands(true),
 		stores,

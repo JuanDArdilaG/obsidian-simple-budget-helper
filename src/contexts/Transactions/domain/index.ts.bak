@@ -8,6 +8,4 @@ export * from './transaction-operation.valueobject';
 export * from './transaction.criteria';
 export * from './transaction.entity';
 export * from './transactions-repository.interface';
-export * from './transactions-repository.mock';
 export * from './transactions-service.interface';
-export * from './transactions-service.mock';

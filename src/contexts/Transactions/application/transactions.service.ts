@@ -1,4 +1,4 @@
-import { Logger } from "contexts/Shared/infrastructure";
+import { Logger } from "contexts/Shared/infrastructure/logger";
 import {
 	ITransactionsRepository,
 	ITransactionsService,
@@ -22,8 +22,9 @@ import {
 	AccountID,
 	IAccountsService,
 } from "contexts/Accounts/domain";
-import { EntityNotFoundError } from "contexts/Shared";
+import { EntityNotFoundError } from "contexts/Shared/domain";
 import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
+import { NumberValueObject } from "@juandardilag/value-objects/NumberValueObject";
 
 export class TransactionsService implements ITransactionsService {
 	#logger = new Logger("TransactionsService");
@@ -40,8 +41,7 @@ export class TransactionsService implements ITransactionsService {
 
 	async getByID(id: TransactionID): Promise<Transaction> {
 		const transaction = await this._transactionsRepository.findById(id);
-		if (!transaction)
-			throw new EntityNotFoundError("Transaction", id.toString());
+		if (!transaction) throw new EntityNotFoundError("Transaction", id);
 		return transaction;
 	}
 
@@ -53,7 +53,7 @@ export class TransactionsService implements ITransactionsService {
 
 	async record(transaction: Transaction): Promise<void> {
 		this.#logger.debug("recording transaction", {
-			...transaction.toPrimitives(),
+			transaction,
 		});
 
 		await this._accountsService.adjustOnTransaction(transaction);
@@ -93,7 +93,7 @@ export class TransactionsService implements ITransactionsService {
 			new TransactionOperation(
 				amountDifference
 					.times(
-						new PriceValueObject(account.type.isAsset() ? 1 : -1)
+						new NumberValueObject(account.type.isAsset() ? 1 : -1)
 					)
 					.isPositive()
 					? "income"

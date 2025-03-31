@@ -31,7 +31,7 @@ export class AccountsService implements IAccountsService {
 
 	async getByID(id: AccountID): Promise<Account> {
 		const account = await this._accountsRepository.findById(id);
-		if (!account) throw new EntityNotFoundError("Account", id.toString());
+		if (!account) throw new EntityNotFoundError("Account", id);
 		return account;
 	}
 

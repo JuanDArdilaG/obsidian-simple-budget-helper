@@ -44,6 +44,10 @@ export class StringValueObject extends ValueObject<string> {
 		return new StringValueObject("", "");
 	}
 
+	copy(): StringValueObject {
+		return new StringValueObject(this._name, this.value, this._length);
+	}
+
 	toString(): string {
 		return this.value;
 	}

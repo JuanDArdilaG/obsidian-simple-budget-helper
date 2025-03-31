@@ -1,4 +1,4 @@
-import { CategoryID } from "contexts/Categories";
+import { CategoryID } from "contexts/Categories/domain";
 import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
 import {
 	SubCategory,

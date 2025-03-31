@@ -6,18 +6,19 @@ import {
 	TransactionsContext,
 } from "apps/obsidian-plugin/views";
 import {
-	Input,
 	Select,
 	SelectWithCreation,
 	useAccountSelect,
-} from "apps/obsidian-plugin/components";
+} from "apps/obsidian-plugin/components/Select";
 import {
 	Transaction,
 	TransactionDate,
 	TransactionName,
-} from "contexts/Transactions";
-import { Account, AccountID, AccountName } from "contexts/Accounts";
-import { Category, CategoryID, SubCategory, SubCategoryID } from "contexts";
+} from "contexts/Transactions/domain";
+import { Account, AccountID, AccountName } from "contexts/Accounts/domain";
+import { CategoryID, Category } from "contexts/Categories/domain";
+import { SubCategoryID, SubCategory } from "contexts/Subcategories/domain";
+import { Input } from "apps/obsidian-plugin/components/Input/Input";
 
 export const EditTransactionPanel = ({
 	transaction,
@@ -50,15 +51,15 @@ export const EditTransactionPanel = ({
 	);
 	const { AccountSelect, account } = useAccountSelect({
 		label: "From",
-		initialValueID: transaction.account,
+		initialValueID: transaction.account.value,
 	});
 	const { AccountSelect: ToAccountSelect, account: toAccount } =
 		useAccountSelect({
 			label: "To",
-			initialValueID: transaction.toAccount,
+			initialValueID: transaction.toAccount?.value,
 		});
 
-	const [date, setDate] = useState(transaction.date.valueOf());
+	const [date, setDate] = useState(transaction.date.value);
 
 	return (
 		<div className="create-budget-item-modal">

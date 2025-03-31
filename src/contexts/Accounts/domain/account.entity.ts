@@ -6,19 +6,21 @@ import {
 	AccountType,
 	AccountTypeType,
 } from "contexts/Accounts/domain";
-import { IEntity } from "contexts/Shared/domain";
+import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Transaction } from "contexts/Transactions/domain";
 
 const logger: Logger = new Logger("Account");
 
-export class Account implements IEntity<AccountID, AccountPrimitives> {
+export class Account extends Entity<AccountID, AccountPrimitives> {
 	constructor(
-		private _id: AccountID,
+		id: AccountID,
 		private _type: AccountType,
 		private _name: AccountName,
 		private _balance: AccountBalance
-	) {}
+	) {
+		super(id);
+	}
 
 	static create(type: AccountType, name: AccountName): Account {
 		return new Account(
@@ -27,10 +29,6 @@ export class Account implements IEntity<AccountID, AccountPrimitives> {
 			name,
 			AccountBalance.zero()
 		);
-	}
-
-	get id(): AccountID {
-		return this._id;
 	}
 
 	get type(): AccountType {

@@ -1,18 +1,14 @@
-import {
-	Account,
-	AccountID,
-	AccountName,
-	GetAllAccountsUseCase,
-} from "contexts";
 import { useState, useEffect, useCallback } from "react";
 import { useLogger } from "./useLogger";
+import { GetAllAccountsUseCase } from "contexts/Accounts/application/get-all-accounts.usecase";
+import { Account, AccountID, AccountName } from "contexts/Accounts/domain";
 
 export const useAccounts = ({
 	getAllAccounts,
 }: {
 	getAllAccounts: GetAllAccountsUseCase;
 }) => {
-	const logger = useLogger("useAccounts", false);
+	const { logger } = useLogger("useAccounts");
 	const [accounts, setAccounts] = useState<Account[]>([]);
 	const [updateAccounts, setUpdateAccounts] = useState(true);
 

@@ -1,22 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLogger } from "./useLogger";
 import {
-	Category,
-	CategoryID,
-	CategoryName,
 	GetAllCategoriesWithSubCategoriesUseCase,
 	GetAllCategoriesWithSubCategoriesUseCaseOutput,
+} from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
+import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
+import {
 	SubCategory,
 	SubCategoryID,
 	SubCategoryName,
-} from "contexts";
+} from "contexts/Subcategories/domain";
 
 export const useCategories = ({
 	getAllCategoriesWithSubCategories,
 }: {
 	getAllCategoriesWithSubCategories: GetAllCategoriesWithSubCategoriesUseCase;
 }) => {
-	const logger = useLogger("useCategories", false);
+	const { logger } = useLogger("useCategories");
 
 	const [categoriesWithSubcategories, setCategoriesWithSubcategories] =
 		useState<GetAllCategoriesWithSubCategoriesUseCaseOutput>([]);
@@ -73,11 +73,7 @@ export const useCategories = ({
 	const getCategoryByID = useCallback(
 		(id: CategoryID) => {
 			const cat = categories.find((cat) => cat.id.equalTo(id));
-			logger.debug(
-				"searching category",
-				{ categories, id, cat },
-				{ on: false }
-			);
+			logger.debug("searching category", { categories, id, cat });
 			return cat;
 		},
 		[categories]

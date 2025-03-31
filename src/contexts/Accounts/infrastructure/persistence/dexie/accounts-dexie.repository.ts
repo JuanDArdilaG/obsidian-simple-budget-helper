@@ -5,11 +5,9 @@ import {
 	AccountPrimitives,
 	IAccountsRepository,
 } from "contexts/Accounts/domain";
-import {
-	DexieDB,
-	DexieRepository,
-} from "contexts/Shared/infrastructure/persistence";
-import { Config } from "contexts/Shared/infrastructure/config";
+import { Config } from "contexts/Shared/infrastructure/config/config";
+import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.db";
+import { DexieRepository } from "contexts/Shared/infrastructure/persistence/dexie/dexie.repository";
 
 export class AccountsDexieRepository
 	extends DexieRepository<Account, AccountID, AccountPrimitives>

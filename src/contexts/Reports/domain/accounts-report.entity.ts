@@ -1,4 +1,4 @@
-import { Account } from "contexts/Accounts";
+import { Account } from "contexts/Accounts/domain";
 import { ReportBalance } from "./report-balance.valueobject";
 
 export class AccountsReport {

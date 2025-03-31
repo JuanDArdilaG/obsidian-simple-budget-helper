@@ -1,4 +1,4 @@
-import { CommandUseCase } from "contexts/Shared";
+import { CommandUseCase } from "contexts/Shared/domain";
 import {
 	ISubCategoriesService,
 	SubCategory,

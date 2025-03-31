@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { ReportsService } from "../../../../src/contexts/Reports/application/reports.service";
-import { TransactionsRepositoryMock } from "../../../../src/contexts/Transactions/domain/transactions-repository.mock";
 import { buildTestTransactions } from "../domain/buildTestTransactions";
+import { TransactionsRepositoryMock } from "../../Transactions/domain/transactions-repository.mock";
 
 // describe("getTransactionsBalance", () => {
 // it("should return the correct balance for one expense transaction", async () => {

@@ -5,7 +5,7 @@ import {
 	CategoryPrimitives,
 	ICategoriesRepository,
 } from "contexts/Categories/domain";
-import { Config } from "contexts/Shared/infrastructure/config";
+import { Config } from "contexts/Shared/infrastructure/config/config";
 import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.db";
 import { DexieRepository } from "contexts/Shared/infrastructure/persistence/dexie/dexie.repository";
 

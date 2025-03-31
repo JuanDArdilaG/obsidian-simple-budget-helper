@@ -1,11 +1,12 @@
 import Dexie from "dexie";
 import { DB } from "../db";
-import { Config } from "contexts/Shared/infrastructure";
+import { Config } from "contexts/Shared/infrastructure/config/config";
 import { Account } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
-import { Item } from "contexts/Items";
+import { Item, SimpleItem } from "contexts/SimpleItems/domain";
 import { SubCategory } from "contexts/Subcategories/domain";
-import { Transaction } from "contexts/Transactions";
+import { Transaction } from "contexts/Transactions/domain";
+import { ScheduledItem } from "contexts/ScheduledItems/domain";
 
 export class DexieDB extends DB {
 	readonly db: Dexie;
@@ -20,15 +21,19 @@ export class DexieDB extends DB {
 	}
 
 	#initializeTables() {
-		this.db.version(2).stores({
+		this.db.version(5).stores({
 			[this.config.accountsTableName]: Object.keys(
 				Account.emptyPrimitives()
 			).join(", "),
 			[this.config.categoriesTableName]: Object.keys(
 				Category.emptyPrimitives()
 			).join(", "),
-			[this.config.itemsTableName]: Object.keys(
-				Item.emptyPrimitives()
+			[this.config.simpleItemsTableName]: Object.keys(
+				SimpleItem.emptyPrimitives()
+			).join(", "),
+			["items"]: Object.keys(SimpleItem.emptyOldPrimitives()).join(", "),
+			[this.config.scheduledItemsTableName]: Object.keys(
+				ScheduledItem.emptyPrimitives()
 			).join(", "),
 			[this.config.subCategoriesTableName]: Object.keys(
 				SubCategory.emptyPrimitives()

@@ -1,7 +1,12 @@
-import { CalendarSync, Database, ListCollapse } from "lucide-react";
+import { CalendarSync, Database, Landmark, ListCollapse } from "lucide-react";
 import { JSX } from "react";
 
-export type MainSidebarSections = "recurrentItems" | "accounting" | "DB";
+export type MainSidebarSections =
+	| "scheduledItems"
+	| "accounting"
+	| "accounts"
+	| "categories"
+	| "DB";
 
 export const SectionButtons = ({
 	selected,
@@ -21,11 +26,25 @@ export const SectionButtons = ({
 					onClick={() => setSelected("accounting")}
 				/>
 				<SectionButton
-					type="recurrentItems"
-					label="Recurrent"
+					type="scheduledItems"
+					label="Scheduled"
 					icon={<CalendarSync size={16} />}
 					selected={selected}
-					onClick={() => setSelected("recurrentItems")}
+					onClick={() => setSelected("scheduledItems")}
+				/>
+				<SectionButton
+					type="accounts"
+					label="Accounts"
+					icon={<Landmark size={16} />}
+					selected={selected}
+					onClick={() => setSelected("accounts")}
+				/>
+				<SectionButton
+					type="categories"
+					label="Categories"
+					icon={<Landmark size={16} />}
+					selected={selected}
+					onClick={() => setSelected("categories")}
 				/>
 				<SectionButton
 					type="DB"

@@ -30,7 +30,7 @@ export class TransactionsReport {
 
 	groupByDays(): GroupByYearMonthDay {
 		return this._transactions.reduce((group, transaction) => {
-			const year = transaction.date.getYear();
+			const year = transaction.date.getFullYear();
 			const month = transaction.date.getMonthNameAbbreviation();
 			const day = transaction.date.getDay();
 
@@ -61,17 +61,13 @@ export class TransactionsReport {
 				].plus(
 					transaction.getRealAmountForAccount(transaction.account)
 				);
-				logger.debug(
-					"accumulating transaction",
-					{
-						transaction: transaction.toPrimitives(),
-						realAmount: transaction
-							.getRealAmountForAccount(transaction.account)
-							.valueOf(),
-						accumulated,
-					},
-					{ on: false }
-				);
+				logger.debug("accumulating transaction", {
+					transaction: transaction.toPrimitives(),
+					realAmount: transaction
+						.getRealAmountForAccount(transaction.account)
+						.valueOf(),
+					accumulated,
+				});
 				transactions.push({
 					transaction,
 					balance: accumulated[transaction.account.value],

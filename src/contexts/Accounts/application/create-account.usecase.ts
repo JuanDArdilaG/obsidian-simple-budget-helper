@@ -1,4 +1,4 @@
-import { CommandUseCase } from "contexts/Shared";
+import { CommandUseCase } from "contexts/Shared/domain";
 import { Account, IAccountsService } from "contexts/Accounts/domain";
 
 export type CreateAccountUseCaseInput = Account;

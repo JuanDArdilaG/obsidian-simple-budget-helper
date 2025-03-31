@@ -9,8 +9,12 @@ import { ActionButtons } from "../../components/ActionButtons";
 import { CreateItemPanel } from "apps/obsidian-plugin/panels";
 import { AwilixContainer } from "awilix";
 import { AppProviders } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { RecurrentItemsSection } from "apps/obsidian-plugin/views";
+import {
+	AccountsList,
+	ScheduledItemsSection,
+} from "apps/obsidian-plugin/views";
 import { DBSection } from "./DBSection";
+import { CategoriesList } from "./AccountingSection/CategoriesList";
 
 export const RightSidebarReactView = ({
 	container,
@@ -37,13 +41,15 @@ export const RightSidebarReactView = ({
 				setSelected={setSectionSelection}
 			/>
 
-			{sectionSelection === "recurrentItems" && <RecurrentItemsSection />}
+			{sectionSelection === "scheduledItems" && <ScheduledItemsSection />}
 			{sectionSelection === "accounting" && (
 				<AccountingSection
 					app={plugin.app}
 					statusBarAddText={statusBarAddText}
 				/>
 			)}
+			{sectionSelection === "accounts" && <AccountsList />}
+			{sectionSelection === "categories" && <CategoriesList />}
 			{sectionSelection === "DB" && <DBSection />}
 		</AppProviders>
 	);
