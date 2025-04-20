@@ -3,6 +3,7 @@
 	"version": "0.0.1",
 	"description": "A simple budget helper for Obsidian",
 	"main": "main.js",
+	"type": "module",
 	"scripts": {
 		"create-index": "cti ./src/contexts/**/domain",
 		"dev": "npm run test && node esbuild.config.mjs",
