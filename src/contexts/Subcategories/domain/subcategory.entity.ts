@@ -5,8 +5,8 @@ import { Entity } from "contexts/Shared/domain/entity.abstract";
 export class SubCategory extends Entity<SubCategoryID, SubcategoryPrimitives> {
 	constructor(
 		id: SubCategoryID,
-		private _category: CategoryID,
-		private _name: SubCategoryName
+		private readonly _category: CategoryID,
+		private readonly _name: SubCategoryName
 	) {
 		super(id);
 	}
@@ -31,7 +31,7 @@ export class SubCategory extends Entity<SubCategoryID, SubcategoryPrimitives> {
 		return {
 			id: this._id.value,
 			category: this._category.value,
-			name: this._name.valueOf(),
+			name: this._name.value,
 		};
 	}
 

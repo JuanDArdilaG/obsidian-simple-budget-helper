@@ -1,115 +1,115 @@
-import {
-	GroupByYearMonthDay,
-	IReportsService,
-} from "../domain/reports-service.interface";
-import { CategoryName } from "../../Categories/domain/category-name.valueobject";
-import { SubCategoryName } from "../../Subcategories/domain/subcategory-name.valueobject";
-import {
-	Transaction,
-	TransactionCriteria,
-	ITransactionsRepository,
-} from "contexts/Transactions/domain";
-import { AccountID } from "contexts/Accounts/domain";
-import { CategoryID } from "contexts/Categories/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
-import { TransactionsReport } from "../domain";
+import { IReportsService } from "../domain/reports-service.interface";
+import { ItemsReport, ReportBalance } from "../domain";
+import { Account, IAccountsService } from "contexts/Accounts/domain";
+import { Logger } from "contexts/Shared/infrastructure/logger";
+import { Item } from "contexts/Items/domain";
+
+type ItemsWithAccounts = {
+	item: Item;
+	account: Account;
+	toAccount?: Account;
+};
 
 export class ReportsService implements IReportsService {
-	constructor(private _transactionsRepository: ITransactionsRepository) {}
+	readonly #logger = new Logger("ReportsService");
+	constructor(private readonly _accountsService: IAccountsService) {}
 
-	async groupTransactionsByCategories(
-		criteria?: TransactionCriteria
-	): Promise<{ category: CategoryID; transactions: Transaction[] }[]> {
-		const transactions = await this._transactionsRepository.findByCriteria(
-			criteria ?? new TransactionCriteria()
-		);
-		const result: {
-			category: CategoryID;
-			transactions: Transaction[];
-		}[] = [];
-		for (const transaction of transactions) {
-			let i = result.findIndex((existing) =>
-				existing.category.equalTo(transaction.categoryID)
-			);
-			if (i === -1) {
-				i = result.length;
-				result.push({
-					category: transaction.categoryID,
-					transactions: [],
-				});
-			}
-			result[i].transactions.push(transaction);
-		}
-		return result;
-	}
-
-	async groupTransactionsBySubcategories(
-		criteria?: TransactionCriteria
-	): Promise<{ subcategory: SubCategoryID; transactions: Transaction[] }[]> {
-		const transactions = await this._transactionsRepository.findByCriteria(
-			criteria ?? new TransactionCriteria()
-		);
-		const result: {
-			subcategory: SubCategoryID;
-			transactions: Transaction[];
-		}[] = [];
-		for (const transaction of transactions) {
-			let i = result.findIndex((existing) =>
-				existing.subcategory.equalTo(transaction.subCategory)
-			);
-			if (i === -1) {
-				i = result.length;
-				result.push({
-					subcategory: transaction.subCategory,
-					transactions: [],
-				});
-			}
-			result[i].transactions.push(transaction);
-		}
-		return result;
-	}
-
-	async groupTransactionsByYearMonthDay({
-		accountFilter,
-		categoryFilter,
-		subCategoryFilter,
-	}: {
-		accountFilter?: AccountID;
-		categoryFilter?: CategoryID;
-		subCategoryFilter?: SubCategoryID;
-	}): Promise<GroupByYearMonthDay> {
-		const filterCriteria = new TransactionCriteria();
-		if (accountFilter) filterCriteria.where("account", accountFilter.value);
-
-		if (categoryFilter)
-			filterCriteria.where("category", categoryFilter.value);
-
-		if (subCategoryFilter)
-			filterCriteria.where("subCategory", subCategoryFilter.value);
-
-		let transactions = await this._transactionsRepository.findByCriteria(
-			filterCriteria
-		);
-
-		if (accountFilter) {
-			const filterCriteria = new TransactionCriteria();
-			if (accountFilter)
-				filterCriteria.where("toAccount", accountFilter.value);
-
-			if (categoryFilter)
-				filterCriteria.where("category", categoryFilter.value);
-
-			if (subCategoryFilter)
-				filterCriteria.where("subCategory", subCategoryFilter.value);
-
-			const transactionsToAccount =
-				await this._transactionsRepository.findByCriteria(
-					filterCriteria
+	/**
+	 * Retrieve and map accounts to items
+	 * @param {ItemsReport} report
+	 * @returns {ItemsWithAccounts[]} an array containing the items with its corresponding account and toAccount (if applies)
+	 */
+	async #addAccountsToItems(
+		report: ItemsReport
+	): Promise<ItemsWithAccounts[]> {
+		return await Promise.all(
+			report.items.map(async (item) => {
+				const account = await this._accountsService.getByID(
+					item.account
 				);
+				const toAccount =
+					item.toAccount &&
+					(await this._accountsService.getByID(item.toAccount));
+				return { item, account, toAccount };
+			})
+		);
+	}
 
-			transactions.push(...transactionsToAccount);
+	#filterItemsByType(
+		items: ItemsWithAccounts[],
+		type?: "expenses" | "incomes"
+	): ItemsWithAccounts[] {
+		if (!type) return items;
+		return items.filter(({ item, account, toAccount }) => {
+			if (
+				type === "expenses" &&
+				(item.operation.isExpense() ||
+					(item.operation.isTransfer() &&
+						account.type.isAsset() &&
+						toAccount?.type.isLiability()))
+			)
+				return true;
+			if (
+				type === "incomes" &&
+				(item.operation.isIncome() ||
+					(item.operation.isTransfer() &&
+						account.type.isLiability() &&
+						toAccount?.type.isAsset()))
+			)
+				return true;
+			return false;
+		});
+	}
+
+	async getTotal(
+		report: ItemsReport,
+		type?: "expenses" | "incomes"
+	): Promise<ReportBalance> {
+		this.#logger.debug("getTotal", { report, type });
+
+		const items = this.#filterItemsByType(
+			await this.#addAccountsToItems(report),
+			type
+		);
+
+		let total = ReportBalance.zero();
+		for (const { item, account, toAccount } of items) {
+			const realPrice = item.realPrice;
+			if (!realPrice.isZero()) {
+				total = total.plus(realPrice);
+				continue;
+			}
+			if (account.type.isAsset() && toAccount?.type.isLiability())
+				total = total.plus(item.price.negate());
+			else if (account.type.isLiability() && toAccount?.type.isAsset())
+				total = total.plus(item.price);
 		}
+		return total;
+	}
 
-		return new TransactionsReport(transactions).groupByDays();
+	async getTotalPerMonth(
+		report: ItemsReport,
+		type: "expenses" | "incomes" | "all" = "all"
+	): Promise<ReportBalance> {
+		this.#logger.debug("getTotalPerMonth", { report, type });
+
+		const items = this.#filterItemsByType(
+			await this.#addAccountsToItems(report),
+			type !== "all" ? type : undefined
+		);
+
+		let total = ReportBalance.zero();
+		for (const { item, account, toAccount } of items) {
+			const pricePerMonth = item.pricePerMonth;
+			if (!pricePerMonth.isZero()) {
+				total = total.plus(pricePerMonth);
+				continue;
+			}
+			if (account.type.isAsset() && toAccount?.type.isLiability())
+				total = total.plus(item.price.negate());
+			else if (account.type.isLiability() && toAccount?.type.isAsset())
+				total = total.plus(item.price);
+		}
+		return total;
 	}
 }

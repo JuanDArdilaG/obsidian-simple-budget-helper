@@ -1,7 +1,7 @@
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
-import { RightSidebarReactViewRoot } from "apps/obsidian-plugin";
 import { views } from "apps/obsidian-plugin/config";
 import { WorkspaceLeaf } from "obsidian";
+import { RightSidebarReactViewRoot } from "./views";
 
 export class LeftMenuItems {
 	static RightSidebarPanel(plugin: SimpleBudgetHelperPlugin) {
@@ -14,9 +14,7 @@ export class LeftMenuItems {
 				);
 				let leaf: WorkspaceLeaf | undefined;
 				if (leafs.length === 0) {
-					leaf =
-						plugin.app.workspace.getRightLeaf(false) ??
-						plugin.app.workspace.getLeaf();
+					leaf = plugin.app.workspace.getLeaf(false);
 					await leaf.setViewState({
 						type: views.LIST_BUDGET_ITEMS_REACT.type,
 					});

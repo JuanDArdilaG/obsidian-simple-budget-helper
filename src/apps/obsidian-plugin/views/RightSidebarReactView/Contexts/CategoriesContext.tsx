@@ -29,6 +29,8 @@ export type CategoriesContextType = {
 	getSubCategoryByName: (name: SubCategoryName) => SubCategory | undefined;
 	getSubCategoriesByCategory: (category: Category) => SubCategory[];
 	updateCategoriesWithSubcategories: () => void;
+	updateCategories: () => void;
+	updateSubCategories: () => void;
 };
 
 export const CategoriesContext = createContext<CategoriesContextType>({
@@ -47,6 +49,8 @@ export const CategoriesContext = createContext<CategoriesContextType>({
 	getSubCategoryByName: () => undefined,
 	getSubCategoriesByCategory: () => [],
 	updateCategoriesWithSubcategories: () => {},
+	updateCategories: () => {},
+	updateSubCategories: () => {},
 });
 
 export const getCategoriesContextDefault = (
@@ -67,6 +71,8 @@ export const getCategoriesContextDefault = (
 		getCategoryByName,
 		getSubCategoryByName,
 		updateCategoriesWithSubcategories,
+		updateCategories,
+		updateSubCategories,
 	} = useCategories({ getAllCategoriesWithSubCategories });
 
 	const getSubCategoriesByCategory = useCallback(
@@ -94,5 +100,7 @@ export const getCategoriesContextDefault = (
 		getSubCategoryByName,
 		getSubCategoriesByCategory,
 		updateCategoriesWithSubcategories,
+		updateCategories,
+		updateSubCategories,
 	};
 };

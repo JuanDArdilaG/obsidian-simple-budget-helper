@@ -1,17 +1,16 @@
-import { ItemID } from "contexts/SimpleItems/domain/item-id.valueobject";
+import { ItemID } from "contexts/Items/domain/item-id.valueobject";
 import { TransactionID } from "./transaction-id.valueobject";
 import { TransactionOperation } from "./transaction-operation.valueobject";
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { TransactionDate } from "./transaction-date.valueobject";
 import { TransactionAmount } from "./transaction-amount.valueobject";
-import { ItemBrand } from "contexts/SimpleItems/domain/item-brand.valueobject";
-import { ItemStore } from "contexts/SimpleItems/domain/item-store.valueobject";
-import { Item } from "contexts/SimpleItems/domain/item.entity";
+import { Item } from "contexts/Items/domain/item.entity";
 import { TransactionName } from "./item-name.valueobject";
 import { OperationType } from "contexts/Shared/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
+import { ItemBrand, ItemProductInfo, ItemStore } from "contexts/Items/domain";
 
 export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	constructor(
@@ -23,10 +22,9 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		private _subCategory: SubCategoryID,
 		private _date: TransactionDate,
 		private _amount: TransactionAmount,
-		private _item?: ItemID,
+		private readonly _item?: ItemID,
 		private _toAccount?: AccountID,
-		private _brand?: ItemBrand,
-		private _store?: ItemStore
+		private readonly _productInfo?: ItemProductInfo
 	) {
 		super(id);
 	}
@@ -43,8 +41,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			item.price,
 			item.id,
 			item.operation.isTransfer() ? item.toAccount : undefined,
-			item.brand,
-			item.store
+			item.info
 		);
 	}
 
@@ -54,10 +51,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		operation: TransactionOperation,
 		category: CategoryID,
 		subCategory: SubCategoryID,
-		amount: TransactionAmount,
-		toAccount?: AccountID,
-		brand?: ItemBrand,
-		store?: ItemStore
+		amount: TransactionAmount
 	): Transaction {
 		return new Transaction(
 			TransactionID.generate(),
@@ -67,11 +61,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			category,
 			subCategory,
 			TransactionDate.createNowDate(),
-			amount,
-			undefined,
-			toAccount,
-			brand,
-			store
+			amount
 		);
 	}
 
@@ -87,8 +77,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			this._amount,
 			this._item,
 			this._toAccount,
-			this._brand,
-			this._store
+			this._productInfo
 		);
 	}
 
@@ -104,8 +93,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			this._amount.negate(),
 			this._item,
 			this._toAccount,
-			this._brand,
-			this._store
+			this._productInfo
 		);
 	}
 
@@ -157,12 +145,20 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		this._toAccount = toAccount;
 	}
 
-	get categoryID(): CategoryID {
+	get category(): CategoryID {
 		return this._category;
+	}
+
+	updateCategory(category: CategoryID) {
+		this._category = category;
 	}
 
 	get subCategory(): SubCategoryID {
 		return this._subCategory;
+	}
+
+	updateSubCategory(subCategory: SubCategoryID) {
+		this._subCategory = subCategory;
 	}
 
 	get amount(): TransactionAmount {
@@ -174,30 +170,14 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	}
 
 	getRealAmountForAccount(accountID: AccountID): TransactionAmount {
-		return new TransactionAmount(
-			this.operation.isTransfer()
-				? (accountID.equalTo(this.account)
-						? -1
-						: (
-								this.toAccount
-									? accountID.equalTo(this.toAccount)
-									: false
-						  )
-						? 1
-						: 0) * this.amount.toNumber()
-				: this.amount.toNumber() *
-				  (this._operation.isExpense() ? -1 : 1)
-		);
-	}
-
-	toString(): string {
-		return `- id: ${this._id}. name: ${this._name}. account: ${
-			this._account
-		}. date: ${
-			this._date.toString().split(" GMT")[0]
-		}. amount: ${this._amount.toString()}${
-			this._brand ? `. brand: ${this._brand}` : ""
-		}${this._store ? `. store: ${this._store}` : ""}`;
+		let multiplier = 1;
+		if (this.operation.isTransfer()) {
+			if (this.account.equalTo(accountID)) multiplier = -1;
+			else if (this.toAccount)
+				multiplier = this.toAccount.equalTo(accountID) ? 1 : 0;
+		}
+		if (this.operation.isExpense()) multiplier = -multiplier;
+		return new TransactionAmount(this._amount.toNumber() * multiplier);
 	}
 
 	toPrimitives(): TransactionPrimitives {
@@ -209,9 +189,9 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			toAccount: this._toAccount?.value,
 			operation: this._operation.value,
 			date: this._date,
-			amount: this._amount.valueOf(),
-			brand: this._brand?.value,
-			store: this._store?.value,
+			amount: this._amount.value,
+			brand: this._productInfo?.value.brand?.value,
+			store: this._productInfo?.value.store?.value,
 			category: this._category.value,
 			subCategory: this._subCategory.value,
 		};
@@ -242,8 +222,12 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			new TransactionAmount(amount),
 			item ? new ItemID(item) : undefined,
 			toAccount ? new AccountID(toAccount) : undefined,
-			brand ? new ItemBrand(brand) : undefined,
-			store ? new ItemStore(store) : undefined
+			brand || store
+				? new ItemProductInfo({
+						brand: brand ? new ItemBrand(brand) : undefined,
+						store: store ? new ItemStore(store) : undefined,
+				  })
+				: undefined
 		);
 	}
 

@@ -1,4 +1,4 @@
-import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
+import { PriceValueObject } from "@juandardilag/value-objects";
 import { useState, useCallback } from "react";
 import {
 	PieChart as RechartsPieChart,

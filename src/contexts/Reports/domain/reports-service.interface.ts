@@ -1,8 +1,6 @@
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
-import { TransactionCriteria } from "contexts/Transactions/domain/transaction.criteria";
-import { AccountID } from "contexts/Accounts/domain";
-import { CategoryID } from "contexts/Categories/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
+import { ReportBalance } from "./report-balance.valueobject";
+import { ItemsReport } from "./items-report.entity";
 
 export type GroupByYearMonthDay = {
 	[year: number]: {
@@ -13,21 +11,18 @@ export type GroupByYearMonthDay = {
 };
 
 export interface IReportsService {
-	groupTransactionsByYearMonthDay(filters: {
-		accountFilter?: AccountID;
-		categoryFilter?: CategoryID;
-		subCategoryFilter?: SubCategoryID;
-	}): Promise<GroupByYearMonthDay>;
-	groupTransactionsByCategories(criteria?: TransactionCriteria): Promise<
-		{
-			category: CategoryID;
-			transactions: Transaction[];
-		}[]
-	>;
-	groupTransactionsBySubcategories(criteria?: TransactionCriteria): Promise<
-		{
-			subcategory: SubCategoryID;
-			transactions: Transaction[];
-		}[]
-	>;
+	getTotalPerMonth(
+		report: ItemsReport,
+		type: "expenses" | "incomes" | "all"
+	): Promise<ReportBalance>;
+
+	/**
+	 * Calculates the accumulated total of the report
+	 * @param report the report
+	 * @param type the type of transactions to calculate (if null calculates all transactions)
+	 */
+	getTotal(
+		report: ItemsReport,
+		type?: "expenses" | "incomes"
+	): Promise<ReportBalance>;
 }

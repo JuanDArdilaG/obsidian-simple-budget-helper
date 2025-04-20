@@ -11,16 +11,14 @@ export const AccountingSectionButtons = ({
 	setSelected: (selected: AccountingSectionSelection) => void;
 }) => {
 	return (
-		<>
-			<div className="section-buttons">
-				<SectionButton
-					type="movements"
-					label="Movements"
-					icon={<Menu size={16} />}
-					selected={selected}
-					onClick={() => setSelected("movements")}
-				/>
-			</div>
-		</>
+		<div className="section-buttons">
+			<SectionButton
+				type="movements"
+				label="Movements"
+				icon={<Menu size={16} />}
+				selected={selected}
+				onClick={() => setSelected("movements")}
+			/>
+		</div>
 	);
 };

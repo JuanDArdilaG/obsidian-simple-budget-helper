@@ -4,11 +4,22 @@ ul {
 	margin: 0;
 }
 
-.accounting-list li {
+.accounting-list ul {
+	width: 100%;
+}
+
+.accounting-list .MuiButtonBase-root {
 	padding: 12px 0;
 	border-bottom: 1px solid #cfcfcf;
 	display: flex;
 	justify-content: space-between;
+}
+
+.accounting-list .MuiListSubheader-root {
+	border: none;
+	padding-left: 25px;
+	height: auto;
+	font-size: 1.1em;
 }
 
 .two-columns-list {
@@ -23,6 +34,9 @@ ul {
 	width: 100%;
 	display: flex;
 	justify-content: center;
+	flex-wrap: wrap;
+	padding: 10px 0 10px 0;
+	margin: 0 0 10px 0;
 }
 
 .active-section-button {
@@ -39,19 +53,16 @@ ul {
 	margin: auto;
 }
 
-.section-buttons-container {
-	padding: 10px 0 10px 0;
-	margin: 0 0 10px 0;
-	border-bottom: 1px solid #cfcfcf;
-}
-
 /* Accounting Section */
 .accounting-list-item {
-	display: flex;
-	flex-direction: column;
+	display: flex !important;
+	justify-content: space-between !important;
+	gap: 20px;
+	width: 100%;
 }
 
 .accounting-list-item .first-row {
+	width: 100%;
 	display: flex;
 	justify-content: space-between;
 	gap: 20px;
@@ -63,6 +74,7 @@ ul {
 	justify-content: space-between;
 	gap: 15px;
 	padding: 2px;
+	font-size: 0.8em;
 }
 
 .align-right {
@@ -78,7 +90,10 @@ ul {
 .light-text {
 	font-size: 0.8em;
 	font-weight: lighter;
-	align-self: flex-end;
+}
+
+.small {
+	font-size: 0.8em;
 }
 
 /* Budget Section */
@@ -87,17 +102,10 @@ ul {
 .create-budget-item-modal {
 	display: flex;
 	flex-direction: column;
-	gap: 20px;
+	gap: 15px;
 	width: 80%;
 	margin: auto;
-}
-
-/*/* Edit Budget Modal */
-.edit-budget-item-modal {
-	display: flex;
-	flex-direction: column;
-	width: 80%;
-	margin: auto;
+	align-items: stretch;
 }
 
 .horizontal-input {
@@ -119,4 +127,18 @@ ul {
 
 input {
 	padding: 5px;
+}
+
+.no-styles {
+	border: "none" !important;
+	border-radius: "0";
+	padding-left: 0;
+}
+
+.date-time-picker {
+	height: auto;
+}
+
+.date-time-picker .MuiPickersSectionList-root {
+	color: var(--text-normal);
 }

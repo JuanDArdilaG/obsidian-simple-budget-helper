@@ -1,14 +1,14 @@
 import { useContext, useMemo } from "react";
 import { CategoriesContext, ItemsContext } from "../../Contexts";
-import { ScheduledItemsReport } from "contexts/Reports/domain";
-import { NumberValueObject } from "@juandardilag/value-objects/NumberValueObject";
+import { NumberValueObject } from "@juandardilag/value-objects";
+import { ItemsReport } from "contexts/Reports/domain";
 
-export const PerCategoryScheduledItemsTab = ({}) => {
+export const PerCategoryItemsTab = () => {
 	const { scheduledItems } = useContext(ItemsContext);
 	const { categoriesWithSubcategories } = useContext(CategoriesContext);
 
 	const report = useMemo(
-		() => new ScheduledItemsReport(scheduledItems),
+		() => new ItemsReport(scheduledItems),
 		[scheduledItems]
 	);
 
@@ -127,7 +127,7 @@ export const PerCategoryScheduledItemsTab = ({}) => {
 				)
 			)}
 			<h4>
-				Total:
+				Total:{" "}
 				<span
 					style={{
 						fontSize: "1.2em",
@@ -145,17 +145,17 @@ export const PerCategoryScheduledItemsTab = ({}) => {
 						color: "var(--color-green)",
 					}}
 				>
-					{new ScheduledItemsReport(report.onlyExpenses())
-						.getTotalPerMonth()
-						.divide(
-							new ScheduledItemsReport(report.onlyIncomes())
-								.getTotalPerMonth()
-								.abs()
-						)
-						.times(new NumberValueObject(100))
-						.toFixed(2)
-						.abs()
-						.valueOf()}
+					{
+						report
+							.onlyExpenses()
+							.getTotalPerMonth()
+							.divide(
+								report.onlyIncomes().getTotalPerMonth().abs()
+							)
+							.times(new NumberValueObject(100))
+							.fixed(2)
+							.abs().value
+					}
 					%
 				</span>
 			</h4>

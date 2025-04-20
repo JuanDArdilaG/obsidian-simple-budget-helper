@@ -1,32 +1,28 @@
-import { useEffect, useState } from "react";
-import { Input } from "./Input";
+import { useState } from "react";
+import { DateInput } from "./DateInput";
+import { WithLockField } from "../WithLockField";
 
-export const useDateInput = ({
-	id,
-	label,
-	initialValue,
-	lock,
-	setLock,
-}: {
-	id: string;
+export const useDateInput = (props?: {
+	id?: string;
 	label?: string;
 	initialValue?: Date;
 	lock?: boolean;
 	setLock?: (lock: boolean) => void;
+	dateWithTime?: boolean;
 }) => {
+	const { label, initialValue, lock, setLock } = props ?? {};
 	const [date, setDate] = useState(initialValue ?? new Date());
 
 	return {
 		DateInput: (
-			<Input<Date>
-				id={id}
-				label={label ?? "Account"}
-				value={date}
-				onChange={setDate}
-				isLocked={lock}
-				setIsLocked={setLock ? (lock) => setLock(lock) : undefined}
-				// error={errors?.account}
-			/>
+			<WithLockField isLocked={lock} setIsLocked={setLock}>
+				<DateInput
+					value={date}
+					onChange={setDate}
+					label={label}
+					disabled={lock}
+				/>
+			</WithLockField>
 		),
 		date,
 	};

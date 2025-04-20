@@ -1,23 +1,5 @@
 import { PluginSettingTab, App, Setting } from "obsidian";
 import SimpleBudgetHelperPlugin from "./main";
-import { MainSidebarSections } from "./components/SectionButtons";
-import { ScheduledItemsSectionSelection } from "./views";
-
-export type SimpleBudgetHelperSettings = {
-	rootFolder: string;
-	lastTab: {
-		main: MainSidebarSections;
-		scheduled: ScheduledItemsSectionSelection;
-	};
-};
-
-export const DEFAULT_SETTINGS: SimpleBudgetHelperSettings = {
-	rootFolder: "Budget",
-	lastTab: {
-		main: "accounting",
-		scheduled: "calendar",
-	},
-};
 
 export class SettingTab extends PluginSettingTab {
 	plugin: SimpleBudgetHelperPlugin;
@@ -41,6 +23,18 @@ export class SettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.rootFolder)
 					.onChange(async (value) => {
 						this.plugin.settings.rootFolder = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Debug mode")
+			.setDesc("Enable/Disable debug mode")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.debugMode)
+					.onChange(async (value) => {
+						this.plugin.settings.debugMode = value;
 						await this.plugin.saveSettings();
 					})
 			);

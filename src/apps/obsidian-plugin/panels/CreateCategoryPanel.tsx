@@ -9,6 +9,8 @@ export const CreateCategoryPanel = ({ onCreate }: { onCreate: () => void }) => {
 	const {
 		useCases: { createCategory, createSubCategory },
 		updateCategoriesWithSubcategories,
+		updateCategories,
+		updateSubCategories,
 	} = useContext(CategoriesContext);
 
 	const [name, setName] = useState("");
@@ -19,10 +21,12 @@ export const CreateCategoryPanel = ({ onCreate }: { onCreate: () => void }) => {
 			await createCategory.execute(
 				Category.create(new CategoryName(name))
 			);
+			updateCategories();
 		} else {
 			await createSubCategory.execute(
 				SubCategory.create(category.id, new SubCategoryName(name))
 			);
+			updateSubCategories();
 		}
 
 		updateCategoriesWithSubcategories();

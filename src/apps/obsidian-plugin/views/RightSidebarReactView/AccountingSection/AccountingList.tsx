@@ -1,9 +1,8 @@
 import { App } from "obsidian";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
-import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
+import { PriceValueObject } from "@juandardilag/value-objects";
 import { AccountingListContextMenu } from "./AccountingListContextMenu";
-import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import {
 	AccountsContext,
 	CategoriesContext,
@@ -14,16 +13,27 @@ import { TransactionWithAccumulatedBalance } from "contexts/Reports/domain";
 import { useAccountSelect } from "apps/obsidian-plugin/components/Select/useAccountSelect";
 import { useCategorySelect } from "apps/obsidian-plugin/components/Select/useCategorySelect";
 import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/useSubCategorySelect";
-import { EditTransactionPanel } from "apps/obsidian-plugin/panels";
+import { EditTransactionPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel";
+import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
+import {
+	List,
+	ListItem,
+	ListItemButton,
+	ListSubheader,
+	Typography,
+} from "@mui/material";
 
 export function AccountingList({
 	app,
 	statusBarAddText,
-}: {
+	selection,
+	setSelection,
+}: Readonly<{
 	app: App;
 	statusBarAddText: (val: string | DocumentFragment) => void;
-}) {
-	const { logger } = useLogger("AccountingList");
+	selection: Transaction[];
+	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
+}>) {
 	const {
 		useCases: { deleteTransaction },
 		setFilters,
@@ -32,8 +42,17 @@ export function AccountingList({
 	} = useContext(TransactionsContext);
 
 	const { AccountSelect, account } = useAccountSelect({});
-	const { CategorySelect, category } = useCategorySelect({});
-	const { SubCategorySelect, subCategory } = useSubCategorySelect({});
+	const { CategorySelect, category } = useCategorySelect({
+		overrideCategoriesIDs: filteredTransactionsReport.transactions.map(
+			(t) => t.category
+		),
+	});
+	const { SubCategorySelect, subCategory } = useSubCategorySelect({
+		category,
+		overrideSubCategoriesIDs: filteredTransactionsReport.transactions.map(
+			(t) => t.subCategory
+		),
+	});
 
 	useEffect(() => {
 		setFilters([account?.id, category?.id, subCategory?.id]);
@@ -45,7 +64,7 @@ export function AccountingList({
 			.withAccumulatedBalance()
 			.forEach((withBalanceTransaction) => {
 				const date =
-					withBalanceTransaction.transaction.date.toPrettyFormatDate();
+					withBalanceTransaction.transaction.date.toLocaleDateString();
 				if (!res.find((r) => r[0] === date)) res.push([date, []]);
 				res.last()?.[1].push(withBalanceTransaction);
 			});
@@ -57,7 +76,6 @@ export function AccountingList({
 	const [action, setAction] = useState<"edit" | "delete">();
 
 	const [selectionActive, setSelectionActive] = useState(false);
-	const [selection, setSelection] = useState<Transaction[]>([]);
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -101,10 +119,23 @@ export function AccountingList({
 	}, [selectionActive]);
 
 	return (
-		<RightSidebarReactTab title="Accounting" subtitle>
-			{AccountSelect}
-			{CategorySelect}
-			{SubCategorySelect}
+		<>
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "center",
+					alignItems: "center",
+					gap: 15,
+					flexWrap: "wrap",
+					marginTop: 10,
+					marginBottom: 10,
+				}}
+			>
+				<h4>Filters:</h4>
+				<div style={{ minWidth: 150 }}>{AccountSelect}</div>
+				<div style={{ minWidth: 150 }}>{CategorySelect}</div>
+				<div style={{ minWidth: 150 }}>{SubCategorySelect}</div>
+			</div>
 			{selectedTransaction && (
 				<AccountingListContextMenu
 					app={app}
@@ -113,25 +144,65 @@ export function AccountingList({
 					onDelete={async () => {
 						await deleteTransaction.execute(selectedTransaction.id);
 						updateFilteredTransactions();
+						setSelectedTransaction(undefined);
+						setSelection([]);
 					}}
 				/>
 			)}
-			{withAccumulatedBalanceTransactionsGrouped.map(
-				([date, withBalanceTransactions]) => (
-					<AccountingListRowGroup
-						key={date}
-						date={date}
-						transactionsWithBalance={withBalanceTransactions}
-						selectedTransaction={selectedTransaction}
-						selection={selection}
-						setSelection={setSelection}
-						setSelectedTransaction={setSelectedTransaction}
-						setAction={setAction}
-						action={action}
-					/>
-				)
-			)}
-		</RightSidebarReactTab>
+			<List className="accounting-list" subheader={<li />}>
+				{withAccumulatedBalanceTransactionsGrouped.map(
+					([date, withBalanceTransactions]) => (
+						<ListItem key={date}>
+							<List>
+								<ListSubheader
+									style={{
+										backgroundColor:
+											"var(--background-primary-alt)",
+										color: "var(--text-normal)",
+									}}
+								>
+									{new Date(date).toLocaleDateString(
+										"default",
+										{
+											year: "numeric",
+											month: "short",
+											day: "2-digit",
+											weekday: "short",
+										}
+									)}
+								</ListSubheader>
+								{withBalanceTransactions.map(
+									(transactionWithBalance) => {
+										return (
+											<AccountingListRow
+												key={
+													transactionWithBalance
+														.transaction.id.value
+												}
+												action={action}
+												setAction={setAction}
+												transactionWithBalance={
+													transactionWithBalance
+												}
+												selection={selection}
+												selectionActive={true}
+												setSelection={setSelection}
+												selectedTransaction={
+													selectedTransaction
+												}
+												setSelectedTransaction={
+													setSelectedTransaction
+												}
+											/>
+										);
+									}
+								)}
+							</List>
+						</ListItem>
+					)
+				)}
+			</List>
+		</>
 	);
 }
 
@@ -150,7 +221,9 @@ const AccountingListRow = ({
 	selection: Transaction[];
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
 	selectedTransaction?: Transaction;
-	setSelectedTransaction: React.Dispatch<React.SetStateAction<Transaction>>;
+	setSelectedTransaction: React.Dispatch<
+		React.SetStateAction<Transaction | undefined>
+	>;
 	action?: "edit" | "delete";
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "delete" | undefined>
@@ -182,8 +255,9 @@ const AccountingListRow = ({
 	}
 
 	return (
-		<li
+		<ListItemButton
 			key={transaction.id.toString()}
+			onKeyDown={() => {}}
 			onClick={() => {
 				if (selectionActive)
 					setSelection((prevSelection) =>
@@ -197,65 +271,77 @@ const AccountingListRow = ({
 			onContextMenu={() => {
 				setAction(undefined);
 				setSelectedTransaction(transaction);
+				setSelection([]);
 			}}
 			className="accounting-list-item"
-			style={{
-				backgroundColor: selection.includes(transaction)
-					? "var(--background-modifier-hover)"
-					: "",
-			}}
+			selected={selection.includes(transaction)}
 		>
-			<span className="first-row">
-				<div>
-					<span style={{ fontSize: "0.7em" }}>
-						{transaction.date.toPrettyFormatHour()}
-					</span>{" "}
+			<div
+				style={{
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "flex-start",
+				}}
+			>
+				<Typography variant="body1">
 					{transaction.name.toString()}
+				</Typography>
+				<div style={{ width: "100%", marginTop: "5px" }}>
+					<div style={{ marginBottom: "3px" }}>
+						<Typography variant="body2">
+							<b>Category:</b>{" "}
+							{getCategoryByID(
+								transaction.category
+							)?.name.toString() ?? ""}
+						</Typography>
+					</div>
+					<div>
+						<Typography variant="body2">
+							<b>SubCategory:</b>{" "}
+							{
+								getSubCategoryByID(transaction.subCategory)
+									?.name.value
+							}
+						</Typography>
+					</div>
+				</div>
+			</div>
+			<div
+				style={{
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "flex-end",
+				}}
+			>
+				<div>
+					<span className="light-text">
+						{transaction.date.toLocaleTimeString("default", {
+							hour: "2-digit",
+							minute: "2-digit",
+						})}
+					</span>{" "}
 				</div>
 				<div
 					style={{
-						color: transaction.operation.isIncome()
-							? "var(--color-green)"
-							: transaction.operation.isExpense()
-							? "var(--color-red)"
-							: "var(--color-blue)",
+						display: "flex",
+						gap: "10px",
+						alignItems: "stretch",
+						marginBottom: 5,
 					}}
 				>
-					{/* {transaction.operation.isExpense() ||
-					(transaction.operation.isTransfer() &&
-						transaction.amount.isPositive())
-						? "-"
-						: "+"} */}
-					{transaction.getRealAmountForAccount(account.id).toString()}
+					<span>{account?.name.toString() ?? ""}</span>
+					<PriceLabel
+						price={transaction.getRealAmountForAccount(account.id)}
+						operation={transaction.operation}
+					/>
 				</div>
-			</span>
-			<span
-				className="second-row light-text"
-				style={{ marginTop: "5px" }}
-			>
-				<div className="category">
-					<div style={{ marginBottom: "3px" }}>
-						<b>Category:</b>{" "}
-						{getCategoryByID(
-							transaction.categoryID
-						)?.name.toString() ?? ""}
-					</div>
+				<div className="small">
 					<div>
-						<b>SubCategory:</b>{" "}
-						{getSubCategoryByID(
-							transaction.subCategory
-						)?.name.valueOf()}
+						<PriceLabel price={prevBalance} /> {"→"}{" "}
+						<PriceLabel price={balance} />
 					</div>
 				</div>
-				<div style={{ textAlign: "right" }}>
-					<div style={{ marginBottom: "3px" }}>
-						{account?.name.toString() ?? ""}
-					</div>
-					<div>
-						{prevBalance.toString()} {"->"} {balance.toString()}
-					</div>
-				</div>
-			</span>
+			</div>
 			{action === "edit" &&
 				selectedTransaction?.id.equalTo(transaction.id) && (
 					<EditTransactionPanel
@@ -263,68 +349,12 @@ const AccountingListRow = ({
 							setAction(undefined);
 							updateTransactions();
 							updateAccounts();
+							setSelectedTransaction(undefined);
+							setSelection([]);
 						}}
 						transaction={transaction}
-						getCategoryByID={getCategoryByID}
-						getSubCategoryByID={getSubCategoryByID}
-						getAccountByID={getAccountByID}
 					/>
 				)}
-		</li>
-	);
-};
-
-const AccountingListRowGroup = ({
-	date,
-	transactionsWithBalance,
-	selectedTransaction,
-	selection,
-	setSelection,
-	setSelectedTransaction,
-	action,
-	setAction,
-}: {
-	date: string;
-	transactionsWithBalance: TransactionWithAccumulatedBalance[];
-	selectedTransaction?: Transaction;
-	selection: Transaction[];
-	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
-	setSelectedTransaction: React.Dispatch<React.SetStateAction<Transaction>>;
-	action?: "edit" | "delete";
-	setAction: React.Dispatch<
-		React.SetStateAction<"edit" | "delete" | undefined>
-	>;
-}) => {
-	const logger = useLogger("AccountingListRowGroup");
-	return (
-		<div>
-			<div
-				style={{
-					paddingRight: "7px",
-					marginRight: "15px",
-					marginTop: "15px",
-				}}
-			>
-				<b>{date}</b>
-			</div>
-			<ul className="accounting-list">
-				{transactionsWithBalance.map((transactionWithBalance) => {
-					const transaction = transactionWithBalance.transaction;
-					return (
-						<AccountingListRow
-							key={transaction.id.toString()}
-							action={action}
-							setAction={setAction}
-							transactionWithBalance={transactionWithBalance}
-							selection={selection}
-							selectionActive={true}
-							setSelection={setSelection}
-							selectedTransaction={selectedTransaction}
-							setSelectedTransaction={setSelectedTransaction}
-						/>
-					);
-				})}
-			</ul>
-		</div>
+		</ListItemButton>
 	);
 };

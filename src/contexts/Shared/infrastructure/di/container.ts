@@ -12,20 +12,13 @@ import { ReportsService } from "contexts/Reports/application/reports.service";
 import { CreateAccountUseCase } from "contexts/Accounts/application/create-account.usecase";
 import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.db";
 import { GetAllCategoriesUseCase } from "contexts/Categories/application/get-all-categories.usecase";
-import { DeleteSimpleItemUseCase } from "contexts/SimpleItems/application/delete-simple-item.usecase";
-import { UpdateSimpleItemUseCase } from "contexts/SimpleItems/application/update-simple-item.usecase";
 import { AccountsService } from "contexts/Accounts/application/accounts.service";
 import { GetAllAccountNamesUseCase } from "contexts/Accounts/application/get-all-account-names.usecase";
 import { GetAllAccountsUseCase } from "contexts/Accounts/application/get-all-accounts.usecase";
 import { AccountsDexieRepository } from "contexts/Accounts/infrastructure/persistence/dexie/accounts-dexie.repository";
-import { CreateItemUseCase } from "contexts/SimpleItems/application/create-simple-item.usecase";
-import { CreateScheduledItemUseCase } from "contexts/ScheduledItems/application/create-scheduled-item.usecase";
-import { GetAllScheduledItemsUseCase } from "contexts/ScheduledItems/application/get-all-scheduled-items.usecase";
-import { GetAllUniqueItemBrandsUseCase } from "contexts/SimpleItems/application/get-all-unique-item-brands.usecase";
-import { GetAllUniqueItemStoresUseCase } from "contexts/SimpleItems/application/get-all-unique-item-stores.usecase";
-import { GetAllUniqueItemsByNameUseCase } from "contexts/SimpleItems/application/get-all-unique-items-by-name.usecase";
-import { GetScheduledItemsUntilDateUseCase } from "contexts/ScheduledItems/application/get-scheduled-items-until-date.usecase";
-import { SimpleItemsService } from "contexts/SimpleItems/application/simple-items.service";
+import { GetAllUniqueItemBrandsUseCase } from "contexts/Transactions/application/get-all-unique-item-brands.usecase";
+import { GetAllUniqueItemStoresUseCase } from "contexts/Transactions/application/get-all-unique-item-stores.usecase";
+import { GetAllUniqueItemsByNameUseCase } from "contexts/Items/application/get-all-unique-items-by-name.usecase";
 import { CreateSubCategoryUseCase } from "contexts/Subcategories/application/create-subcategory.usecase";
 import { GetAllSubcategoriesUseCase } from "contexts/Subcategories/application/get-all-subcategories.usecase";
 import { SubCategoriesService } from "contexts/Subcategories/application/subcategories.service";
@@ -37,18 +30,22 @@ import { TransactionsDexieRepository } from "contexts/Transactions/infrastructur
 import { AdjustAccountUseCase } from "contexts/Transactions/application/adjust-account.usecase";
 import { DeleteTransactionUseCase } from "contexts/Transactions/application/delete-transaction.usecase";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
-import { RecordSimpleItemUseCase } from "contexts/Transactions/application/record-simple-item.usecase";
 import { RecordTransactionUseCase } from "contexts/Transactions/application/record-transaction.usecase";
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 import { UpdateTransactionUseCase } from "contexts/Transactions/application/update-transaction.usecase";
-import { SimpleItemsDexieRepository } from "contexts/SimpleItems/infrastructure/persistence/dexie/simple-items-dexie.repository";
-import { GetAllTransactionsGroupedByDaysUseCase } from "contexts/Reports/application/get-all-transactions-grouped-by-days.usecase";
-import { RecordScheduledItemUseCase } from "contexts/Transactions/application/record-scheduled-item.usecase";
-import { ScheduledItemsDexieRepository } from "contexts/ScheduledItems/infrastructure/persistence/dexie/scheduled-items-dexie.repository";
-import { ScheduledItemsService } from "contexts/ScheduledItems/application/scheduled-items.service";
-import { ModifyNScheduledItemRecurrenceUseCase } from "contexts/ScheduledItems/application/modify-n-scheduled-item-recurrence.usecase";
-import { UpdateScheduledItemUseCase } from "contexts/ScheduledItems/application/update-scheduled-item.usecase";
-import { DeleteScheduledItemUseCase } from "contexts/ScheduledItems/application/delete-scheduled-item.usecase";
+import { ItemsDexieRepository } from "contexts/Items/infrastructure/persistence/dexie/items-dexie.repository";
+import { ItemsService } from "contexts/Items/application/items.service";
+import { CreateItemUseCase } from "contexts/Items/application/create-item.usecase";
+import { DeleteItemUseCase } from "contexts/Items/application/delete-item.usecase";
+import { UpdateItemUseCase } from "contexts/Items/application/update-item.usecase";
+import { GetAllItemsUseCase } from "contexts/Items/application/get-all-items.usecase";
+import { ModifyNItemRecurrenceUseCase } from "contexts/Items/application/modify-n-item-recurrence.usecase";
+import { GetItemsUntilDateUseCase } from "contexts/Items/application/get-items-until-date.usecase";
+import { RecordItemUseCase } from "contexts/Transactions/application/record-item.usecase";
+import { GetAllUniqueTransactionsByNameUseCase } from "contexts/Transactions/application/get-all-unique-transactions.usecase";
+import { Logger } from "../logger";
+import { GetTotalPerMonthUseCase } from "contexts/Reports/application/get-total-per-month.usecase";
+import { GetTotalUseCase } from "contexts/Reports/application/get-total.usecase";
 
 const container = createContainer({
 	injectionMode: InjectionMode.CLASSIC,
@@ -57,51 +54,25 @@ const container = createContainer({
 export function buildContainer(): AwilixContainer {
 	container.register({
 		config: asValue(Config),
+		_logger: asClass(Logger).singleton(),
 		_db: asClass(DexieDB).singleton(),
 	});
 
 	// ITEMS
 	container.register({
-		_itemsRepository: asClass(SimpleItemsDexieRepository).singleton(),
-		_itemsService: asClass(SimpleItemsService).singleton(),
+		_itemsRepository: asClass(ItemsDexieRepository).singleton(),
+		_itemsService: asClass(ItemsService).singleton(),
 		createItemUseCase: asClass(CreateItemUseCase).singleton(),
+		getAllItemsUseCase: asClass(GetAllItemsUseCase).singleton(),
+		updateItemUseCase: asClass(UpdateItemUseCase).singleton(),
+		deleteItemUseCase: asClass(DeleteItemUseCase).singleton(),
 		getAllUniqueItemsByNameUseCase: asClass(
 			GetAllUniqueItemsByNameUseCase
 		).singleton(),
-		getAllUniqueItemBrandsUseCase: asClass(
-			GetAllUniqueItemBrandsUseCase
+		modifyNItemRecurrenceUseCase: asClass(
+			ModifyNItemRecurrenceUseCase
 		).singleton(),
-		getAllUniqueItemStoresUseCase: asClass(
-			GetAllUniqueItemStoresUseCase
-		).singleton(),
-		deleteItemUseCase: asClass(DeleteSimpleItemUseCase).singleton(),
-		updateItemUseCase: asClass(UpdateSimpleItemUseCase).singleton(),
-	});
-
-	// SCHEDULED ITEMS
-	container.register({
-		_scheduledItemsRepository: asClass(
-			ScheduledItemsDexieRepository
-		).singleton(),
-		_scheduledItemsService: asClass(ScheduledItemsService).singleton(),
-		getAllScheduledItemsUseCase: asClass(
-			GetAllScheduledItemsUseCase
-		).singleton(),
-		updateScheduledItemUseCase: asClass(
-			UpdateScheduledItemUseCase
-		).singleton(),
-		deleteScheduledItemUseCase: asClass(
-			DeleteScheduledItemUseCase
-		).singleton(),
-		modifyNScheduledItemRecurrenceUseCase: asClass(
-			ModifyNScheduledItemRecurrenceUseCase
-		).singleton(),
-		getScheduledItemsUntilDateUseCase: asClass(
-			GetScheduledItemsUntilDateUseCase
-		).singleton(),
-		createScheduledItemUseCase: asClass(
-			CreateScheduledItemUseCase
-		).singleton(),
+		getItemsUntilDateUseCase: asClass(GetItemsUntilDateUseCase).singleton(),
 	});
 
 	// ACCOUNTS
@@ -124,11 +95,17 @@ export function buildContainer(): AwilixContainer {
 		getAllTransactionsUseCase: asClass(
 			GetAllTransactionsUseCase
 		).singleton(),
-		recordTransactionUseCase: asClass(RecordTransactionUseCase).singleton(),
-		recordSimpleItemUseCase: asClass(RecordSimpleItemUseCase).singleton(),
-		recordScheduledItemUseCase: asClass(
-			RecordScheduledItemUseCase
+		getAllUniqueTransactionsByNameUseCase: asClass(
+			GetAllUniqueTransactionsByNameUseCase
+		),
+		getAllUniqueItemBrandsUseCase: asClass(
+			GetAllUniqueItemBrandsUseCase
 		).singleton(),
+		getAllUniqueItemStoresUseCase: asClass(
+			GetAllUniqueItemStoresUseCase
+		).singleton(),
+		recordTransactionUseCase: asClass(RecordTransactionUseCase).singleton(),
+		recordItemUseCase: asClass(RecordItemUseCase).singleton(),
 		deleteTransactionUseCase: asClass(DeleteTransactionUseCase).singleton(),
 		updateTransactionUseCase: asClass(UpdateTransactionUseCase).singleton(),
 		adjustAccountUseCase: asClass(AdjustAccountUseCase).singleton(),
@@ -153,11 +130,11 @@ export function buildContainer(): AwilixContainer {
 		).singleton(),
 	});
 
+	// Reports
 	container.register({
 		_reportsService: asClass(ReportsService).singleton(),
-		getAllTransactionsGroupedByDaysUseCase: asClass(
-			GetAllTransactionsGroupedByDaysUseCase
-		).singleton(),
+		getTotalPerMonthUseCase: asClass(GetTotalPerMonthUseCase).singleton(),
+		getTotalUseCase: asClass(GetTotalUseCase).singleton(),
 	});
 
 	return container;

@@ -5,8 +5,6 @@ import {
 } from "../../components/SectionButtons";
 import { AccountingSection } from "./AccountingSection/AccountingSection";
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
-import { ActionButtons } from "../../components/ActionButtons";
-import { CreateItemPanel } from "apps/obsidian-plugin/panels";
 import { AwilixContainer } from "awilix";
 import { AppProviders } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import {

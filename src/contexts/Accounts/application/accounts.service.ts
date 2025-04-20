@@ -13,8 +13,8 @@ import {
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 
 export class AccountsService implements IAccountsService {
-	#logger = new Logger("AccountsService");
-	constructor(private _accountsRepository: IAccountsRepository) {}
+	private readonly _logger = new Logger("AccountsService");
+	constructor(private readonly _accountsRepository: IAccountsRepository) {}
 
 	async create(account: Account): Promise<void> {
 		const existingAccount = await this._accountsRepository.findByName(
@@ -52,24 +52,24 @@ export class AccountsService implements IAccountsService {
 			? await this.getByID(transaction.toAccount)
 			: undefined;
 
-		this.#logger.debug("adjusting account", {
+		this._logger.debug("adjusting account", {
 			account: account.toPrimitives(),
 			transaction: transaction.toPrimitives(),
 		});
 		account.adjustFromTransaction(transaction);
-		this.#logger.debug("adjusting account adjusted", {
+		this._logger.debug("adjusting account adjusted", {
 			...account.toPrimitives(),
 		});
 
 		await this.update(account);
 
 		if (toAccount) {
-			this.#logger.debug("adjusting toAccount", {
+			this._logger.debug("adjusting toAccount", {
 				toAccount: toAccount.toPrimitives(),
 				transaction: transaction.toPrimitives(),
 			});
 			toAccount.adjustFromTransaction(transaction);
-			this.#logger.debug("adjusting toAccount adjusted", {
+			this._logger.debug("adjusting toAccount adjusted", {
 				...toAccount.toPrimitives(),
 			});
 			await this.update(toAccount);

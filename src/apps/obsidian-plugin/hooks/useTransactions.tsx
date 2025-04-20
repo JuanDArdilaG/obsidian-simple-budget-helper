@@ -5,11 +5,18 @@ import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
 import { Transaction } from "contexts/Transactions/domain";
+import { GetAllUniqueItemBrandsUseCase } from "contexts/Transactions/application/get-all-unique-item-brands.usecase";
+import { GetAllUniqueItemStoresUseCase } from "contexts/Transactions/application/get-all-unique-item-stores.usecase";
+import { ItemBrand, ItemStore } from "contexts/Items/domain";
 
 export const useTransactions = ({
 	getAllTransactions,
+	getAllUniqueItemBrands,
+	getAllUniqueItemStores,
 }: {
 	getAllTransactions: GetAllTransactionsUseCase;
+	getAllUniqueItemBrands: GetAllUniqueItemBrandsUseCase;
+	getAllUniqueItemStores: GetAllUniqueItemStoresUseCase;
 }) => {
 	const { logger } = useLogger("useTransactions");
 
@@ -27,6 +34,12 @@ export const useTransactions = ({
 	>([undefined, undefined, undefined]);
 	const [updateFilteredTransactions, setUpdateFilteredTransactions] =
 		useState(true);
+
+	const [brands, setBrands] = useState<ItemBrand[]>([]);
+	const [updateBrands, setUpdateBrands] = useState(true);
+
+	const [stores, setStores] = useState<ItemStore[]>([]);
+	const [updateStores, setUpdateStores] = useState(true);
 
 	useEffect(() => {
 		if (updateTransactions) {
@@ -74,15 +87,43 @@ export const useTransactions = ({
 				});
 		}
 	}, [updateFilteredTransactions]);
+	useEffect(() => {
+		if (updateBrands) {
+			setUpdateBrands(false);
+			getAllUniqueItemBrands.execute().then((brands) => {
+				logger.debug("updating brands", {
+					brands,
+				});
+				setBrands(brands);
+			});
+		}
+	}, [updateBrands]);
+
+	useEffect(() => {
+		if (updateStores) {
+			setUpdateStores(false);
+			getAllUniqueItemStores.execute().then((stores) => {
+				logger.debug("updating stores", {
+					updateStores,
+					brands,
+				});
+				setStores(stores);
+			});
+		}
+	}, [updateStores]);
 
 	return {
 		transactions,
-		filteredTransactions,
-		setFilters,
 		updateTransactions: () => {
 			setUpdateTransactions(true);
 			setUpdateFilteredTransactions(true);
 		},
+		filteredTransactions,
+		setFilters,
 		updateFilteredTransactions: () => setUpdateFilteredTransactions(true),
+		brands,
+		updateBrands: () => setUpdateBrands(true),
+		stores,
+		updateStores: () => setUpdateStores(true),
 	};
 };

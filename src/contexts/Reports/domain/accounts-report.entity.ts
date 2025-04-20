@@ -8,7 +8,7 @@ export class AccountsReport {
 		return this._accounts
 			.filter((acc) => acc.type.isAsset())
 			.reduce(
-				(total, acc) => total.plus(acc.balance),
+				(total, acc) => total.plus(acc.balance.value),
 				ReportBalance.zero()
 			);
 	}
@@ -17,7 +17,7 @@ export class AccountsReport {
 		return this._accounts
 			.filter((acc) => acc.type.isLiability())
 			.reduce(
-				(total, acc) => total.plus(acc.balance),
+				(total, acc) => total.plus(acc.balance.value),
 				ReportBalance.zero()
 			);
 	}

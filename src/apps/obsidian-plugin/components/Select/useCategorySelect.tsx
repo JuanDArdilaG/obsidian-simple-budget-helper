@@ -9,30 +9,44 @@ export const useCategorySelect = ({
 	initialValueID,
 	lock,
 	setLock,
+	overrideCategoriesIDs,
 }: {
 	label?: string;
 	initialValueName?: CategoryName;
 	initialValueID?: string;
 	lock?: boolean;
 	setLock?: (lock: boolean) => void;
+	overrideCategoriesIDs?: CategoryID[];
 }) => {
 	const [categoryName, setCategoryName] = useState(
-		initialValueName?.valueOf() ?? ""
+		initialValueName?.value ?? ""
 	);
 	const [category, setCategory] = useState<Category>();
 
 	const { categories, getCategoryByID } = useContext(CategoriesContext);
 	const categoriesNames = useMemo(
-		() => categories.map((acc) => acc.name.valueOf()).sort(),
-		[categories]
+		() =>
+			!overrideCategoriesIDs
+				? categories
+						.map((acc) => acc.name.value)
+						.sort((a, b) => a.localeCompare(b))
+				: [
+						...new Set(
+							overrideCategoriesIDs.map((catID) => catID.value)
+						),
+				  ].map(
+						(catID) =>
+							getCategoryByID(new CategoryID(catID))?.name
+								.value ?? `not found id: ${catID}`
+				  ),
+		[categories, overrideCategoriesIDs]
 	);
 
 	useEffect(() => {
 		setCategoryName(
 			initialValueID
-				? getCategoryByID(
-						new CategoryID(initialValueID)
-				  )?.name.valueOf() ?? ""
+				? getCategoryByID(new CategoryID(initialValueID))?.name.value ??
+						""
 				: ""
 		);
 	}, [initialValueID]);
@@ -53,7 +67,10 @@ export const useCategorySelect = ({
 				id="category"
 				label={label ?? "Category"}
 				value={categoryName}
-				values={["", ...categoriesNames]}
+				values={[
+					"",
+					...categoriesNames.toSorted((a, b) => a.localeCompare(b)),
+				]}
 				onChange={(category) => setCategoryName(category)}
 				isLocked={lock}
 				setIsLocked={setLock ? (lock) => setLock(lock) : undefined}

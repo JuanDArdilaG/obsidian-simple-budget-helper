@@ -1,22 +1,28 @@
-import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
+import { PriceValueObject } from "@juandardilag/value-objects";
 
-export class AccountBalance extends PriceValueObject {
+export class AccountBalance {
+	constructor(private _balance: PriceValueObject) {}
+
 	static zero(): AccountBalance {
-		return new AccountBalance(0);
+		return new AccountBalance(PriceValueObject.zero());
+	}
+
+	get value(): PriceValueObject {
+		return this._balance;
 	}
 
 	plus(other: PriceValueObject): AccountBalance {
-		return new AccountBalance(super.plus(other).valueOf());
+		return new AccountBalance(this._balance.plus(other));
 	}
 
 	sustract(other: PriceValueObject): AccountBalance {
-		return new AccountBalance(super.sustract(other).valueOf());
+		return new AccountBalance(this._balance.sustract(other));
 	}
 
-	adjust(newBalance: AccountBalance): PriceValueObject {
-		const difference = newBalance.sustract(this);
+	adjust(newBalance: PriceValueObject): PriceValueObject {
+		const difference = newBalance.sustract(this._balance);
 
-		this._value = newBalance._value;
+		this._balance = newBalance;
 
 		return difference;
 	}

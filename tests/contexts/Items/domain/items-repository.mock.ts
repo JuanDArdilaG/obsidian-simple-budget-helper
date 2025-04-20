@@ -1,16 +1,15 @@
 import { RepositoryMock } from "../../Shared/domain/repository.mock";
 import {
 	IItemsRepository,
-	Item,
 	ItemBrand,
 	ItemID,
 	ItemPrimitives,
 	ItemStore,
-	SimpleItem,
-} from "contexts/SimpleItems/domain";
+	Item,
+} from "contexts/Items/domain";
 
 export class ItemsRepositoryMock
-	extends RepositoryMock<ItemID, SimpleItem, ItemPrimitives>
+	extends RepositoryMock<ItemID, Item, ItemPrimitives>
 	implements IItemsRepository
 {
 	findAllUniqueItemBrands(): Promise<ItemBrand[]> {

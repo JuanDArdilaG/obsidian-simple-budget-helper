@@ -35,6 +35,9 @@ export const AccountingListContextMenu = ({
 							borderBottom: "1px solid black",
 						}}
 						onClick={async () => await onEdit(transaction)}
+						onKeyDown={async (e) =>
+							e.key === "e" && (await onEdit(transaction))
+						}
 					>
 						<Pencil size={16} /> Edit
 					</li>
@@ -50,6 +53,14 @@ export const AccountingListContextMenu = ({
 								}
 							}).open();
 						}}
+						onKeyDown={async (e) =>
+							e.key === "d" &&
+							new ConfirmationModal(app, async (confirm) => {
+								if (confirm) {
+									await onDelete(transaction);
+								}
+							}).open()
+						}
 					>
 						<Trash2 size={16} /> Delete
 					</li>

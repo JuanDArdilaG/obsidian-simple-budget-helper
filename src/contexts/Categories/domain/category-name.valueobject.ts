@@ -1,3 +1,3 @@
-import { StringValueObject } from "@juandardilag/value-objects/StringValueObject";
+import { StringValueObject } from "@juandardilag/value-objects";
 
 export class CategoryName extends StringValueObject {}

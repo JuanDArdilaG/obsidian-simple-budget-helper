@@ -3,7 +3,7 @@ import { CategoryName } from "./category-name.valueobject";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 
 export class Category extends Entity<CategoryID, CategoryPrimitives> {
-	constructor(id: CategoryID, private _name: CategoryName) {
+	constructor(id: CategoryID, private readonly _name: CategoryName) {
 		super(id);
 	}
 
@@ -22,7 +22,7 @@ export class Category extends Entity<CategoryID, CategoryPrimitives> {
 	toPrimitives(): CategoryPrimitives {
 		return {
 			id: this._id.value,
-			name: this._name.valueOf(),
+			name: this._name.value,
 		};
 	}
 

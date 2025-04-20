@@ -3,7 +3,6 @@ import {
 	Entity,
 	EntityComposedValue,
 	IDValueObject,
-	IEntity,
 } from "contexts/Shared/domain";
 import { IRepository } from "../../../../src/contexts/Shared/domain/persistence/repository.interface";
 

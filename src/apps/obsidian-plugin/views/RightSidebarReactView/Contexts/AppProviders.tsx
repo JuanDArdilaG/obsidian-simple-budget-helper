@@ -1,3 +1,5 @@
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import {
 	AppContext,
 	ItemsContext,
@@ -12,6 +14,10 @@ import { PropsWithChildren } from "react";
 import { AwilixContainer } from "awilix";
 import { AccountsContext, getAccountsContextValues } from "./AccountsContext";
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
+import {
+	getItemReportContextValues,
+	ItemReportContext,
+} from "./ItemReportContext";
 
 export const AppProviders = ({
 	children,
@@ -22,22 +28,34 @@ export const AppProviders = ({
 	plugin: SimpleBudgetHelperPlugin;
 }>) => {
 	return (
-		<AppContext.Provider value={getAppContextDefault(container, plugin)}>
-			<ItemsContext.Provider value={getItemsContextDefault(container)}>
-				<AccountsContext.Provider
-					value={getAccountsContextValues(container)}
+		<LocalizationProvider dateAdapter={AdapterDayjs}>
+			<AppContext.Provider
+				value={getAppContextDefault(container, plugin)}
+			>
+				<ItemsContext.Provider
+					value={getItemsContextDefault(container)}
 				>
-					<CategoriesContext.Provider
-						value={getCategoriesContextDefault(container)}
+					<AccountsContext.Provider
+						value={getAccountsContextValues(container)}
 					>
-						<TransactionsContext.Provider
-							value={getTransactionsContextValues(container)}
+						<CategoriesContext.Provider
+							value={getCategoriesContextDefault(container)}
 						>
-							{children}
-						</TransactionsContext.Provider>
-					</CategoriesContext.Provider>
-				</AccountsContext.Provider>
-			</ItemsContext.Provider>
-		</AppContext.Provider>
+							<TransactionsContext.Provider
+								value={getTransactionsContextValues(container)}
+							>
+								<ItemReportContext.Provider
+									value={getItemReportContextValues(
+										container
+									)}
+								>
+									{children}
+								</ItemReportContext.Provider>
+							</TransactionsContext.Provider>
+						</CategoriesContext.Provider>
+					</AccountsContext.Provider>
+				</ItemsContext.Provider>
+			</AppContext.Provider>
+		</LocalizationProvider>
 	);
 };

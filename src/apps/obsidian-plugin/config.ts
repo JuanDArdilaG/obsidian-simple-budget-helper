@@ -1,6 +1,7 @@
 export const PLUGIN_INFO = {
 	name: "Simple Budget Helper",
 	defaultRootFolder: "~simple-budget-helper",
+	debugMode: false,
 };
 
 export const views = {

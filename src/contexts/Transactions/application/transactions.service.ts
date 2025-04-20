@@ -23,16 +23,15 @@ import {
 	IAccountsService,
 } from "contexts/Accounts/domain";
 import { EntityNotFoundError } from "contexts/Shared/domain";
-import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import { NumberValueObject } from "@juandardilag/value-objects/NumberValueObject";
+import { NumberValueObject } from "@juandardilag/value-objects";
 
 export class TransactionsService implements ITransactionsService {
-	#logger = new Logger("TransactionsService");
+	readonly #logger = new Logger("TransactionsService");
 	constructor(
-		private _accountsService: IAccountsService,
-		private _transactionsRepository: ITransactionsRepository,
-		private _categoriesService: ICategoriesService,
-		private _subCategoriesService: ISubCategoriesService
+		private readonly _accountsService: IAccountsService,
+		private readonly _transactionsRepository: ITransactionsRepository,
+		private readonly _categoriesService: ICategoriesService,
+		private readonly _subCategoriesService: ISubCategoriesService
 	) {}
 
 	async getAll(): Promise<Transaction[]> {
@@ -67,12 +66,12 @@ export class TransactionsService implements ITransactionsService {
 		newBalance: AccountBalance
 	): Promise<void> {
 		const account = await this._accountsService.getByID(accountID);
-		const amountDifference = account.balance.adjust(newBalance);
+		let amountDifference = account.balance.adjust(newBalance.value);
 
 		this.#logger
 			.debugB("accountAdjustment", {
 				account: account.toPrimitives(),
-				newBalance: newBalance.toString(),
+				newBalance: newBalance.value.toString(),
 				amountDifference: amountDifference.toString(),
 			})
 			.log();
@@ -87,17 +86,16 @@ export class TransactionsService implements ITransactionsService {
 				new SubCategoryName("Adjustment")
 			);
 
+		if (account.type.isLiability())
+			amountDifference = amountDifference.times(
+				new NumberValueObject(-1)
+			);
+
 		const transaction = Transaction.createWithoutItem(
 			accountID,
 			new TransactionName(`Adjustment for ${account.name}`),
 			new TransactionOperation(
-				amountDifference
-					.times(
-						new NumberValueObject(account.type.isAsset() ? 1 : -1)
-					)
-					.isPositive()
-					? "income"
-					: "expense"
+				amountDifference.isPositive() ? "income" : "expense"
 			),
 			category.id,
 			subCategory.id,

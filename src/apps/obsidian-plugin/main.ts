@@ -1,19 +1,14 @@
 import Dexie from "dexie";
 import { exportDB, importDB } from "dexie-export-import";
 import { App, normalizePath, Plugin, PluginManifest } from "obsidian";
-import { DEFAULT_SETTINGS, SimpleBudgetHelperSettings } from "./SettingTab";
+import { SettingTab } from "./SettingTab";
 import { buildContainer } from "contexts/Shared/infrastructure/di/container";
 import { Logger } from "../../contexts/Shared/infrastructure/logger";
-import { LeftMenuItems, SettingTab, views } from "apps/obsidian-plugin";
 import { RightSidebarReactViewRoot } from "apps/obsidian-plugin/views";
 import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.db";
-import { MDMigration } from "apps/obsidian-plugin/migration/md.migration";
-import { AwilixContainer } from "awilix";
-import { IItemsRepository, SimpleItem } from "contexts/SimpleItems/domain";
-import {
-	IScheduledItemsRepository,
-	ScheduledItem,
-} from "contexts/ScheduledItems/domain";
+import { views } from "./config";
+import { LeftMenuItems } from "./ribbonIcon";
+import { SimpleBudgetHelperSettings, DEFAULT_SETTINGS } from "./PluginSettings";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
@@ -49,24 +44,6 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		}
 	}
 
-	async migrateRecurrentItems(
-		container: AwilixContainer<any>
-	): Promise<void> {
-		const itemsRepo = container.resolve<IItemsRepository>(
-			"_oldItemsRepository"
-		);
-		const sItemsRepo =
-			container.resolve<IItemsRepository>("_itemsRepository");
-
-		const items = await itemsRepo.findAll();
-		const simpleItems = items.filter((item) => SimpleItem.IsSimple(item));
-		this.logger.debug("simple items", {
-			items,
-			recurrentItems: simpleItems,
-		});
-		await Promise.all(simpleItems.map((item) => sItemsRepo.persist(item)));
-	}
-
 	async importDBBackup() {
 		const path = normalizePath(`${this.settings.rootFolder}/db/db.backup`);
 		const buffer = await this.app.vault.adapter.readBinary(path);
@@ -75,12 +52,9 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		Logger.setDebugMode(this.settings.debugMode);
 		const container = buildContainer();
-		// await this.migrateFromMarkdown(container);
 		this.db = (container.resolve("_db") as DexieDB).db;
-		// await this.importDBBackup();
-		// await this.exportDBBackup();
-		// await this.migrateRecurrentItems(container);
 
 		await initStoragePersistence();
 		const storageQuota = await showEstimatedQuota();
@@ -102,40 +76,13 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		LeftMenuItems.RightSidebarPanel(this);
 	}
 
-	async migrateFromMarkdown(container: AwilixContainer) {
-		const migrator = new MDMigration(
-			this.app.vault,
-			this.settings.rootFolder,
-			container.resolve("getAllAccountsUseCase"),
-			container.resolve("getAllCategoriesUseCase"),
-			container.resolve("getAllSubCategoriesUseCase"),
-			container.resolve("createAccountUseCase"),
-			container.resolve("createCategoryUseCase"),
-			container.resolve("createSubCategoryUseCase"),
-			container.resolve("recordTransactionUseCase"),
-			container.resolve("recordSimpleItemUseCase"),
-			container.resolve("createScheduledItemUseCase")
-		);
-		const { items, transactions } = await migrator.migrate();
-		this.logger.debug("transactions migrated", {
-			migration: {
-				items: items.map((i) => i.toPrimitives()),
-				transactions: transactions.map((t) => t.toPrimitives()),
-			},
-		});
-	}
-
-	async onunload() {
+	onunload(): void {
 		this.logger.debug("onunload");
 		persist();
 	}
 
 	async loadSettings() {
-		const data = Object.assign(
-			{},
-			{ ...DEFAULT_SETTINGS },
-			await this.loadData()
-		);
+		const data = { ...DEFAULT_SETTINGS, ...(await this.loadData()) };
 		this.logger.debug("loaded settings", { data });
 		this.settings = data;
 	}
@@ -147,18 +94,15 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 }
 
 async function persist() {
-	return navigator.storage && navigator.storage.persist
-		? navigator.storage.persist()
-		: undefined;
+	return navigator.storage?.persist ? navigator.storage.persist() : undefined;
 }
 
 async function showEstimatedQuota(): Promise<
 	{ quota?: number; usage?: number; percentage?: string } | undefined
 > {
-	const estimation =
-		navigator.storage && navigator.storage.estimate
-			? await navigator.storage.estimate()
-			: undefined;
+	const estimation = navigator.storage?.estimate
+		? await navigator.storage?.estimate()
+		: undefined;
 	if (!estimation) return undefined;
 	return {
 		...estimation,
@@ -175,10 +119,10 @@ async function showEstimatedQuota(): Promise<
 }
 
 async function tryPersistWithoutPromptingUser() {
-	if (!navigator.storage || !navigator.storage.persisted) return "never";
+	if (!navigator.storage?.persisted) return "never";
 	let persisted = await navigator.storage.persisted();
 	if (persisted) return "persisted";
-	if (!navigator.permissions || !navigator.permissions.query) return "prompt";
+	if (!navigator.permissions?.query) return "prompt";
 	const permission = await navigator.permissions.query({
 		name: "persistent-storage",
 	});

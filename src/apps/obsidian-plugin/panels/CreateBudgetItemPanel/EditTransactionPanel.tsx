@@ -1,54 +1,45 @@
 import { useContext, useState } from "react";
-import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
-import {
-	AccountsContext,
-	CategoriesContext,
-	TransactionsContext,
-} from "apps/obsidian-plugin/views";
+import { TransactionsContext } from "apps/obsidian-plugin/views";
 import {
 	Select,
-	SelectWithCreation,
 	useAccountSelect,
+	useCategorySelect,
+	useSubCategorySelect,
 } from "apps/obsidian-plugin/components/Select";
 import {
 	Transaction,
 	TransactionDate,
 	TransactionName,
 } from "contexts/Transactions/domain";
-import { Account, AccountID, AccountName } from "contexts/Accounts/domain";
-import { CategoryID, Category } from "contexts/Categories/domain";
-import { SubCategoryID, SubCategory } from "contexts/Subcategories/domain";
 import { Input } from "apps/obsidian-plugin/components/Input/Input";
+import { useLogger } from "apps/obsidian-plugin/hooks";
+import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
+import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
+import { Typography } from "@mui/material";
+import { Button } from "apps/obsidian-plugin/components/Button";
 
 export const EditTransactionPanel = ({
 	transaction,
-	getAccountByID,
-	getCategoryByID,
-	getSubCategoryByID,
 	onUpdate,
 }: {
 	transaction: Transaction;
-	getAccountByID: (id: AccountID) => Account | undefined;
-	getCategoryByID: (id: CategoryID) => Category | undefined;
-	getSubCategoryByID: (id: SubCategoryID) => SubCategory | undefined;
 	onUpdate: () => Promise<void>;
 }) => {
+	const { logger } = useLogger("EditTransactionPanel");
 	const {
 		useCases: { updateTransaction },
 	} = useContext(TransactionsContext);
 
-	const { subCategories, categories } = useContext(CategoriesContext);
-	const { accounts, getAccountByName } = useContext(AccountsContext);
-
 	const [name, setName] = useState(transaction.name.value);
 	const [amount, setAmount] = useState(transaction.amount);
 	const [type, setType] = useState(transaction.operation.value);
-	const [categoryName, setCategoryName] = useState(
-		getCategoryByID(transaction.categoryID)?.name.valueOf()
-	);
-	const [subCategoryName, setSubCategoryName] = useState(
-		getSubCategoryByID(transaction.subCategory)?.name.valueOf()
-	);
+	const { CategorySelect, category } = useCategorySelect({
+		initialValueID: transaction.category.value,
+	});
+	const { SubCategorySelect, subCategory } = useSubCategorySelect({
+		category,
+		initialValueID: transaction.subCategory.value,
+	});
 	const { AccountSelect, account } = useAccountSelect({
 		label: "From",
 		initialValueID: transaction.account.value,
@@ -58,12 +49,16 @@ export const EditTransactionPanel = ({
 			label: "To",
 			initialValueID: transaction.toAccount?.value,
 		});
-
-	const [date, setDate] = useState(transaction.date.value);
+	const { DateInput, date } = useDateInput({
+		dateWithTime: true,
+		initialValue: transaction.date,
+	});
 
 	return (
 		<div className="create-budget-item-modal">
-			<h3>Edit Account Record</h3>
+			<Typography variant="h4" style={{ marginTop: 15 }}>
+				Edit Transaction
+			</Typography>
 			<Input
 				id="name"
 				label="Name"
@@ -71,14 +66,11 @@ export const EditTransactionPanel = ({
 				onChange={(name) => setName(name)}
 				// error={!validation || validation.name ? undefined : "required"}
 			/>
-			<Input<PriceValueObject>
+			<PriceInput
 				id="amount"
 				label="Amount"
 				value={amount}
 				onChange={setAmount}
-				// error={
-				// !validation || validation.amount ? undefined : "required"
-				// }
 			/>
 			<Select
 				id="type"
@@ -89,41 +81,18 @@ export const EditTransactionPanel = ({
 			/>
 			{AccountSelect}
 			{type === "transfer" && ToAccountSelect}
-			<SelectWithCreation
-				id="category"
-				label="Category"
-				item={categoryName ?? ""}
-				items={categories.map((cat) => cat.name.valueOf())}
-				onChange={(category) => setCategoryName(category ?? "")}
-				// error={
-				// !validation || validation.category ? undefined : "required"
-				// }
-			/>
-			<SelectWithCreation
-				id="subcategory"
-				label="SubCategory"
-				item={subCategoryName ?? ""}
-				items={subCategories.map((sub) => sub.name.valueOf())}
-				onChange={(category) => setSubCategoryName(category ?? "")}
-				// error={
-				// !validation || validation.subCategory
-				// 		? undefined
-				// 		: "required"
-				// }
-			/>
-			<Input<Date>
-				dateWithTime
-				id="date"
-				label="Date"
-				value={date}
-				onChange={setDate}
-				// error={!validation || validation.date ? undefined : "required"}
-			/>
-			<button
+			{CategorySelect}
+			{SubCategorySelect}
+			{DateInput}
+			<Button
+				label="Edit"
 				onClick={async () => {
 					date.setSeconds(0);
 
-					if (!account) return console.error("account not selected");
+					if (!account) return logger.error("account not selected");
+					if (!category) return logger.error("category not selected");
+					if (!subCategory)
+						return logger.error("subCategory not selected");
 
 					transaction.updateName(new TransactionName(name));
 					transaction.updateDate(new TransactionDate(date));
@@ -131,13 +100,13 @@ export const EditTransactionPanel = ({
 					transaction.updateAmount(amount);
 					transaction.updateAccount(account.id);
 					transaction.updateToAccount(toAccount?.id);
+					transaction.updateCategory(category.id);
+					transaction.updateSubCategory(subCategory.id);
 
 					await updateTransaction.execute(transaction);
 					await onUpdate();
 				}}
-			>
-				Create
-			</button>
+			/>
 		</div>
 	);
 };

@@ -1,4 +1,4 @@
-import { StringValueObject as LibStringValueObject } from "@juandardilag/value-objects/StringValueObject";
+import { StringValueObject as LibStringValueObject } from "@juandardilag/value-objects";
 import { DomainError } from "../errors";
 import { StringValueObject } from "../value-objects";
 

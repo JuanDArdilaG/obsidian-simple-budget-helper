@@ -3,10 +3,9 @@ import { DB } from "../db";
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { Account } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
-import { Item, SimpleItem } from "contexts/SimpleItems/domain";
 import { SubCategory } from "contexts/Subcategories/domain";
 import { Transaction } from "contexts/Transactions/domain";
-import { ScheduledItem } from "contexts/ScheduledItems/domain";
+import { Item } from "contexts/Items/domain";
 
 export class DexieDB extends DB {
 	readonly db: Dexie;
@@ -28,12 +27,8 @@ export class DexieDB extends DB {
 			[this.config.categoriesTableName]: Object.keys(
 				Category.emptyPrimitives()
 			).join(", "),
-			[this.config.simpleItemsTableName]: Object.keys(
-				SimpleItem.emptyPrimitives()
-			).join(", "),
-			["items"]: Object.keys(SimpleItem.emptyOldPrimitives()).join(", "),
-			[this.config.scheduledItemsTableName]: Object.keys(
-				ScheduledItem.emptyPrimitives()
+			[this.config.itemsTableName]: Object.keys(
+				Item.emptyPrimitives()
 			).join(", "),
 			[this.config.subCategoriesTableName]: Object.keys(
 				SubCategory.emptyPrimitives()

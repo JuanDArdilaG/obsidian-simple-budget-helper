@@ -1,5 +1,11 @@
-import { LockField } from "apps/obsidian-plugin/components/LockField";
+import {
+	FormControl,
+	InputLabel,
+	MenuItem,
+	Select as MuiSelect,
+} from "@mui/material";
 import { JSX, useEffect, useState } from "react";
+import { WithLockField } from "../WithLockField";
 
 export const Select = <T extends string | number>({
 	id,
@@ -25,15 +31,15 @@ export const Select = <T extends string | number>({
 		setOptions(
 			Array.isArray(values)
 				? values.map((v) => (
-						<option key={v} value={v}>
+						<MenuItem key={v} value={v}>
 							{v}
-						</option>
+						</MenuItem>
 				  ))
 				: Object.keys(values).map(
 						(key) => (
-							<option key={key} value={key}>
+							<MenuItem key={key} value={key}>
 								{values[key]}
-							</option>
+							</MenuItem>
 						),
 						[]
 				  )
@@ -41,25 +47,46 @@ export const Select = <T extends string | number>({
 	}, [values]);
 
 	return (
-		<div style={{ display: "flex", flexDirection: "column" }}>
-			<label htmlFor={`${id}-input`}>{label}</label>
-			<select
-				value={value}
-				onChange={(e) =>
-					onChange(
-						(typeof value === "string"
-							? e.target.value
-							: Number(e.target.value)) as T
-					)
-				}
-				style={error ? { border: "1px solid red" } : {}}
-			>
-				{options}
-			</select>
-
-			{setIsLocked && (
-				<LockField setIsLocked={setIsLocked} isLocked={isLocked} />
-			)}
-		</div>
+		<WithLockField
+			isLocked={isLocked}
+			setIsLocked={setIsLocked}
+			style={{ width: "100%" }}
+		>
+			<FormControl fullWidth>
+				<InputLabel
+					id={`${id}-label`}
+					style={{
+						color: "var(--text-muted)",
+						paddingLeft: 0,
+						padding: 5,
+					}}
+				>
+					{label}
+				</InputLabel>
+				<MuiSelect
+					labelId={`${id}-label`}
+					id={id}
+					value={value}
+					label={label}
+					variant="standard"
+					onChange={(e) => onChange(e.target.value as T)}
+					disabled={isLocked}
+					style={{
+						color: "var(--text-normal)",
+						backgroundColor:
+							"var(--background-modifier-form-field)",
+						padding: 5,
+						paddingLeft: 15,
+					}}
+					slotProps={{
+						input: {
+							style: { padding: 5 },
+						},
+					}}
+				>
+					{options}
+				</MuiSelect>
+			</FormControl>
+		</WithLockField>
 	);
 };

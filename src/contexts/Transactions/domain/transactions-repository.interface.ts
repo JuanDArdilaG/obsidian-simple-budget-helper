@@ -1,4 +1,5 @@
-import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
+import { ItemBrand, ItemStore } from "contexts/Items/domain";
+import { IRepository } from "contexts/Shared/domain/persistence";
 import {
 	TransactionID,
 	Transaction,
@@ -6,4 +7,7 @@ import {
 } from "contexts/Transactions/domain";
 
 export interface ITransactionsRepository
-	extends IRepository<TransactionID, Transaction, TransactionPrimitives> {}
+	extends IRepository<TransactionID, Transaction, TransactionPrimitives> {
+	findAllUniqueItemBrands(): Promise<ItemBrand[]>;
+	findAllUniqueItemStores(): Promise<ItemStore[]>;
+}

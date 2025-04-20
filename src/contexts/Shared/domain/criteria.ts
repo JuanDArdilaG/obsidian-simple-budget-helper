@@ -4,14 +4,12 @@ type Operator =
 	| "LESS_THAN"
 	| "GREATER_THAN_OR_EQUAL"
 	| "LESS_THAN_OR_EQUAL"
-	| "NOT_EQUAL"
-	| "IN"
-	| "NOT_IN"
-	| "LIKE"
-	| "BETWEEN";
+	| "NOT_EQUAL";
+
+type FilterValue = string | number | Date | undefined;
 
 interface FilterCriterion {
-	value: string | number | Date | undefined;
+	value: FilterValue;
 	operator: Operator;
 }
 
@@ -54,26 +52,23 @@ export class Criteria<T> {
 		field: keyof T,
 		value: string | number | Date | undefined,
 		operator: Operator = "EQUAL"
-	): Criteria<T> {
+	): this {
 		const filter = makeFilter(value, operator);
 		this.filters[field] = filter;
 		return this;
 	}
 
-	orderBy(
-		field: keyof T,
-		direction: "ASC" | "DESC" | "NONE" = "ASC"
-	): Criteria<T> {
+	orderBy(field: keyof T, direction: "ASC" | "DESC" | "NONE" = "ASC"): this {
 		if (direction === "NONE") this.orders.push({ field, direction });
 		return this;
 	}
 
-	take(limit: number): Criteria<T> {
+	take(limit: number): this {
 		this.limit = limit;
 		return this;
 	}
 
-	skip(offset: number): Criteria<T> {
+	skip(offset: number): this {
 		this.offset = offset;
 		return this;
 	}

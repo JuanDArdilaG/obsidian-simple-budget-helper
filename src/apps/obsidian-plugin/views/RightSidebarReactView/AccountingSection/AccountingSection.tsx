@@ -1,14 +1,12 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AccountingList } from "./AccountingList";
-import {
-	AccountingSectionButtons,
-	AccountingSectionSelection,
-} from "./AccountingSectionButtons";
+import { AccountingSectionSelection } from "./AccountingSectionButtons";
 import { App } from "obsidian";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
-import { ActionButtons } from "apps/obsidian-plugin/components/ActionButtons";
-import { CreateItemPanel } from "apps/obsidian-plugin/panels";
+import { CreateTransactionPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/CreateTransactionPanel";
+import { Transaction } from "contexts/Transactions/domain";
+import { TransactionsContext } from "../Contexts";
 
 export const AccountingSection = ({
 	app,
@@ -17,32 +15,40 @@ export const AccountingSection = ({
 	app: App;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) => {
+	const { updateFilteredTransactions } = useContext(TransactionsContext);
 	const logger = useLogger("AccountingSection");
 	const [showCreateForm, setShowCreateForm] = useState(false);
-	const [sectionSelection, setSectionSelection] =
+	const [sectionSelection] =
 		useState<AccountingSectionSelection>("movements");
 
 	useEffect(() => {
 		logger.debug("section selection changed", { sectionSelection });
 	}, [sectionSelection]);
 
+	const [selection, setSelection] = useState<Transaction[]>([]);
+
 	return (
-		<RightSidebarReactTab title="Accounting">
-			<ActionButtons
-				handleCreateClick={async () =>
-					setShowCreateForm(!showCreateForm)
-				}
-				isCreating={showCreateForm}
-			/>
+		<RightSidebarReactTab
+			title="Accounting"
+			handleCreate={async () => setShowCreateForm(!showCreateForm)}
+			handleRefresh={async () => {
+				updateFilteredTransactions();
+			}}
+			isCreating={showCreateForm}
+		>
 			{showCreateForm && (
-				<CreateItemPanel close={() => setShowCreateForm(false)} />
+				<CreateTransactionPanel
+					close={() => setShowCreateForm(false)}
+					onCreate={() => setSelection([])}
+				/>
 			)}
-			<AccountingSectionButtons
-				selected={sectionSelection}
-				setSelected={setSectionSelection}
-			/>
 			{sectionSelection === "movements" && (
-				<AccountingList app={app} statusBarAddText={statusBarAddText} />
+				<AccountingList
+					app={app}
+					statusBarAddText={statusBarAddText}
+					selection={selection}
+					setSelection={setSelection}
+				/>
 			)}
 		</RightSidebarReactTab>
 	);

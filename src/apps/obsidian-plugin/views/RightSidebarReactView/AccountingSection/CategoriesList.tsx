@@ -1,34 +1,23 @@
 import { useContext, useState } from "react";
-import { ActionButtons } from "apps/obsidian-plugin/components/ActionButtons";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { CategoriesContext } from "../Contexts";
 import { CreateCategoryPanel } from "apps/obsidian-plugin/panels/CreateCategoryPanel";
-import { Category } from "contexts/Categories/domain";
+import { List, ListItem, Typography } from "@mui/material";
 
 export const CategoriesList = () => {
 	const { categoriesWithSubcategories, updateCategoriesWithSubcategories } =
 		useContext(CategoriesContext);
 
-	const [selectedCategory, setSelectedCategory] = useState<Category>();
 	const [showCreateForm, setShowCreateForm] = useState(false);
 
 	return (
-		<RightSidebarReactTab title="Accounts" subtitle>
-			{/* {selectedCategory && (
-				<AccountsListContextMenu
-					account={selectedCategory}
-					onAdjust={async () => {
-						updateCategoriesWithSubcategories()
-					}}
-				/>
-			)} */}
-
-			<ActionButtons
-				handleCreateClick={async () =>
-					setShowCreateForm(!showCreateForm)
-				}
-				isCreating={showCreateForm}
-			/>
+		<RightSidebarReactTab
+			title="Categories"
+			total={categoriesWithSubcategories.length}
+			handleCreate={async () => setShowCreateForm(!showCreateForm)}
+			handleRefresh={async () => updateCategoriesWithSubcategories()}
+			isCreating={showCreateForm}
+		>
 			{showCreateForm && (
 				<CreateCategoryPanel
 					onCreate={() => {
@@ -37,45 +26,30 @@ export const CategoriesList = () => {
 					}}
 				/>
 			)}
-			<h3>
-				Categories
-				<span
-					style={{
-						fontSize: "0.7em",
-						fontWeight: "normal",
-						paddingLeft: "5px",
-					}}
-				>
-					Total: {categoriesWithSubcategories.length}
-				</span>
-			</h3>
-			<ul>
+			<List>
 				{categoriesWithSubcategories
-					.sort((catA, catB) =>
-						catA.category.name.compare(catB.category.name)
+					.toSorted((catA, catB) =>
+						catA.category.name.compareTo(catB.category.name)
 					)
-					.map((categoryWithSubCategories, i) => (
-						<li
-							key={i}
-							onContextMenu={() =>
-								setSelectedCategory(
-									categoryWithSubCategories.category
-								)
-							}
+					.map((categoryWithSubCategories) => (
+						<ListItem
+							key={categoryWithSubCategories.category.id.value}
 						>
-							<h4>
+							<Typography variant="h4">
 								{categoryWithSubCategories.category.name.toString()}
-							</h4>
-							{categoryWithSubCategories.subCategories.map(
-								(subCategory, i) => (
-									<div key={i}>
-										{subCategory.name.toString()}
-									</div>
-								)
-							)}
-						</li>
+							</Typography>
+							<List>
+								{categoryWithSubCategories.subCategories.map(
+									(subCategory, i) => (
+										<ListItem key={subCategory.id.value}>
+											{subCategory.name.toString()}
+										</ListItem>
+									)
+								)}
+							</List>
+						</ListItem>
 					))}
-			</ul>
+			</List>
 		</RightSidebarReactTab>
 	);
 };

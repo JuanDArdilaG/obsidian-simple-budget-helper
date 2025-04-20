@@ -2,10 +2,9 @@ import { useContext, useEffect, useState } from "react";
 import { ContextMenu } from "apps/obsidian-plugin/components/ContextMenu";
 import { CheckCircle, CircleX, EqualNot } from "lucide-react";
 import { Account, AccountBalance } from "contexts/Accounts/domain";
-import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
 import { TransactionsContext } from "../Contexts";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
-import { Input } from "apps/obsidian-plugin/components/Input/Input";
+import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 
 export const AccountsListContextMenu = ({
 	account,
@@ -19,13 +18,13 @@ export const AccountsListContextMenu = ({
 		useCases: { adjustAccount },
 	} = useContext(TransactionsContext);
 
-	const [newBalance, setNewBalance] = useState(account.balance);
+	const [newBalance, setNewBalance] = useState(account.balance.value);
 	const [askForNewAmount, setAskForNewAmount] = useState(false);
 
 	const handleAdjust = async () => {
 		await adjustAccount.execute({
 			accountID: account.id,
-			newBalance,
+			newBalance: new AccountBalance(newBalance),
 		});
 		await onAdjust();
 	};
@@ -86,15 +85,11 @@ export const AccountsListContextMenu = ({
 					</li>
 					{askForNewAmount && (
 						<div style={{ display: "flex", width: "100%" }}>
-							<Input<PriceValueObject>
+							<PriceInput
 								id="newAmount"
-								value={newBalance}
 								label="New balance"
-								onChange={(e) =>
-									setNewBalance(
-										new AccountBalance(e.valueOf())
-									)
-								}
+								value={newBalance}
+								onChange={setNewBalance}
 							/>
 
 							<CheckCircle

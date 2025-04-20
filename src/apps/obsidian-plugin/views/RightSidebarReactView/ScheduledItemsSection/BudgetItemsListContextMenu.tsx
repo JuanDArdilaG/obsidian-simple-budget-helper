@@ -1,4 +1,4 @@
-import { ScheduledItem } from "contexts/ScheduledItems/domain";
+import { Item } from "contexts/Items/domain";
 import { ContextMenu } from "apps/obsidian-plugin/components/ContextMenu";
 import { Pencil } from "lucide-react";
 import { useLogger } from "../../../hooks/useLogger";
@@ -10,7 +10,7 @@ export const BudgetItemsListContextMenu = ({
 	item,
 	setAction,
 }: {
-	item: ScheduledItem;
+	item: Item;
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
@@ -18,8 +18,8 @@ export const BudgetItemsListContextMenu = ({
 	const logger = useLogger("BudgetItemsListContextMenu");
 	const { plugin } = useContext(AppContext);
 	const {
-		useCases: { deleteScheduledItem },
-		updateScheduledItems,
+		useCases: { deleteItem },
+		updateItems,
 	} = useContext(ItemsContext);
 
 	return (
@@ -68,10 +68,8 @@ export const BudgetItemsListContextMenu = ({
 								plugin.app,
 								async (confirm) => {
 									if (confirm) {
-										await deleteScheduledItem.execute(
-											item.id
-										);
-										updateScheduledItems();
+										await deleteItem.execute(item.id);
+										updateItems();
 									}
 								}
 							).open();

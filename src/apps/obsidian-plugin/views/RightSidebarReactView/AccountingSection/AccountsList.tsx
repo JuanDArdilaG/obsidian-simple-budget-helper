@@ -1,11 +1,11 @@
 import { useContext, useMemo, useState } from "react";
-import { ActionButtons } from "apps/obsidian-plugin/components/ActionButtons";
 import { AccountsListContextMenu } from "./AccountsListContextMenu";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { Account } from "contexts/Accounts/domain";
-import { CreateAccountPanel } from "apps/obsidian-plugin/panels";
 import { AccountsContext, TransactionsContext } from "../Contexts";
 import { AccountsReport } from "contexts/Reports/domain/accounts-report.entity";
+import { CreateAccountPanel } from "apps/obsidian-plugin/panels/CreateAccountPanel";
+import { List, ListItem, Typography } from "@mui/material";
 
 export const AccountsList = () => {
 	const { accounts, updateAccounts } = useContext(AccountsContext);
@@ -17,7 +17,12 @@ export const AccountsList = () => {
 	const [showCreateForm, setShowCreateForm] = useState(false);
 
 	return (
-		<RightSidebarReactTab title="Accounts" subtitle>
+		<RightSidebarReactTab
+			title="Accounts"
+			handleCreate={async () => setShowCreateForm(!showCreateForm)}
+			handleRefresh={async () => updateAccounts()}
+			isCreating={showCreateForm}
+		>
 			{selectedAccount && (
 				<AccountsListContextMenu
 					account={selectedAccount}
@@ -27,13 +32,6 @@ export const AccountsList = () => {
 					}}
 				/>
 			)}
-
-			<ActionButtons
-				handleCreateClick={async () =>
-					setShowCreateForm(!showCreateForm)
-				}
-				isCreating={showCreateForm}
-			/>
 			{showCreateForm && (
 				<CreateAccountPanel
 					onCreate={() => {
@@ -42,8 +40,8 @@ export const AccountsList = () => {
 					}}
 				/>
 			)}
-			<h4>
-				Assets
+			<Typography variant="h4">
+				Assets{" "}
 				<span
 					style={{
 						fontSize: "0.7em",
@@ -53,27 +51,29 @@ export const AccountsList = () => {
 				>
 					Total: {report.getTotalForAssets().toString()}
 				</span>
-			</h4>
-			<ul>
+			</Typography>
+			<List>
 				{accounts
 					.filter((acc) => acc.type.isAsset())
 					.sort(
 						(accA, accB) =>
-							accB.balance.toNumber() - accA.balance.toNumber()
+							accB.balance.value.toNumber() -
+							accA.balance.value.toNumber()
 					)
-					.map((account, i) => (
-						<li
-							key={i}
+					.map((account) => (
+						<ListItem
+							key={account.id.value}
 							onContextMenu={() => setSelectedAccount(account)}
 						>
-							{account.name.toString()}:{" "}
-							{account.balance.toString()}
-							<hr />
-						</li>
+							<Typography variant="body1">
+								{account.name.toString()}:{" "}
+								{account.balance.value.toString()}
+							</Typography>
+						</ListItem>
 					))}
-			</ul>
-			<h4>
-				Liabilities
+			</List>
+			<Typography variant="h4">
+				Liabilities{" "}
 				<span
 					style={{
 						fontSize: "0.7em",
@@ -83,25 +83,27 @@ export const AccountsList = () => {
 				>
 					Total: {report.getTotalForLiabilites().toString()}
 				</span>
-			</h4>
-			<ul>
+			</Typography>
+			<List>
 				{accounts
 					.filter((acc) => acc.type.isLiability())
 					.sort(
 						(accA, accB) =>
-							accB.balance.toNumber() - accA.balance.toNumber()
+							accB.balance.value.toNumber() -
+							accA.balance.value.toNumber()
 					)
-					.map((account, i) => (
-						<li
-							key={i}
+					.map((account) => (
+						<ListItem
+							key={account.id.value}
 							onContextMenu={() => setSelectedAccount(account)}
 						>
-							{account.name.toString()}:{" "}
-							{account.balance.toString()}
-							<hr />
-						</li>
+							<Typography variant="body1">
+								{account.name.toString()}:{" "}
+								{account.balance.value.toString()}
+							</Typography>
+						</ListItem>
 					))}
-			</ul>
+			</List>
 			<br />
 			<div>Total: {report.getTotal().toString()}</div>
 		</RightSidebarReactTab>

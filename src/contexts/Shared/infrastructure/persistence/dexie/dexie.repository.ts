@@ -12,7 +12,7 @@ export abstract class DexieRepository<
 	P extends EntityComposedValue
 > implements IRepository<ID, T, P>
 {
-	#logger = new Logger("DexieRepository");
+	readonly #logger = new Logger("DexieRepository");
 	protected readonly _table: EntityTable<P, "id">;
 
 	constructor(
@@ -45,7 +45,6 @@ export abstract class DexieRepository<
 	}
 
 	async findByCriteria(criteria: Criteria<P>): Promise<T[]> {
-		//TODO: complete implementation
 		const table = this._table;
 		this.#logger.debug("findByCriteria dexie repository", {
 			criteria,
@@ -58,18 +57,23 @@ export abstract class DexieRepository<
 			});
 			collection = collection.and((p) => {
 				const value = p[field];
-				this.#logger.debug("evaluating filter", {
-					value: p[field],
-				});
-				return filter.operator === "EQUAL"
-					? value === filter.value
-					: filter.operator === "LESS_THAN_OR_EQUAL" &&
-					  filter.value &&
-					  value
-					? value <= filter.value
-					: filter.operator === "NOT_EQUAL"
-					? value !== filter.value
-					: false;
+
+				if (filter.operator === "EQUAL") return value === filter.value;
+				if (filter.operator === "NOT_EQUAL")
+					return value !== filter.value;
+
+				if (filter.value && value) {
+					if (filter.operator === "GREATER_THAN")
+						return value > filter.value;
+					if (filter.operator === "GREATER_THAN_OR_EQUAL")
+						return value >= filter.value;
+					if (filter.operator === "LESS_THAN")
+						return value < filter.value;
+					if (filter.operator === "LESS_THAN_OR_EQUAL")
+						return value <= filter.value;
+				}
+
+				return false;
 			});
 		});
 		const res = await collection.toArray();

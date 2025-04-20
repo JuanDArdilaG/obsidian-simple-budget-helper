@@ -1,48 +1,62 @@
-import { ValueObject as LibValueObject } from "@juandardilag/value-objects/ValueObject";
 import { ValueObject } from "../domain";
 import { Entity } from "../domain/entity.abstract";
-import { Config } from "./config/config";
 
 export class Logger {
+	private static _debugMode: boolean = false;
 	constructor(
-		readonly name: string,
+		private _name: string = "Logger",
 		private _title: string = "",
 		private _body: Record<string, any> = {}
 	) {}
 
+	static setDebugMode(debugMode: boolean) {
+		Logger._debugMode = debugMode;
+	}
+
+	setName(name: string) {
+		this._name = name;
+	}
+
 	debug(title: string, body?: Record<string, any>) {
-		if (!Config.debug) return;
+		if (!Logger._debugMode) return;
 		console.log({
-			_title: `${this.name}: ${title}`,
+			_title: `${this._name}: ${title}`,
 			...this.#mapBody(body),
 		});
 	}
 
-	debugB(title: string, body?: Record<string, any>): Logger {
+	error(title: string, body?: Record<string, any>) {
+		console.error({
+			_title: `${this._name}: ${title}`,
+			...this.#mapBody(body),
+		});
+	}
+
+	debugB(title: string, body?: Record<string, any>): this {
 		this._title = title;
 		this._body = body ?? {};
 		return this;
 	}
 
-	title(t: string): Logger {
+	title(t: string): this {
 		this._title = t;
 		return this;
 	}
 
-	attr(n: string, v: any): Logger {
+	attr(n: string, v: any): this {
 		this._body[n] = v;
 		return this;
 	}
 
-	obj(o: Record<string, any>): Logger {
+	obj(o: Record<string, any>): this {
 		this._body = { ...this._body, ...o };
 		return this;
 	}
 
 	log() {
-		if (!Config.debug) return;
+		if (!Logger._debugMode) return;
 		console.log({
-			_title: `${this.name}: ${this._title}`,
+			_title: `${this._name}: ${this._title}`,
 			...this.#mapBody(this._body),
 		});
 		this._title = "";
@@ -63,12 +77,8 @@ export class Logger {
 	}
 
 	#mapValue(value: any): any {
-		return value instanceof ValueObject
-			? value.value
-			: value instanceof LibValueObject
-			? value.valueOf()
-			: value instanceof Entity
-			? value.toPrimitives()
-			: value;
+		if (value instanceof ValueObject) return value.value;
+		if (value instanceof Entity) return value.toPrimitives();
+		return value ? value.valueOf() : value;
 	}
 }

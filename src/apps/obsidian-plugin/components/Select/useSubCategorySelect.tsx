@@ -15,6 +15,7 @@ export const useSubCategorySelect = ({
 	category,
 	lock,
 	setLock,
+	overrideSubCategoriesIDs,
 }: {
 	label?: string;
 	initialValueName?: SubCategoryName;
@@ -22,30 +23,44 @@ export const useSubCategorySelect = ({
 	category?: Category;
 	lock?: boolean;
 	setLock?: (lock: boolean) => void;
+	overrideSubCategoriesIDs?: SubCategoryID[];
 }) => {
 	const [subCategoryName, setSubCategoryName] = useState(
-		initialValueName?.valueOf() ?? ""
+		initialValueName?.value ?? ""
 	);
 	const [subCategory, setSubCategory] = useState<SubCategory>();
 
 	const { subCategories, getSubCategoriesByCategory, getSubCategoryByID } =
 		useContext(CategoriesContext);
 
-	const subCategoriesNames = useMemo(
-		() =>
-			(category ? getSubCategoriesByCategory(category) : subCategories)
-				.map((acc) => acc.name.valueOf())
+	const subCategoriesNames = useMemo(() => {
+		if (category)
+			return getSubCategoriesByCategory(category)
+				.map((cat) => cat.name.value)
 				.unique()
-				.sort(),
-		[subCategories, category]
-	);
+				.sort((a, b) => a.localeCompare(b));
+		return (
+			!overrideSubCategoriesIDs
+				? subCategories.map((acc) => acc.name.value)
+				: [
+						...new Set(
+							overrideSubCategoriesIDs.map((subID) => subID.value)
+						),
+				  ].map(
+						(subID) =>
+							getSubCategoryByID(new SubCategoryID(subID))?.name
+								.value ?? `not found id: ${subID}`
+				  )
+		)
+			.unique()
+			.sort((a, b) => a.localeCompare(b));
+	}, [subCategories, category, overrideSubCategoriesIDs]);
 
 	useEffect(() => {
 		if (initialValueID)
 			setSubCategoryName(
-				getSubCategoryByID(
-					new SubCategoryID(initialValueID)
-				)?.name.valueOf() ?? ""
+				getSubCategoryByID(new SubCategoryID(initialValueID))?.name
+					.value ?? ""
 			);
 	}, [initialValueID]);
 

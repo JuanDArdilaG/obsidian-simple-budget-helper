@@ -1,4 +1,7 @@
-import { NumberValueObject } from "@juandardilag/value-objects/NumberValueObject";
+import {
+	NumberValueObject,
+	PriceValueObject,
+} from "@juandardilag/value-objects";
 import {
 	AccountBalance,
 	AccountID,
@@ -15,8 +18,8 @@ const logger: Logger = new Logger("Account");
 export class Account extends Entity<AccountID, AccountPrimitives> {
 	constructor(
 		id: AccountID,
-		private _type: AccountType,
-		private _name: AccountName,
+		private readonly _type: AccountType,
+		private readonly _name: AccountName,
 		private _balance: AccountBalance
 	) {
 		super(id);
@@ -48,7 +51,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			id: this._id.value,
 			type: this._type.value,
 			transaction: transaction.toPrimitives(),
-			balance: this._balance.valueOf(),
+			balance: this._balance.value,
 		});
 		this._balance = this._balance.plus(
 			transaction
@@ -83,7 +86,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			id: this._id.value,
 			type: this._type.value,
 			name: this._name.value,
-			balance: this._balance.valueOf(),
+			balance: this._balance.value.value,
 		};
 	}
 
@@ -97,7 +100,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			new AccountID(id),
 			new AccountType(type),
 			new AccountName(name),
-			new AccountBalance(balance)
+			new AccountBalance(new PriceValueObject(balance))
 		);
 	}
 

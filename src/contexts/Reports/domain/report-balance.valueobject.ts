@@ -1,3 +1,3 @@
-import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
+import { PriceValueObject } from "@juandardilag/value-objects";
 
 export class ReportBalance extends PriceValueObject {}

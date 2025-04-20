@@ -1,9 +1,6 @@
-import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 import { GroupByYearMonthDay } from "./reports-service.interface";
 import { ReportBalance } from "./report-balance.valueobject";
-
-const logger = new Logger("TransactionsReport");
 
 export type TransactionWithAccumulatedBalance = {
 	transaction: Transaction;
@@ -12,7 +9,7 @@ export type TransactionWithAccumulatedBalance = {
 };
 
 export class TransactionsReport {
-	constructor(private _transactions: Transaction[]) {}
+	constructor(private readonly _transactions: Transaction[]) {}
 
 	get transactions(): Transaction[] {
 		return this._transactions;
@@ -20,10 +17,10 @@ export class TransactionsReport {
 
 	sortedByDate(direction: "asc" | "desc" = "asc"): TransactionsReport {
 		return new TransactionsReport(
-			this._transactions.sort((a, b) =>
+			this._transactions.toSorted((a, b) =>
 				direction === "asc"
-					? a.date.compare(b.date)
-					: b.date.compare(a.date)
+					? a.date.compareTo(b.date)
+					: b.date.compareTo(a.date)
 			)
 		);
 	}
@@ -48,7 +45,7 @@ export class TransactionsReport {
 
 		const sortedReport = this.sortedByDate("asc");
 
-		let accumulated: Record<string, ReportBalance> = {};
+		const accumulated: Record<string, ReportBalance> = {};
 		return sortedReport.transactions
 			.map((transaction) => {
 				const transactions: TransactionWithAccumulatedBalance[] = [];
@@ -61,13 +58,6 @@ export class TransactionsReport {
 				].plus(
 					transaction.getRealAmountForAccount(transaction.account)
 				);
-				logger.debug("accumulating transaction", {
-					transaction: transaction.toPrimitives(),
-					realAmount: transaction
-						.getRealAmountForAccount(transaction.account)
-						.valueOf(),
-					accumulated,
-				});
 				transactions.push({
 					transaction,
 					balance: accumulated[transaction.account.value],

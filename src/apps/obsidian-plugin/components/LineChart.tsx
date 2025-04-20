@@ -1,4 +1,4 @@
-import { PriceValueObject } from "@juandardilag/value-objects/PriceValueObject";
+import { PriceValueObject } from "@juandardilag/value-objects";
 import { FunctionComponent } from "react";
 import {
 	LineChart as RechartsLineChart,

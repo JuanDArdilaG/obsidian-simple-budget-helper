@@ -23,7 +23,10 @@ export const useAccountSelect = ({
 
 	const { accounts, getAccountByID } = useContext(AccountsContext);
 	const accountNames = useMemo(
-		() => accounts.map((acc) => acc.name.value).sort(),
+		() =>
+			accounts
+				.map((acc) => acc.name.value)
+				.toSorted((a, b) => a.localeCompare(b)),
 		[accounts]
 	);
 

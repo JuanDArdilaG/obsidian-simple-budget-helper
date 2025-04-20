@@ -7,6 +7,7 @@ import {
 	AccountName,
 } from "../../../../src/contexts/Accounts/domain";
 import { buildTestTransactions } from "../../Reports/domain/buildTestTransactions";
+import { PriceValueObject } from "@juandardilag/value-objects";
 
 describe("adjustOnTransactionDeletion", () => {
 	it("account balance should be adjust on expense transaction", () => {
@@ -15,7 +16,7 @@ describe("adjustOnTransactionDeletion", () => {
 
 		account.adjustOnTransactionDeletion(transactions[0]);
 
-		expect(account.balance.valueOf()).toBe(100);
+		expect(account.balance.value.value).toBe(100);
 	});
 
 	it("account balance should be adjust on income transaction", () => {
@@ -26,7 +27,7 @@ describe("adjustOnTransactionDeletion", () => {
 
 		account.adjustOnTransactionDeletion(transactions[0]);
 
-		expect(account.balance.valueOf()).toBe(-100);
+		expect(account.balance.value.value).toBe(-100);
 	});
 
 	it("account balance should be adjust on transfer transaction - account", () => {
@@ -37,7 +38,7 @@ describe("adjustOnTransactionDeletion", () => {
 
 		account.adjustOnTransactionDeletion(transactions[0]);
 
-		expect(account.balance.valueOf()).toBe(100);
+		expect(account.balance.value.value).toBe(100);
 	});
 
 	it("account balance should be adjust on transfer transaction - toAccount", () => {
@@ -48,7 +49,7 @@ describe("adjustOnTransactionDeletion", () => {
 
 		account.adjustOnTransactionDeletion(transactions[0]);
 
-		expect(account.balance.valueOf()).toBe(-100);
+		expect(account.balance.value.value).toBe(-100);
 	});
 });
 
@@ -57,6 +58,6 @@ const buildTestAccount = (): Account => {
 		AccountID.generate(),
 		AccountType.asset(),
 		new AccountName("name"),
-		new AccountBalance(0)
+		new AccountBalance(PriceValueObject.zero())
 	);
 };

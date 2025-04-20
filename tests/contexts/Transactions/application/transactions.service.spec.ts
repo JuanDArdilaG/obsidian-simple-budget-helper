@@ -65,12 +65,12 @@ describe("update", () => {
 
 		await transactionsService.update(updatedTransaction);
 
-		expect(accounts[0].balance.valueOf()).toEqual(10);
-		expect(accounts[1].balance.valueOf()).toEqual(-10);
-		expect(accounts[2].balance.valueOf()).toEqual(0);
+		expect(accounts[0].balance.value.value).toEqual(10);
+		expect(accounts[1].balance.value.value).toEqual(-10);
+		expect(accounts[2].balance.value.value).toEqual(0);
 		expect(transactions[0].account.value).toEqual(accounts[1].id.value);
 		expect(transactions[0].toAccount?.value).toEqual(accounts[2].id.value);
-		expect(transactions[0].amount.valueOf()).toEqual(10);
+		expect(transactions[0].amount.value).toEqual(10);
 	});
 });
 

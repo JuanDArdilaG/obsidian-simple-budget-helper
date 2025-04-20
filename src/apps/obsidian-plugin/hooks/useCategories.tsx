@@ -71,11 +71,7 @@ export const useCategories = ({
 	}, [updateSubCategories]);
 
 	const getCategoryByID = useCallback(
-		(id: CategoryID) => {
-			const cat = categories.find((cat) => cat.id.equalTo(id));
-			logger.debug("searching category", { categories, id, cat });
-			return cat;
-		},
+		(id: CategoryID) => categories.find((cat) => cat.id.equalTo(id)),
 		[categories]
 	);
 
