@@ -1,20 +1,24 @@
-import { Account, AccountID } from "contexts/Accounts/domain";
-import { GetAllCategoriesWithSubCategoriesUseCaseOutput } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
+import { Account, AccountBalance } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
 import { Item } from "contexts/Items/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { SubCategory } from "contexts/Subcategories/domain";
 import { ReportBalance } from "./report-balance.valueobject";
-import {
-	DateValueObject,
-	NumberValueObject,
-} from "@juandardilag/value-objects";
-import { ItemOperation } from "contexts/Shared/domain";
+import { NumberValueObject } from "@juandardilag/value-objects";
+import { GetAllCategoriesWithSubCategoriesUseCaseOutput } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 
 export type ItemWithAccumulatedBalance = {
 	item: Item;
-	balance: ReportBalance;
-	prevBalance: ReportBalance;
+	accountPrevBalance: AccountBalance;
+	accountBalance: AccountBalance;
+	toAccountPrevBalance?: AccountBalance;
+	toAccountBalance?: AccountBalance;
+};
+
+export type ItemWithAccounts = {
+	item: Item;
+	account: Account;
+	toAccount?: Account;
 };
 
 export type ItemsWithCategoryAndSubCategory = {
@@ -41,16 +45,6 @@ export class ItemsReport {
 	readonly #logger = new Logger("ItemsReport");
 	constructor(readonly items: Item[]) {}
 
-	sortedByDate(direction: "asc" | "desc" = "asc"): ItemsReport {
-		return new ItemsReport(
-			this.items.toSorted((a, b) =>
-				direction === "asc"
-					? a.date.compare(b.date)
-					: b.date.compare(a.date)
-			)
-		);
-	}
-
 	onlyExpenses(): ItemsReport {
 		return new ItemsReport(
 			this.items.filter((item) => item.operation.isExpense())
@@ -60,12 +54,6 @@ export class ItemsReport {
 	onlyIncomes(): ItemsReport {
 		return new ItemsReport(
 			this.items.filter((item) => item.operation.isIncome())
-		);
-	}
-
-	untilDate(date: DateValueObject): ItemsReport {
-		return new ItemsReport(
-			this.items.filter((item) => item.date.isLessOrEqualThan(date))
 		);
 	}
 
@@ -83,82 +71,124 @@ export class ItemsReport {
 		);
 	}
 
-	withAccumulatedBalance(accounts: Account[]): ItemWithAccumulatedBalance[] {
-		this.#logger.debug("withAccumulatedBalance", { accounts });
-		if (!this.items.length) return [];
+	preValidate(): boolean {
+		this.#logger.debug("preValidate", {
+			length: this.items.length,
+		});
+		return this.items.length > 0;
+	}
 
-		let accumulated: Record<string, ReportBalance> = {};
-		return this.sortedByDate("asc")
-			.items.map((item) => ({
-				item,
-				account: accounts.find((acc) => acc.id.equalTo(item.account)),
-			}))
-			.map(({ item, account }) => {
-				if (!account)
-					return {
-						item,
-						balance: ReportBalance.zero(),
-						prevBalance: ReportBalance.zero(),
-					};
-				const itemsWithBalance: ItemWithAccumulatedBalance[] = [];
-				if (!accumulated[item.account.value])
-					accumulated[item.account.value] =
-						account?.balance.value ?? ReportBalance.zero();
+	sort(): void {
+		this.items.sort((a, b) => a.date.compare(b.date));
+		this.#logger.debug("sort", {
+			items: [...this.items],
+		});
+	}
 
-				const prevBalance = accumulated[item.account.value];
-				accumulated[item.account.value] = accumulated[
-					item.account.value
-				].plus(item.getRealPriceForAccount(account));
+	filter(): void {}
 
-				const toAccount = item.toAccount
-					? accounts.find((acc) =>
-							acc.id.equalTo(item.toAccount ?? new AccountID(""))
-					  )
-					: undefined;
-				if (item.operation.isTransfer() && toAccount) {
-					const expenseTransaction = item.copy();
-					expenseTransaction.updateOperation(ItemOperation.expense());
-
-					itemsWithBalance.push({
-						item: expenseTransaction,
-						balance: accumulated[item.account.value],
-						prevBalance,
-					});
-				} else {
-					itemsWithBalance.push({
-						item,
-						balance: accumulated[item.account.value],
-						prevBalance,
-					});
-				}
-
-				this.#logger.debug("item", {
+	addAccounts(accounts: Account[]): ItemWithAccounts[] {
+		return this.items
+			.filter((item) => {
+				this.#logger.debug("addAccounts", {
 					item,
-					operation: item.operation,
+					account: accounts.find((acc) =>
+						acc.id.equalTo(item.account)
+					),
 				});
-				if (item.operation.isTransfer() && toAccount) {
-					this.#logger.debug("transfer item", { item });
-					if (!accumulated[toAccount.id.value])
-						accumulated[toAccount.id.value] =
-							toAccount.balance.value;
-
-					const prevBalance = accumulated[toAccount.id.value];
-					accumulated[toAccount.id.value] = accumulated[
-						toAccount.id.value
-					].plus(item.getRealPriceForAccount(toAccount));
-
-					const incomeTransaction = item.copy();
-					incomeTransaction.updateOperation(ItemOperation.income());
-					incomeTransaction.updateAccount(toAccount.id);
-					itemsWithBalance.push({
-						item: incomeTransaction,
-						balance: accumulated[toAccount.id.value],
-						prevBalance,
-					});
-				}
-				return itemsWithBalance;
+				return accounts.find((acc) => acc.id.equalTo(item.account));
 			})
-			.flat();
+			.map((item) => ({
+				item,
+				account: accounts.find((acc) => acc.id.equalTo(item.account))!,
+				toAccount:
+					item.toAccount &&
+					accounts.find((acc) => acc.id.equalTo(item.toAccount!)),
+			}));
+	}
+
+	initialAccountsBalance(
+		itemsWithAccount: ItemWithAccounts[]
+	): Record<string, AccountBalance> {
+		const result: Record<string, AccountBalance> = {};
+		itemsWithAccount.forEach(({ account, toAccount }) => {
+			result[account.id.value] = account.balance;
+			if (toAccount) result[toAccount.id.value] = toAccount.balance;
+		});
+		this.#logger.debug("initialAccountsBalance", {
+			result,
+		});
+		return result;
+	}
+
+	addItemToAccountBalance(
+		itemWithAccount: ItemWithAccounts,
+		accountBalance: AccountBalance,
+		toAccountBalance?: AccountBalance
+	): {
+		newAccountBalance: AccountBalance;
+		newToAccountBalance?: AccountBalance;
+	} {
+		accountBalance = accountBalance.plus(
+			itemWithAccount.item.getRealPriceForAccount(itemWithAccount.account)
+		);
+
+		if (toAccountBalance && itemWithAccount.toAccount)
+			toAccountBalance = toAccountBalance.plus(
+				itemWithAccount.item.getRealPriceForAccount(
+					itemWithAccount.toAccount
+				)
+			);
+
+		this.#logger.debug("addItemToAccountBalance", {
+			itemWithAccount,
+			accountBalance,
+			toAccountBalance,
+		});
+
+		return {
+			newAccountBalance: accountBalance,
+			newToAccountBalance: toAccountBalance,
+		};
+	}
+
+	execute(accounts: Account[]): ItemWithAccumulatedBalance[] {
+		if (!this.preValidate()) return [];
+		this.sort();
+		this.filter();
+		const itemsWithAccount = this.addAccounts(accounts);
+		this.#logger.debug("itemsWithAccount", {
+			itemsWithAccount,
+		});
+		const initialAccountsBalance =
+			this.initialAccountsBalance(itemsWithAccount);
+
+		return itemsWithAccount.map(({ item, account, toAccount }) => {
+			const accountPrevBalance =
+				initialAccountsBalance[item.account.value];
+			const toAccountPrevBalance =
+				item.toAccount && initialAccountsBalance[item.toAccount.value];
+
+			const { newAccountBalance, newToAccountBalance } =
+				this.addItemToAccountBalance(
+					{ item, account, toAccount },
+					accountPrevBalance,
+					toAccountPrevBalance
+				);
+
+			initialAccountsBalance[item.account.value] = newAccountBalance;
+			if (item.toAccount && newToAccountBalance)
+				initialAccountsBalance[item.toAccount.value] =
+					newToAccountBalance;
+
+			return {
+				item,
+				accountPrevBalance,
+				accountBalance: newAccountBalance,
+				toAccountPrevBalance,
+				toAccountBalance: newToAccountBalance,
+			};
+		});
 	}
 
 	groupPerCategory(
@@ -171,14 +201,11 @@ export class ItemsReport {
 		const res: ItemsWithCategoryAndSubCategory[] = [];
 		const totalExpenses = this.onlyExpenses().getTotalPerMonth().abs();
 		const totalIncomes = this.onlyIncomes().getTotalPerMonth().abs();
-		let expenses = NumberValueObject.zero();
-		let inverseOperation = NumberValueObject.zero();
+		const expenses = NumberValueObject.zero();
+		const inverseOperation = NumberValueObject.zero();
 		this.items
 			.filter((item) => !item.operation.isTransfer())
 			.forEach((item) => {
-				if (item.category.value === "wqL5sFi3s_bJV_Gl8sngb") {
-					this.#logger.debug("loan item", { item });
-				}
 				const categoryWithSubCategories =
 					categoriesWithSubcategories.find(({ category }) =>
 						category.id.equalTo(item.category)

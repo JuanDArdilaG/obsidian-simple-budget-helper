@@ -155,6 +155,7 @@ export const CreateItemForm = ({
 			subCategory: subCategory?.id.value ?? "",
 			account: account?.id.value ?? "",
 			toAccount: toAccount?.id.value,
+			date,
 		});
 
 		await onSubmit(itemToPersist, new TransactionDate(date));

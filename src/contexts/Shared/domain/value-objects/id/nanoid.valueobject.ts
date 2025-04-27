@@ -4,14 +4,14 @@ import { InvalidArgumentError } from "contexts/Shared/domain/errors";
 
 export class Nanoid extends IDValueObject {
 	constructor(name: string, value: string) {
-		super(name, value, { minLength: 21, maxLength: 21 });
+		super(value, { minLength: 21, maxLength: 21 });
 		this.validate();
 	}
 
 	validate(): void {
 		if (this.value.length !== 21)
 			throw new InvalidArgumentError(
-				this._name,
+				"nanoid",
 				this.value,
 				"invalid nanoid"
 			);

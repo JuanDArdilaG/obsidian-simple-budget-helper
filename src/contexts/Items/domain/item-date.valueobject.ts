@@ -54,8 +54,10 @@ export class ItemDate extends DateValueObject {
 	}
 
 	toPrettyFormatDate(): string {
-		return `${this.value.getDate()}/${
-			this.value.getMonth() + 1
-		}/${this.value.getFullYear()}`;
+		return this.toLocaleDateString("default", {
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+		});
 	}
 }

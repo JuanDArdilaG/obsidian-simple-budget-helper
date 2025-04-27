@@ -10,6 +10,7 @@ import { RecordItemPanel } from "apps/obsidian-plugin/panels/RecordItemPanel";
 import { EditItemPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemPanel";
 import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
 import { ItemReportContext } from "../../Contexts/ItemReportContext";
+import { AccountBalance, AccountName } from "contexts/Accounts/domain";
 
 export const CalendarItemsList = ({
 	items,
@@ -29,7 +30,7 @@ export const CalendarItemsList = ({
 	updateItems: () => void;
 }) => {
 	const logger = useLogger("CalendarItemsList");
-	const { getAccountByID, accounts } = useContext(AccountsContext);
+	const { accounts, getAccountByID } = useContext(AccountsContext);
 	const {
 		useCases: { getTotal },
 	} = useContext(ItemReportContext);
@@ -43,8 +44,8 @@ export const CalendarItemsList = ({
 		() => new ItemsReport(items.map((i) => i.item)),
 		[items]
 	);
-	const withAccumulatedBalanceItems = useMemo(
-		() => itemsReport.withAccumulatedBalance(accounts),
+	const itemsWithAccountsBalance = useMemo(
+		() => itemsReport.execute(accounts),
 		[itemsReport, accounts]
 	);
 
@@ -116,140 +117,217 @@ export const CalendarItemsList = ({
 				</div>
 			</div>
 			<ul>
-				{withAccumulatedBalanceItems.map(
-					({ item, balance, prevBalance }, index) => {
-						const account = getAccountByID(
-							item.operation.isTransfer() &&
-								item.toAccount &&
-								item.price.isNegative()
-								? item.toAccount
-								: item.account
-						);
-						const remainingDays = item.date.remainingDays;
-
-						let remainingDaysColor = "";
-						if (remainingDays < -3)
-							remainingDaysColor = "var(--color-red)";
-						else if (Math.abs(remainingDays) <= 3)
-							remainingDaysColor = "var(--color-yellow)";
-						else remainingDaysColor = "var(--color-green)";
-
-						return (
-							<div key={`${item.id.value}-${index}`}>
-								<li
-									onClick={() => {
-										setShowPanel(undefined);
-									}}
-									onContextMenu={(e) => {
-										e.preventDefault();
-										setShowPanel(undefined);
-										setSelectedItem(item);
-									}}
-									onKeyDown={() => {}}
-								>
-									<div className="two-columns-list">
-										<span>
-											{item.name.value}{" "}
-											<span className="light-text">
-												{item.recurrence?.frequency
-													.value ?? undefined}
-											</span>
-											<br />
-											<span
-												style={{
-													fontSize: "0.9em",
-													marginLeft: "15px",
-												}}
-											>
-												{item.date.toPrettyFormatDate()}
-												<br />
-												<span
-													style={{
-														color: remainingDaysColor,
-														marginLeft: "15px",
-													}}
-												>
-													{item.date.remainingDaysStr}
-												</span>
-											</span>
-										</span>
-										<span style={{ textAlign: "right" }}>
-											<PriceLabel
-												price={
-													item.operation.isTransfer()
-														? item.price.negate()
-														: item.realPrice
-												}
-												operation={item.operation}
-											/>
-											<span
-												style={{
-													marginLeft: "8px",
-													paddingTop: "20px",
-												}}
-											>
-												<Forward
-													style={{
-														cursor: "pointer",
-														color: "var(--color-green)",
-													}}
-													size={19}
-													onClick={() => {
-														setAction("record");
-														setSelectedItem(item);
-													}}
-												/>
-											</span>
-											<br />
-											<div
-												style={{ textAlign: "right" }}
-												className="light-text"
-											>
-												<div>
-													{account?.name.toString()}
-												</div>
-												<div>
-													{prevBalance.toString()}{" "}
-													{"->"} {balance.toString()}
-												</div>
-											</div>
-										</span>
-									</div>
-								</li>
-								{item === showPanel?.item &&
-									showPanel.action === "record" && (
-										<RecordItemPanel
-											item={item}
-											onClose={() => {
-												updateItems();
-												setShowPanel(undefined);
-												setAction(undefined);
-											}}
-										/>
-									)}
-								{item === showPanel?.item &&
-									showPanel.action === "edit" && (
-										<EditItemPanel
-											recurrence={
-												items.find(
-													(r) => r.item === item
-												) ?? {
-													item,
-													n: NumberValueObject.zero(),
-												}
-											}
-											onClose={() => {
-												setShowPanel(undefined);
-												setAction(undefined);
-												updateItems();
-											}}
-										/>
-									)}
-							</div>
-						);
-					}
+				{itemsWithAccountsBalance.map(
+					(
+						{
+							item,
+							accountBalance,
+							accountPrevBalance,
+							toAccountBalance,
+							toAccountPrevBalance,
+						},
+						index
+					) => (
+						<>
+							<CalendarItemsListItem
+								key={item.id.value + index}
+								item={item}
+								accountName={
+									getAccountByID(item.account)?.name ??
+									AccountName.empty()
+								}
+								accountBalance={accountBalance}
+								accountPrevBalance={accountPrevBalance}
+								showPanel={showPanel}
+								setShowPanel={setShowPanel}
+								setSelectedItem={setSelectedItem}
+								setAction={setAction}
+								items={items}
+								updateItems={updateItems}
+							/>
+							{item.operation.isTransfer() &&
+								toAccountBalance &&
+								toAccountPrevBalance && (
+									<CalendarItemsListItem
+										key={
+											item.id.value + index + "-transfer"
+										}
+										item={item}
+										accountName={
+											(item.toAccount &&
+												getAccountByID(item.toAccount)
+													?.name) ??
+											AccountName.empty()
+										}
+										accountBalance={toAccountBalance}
+										accountPrevBalance={
+											toAccountPrevBalance
+										}
+										showPanel={showPanel}
+										setShowPanel={setShowPanel}
+										setSelectedItem={setSelectedItem}
+										setAction={setAction}
+										items={items}
+										updateItems={updateItems}
+									/>
+								)}
+						</>
+					)
 				)}
 			</ul>
+		</div>
+	);
+};
+
+const CalendarItemsListItem = ({
+	item,
+	accountName,
+	accountBalance,
+	accountPrevBalance,
+	showPanel,
+	setShowPanel,
+	setSelectedItem,
+	setAction,
+	items,
+	updateItems,
+}: {
+	item: Item;
+	accountName: AccountName;
+	accountBalance: AccountBalance;
+	accountPrevBalance: AccountBalance;
+	showPanel:
+		| {
+				item: Item;
+				action?: "edit" | "record";
+		  }
+		| undefined;
+	setShowPanel: React.Dispatch<
+		React.SetStateAction<
+			| {
+					item: Item;
+					action?: "edit" | "record";
+			  }
+			| undefined
+		>
+	>;
+	setSelectedItem: React.Dispatch<React.SetStateAction<Item | undefined>>;
+	setAction: React.Dispatch<
+		React.SetStateAction<"edit" | "record" | undefined>
+	>;
+	items: GetItemsUntilDateUseCaseOutput;
+	updateItems: () => void;
+}) => {
+	const remainingDays = item.date.remainingDays;
+	let remainingDaysColor = "";
+	if (remainingDays < -3) remainingDaysColor = "var(--color-red)";
+	else if (Math.abs(remainingDays) <= 3)
+		remainingDaysColor = "var(--color-yellow)";
+	else remainingDaysColor = "var(--color-green)";
+
+	return (
+		<div>
+			<li
+				onClick={() => {
+					setShowPanel(undefined);
+				}}
+				onContextMenu={(e) => {
+					e.preventDefault();
+					setShowPanel(undefined);
+					setSelectedItem(item);
+				}}
+				onKeyDown={() => {}}
+			>
+				<div className="two-columns-list">
+					<span>
+						{item.name.value}{" "}
+						<span className="light-text">
+							{item.recurrence?.frequency.value ?? undefined}
+						</span>
+						<br />
+						<span
+							style={{
+								fontSize: "0.9em",
+								marginLeft: "15px",
+							}}
+						>
+							{item.date.toPrettyFormatDate()}
+							<br />
+							<span
+								style={{
+									color: remainingDaysColor,
+									marginLeft: "15px",
+								}}
+							>
+								{item.date.remainingDaysStr}
+							</span>
+						</span>
+					</span>
+					<span style={{ textAlign: "right" }}>
+						<PriceLabel
+							price={
+								item.operation.isTransfer()
+									? item.price.negate()
+									: item.realPrice
+							}
+							operation={item.operation}
+						/>
+						<span
+							style={{
+								marginLeft: "8px",
+								paddingTop: "20px",
+							}}
+						>
+							<Forward
+								style={{
+									cursor: "pointer",
+									color: "var(--color-green)",
+								}}
+								size={19}
+								onClick={() => {
+									setAction("record");
+									setSelectedItem(item);
+								}}
+							/>
+						</span>
+						<br />
+						<div
+							style={{ textAlign: "right" }}
+							className="light-text"
+						>
+							<div>{accountName.toString()}</div>
+							<div>
+								{accountPrevBalance.value.toString()} {"->"}{" "}
+								{accountBalance.value.toString()}
+							</div>
+						</div>
+					</span>
+				</div>
+			</li>
+			{item === showPanel?.item && showPanel.action === "record" && (
+				<RecordItemPanel
+					item={item}
+					onClose={() => {
+						updateItems();
+						setShowPanel(undefined);
+						setAction(undefined);
+					}}
+				/>
+			)}
+			{item === showPanel?.item && showPanel.action === "edit" && (
+				<EditItemPanel
+					recurrence={
+						items.find((r) => r.item === item) ?? {
+							item,
+							n: NumberValueObject.zero(),
+						}
+					}
+					onClose={() => {
+						setShowPanel(undefined);
+						setAction(undefined);
+						updateItems();
+					}}
+				/>
+			)}
 		</div>
 	);
 };

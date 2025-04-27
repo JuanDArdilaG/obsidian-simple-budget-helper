@@ -5,7 +5,7 @@ import { ItemPrice } from "contexts/Items/domain";
 import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
 
 describe("withAccumulatedBalance", () => {
-	it("transfer item should generate two items (income and transfer)", () => {
+	it("one transfer item should return account and toAccount balances", () => {
 		const accounts = buildTestAccounts(2);
 		const items = buildTestItems([
 			{
@@ -16,10 +16,14 @@ describe("withAccumulatedBalance", () => {
 		]);
 		const report = new ItemsReport(items);
 
-		const withAccumulatedBalance = report.withAccumulatedBalance(accounts);
+		const withAccumulatedBalance = report.execute(accounts);
 
-		expect(withAccumulatedBalance).toHaveLength(2);
-		expect(withAccumulatedBalance[0].balance.value).toEqual(-100);
-		expect(withAccumulatedBalance[1].balance.value).toEqual(100);
+		expect(withAccumulatedBalance).toHaveLength(1);
+		expect(withAccumulatedBalance[0].accountPrevBalance.value).toEqual(0);
+		expect(withAccumulatedBalance[0].accountBalance.value).toEqual(-100);
+		expect(withAccumulatedBalance[0].toAccountPrevBalance?.value).toEqual(
+			0
+		);
+		expect(withAccumulatedBalance[0].toAccountBalance?.value).toEqual(100);
 	});
 });

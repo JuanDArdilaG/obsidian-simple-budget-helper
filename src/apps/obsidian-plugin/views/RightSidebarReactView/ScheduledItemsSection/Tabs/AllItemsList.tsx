@@ -33,10 +33,7 @@ export const AllItemsList = ({
 		useCases: { getTotalPerMonth },
 	} = useContext(ItemReportContext);
 
-	const itemsReport = useMemo(
-		() => new ItemsReport(items).sortedByDate(),
-		[items]
-	);
+	const itemsReport = useMemo(() => new ItemsReport(items), [items]);
 	const [showPanel, setShowPanel] = useState<{
 		item: Item;
 		action?: "edit" | "record";

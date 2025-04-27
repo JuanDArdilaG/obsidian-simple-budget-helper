@@ -1,4 +1,4 @@
-import { StringValueObject } from "contexts/Shared/domain/value-objects/string.valueobject";
+import { StringValueObject } from "@juandardilag/value-objects";
 
 export abstract class IDValueObject extends StringValueObject {
 	equalTo(other: IDValueObject): boolean {
