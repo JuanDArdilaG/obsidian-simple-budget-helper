@@ -2,12 +2,30 @@ import {
 	Account,
 	AccountID,
 	AccountName,
+	AccountPrimitives,
 	IAccountsService,
 } from "contexts/Accounts/domain";
+import { Criteria } from "contexts/Shared/domain";
 import { Transaction } from "contexts/Transactions/domain";
 
 export class AccountsServiceMock implements IAccountsService {
 	constructor(private _accounts: Account[]) {}
+
+	delete(id: AccountID): Promise<void> {
+		throw new Error("Method not implemented.");
+	}
+
+	exists(id: AccountID): Promise<boolean> {
+		throw new Error("Method not implemented.");
+	}
+
+	getAll(): Promise<Account[]> {
+		return Promise.resolve(this._accounts);
+	}
+
+	getByCriteria(criteria: Criteria<AccountPrimitives>): Promise<Account[]> {
+		throw new Error("Method not implemented.");
+	}
 
 	create(account: Account): Promise<void> {
 		throw new Error("Method not implemented.");

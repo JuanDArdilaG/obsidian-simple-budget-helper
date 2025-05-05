@@ -3,20 +3,27 @@ import {
 	SubCategory,
 	SubCategoryName,
 	ISubCategoriesRepository,
-	ISubCategoriesService,
+	SubcategoryPrimitives,
+	SubCategoryID,
 } from "../domain";
 import { CategoryID } from "contexts/Categories/domain/category-id.valueobject";
+import { Service } from "contexts/Shared/application/service.abstract";
 
-export class SubCategoriesService implements ISubCategoriesService {
-	constructor(private _subCategoriesRepository: ISubCategoriesRepository) {}
+export class SubCategoriesService extends Service<
+	SubCategoryID,
+	SubCategory,
+	SubcategoryPrimitives
+> {
+	constructor(
+		private readonly _subCategoriesRepository: ISubCategoriesRepository
+	) {
+		super("Subcategory", _subCategoriesRepository);
+	}
 
 	async create(subCategory: SubCategory): Promise<void> {
 		const existingSubcategory =
 			await this._subCategoriesRepository.findByName(subCategory.name);
-		if (
-			existingSubcategory &&
-			existingSubcategory.category.equalTo(subCategory.category)
-		)
+		if (existingSubcategory?.category.equalTo(subCategory.category))
 			throw new InvalidArgumentError(
 				"Subcategory",
 				subCategory.name.toString(),

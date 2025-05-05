@@ -9,6 +9,9 @@ import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.
 import { views } from "./config";
 import { LeftMenuItems } from "./ribbonIcon";
 import { SimpleBudgetHelperSettings, DEFAULT_SETTINGS } from "./PluginSettings";
+import { AwilixContainer } from "awilix";
+import { GetAllItemsUseCase } from "contexts/Items/application/get-all-items.usecase";
+import { UpdateItemUseCase } from "contexts/Items/application/update-item.usecase";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
@@ -50,10 +53,27 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		this.db = await importDB(new Blob([buffer]));
 	}
 
+	async migrateItems(container: AwilixContainer) {
+		const { items } = await container
+			.resolve<GetAllItemsUseCase>("getAllItemsUseCase")
+			.execute();
+		console.log({ items });
+		const updateItemUseCase =
+			container.resolve<UpdateItemUseCase>("updateItemUseCase");
+		await Promise.all(
+			items.map(async (item) => {
+				item.createAllRecurrences();
+				console.log({ item });
+				await updateItemUseCase.execute(item);
+			})
+		);
+	}
+
 	async onload() {
 		await this.loadSettings();
 		Logger.setDebugMode(this.settings.debugMode);
 		const container = buildContainer();
+		// await this.migrateItems(container);
 		this.db = (container.resolve("_db") as DexieDB).db;
 
 		await initStoragePersistence();

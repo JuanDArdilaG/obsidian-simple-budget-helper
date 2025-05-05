@@ -31,7 +31,7 @@ export class TransactionsService implements ITransactionsService {
 		private readonly _accountsService: IAccountsService,
 		private readonly _transactionsRepository: ITransactionsRepository,
 		private readonly _categoriesService: ICategoriesService,
-		private readonly _subCategoriesService: ISubCategoriesService
+		private readonly _subcategoriesService: ISubCategoriesService
 	) {}
 
 	async getAll(): Promise<Transaction[]> {
@@ -81,7 +81,7 @@ export class TransactionsService implements ITransactionsService {
 			new CategoryName("Adjustment")
 		);
 		const subCategory =
-			await this._subCategoriesService.getByNameWithCreation(
+			await this._subcategoriesService.getByNameWithCreation(
 				category.id,
 				new SubCategoryName("Adjustment")
 			);

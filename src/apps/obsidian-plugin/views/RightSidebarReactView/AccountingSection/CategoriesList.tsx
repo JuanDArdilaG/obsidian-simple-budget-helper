@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { CategoriesContext } from "../Contexts";
-import { CreateCategoryPanel } from "apps/obsidian-plugin/panels/CreateCategoryPanel";
+import { CreateCategoryPanel } from "apps/obsidian-plugin/Category/CreateCategoryPanel";
 import { List, ListItem, Typography } from "@mui/material";
 
 export const CategoriesList = () => {

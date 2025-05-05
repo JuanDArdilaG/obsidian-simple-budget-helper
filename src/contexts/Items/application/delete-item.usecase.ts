@@ -7,7 +7,7 @@ export type DeleteItemUseCaseInput = ItemID;
 export class DeleteItemUseCase
 	implements CommandUseCase<DeleteItemUseCaseInput>
 {
-	constructor(private _itemsService: ItemsService) {}
+	constructor(private readonly _itemsService: ItemsService) {}
 
 	async execute(id: ItemID): Promise<void> {
 		await this._itemsService.delete(id);

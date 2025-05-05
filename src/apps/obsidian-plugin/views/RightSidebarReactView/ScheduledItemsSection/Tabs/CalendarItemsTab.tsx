@@ -1,12 +1,13 @@
 import { useContext, useEffect, useState } from "react";
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
 import { BudgetItemsListContextMenu } from "../BudgetItemsListContextMenu";
-import { Item, ItemDate } from "contexts/Items/domain";
+import { ItemDate, ItemRecurrenceModification } from "contexts/Items/domain";
 import { useLogger } from "apps/obsidian-plugin/hooks";
 import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
 import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
 import { ItemsContext } from "../../Contexts/ItemsContext";
 import { CalendarItemsList } from "./CalendarItemsList";
+import { DateValueObject } from "@juandardilag/value-objects";
 
 export const CalendarItemsTab = () => {
 	const { logger } = useLogger("CalendarRightSidebarReactTab");
@@ -17,12 +18,14 @@ export const CalendarItemsTab = () => {
 	const { DateInput: UntilDateFilterInput, date: untilDateFilter } =
 		useDateInput({
 			id: "untilDateFilter",
-			initialValue: new Date(
-				new Date().setMonth(new Date().getMonth() + 1)
-			),
+			initialValue: DateValueObject.createNowDate()
+				.updateDay(1)
+				.updateMonth(new Date().getMonth() + 1)
+				.addDays(-1),
 		});
 
-	const [selectedItem, setSelectedItem] = useState<Item>();
+	const [selectedItem, setSelectedItem] =
+		useState<ItemRecurrenceModification>();
 	const [action, setAction] = useState<"edit" | "record">();
 
 	const [items, setItems] = useState<GetItemsUntilDateUseCaseOutput>([]);
@@ -52,7 +55,7 @@ export const CalendarItemsTab = () => {
 			{selectedItem && (
 				<BudgetItemsListContextMenu
 					setAction={setAction}
-					item={selectedItem}
+					recurrent={selectedItem}
 				/>
 			)}
 			<RightSidebarReactTab title={"Upcoming Schedules"} subtitle>
@@ -61,6 +64,7 @@ export const CalendarItemsTab = () => {
 				</div>
 				<CalendarItemsList
 					items={items}
+					untilDate={untilDateFilter}
 					selectedItem={selectedItem}
 					setSelectedItem={setSelectedItem}
 					action={action}

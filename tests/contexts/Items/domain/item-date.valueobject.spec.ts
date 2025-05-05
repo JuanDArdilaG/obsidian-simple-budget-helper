@@ -1,3 +1,4 @@
+import { DateValueObject } from "@juandardilag/value-objects";
 import { ItemDate, ItemRecurrenceFrequency } from "contexts/Items/domain";
 import { describe, expect, it } from "vitest";
 
@@ -45,5 +46,37 @@ describe("next", () => {
 		const nextDate = prevDate.next(new ItemRecurrenceFrequency("4y2mo19d"));
 
 		expect(nextDate.value).toEqual(expectedDate.value);
+	});
+});
+
+describe("remainingDays", () => {
+	it("should calculate 0 remaining days correctly", () => {
+		const date = new ItemDate(new Date(2024, 0, 1));
+
+		const remainingDays = date.getRemainingDays(
+			new DateValueObject(new Date(2024, 0, 1))
+		);
+
+		expect(remainingDays).toBe(0);
+	});
+
+	it("should calculate -2 remaining days correctly", () => {
+		const date = new ItemDate(new Date(2024, 0, 1));
+
+		const remainingDays = date.getRemainingDays(
+			new DateValueObject(new Date(2024, 0, 3))
+		);
+
+		expect(remainingDays).toBe(-2);
+	});
+
+	it("should calculate -2 remaining days with different time correctly", () => {
+		const date = new ItemDate(new Date(2024, 0, 1, 19));
+
+		const remainingDays = date.getRemainingDays(
+			new DateValueObject(new Date(2024, 0, 3))
+		);
+
+		expect(remainingDays).toBe(-2);
 	});
 });

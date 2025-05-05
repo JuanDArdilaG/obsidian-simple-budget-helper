@@ -1,13 +1,21 @@
 import { InvalidArgumentError } from "contexts/Shared/domain/errors";
 import {
 	Category,
+	CategoryID,
 	CategoryName,
+	CategoryPrimitives,
 	ICategoriesRepository,
 	ICategoriesService,
 } from "../domain";
+import { Service } from "contexts/Shared/application/service.abstract";
 
-export class CategoriesService implements ICategoriesService {
-	constructor(private _categoriesRepository: ICategoriesRepository) {}
+export class CategoriesService
+	extends Service<CategoryID, Category, CategoryPrimitives>
+	implements ICategoriesService
+{
+	constructor(private readonly _categoriesRepository: ICategoriesRepository) {
+		super("Category", _categoriesRepository);
+	}
 
 	async create(category: Category): Promise<void> {
 		const existingCategory = await this._categoriesRepository.findByName(

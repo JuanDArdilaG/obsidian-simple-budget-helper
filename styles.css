@@ -142,3 +142,7 @@ input {
 .date-time-picker .MuiPickersSectionList-root {
 	color: var(--text-normal);
 }
+
+.MuiChartsLegend-label {
+	color: var(--text-normal);
+}

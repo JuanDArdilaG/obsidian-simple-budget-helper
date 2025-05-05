@@ -9,7 +9,7 @@ export type GetAllItemsUseCaseOutput = {
 export class GetAllItemsUseCase
 	implements QueryUseCase<void, GetAllItemsUseCaseOutput>
 {
-	constructor(private _itemsService: ItemsService) {}
+	constructor(private readonly _itemsService: ItemsService) {}
 
 	async execute(): Promise<GetAllItemsUseCaseOutput> {
 		return {

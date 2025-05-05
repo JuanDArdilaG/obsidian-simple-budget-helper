@@ -1,15 +1,10 @@
-import { EnumValueObject } from "contexts/Shared/domain/value-objects/enum.valueobject";
+import { EnumValueObject } from "@juandardilag/value-objects";
 
 export type OperationType = "income" | "expense" | "transfer";
 
 export class Operation extends EnumValueObject<OperationType> {
 	constructor(value: OperationType) {
-		super(
-			"Operation",
-			["income", "expense", "transfer"],
-			(val) => val,
-			value
-		);
+		super(["income", "expense", "transfer"], value);
 	}
 
 	static expense(): Operation {
@@ -22,10 +17,6 @@ export class Operation extends EnumValueObject<OperationType> {
 
 	static transfer(): Operation {
 		return new Operation("transfer");
-	}
-
-	copy(): Operation {
-		return new Operation(this.value);
 	}
 
 	isExpense(): boolean {

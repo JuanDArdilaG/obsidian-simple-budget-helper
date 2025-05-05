@@ -12,7 +12,7 @@ export const WithLockField = ({
 	isLocked?: boolean;
 	setIsLocked?: (value: boolean) => void;
 }) => {
-	if (!setIsLocked && isLocked === undefined) return children;
+	if (!setIsLocked || isLocked === undefined) return children;
 	return (
 		<div style={{ ...style, display: "flex", alignItems: "center" }}>
 			<div style={{ width: "90%" }}>{children}</div>

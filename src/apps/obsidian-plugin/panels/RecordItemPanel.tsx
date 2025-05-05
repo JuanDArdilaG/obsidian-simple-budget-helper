@@ -6,25 +6,31 @@ import {
 	ItemsContext,
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { Item } from "contexts/Items/domain";
+import { Item, ItemRecurrenceModification } from "contexts/Items/domain";
 import {
 	TransactionAmount,
 	TransactionDate,
 } from "contexts/Transactions/domain";
 import { useLogger } from "../hooks";
 import { DateInput } from "../components/Input/DateInput";
+import { NumberValueObject } from "@juandardilag/value-objects";
 
 export const RecordItemPanel = ({
 	item,
+	recurrence: { recurrence, n },
 	onClose,
 }: {
 	item: Item;
+	recurrence: {
+		recurrence: ItemRecurrenceModification;
+		n: NumberValueObject;
+	};
 	onClose: () => void;
 }) => {
 	const { logger, debug } = useLogger("RecordItemPanel");
 	debug("item", { item });
 	const {
-		useCases: { recordItem, deleteItem },
+		useCases: { recordItemRecurrence, deleteItem },
 	} = useContext(ItemsContext);
 	const { updateAccounts } = useContext(AccountsContext);
 	const { updateTransactions } = useContext(TransactionsContext);
@@ -37,7 +43,7 @@ export const RecordItemPanel = ({
 			label: "To",
 			initialValueID: item.toAccount?.value,
 		});
-	const [date, setDate] = useState<Date>(item.date.value);
+	const [date, setDate] = useState<Date>(recurrence.date.value);
 	const [amount, setAmount] = useState(item.price.value);
 	const [isPermanent, setIsPermanent] = useState(false);
 
@@ -65,14 +71,26 @@ export const RecordItemPanel = ({
 			</div>
 			<button
 				onClick={async () => {
-					await recordItem.execute({
+					// if (recurrence instanceof Item || !item.recurrence) {
+					// 	await recordItem.execute({
+					// 		itemID: item.id,
+					// 		account: account?.id,
+					// 		toAccount: toAccount?.id,
+					// 		amount: new TransactionAmount(amount),
+					// 		date: new TransactionDate(date),
+					// 		permanentChanges: isPermanent,
+					// 	});
+					// } else {
+					await recordItemRecurrence.execute({
 						itemID: item.id,
+						n,
 						account: account?.id,
 						toAccount: toAccount?.id,
 						amount: new TransactionAmount(amount),
 						date: new TransactionDate(date),
 						permanentChanges: isPermanent,
 					});
+					// }
 					if (!item.recurrence) {
 						logger.debug("eliminating", { item });
 						await deleteItem.execute(item.id);

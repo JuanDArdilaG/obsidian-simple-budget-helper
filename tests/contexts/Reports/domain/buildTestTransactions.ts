@@ -15,6 +15,8 @@ type TestBudgetSimpleConfig = {
 	operation?: OperationType;
 	account?: string;
 	toAccount?: string;
+	category?: string;
+	subcategory?: string;
 };
 
 export const buildTestTransactions = (
@@ -23,14 +25,24 @@ export const buildTestTransactions = (
 	const testTransactions: Transaction[] = [];
 	if (transactionsConfig instanceof Array) {
 		transactionsConfig.forEach(
-			({ date, amount, operation, account, toAccount }) => {
+			({
+				date,
+				amount,
+				operation,
+				account,
+				toAccount,
+				category,
+				subcategory,
+			}) => {
 				const transaction = new Transaction(
 					TransactionID.generate(),
 					account ? new AccountID(account) : AccountID.generate(),
 					new TransactionName("test"),
 					new TransactionOperation(operation ?? "expense"),
-					CategoryID.generate(),
-					SubCategoryID.generate(),
+					category ? new CategoryID(category) : CategoryID.generate(),
+					subcategory
+						? new SubCategoryID(subcategory)
+						: SubCategoryID.generate(),
 					new TransactionDate(date ?? new Date()),
 					new TransactionAmount(amount ?? 100),
 					undefined,

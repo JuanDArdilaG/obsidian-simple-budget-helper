@@ -50,7 +50,6 @@ export const EditTransactionPanel = ({
 			initialValueID: transaction.toAccount?.value,
 		});
 	const { DateInput, date } = useDateInput({
-		dateWithTime: true,
 		initialValue: transaction.date,
 	});
 

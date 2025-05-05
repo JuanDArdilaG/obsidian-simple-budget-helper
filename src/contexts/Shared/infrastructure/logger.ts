@@ -1,12 +1,48 @@
-import { ValueObject } from "../domain";
-import { Entity } from "../domain/entity.abstract";
+import {
+	DateValueObject,
+	NumberValueObject,
+	StringValueObject,
+} from "@juandardilag/value-objects";
+import { Entity, EntityComposedValue } from "../domain/entity.abstract";
+import { IDValueObject } from "../domain";
+
+type LoggerBodyValues =
+	| StringValueObject
+	| NumberValueObject
+	| DateValueObject
+	| Entity<IDValueObject, EntityComposedValue>
+	| string
+	| number
+	| Date
+	| boolean
+	| object
+	| undefined;
+
+type LoggerBody = {
+	[k: string]: LoggerBodyValues | LoggerBodyValues[];
+};
+
+type LoggerBodyMappedValues =
+	| string
+	| number
+	| Date
+	| object
+	| boolean
+	| EntityComposedValue
+	| undefined;
+
+type LoggerBodyMapped =
+	| {
+			[k: string]: LoggerBodyMappedValues | LoggerBodyMappedValues[];
+	  }
+	| EntityComposedValue;
 
 export class Logger {
 	private static _debugMode: boolean = false;
 	constructor(
 		private _name: string = "Logger",
 		private _title: string = "",
-		private _body: Record<string, any> = {}
+		private _body: LoggerBody = {}
 	) {}
 
 	static setDebugMode(debugMode: boolean) {
@@ -17,7 +53,7 @@ export class Logger {
 		this._name = name;
 	}
 
-	debug(title: string, body?: Record<string, any>) {
+	debug(title: string, body?: LoggerBody) {
 		if (!Logger._debugMode) return;
 		console.log({
 			_title: `${this._name}: ${title}`,
@@ -25,14 +61,14 @@ export class Logger {
 		});
 	}
 
-	error(title: string, body?: Record<string, any>) {
+	error(title: string, body?: LoggerBody) {
 		console.error({
 			_title: `${this._name}: ${title}`,
 			...this.#mapBody(body),
 		});
 	}
 
-	debugB(title: string, body?: Record<string, any>): this {
+	debugB(title: string, body?: LoggerBody): this {
 		this._title = title;
 		this._body = body ?? {};
 		return this;
@@ -43,12 +79,7 @@ export class Logger {
 		return this;
 	}
 
-	attr(n: string, v: any): this {
-		this._body[n] = v;
-		return this;
-	}
-
-	obj(o: Record<string, any>): this {
+	obj(o: LoggerBody): this {
 		this._body = { ...this._body, ...o };
 		return this;
 	}
@@ -63,8 +94,8 @@ export class Logger {
 		this._body = {};
 	}
 
-	#mapBody(body?: Record<string, any>): Record<string, any> {
-		const res: Record<string, any> = {};
+	#mapBody(body?: LoggerBody): LoggerBodyMapped | LoggerBodyMappedValues[] {
+		const res: LoggerBodyMapped = {};
 		if (body)
 			Object.keys(body).forEach(
 				(key) =>
@@ -76,9 +107,16 @@ export class Logger {
 		return res;
 	}
 
-	#mapValue(value: any): any {
-		if (value instanceof ValueObject) return value.value;
+	#mapValue(value: LoggerBodyValues): LoggerBodyMappedValues {
+		if (value === undefined) return undefined;
+		if (
+			value instanceof StringValueObject ||
+			value instanceof NumberValueObject ||
+			value instanceof DateValueObject
+		)
+			return value.value;
 		if (value instanceof Entity) return value.toPrimitives();
-		return value ? value.valueOf() : value;
+		if (value instanceof Date) return value;
+		return value;
 	}
 }

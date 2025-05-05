@@ -1,6 +1,13 @@
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
-import { GroupByYearMonthDay } from "./reports-service.interface";
 import { ReportBalance } from "./report-balance.valueobject";
+
+export type GroupByYearMonthDay = {
+	[year: number]: {
+		[month: string]: {
+			[day: number]: Transaction[];
+		};
+	};
+};
 
 export type TransactionWithAccumulatedBalance = {
 	transaction: Transaction;
@@ -15,12 +22,46 @@ export class TransactionsReport {
 		return this._transactions;
 	}
 
+	onlyIncomes(): TransactionsReport {
+		return new TransactionsReport(
+			this._transactions.filter((t) => t.operation.isIncome())
+		);
+	}
+
+	onlyExpenses(): TransactionsReport {
+		return new TransactionsReport(
+			this._transactions.filter((t) => t.operation.isExpense())
+		);
+	}
+
+	filterByYear(year: number): TransactionsReport {
+		return new TransactionsReport(
+			this._transactions.filter((t) => t.date.getFullYear() === year)
+		);
+	}
+
+	filterByMonth(month: number): TransactionsReport {
+		return new TransactionsReport(
+			this._transactions.filter((t) => t.date.getMonth() === month)
+		);
+	}
+
 	sortedByDate(direction: "asc" | "desc" = "asc"): TransactionsReport {
 		return new TransactionsReport(
 			this._transactions.toSorted((a, b) =>
 				direction === "asc"
 					? a.date.compareTo(b.date)
 					: b.date.compareTo(a.date)
+			)
+		);
+	}
+
+	sortedByAmount(direction: "asc" | "desc" = "asc"): TransactionsReport {
+		return new TransactionsReport(
+			this._transactions.toSorted((a, b) =>
+				direction === "asc"
+					? a.amount.compareTo(b.amount)
+					: b.amount.compareTo(a.amount)
 			)
 		);
 	}

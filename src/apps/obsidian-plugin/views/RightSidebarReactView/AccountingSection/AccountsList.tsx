@@ -1,20 +1,73 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { AccountsListContextMenu } from "./AccountsListContextMenu";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { Account } from "contexts/Accounts/domain";
-import { AccountsContext, TransactionsContext } from "../Contexts";
+import {
+	AccountsContext,
+	ItemsContext,
+	TransactionsContext,
+} from "../Contexts";
 import { AccountsReport } from "contexts/Reports/domain/accounts-report.entity";
 import { CreateAccountPanel } from "apps/obsidian-plugin/panels/CreateAccountPanel";
-import { List, ListItem, Typography } from "@mui/material";
+import {
+	Checkbox,
+	FormControlLabel,
+	List,
+	ListItem,
+	Typography,
+} from "@mui/material";
+import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
+import { DateValueObject } from "@juandardilag/value-objects";
+import { ItemWithAccumulatedBalance } from "contexts/Items/application/items-with-accumulated-balance.usecase";
 
 export const AccountsList = () => {
 	const { accounts, updateAccounts } = useContext(AccountsContext);
 	const report = useMemo(() => new AccountsReport(accounts), [accounts]);
 	const { updateTransactions } = useContext(TransactionsContext);
+	const {
+		useCases: { itemsWithAccumulatedBalanceUseCase },
+	} = useContext(ItemsContext);
 
 	const [selectedAccount, setSelectedAccount] = useState<Account>();
 
 	const [showCreateForm, setShowCreateForm] = useState(false);
+
+	const [project, setProject] = useState(false);
+	const { date, DateInput } = useDateInput({
+		initialValue: new Date(),
+		label: "Date",
+		lock: !project,
+	});
+
+	const [itemsWithAccountsBalance, setItemsWithAccountsBalance] = useState<
+		ItemWithAccumulatedBalance[]
+	>([]);
+	useEffect(() => {
+		itemsWithAccumulatedBalanceUseCase
+			.execute(new DateValueObject(date))
+			.then(setItemsWithAccountsBalance);
+	}, [date]);
+
+	const accountsWithBalance = useMemo(
+		() =>
+			accounts.map((account) => {
+				const newBalance = project
+					? itemsWithAccountsBalance.findLast(
+							({ recurrence: item }) =>
+								item.account?.equalTo(account.id)
+					  )?.accountBalance ?? account.balance
+					: account.balance;
+				account.updateBalance(newBalance);
+				console.log({
+					project,
+					account: account.toPrimitives(),
+					itemsWithAccountsBalance,
+					newBalance: newBalance.value.value,
+				});
+				return account;
+			}),
+		[accounts, itemsWithAccountsBalance, project]
+	);
 
 	return (
 		<RightSidebarReactTab
@@ -40,6 +93,20 @@ export const AccountsList = () => {
 					}}
 				/>
 			)}
+
+			<FormControlLabel
+				control={
+					<Checkbox
+						checked={project}
+						onChange={(e) => {
+							const checked = e.target.checked;
+							setProject(checked);
+						}}
+					/>
+				}
+				label="Project"
+			/>
+			{DateInput}
 			<Typography variant="h4">
 				Assets{" "}
 				<span
@@ -53,9 +120,9 @@ export const AccountsList = () => {
 				</span>
 			</Typography>
 			<List>
-				{accounts
+				{accountsWithBalance
 					.filter((acc) => acc.type.isAsset())
-					.sort(
+					.toSorted(
 						(accA, accB) =>
 							accB.balance.value.toNumber() -
 							accA.balance.value.toNumber()
@@ -85,9 +152,9 @@ export const AccountsList = () => {
 				</span>
 			</Typography>
 			<List>
-				{accounts
+				{accountsWithBalance
 					.filter((acc) => acc.type.isLiability())
-					.sort(
+					.toSorted(
 						(accA, accB) =>
 							accB.balance.value.toNumber() -
 							accA.balance.value.toNumber()

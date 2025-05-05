@@ -4,20 +4,24 @@ import {
 	ItemID,
 	ItemPrimitives,
 	Item,
+	ItemRecurrenceModification,
 } from "contexts/Items/domain";
 import { NumberValueObject } from "@juandardilag/value-objects";
-import { RecurrenceModifications } from "../domain/item-recurrence-modification.valueobject";
 import { InvalidArgumentError } from "contexts/Shared/domain";
+import { IItemsService } from "../domain/items-service.interface";
 
-export class ItemsService extends Service<ItemID, Item, ItemPrimitives> {
-	constructor(private _itemsRepository: IItemsRepository) {
+export class ItemsService
+	extends Service<ItemID, Item, ItemPrimitives>
+	implements IItemsService
+{
+	constructor(private readonly _itemsRepository: IItemsRepository) {
 		super("Item", _itemsRepository);
 	}
 
 	async modifyRecurrence(
 		id: ItemID,
 		n: NumberValueObject,
-		modifications: RecurrenceModifications
+		newRecurrence: ItemRecurrenceModification
 	): Promise<void> {
 		const item = await this.getByID(id);
 		if (!item.recurrence)
@@ -26,7 +30,7 @@ export class ItemsService extends Service<ItemID, Item, ItemPrimitives> {
 				id.toString(),
 				"item doesn't have recurrence"
 			);
-		item.recurrence.addModification(n, modifications);
+		item.recurrences[n.value] = newRecurrence;
 		await this._itemsRepository.persist(item);
 	}
 }

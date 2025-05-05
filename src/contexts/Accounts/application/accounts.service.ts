@@ -3,18 +3,22 @@ import {
 	Account,
 	AccountID,
 	AccountName,
+	AccountPrimitives,
 	IAccountsRepository,
 	IAccountsService,
 } from "contexts/Accounts/domain";
-import {
-	EntityNotFoundError,
-	InvalidArgumentError,
-} from "contexts/Shared/domain/errors";
+import { InvalidArgumentError } from "contexts/Shared/domain/errors";
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
+import { Service } from "contexts/Shared/application/service.abstract";
 
-export class AccountsService implements IAccountsService {
+export class AccountsService
+	extends Service<AccountID, Account, AccountPrimitives>
+	implements IAccountsService
+{
 	private readonly _logger = new Logger("AccountsService");
-	constructor(private readonly _accountsRepository: IAccountsRepository) {}
+	constructor(private readonly _accountsRepository: IAccountsRepository) {
+		super("Accounts", _accountsRepository);
+	}
 
 	async create(account: Account): Promise<void> {
 		const existingAccount = await this._accountsRepository.findByName(
@@ -29,21 +33,10 @@ export class AccountsService implements IAccountsService {
 		await this._accountsRepository.persist(account);
 	}
 
-	async getByID(id: AccountID): Promise<Account> {
-		const account = await this._accountsRepository.findById(id);
-		if (!account) throw new EntityNotFoundError("Account", id);
-		return account;
-	}
-
 	async getAllNames(): Promise<AccountName[]> {
 		return (await this._accountsRepository.findAll()).map(
 			(acc) => acc.name
 		);
-	}
-
-	async update(account: Account): Promise<void> {
-		await this.getByID(account.id);
-		await this._accountsRepository.persist(account);
 	}
 
 	async adjustOnTransaction(transaction: Transaction): Promise<void> {

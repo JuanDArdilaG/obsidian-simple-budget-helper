@@ -4,14 +4,16 @@ import {
 	DateValueObject,
 	NumberValueObject,
 } from "@juandardilag/value-objects";
-import { Item, IItemsRepository } from "contexts/Items/domain";
-import { ItemsCriteria } from "../domain/ItemsCriteria";
+import { ItemRecurrenceModification } from "contexts/Items/domain";
+import { IItemsService } from "../domain/items-service.interface";
 
 export type GetItemsUntilDateUseCaseInput = DateValueObject;
-export type GetItemsUntilDateUseCaseOutput = {
-	item: Item;
+export type ItemRecurrenceModificationWithN = {
+	recurrence: ItemRecurrenceModification;
 	n: NumberValueObject;
-}[];
+};
+
+export type GetItemsUntilDateUseCaseOutput = ItemRecurrenceModificationWithN[];
 
 export class GetItemsUntilDateUseCase
 	implements
@@ -21,40 +23,32 @@ export class GetItemsUntilDateUseCase
 		>
 {
 	readonly #logger = new Logger("GetItemsUntilDateUseCase");
-	constructor(private readonly _itemsRepository: IItemsRepository) {}
+	constructor(private readonly _itemsService: IItemsService) {}
 
 	async execute(
 		to: GetItemsUntilDateUseCaseInput
 	): Promise<GetItemsUntilDateUseCaseOutput> {
 		this.#logger.debug("execute", { to });
-		const betweenDatesCriteria = new ItemsCriteria().where(
-			"date",
-			to.value,
-			"LESS_THAN_OR_EQUAL"
-		);
-		const items = await this._itemsRepository.findByCriteria(
-			betweenDatesCriteria
-		);
+		const items = await this._itemsService.getAll();
 
 		this.#logger.debug("item from repository", {
-			betweenDatesCriteria,
 			items: [...items],
 		});
 
 		const res: {
-			item: Item;
+			recurrence: ItemRecurrenceModification;
 			n: NumberValueObject;
 		}[][] = [];
 
 		items.forEach((item) => {
-			res.push(item.createItemsUntilDate(to));
+			res.push(item.getRecurrencesUntilDate(to));
 		});
 
 		const itemsRes = res
 			.flat()
-			.sort((rA, rB) => rA.item.date.compare(rB.item.date));
+			.sort((rA, rB) => rA.recurrence.date.compareTo(rB.recurrence.date));
 
-		this.#logger.debug("items untils date", {
+		this.#logger.debug("items until date", {
 			res,
 			items: [...itemsRes],
 		});

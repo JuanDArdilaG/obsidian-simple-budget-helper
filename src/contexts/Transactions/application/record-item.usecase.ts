@@ -34,46 +34,42 @@ export class RecordItemUseCase
 		account,
 		toAccount,
 	}: RecordItemUseCaseInput): Promise<void> {
-		this.#logger
-			.debugB("attributes", {
-				itemID,
-				date,
-				amount,
-				account,
-				toAccount,
-			})
-			.log();
+		this.#logger.debug("attributes", {
+			itemID,
+			date,
+			amount,
+			account,
+			toAccount,
+		});
 		const item = await this._itemsRepository.findById(itemID);
 		if (!item) throw new EntityNotFoundError("Item", itemID);
 
-		if (item.recurrence) {
-			const prev = item.date.copy();
-			item.advanceDateToNextDate();
+		// if (item.recurrence) {
+		// 	const prev = item.date.copy();
+		// 	item.advanceDateToNextDate();
 
-			this.#logger.debug("calculating next date", {
-				frequency: item.recurrence.frequency,
-				prev: prev,
-				next: item.date,
-			});
-		}
+		// 	this.#logger.debug("calculating next date", {
+		// 		frequency: item.recurrence.frequency,
+		// 		prev: prev,
+		// 		next: item.date,
+		// 	});
+		// }
 
 		const transaction = Transaction.fromItem(
 			item,
 			date ?? TransactionDate.createNowDate()
 		);
 
-		this.#logger
-			.debugB("transaction from item", {
-				transaction: transaction.toPrimitives(),
-				item,
-			})
-			.log();
+		this.#logger.debug("transaction from item", {
+			transaction: transaction.toPrimitives(),
+			item,
+		});
 
 		transaction.updateAmount(amount ?? item.price);
 		transaction.updateAccount(account ?? item.account);
 		transaction.updateToAccount(toAccount ?? item.toAccount);
 
-		this.#logger.debugB("transaction after update", { transaction }).log();
+		this.#logger.debug("transaction after update", { transaction });
 
 		await this._itemsRepository.persist(item);
 		await this._transactionsService.record(transaction);

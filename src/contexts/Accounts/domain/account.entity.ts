@@ -46,6 +46,10 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		return this._balance;
 	}
 
+	updateBalance(balance: AccountBalance) {
+		this._balance = balance;
+	}
+
 	adjustFromTransaction(transaction: Transaction) {
 		logger.debug("adjustFromTransaction", {
 			id: this._id.value,

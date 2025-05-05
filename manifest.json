@@ -1,11 +1,11 @@
 {
 	"id": "simple-budget-helper",
 	"name": "Simple Budget Helper",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"minAppVersion": "0.15.0",
 	"description": "A simple budget helper",
 	"author": "Juan D. Ardila G.",
 	"authorUrl": "https://github.com/JuanDArdilaG",
 	"fundingUrl": "https://buymeacoffee.com/juandardilag",
-	"isDesktopOnly": true
+	"isDesktopOnly": false
 }

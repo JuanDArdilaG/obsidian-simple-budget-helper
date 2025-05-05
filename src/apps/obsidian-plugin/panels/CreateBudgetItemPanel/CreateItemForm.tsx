@@ -46,16 +46,15 @@ export const CreateItemForm = ({
 		subCategory: false,
 		toAccount: false,
 		store: false,
-		date: false,
 		operation: false,
 		recurrence: false,
+		recurrences: false,
 	});
 	const [item, setItem] = useState<ItemPrimitives>(Item.emptyPrimitives());
 	const [selectedItem, setSelectedItem] = useState<ItemPrimitives>();
 
 	const { DateInput, date } = useDateInput({
 		id: "date",
-		dateWithTime: true,
 	});
 	const { AccountSelect, account } = useAccountSelect({
 		label: "From",
@@ -155,7 +154,6 @@ export const CreateItemForm = ({
 			subCategory: subCategory?.id.value ?? "",
 			account: account?.id.value ?? "",
 			toAccount: toAccount?.id.value,
-			date,
 		});
 
 		await onSubmit(itemToPersist, new TransactionDate(date));
@@ -173,7 +171,7 @@ export const CreateItemForm = ({
 			store: locks.store ? item.store : "",
 			operation: locks.operation ? item.operation : "expense",
 			toAccount: locks.toAccount ? item.toAccount : "",
-			date,
+			recurrences: [],
 		});
 	};
 

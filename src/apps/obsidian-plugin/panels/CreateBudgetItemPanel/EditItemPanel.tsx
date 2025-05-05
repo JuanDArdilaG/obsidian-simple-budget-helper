@@ -1,44 +1,39 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useState } from "react";
 import {
+	Item,
+	ItemDate,
 	ItemName,
 	ItemRecurrence,
 	ItemRecurrenceFrequency,
 	ItemRecurrenceUntilDate,
-	Item,
-	ItemDate,
 } from "contexts/Items/domain";
 import { ItemsContext, TransactionsContext } from "apps/obsidian-plugin/views";
 import {
 	Select,
 	SelectWithCreation,
 	useAccountSelect,
+	useCategorySelect,
+	useSubCategorySelect,
 } from "apps/obsidian-plugin/components/Select";
 import { OperationType } from "contexts/Shared/domain";
-import { useCategorySelect } from "apps/obsidian-plugin/components/Select/useCategorySelect";
-import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/useSubCategorySelect";
 import { Checkbox, FormControlLabel } from "@mui/material";
-import { NumberValueObject } from "@juandardilag/value-objects";
 import { Input } from "apps/obsidian-plugin/components/Input/Input";
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { DateInput } from "apps/obsidian-plugin/components/Input/DateInput";
+import { DateValueObject } from "@juandardilag/value-objects";
 
 export const EditItemPanel = ({
-	recurrence,
+	item,
 	onClose,
 }: {
-	recurrence: { item: Item; n: NumberValueObject } | Item;
+	item: Item;
 	onClose: () => void;
 }) => {
 	const {
-		useCases: { updateItem, modifyNItemRecurrence },
+		useCases: { updateItem },
 		updateItems,
 	} = useContext(ItemsContext);
 	const { brands, stores } = useContext(TransactionsContext);
-
-	const item = useMemo(
-		() => (recurrence instanceof Item ? recurrence : recurrence.item),
-		[recurrence]
-	);
 
 	const { AccountSelect, account } = useAccountSelect({
 		label: "From",
@@ -67,7 +62,9 @@ export const EditItemPanel = ({
 		item.recurrence?.frequency.value
 	);
 
-	const [date, setDate] = useState(item.date.value);
+	const [date, setDate] = useState(
+		item.recurrence?.startDate.value ?? item.recurrences[0].date
+	);
 	const [untilDate, setUntilDate] = useState(
 		item.recurrence?.untilDate?.value
 	);
@@ -104,7 +101,7 @@ export const EditItemPanel = ({
 			{type === "transfer" ? ToAccountSelect : undefined}
 			{CategorySelect}
 			{SubCategorySelect}
-			<DateInput value={date} onChange={setDate} label="NextDate" />
+			<DateInput value={date} onChange={setDate} label="Date" />
 
 			<FormControlLabel
 				control={
@@ -151,69 +148,39 @@ export const EditItemPanel = ({
 			/>
 			<button
 				onClick={async () => {
-					date.setSeconds(0);
+					account &&
+						!account.id.equalTo(item.account) &&
+						item.updateAccount(account.id);
+					toAccount &&
+						item.toAccount &&
+						toAccount.id.equalTo(item.toAccount) &&
+						item.updateToAccount(toAccount?.id);
+					!amount.equalTo(item.price) && item.updatePrice(amount);
+					name !== item.name.value &&
+						item.updateName(new ItemName(name));
+					if (!item.recurrence)
+						item.recurrences[0].updateDate(new ItemDate(date));
+					category &&
+						!category.id.equalTo(item.category) &&
+						item.updateCategory(category.id);
+					subCategory &&
+						!subCategory.id.equalTo(item.subCategory) &&
+						item.updateSubCategory(subCategory.id);
+					item.recurrence &&
+						item.updateRecurrence(
+							new ItemRecurrence(
+								item.id,
+								new DateValueObject(date),
+								new ItemRecurrenceFrequency(
+									frequency ?? item.recurrence.frequency.value
+								),
+								withUntilDate && untilDate
+									? new ItemRecurrenceUntilDate(untilDate)
+									: item.recurrence.untilDate
+							)
+						);
 
-					if (recurrence instanceof Item) {
-						account &&
-							!account.id.equalTo(item.account) &&
-							item.updateAccount(account.id);
-						toAccount &&
-							item.toAccount &&
-							toAccount.id.equalTo(item.toAccount) &&
-							item.updateToAccount(toAccount?.id);
-						!amount.equalTo(item.price) && item.updatePrice(amount);
-						name !== item.name.value &&
-							item.updateName(new ItemName(name));
-						category &&
-							!category.id.equalTo(item.category) &&
-							item.updateCategory(category.id);
-						subCategory &&
-							!subCategory.id.equalTo(item.subCategory) &&
-							item.updateSubCategory(subCategory.id);
-						date !== item.date.value &&
-							item.updateDate(new ItemDate(date));
-						frequency &&
-							frequency !== item.recurrence?.frequency.value &&
-							item.updateRecurrence(
-								new ItemRecurrence(
-									item.id,
-									item.date,
-									new ItemRecurrenceFrequency(frequency),
-									undefined,
-									withUntilDate
-										? new ItemRecurrenceUntilDate(
-												untilDate ?? new Date()
-										  )
-										: undefined
-								)
-							);
-
-						await updateItem.execute(item);
-					} else {
-						await modifyNItemRecurrence.execute({
-							id: item.id,
-							n: recurrence.n,
-							modifications: {
-								date:
-									date !== item.date.value
-										? new ItemDate(date)
-										: undefined,
-								account:
-									account && !account.id.equalTo(item.account)
-										? account?.id
-										: undefined,
-								toAccount:
-									toAccount &&
-									item.toAccount &&
-									toAccount.id.equalTo(item.toAccount)
-										? toAccount.id
-										: undefined,
-								price: !amount.equalTo(item.price)
-									? amount
-									: undefined,
-							},
-						});
-					}
+					await updateItem.execute(item);
 
 					updateItems();
 

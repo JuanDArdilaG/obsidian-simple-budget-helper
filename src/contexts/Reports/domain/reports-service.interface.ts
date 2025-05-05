@@ -1,14 +1,5 @@
-import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 import { ReportBalance } from "./report-balance.valueobject";
 import { ItemsReport } from "./items-report.entity";
-
-export type GroupByYearMonthDay = {
-	[year: number]: {
-		[month: string]: {
-			[day: number]: Transaction[];
-		};
-	};
-};
 
 export interface IReportsService {
 	getTotalPerMonth(

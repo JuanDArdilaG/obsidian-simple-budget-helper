@@ -15,14 +15,16 @@ export class ItemDate extends DateValueObject {
 		return new ItemDate(this.value);
 	}
 
-	get remainingDays(): number {
-		let now = DateValueObject.createNowDate();
-
-		return this.daysDiff(now.modifyHours(0, 0, 0, 0));
+	getRemainingDays(
+		startDate: DateValueObject = DateValueObject.createNowDate()
+	): number {
+		return this.updateTime(0, 0, 0, 0).daysDiff(
+			startDate.updateTime(0, 0, 0, 0)
+		);
 	}
 
 	get remainingDaysStr(): string {
-		const daysToDate = this.remainingDays;
+		const daysToDate = this.getRemainingDays();
 		return daysToDate === 1 || daysToDate === -1
 			? `${daysToDate} day`
 			: `${daysToDate} days`;
@@ -42,22 +44,13 @@ export class ItemDate extends DateValueObject {
 		return new ItemDate(nextDate);
 	}
 
-	compare(other: ItemDate): number {
-		let a = new Date(this.getTime());
-		let b = new Date(other.getTime());
-		a = new Date(a.getTime());
-		a.setHours(0, 0, 0, 0);
-		b = new Date(b.getTime());
-		b.setHours(0, 0, 0, 0);
-
-		return a.getTime() - b.getTime();
-	}
-
 	toPrettyFormatDate(): string {
 		return this.toLocaleDateString("default", {
 			year: "numeric",
 			month: "short",
 			day: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
 		});
 	}
 }

@@ -1,12 +1,8 @@
-import { StringValueObject as LibStringValueObject } from "@juandardilag/value-objects";
+import { StringValueObject } from "@juandardilag/value-objects";
 import { DomainError } from "../errors";
-import { StringValueObject } from "../value-objects";
 
 export class EntityNotFoundError extends DomainError {
-	constructor(
-		entityName: string,
-		id: LibStringValueObject | StringValueObject
-	) {
+	constructor(entityName: string, id: StringValueObject) {
 		super(`${entityName} with id ${id} not found`);
 	}
 

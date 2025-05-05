@@ -46,6 +46,9 @@ import { GetAllUniqueTransactionsByNameUseCase } from "contexts/Transactions/app
 import { Logger } from "../logger";
 import { GetTotalPerMonthUseCase } from "contexts/Reports/application/get-total-per-month.usecase";
 import { GetTotalUseCase } from "contexts/Reports/application/get-total.usecase";
+import { ItemsWithAccumulatedBalanceUseCase } from "contexts/Items/application/items-with-accumulated-balance.usecase";
+import { RecordItemRecurrenceUseCase } from "contexts/Transactions/application/record-item-recurrence.usecase";
+import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
 
 const container = createContainer({
 	injectionMode: InjectionMode.CLASSIC,
@@ -73,6 +76,9 @@ export function buildContainer(): AwilixContainer {
 			ModifyNItemRecurrenceUseCase
 		).singleton(),
 		getItemsUntilDateUseCase: asClass(GetItemsUntilDateUseCase).singleton(),
+		itemsWithAccumulatedBalanceUseCase: asClass(
+			ItemsWithAccumulatedBalanceUseCase
+		).singleton(),
 	});
 
 	// ACCOUNTS
@@ -106,6 +112,9 @@ export function buildContainer(): AwilixContainer {
 		).singleton(),
 		recordTransactionUseCase: asClass(RecordTransactionUseCase).singleton(),
 		recordItemUseCase: asClass(RecordItemUseCase).singleton(),
+		recordItemRecurrenceUseCase: asClass(
+			RecordItemRecurrenceUseCase
+		).singleton(),
 		deleteTransactionUseCase: asClass(DeleteTransactionUseCase).singleton(),
 		updateTransactionUseCase: asClass(UpdateTransactionUseCase).singleton(),
 		adjustAccountUseCase: asClass(AdjustAccountUseCase).singleton(),
@@ -118,7 +127,7 @@ export function buildContainer(): AwilixContainer {
 			SubcategoriesDexieRepository
 		).singleton(),
 		_categoriesService: asClass(CategoriesService).singleton(),
-		_subCategoriesService: asClass(SubCategoriesService).singleton(),
+		_subcategoriesService: asClass(SubCategoriesService).singleton(),
 		createCategoryUseCase: asClass(CreateCategoryUseCase).singleton(),
 		createSubCategoryUseCase: asClass(CreateSubCategoryUseCase).singleton(),
 		getAllCategoriesWithSubCategoriesUseCase: asClass(
@@ -135,6 +144,9 @@ export function buildContainer(): AwilixContainer {
 		_reportsService: asClass(ReportsService).singleton(),
 		getTotalPerMonthUseCase: asClass(GetTotalPerMonthUseCase).singleton(),
 		getTotalUseCase: asClass(GetTotalUseCase).singleton(),
+		groupByCategoryWithAccumulatedBalanceUseCase: asClass(
+			GroupByCategoryWithAccumulatedBalanceUseCase
+		).singleton(),
 	});
 
 	return container;

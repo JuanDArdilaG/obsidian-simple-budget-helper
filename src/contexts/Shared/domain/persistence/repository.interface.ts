@@ -52,29 +52,32 @@ export interface IRepository<
 	exists(id: ID): Promise<boolean>;
 }
 
-// /**
-//  * Extended repository interface with pagination support
-//  */
-// export interface IPaginatedRepository<T, ID extends IDValueObject>
-// 	extends IRepository<T, ID> {
-// 	/**
-// 	 * Find entities with pagination
-// 	 * @param page Page number (0-based)
-// 	 * @param size Page size
-// 	 * @returns Paginated result with entities and metadata
-// 	 */
-// 	findPaginated(page: number, size: number): Promise<PaginationResult<T>>;
-// }
+/**
+ * Extended repository interface with pagination support
+ */
+export interface IPaginatedRepository<
+	ID extends IDValueObject,
+	T extends Entity<ID, P>,
+	P extends EntityComposedValue
+> extends IRepository<ID, T, P> {
+	/**
+	 * Find entities with pagination
+	 * @param page Page number (0-based)
+	 * @param size Page size
+	 * @returns Paginated result with entities and metadata
+	 */
+	findPaginated(page: number, size: number): Promise<PaginationResult<T>>;
+}
 
-// /**
-//  * Pagination result structure
-//  */
-// export interface PaginationResult<T> {
-// 	items: T[];
-// 	total: number;
-// 	page: number;
-// 	size: number;
-// 	pages: number;
-// 	hasNext: boolean;
-// 	hasPrev: boolean;
-// }
+/**
+ * Pagination result structure
+ */
+export interface PaginationResult<T> {
+	items: T[];
+	total: number;
+	page: number;
+	size: number;
+	pages: number;
+	hasNext: boolean;
+	hasPrev: boolean;
+}

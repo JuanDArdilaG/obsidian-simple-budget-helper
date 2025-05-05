@@ -11,6 +11,7 @@ import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { ItemBrand, ItemProductInfo, ItemStore } from "contexts/Items/domain";
+import { NumberValueObject } from "@juandardilag/value-objects";
 
 export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	constructor(
@@ -163,6 +164,15 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 
 	get amount(): TransactionAmount {
 		return this._amount;
+	}
+
+	get realAmount(): TransactionAmount {
+		if (this.operation.isTransfer()) return TransactionAmount.zero();
+		return this._amount.times(
+			this.operation.isExpense()
+				? new NumberValueObject(-1)
+				: new NumberValueObject(1)
+		);
 	}
 
 	updateAmount(amount: TransactionAmount) {

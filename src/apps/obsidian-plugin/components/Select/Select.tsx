@@ -19,7 +19,7 @@ export const Select = <T extends string | number>({
 }: {
 	id: string;
 	label: string;
-	value: T;
+	value?: T;
 	values: T[] | { [key: string]: T };
 	onChange: (value: T) => void;
 	isLocked?: boolean;

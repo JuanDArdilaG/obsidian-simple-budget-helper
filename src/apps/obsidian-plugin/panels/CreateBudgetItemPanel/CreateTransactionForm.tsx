@@ -23,6 +23,7 @@ import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput
 import { AccountID } from "contexts/Accounts/domain";
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { ButtonGroup, Button } from "@mui/material";
+import { CreateCategoryModal } from "apps/obsidian-plugin/Category/CreateCategoryModal";
 
 export const CreateTransactionForm = ({
 	items,
@@ -78,7 +79,6 @@ export const CreateTransactionForm = ({
 
 	const { DateInput, date } = useDateInput({
 		id: "date",
-		dateWithTime: true,
 		lock: locks.date,
 		setLock: (lock) => updateLock("date", lock),
 	});
@@ -113,6 +113,9 @@ export const CreateTransactionForm = ({
 		if (locks[key]) return transaction[key] as T;
 		return (selectedTransaction?.[key] as T) ?? undefined;
 	};
+
+	const [openCreateCategoryModal, setOpenCreateCategoryModal] =
+		useState(false);
 
 	useEffect(() => {
 		if (selectedTransaction) {
@@ -275,19 +278,26 @@ export const CreateTransactionForm = ({
 					label="Amount"
 				/>
 			</div>
-			{/* <Input<PriceValueObject>
-				id="amount"
-				label="Amount"
-				style={{ flexGrow: 1 }}
-				value={new PriceValueObject(transaction.amount)}
-				onChange={(amount) => update({ amount: amount.toNumber() })}
-				isLocked={locks.amount}
-				setIsLocked={(value) => updateLock("amount", value)}
-				// error={validation.check("amount") ?? undefined}
-			/> */}
-			<div style={{ display: "flex", justifyContent: "space-between" }}>
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+				}}
+			>
 				{CategorySelect}
 				{SubCategorySelect}
+				<Button onClick={() => setOpenCreateCategoryModal(true)}>
+					Create
+				</Button>
+				<CreateCategoryModal
+					open={openCreateCategoryModal}
+					onClose={() => setOpenCreateCategoryModal(false)}
+					onCreate={() => {
+						updateAccounts();
+						setOpenCreateCategoryModal(false);
+					}}
+				/>
 			</div>
 			<Select
 				id="type"

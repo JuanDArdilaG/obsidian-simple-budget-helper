@@ -1,7 +1,3 @@
-import { StringValueObject } from "contexts/Shared/domain/value-objects/string.valueobject";
+import { StringValueObject } from "@juandardilag/value-objects";
 
-export class AccountName extends StringValueObject {
-	constructor(value: string) {
-		super("Account Name", value);
-	}
-}
+export class AccountName extends StringValueObject {}

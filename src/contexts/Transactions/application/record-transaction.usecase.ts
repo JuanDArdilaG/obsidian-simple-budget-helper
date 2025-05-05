@@ -7,7 +7,7 @@ export type RecordTransactionUseCaseInput = Transaction;
 export class RecordTransactionUseCase
 	implements CommandUseCase<RecordTransactionUseCaseInput>
 {
-	constructor(private _transactionsService: TransactionsService) {}
+	constructor(private readonly _transactionsService: TransactionsService) {}
 
 	async execute(transaction: Transaction): Promise<void> {
 		await this._transactionsService.record(transaction);

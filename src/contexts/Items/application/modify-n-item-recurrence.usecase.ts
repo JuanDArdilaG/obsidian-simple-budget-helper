@@ -1,24 +1,24 @@
 import { CommandUseCase } from "contexts/Shared/domain";
-import { ItemID, RecurrenceModifications } from "contexts/Items/domain";
+import { ItemID, ItemRecurrenceModification } from "contexts/Items/domain";
 import { NumberValueObject } from "@juandardilag/value-objects";
 import { ItemsService } from "./items.service";
 
 export type ModifyNItemRecurrenceUseCaseInput = {
 	id: ItemID;
 	n: NumberValueObject;
-	modifications: RecurrenceModifications;
+	newRecurrence: ItemRecurrenceModification;
 };
 
 export class ModifyNItemRecurrenceUseCase
 	implements CommandUseCase<ModifyNItemRecurrenceUseCaseInput>
 {
-	constructor(private _itemsService: ItemsService) {}
+	constructor(private readonly _itemsService: ItemsService) {}
 
 	async execute({
 		id,
 		n,
-		modifications,
+		newRecurrence,
 	}: ModifyNItemRecurrenceUseCaseInput): Promise<void> {
-		await this._itemsService.modifyRecurrence(id, n, modifications);
+		await this._itemsService.modifyRecurrence(id, n, newRecurrence);
 	}
 }

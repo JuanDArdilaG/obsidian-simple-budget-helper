@@ -10,6 +10,8 @@ import { GetItemsUntilDateUseCase } from "contexts/Items/application/get-items-u
 import { ModifyNItemRecurrenceUseCase } from "contexts/Items/application/modify-n-item-recurrence.usecase";
 import { UpdateItemUseCase } from "contexts/Items/application/update-item.usecase";
 import { RecordItemUseCase } from "contexts/Transactions/application/record-item.usecase";
+import { ItemsWithAccumulatedBalanceUseCase } from "contexts/Items/application/items-with-accumulated-balance.usecase";
+import { RecordItemRecurrenceUseCase } from "contexts/Transactions/application/record-item-recurrence.usecase";
 
 export type ItemsContextType = {
 	useCases: {
@@ -17,10 +19,12 @@ export type ItemsContextType = {
 		deleteItem: DeleteItemUseCase;
 		updateItem: UpdateItemUseCase;
 		recordItem: RecordItemUseCase;
+		recordItemRecurrence: RecordItemRecurrenceUseCase;
 		modifyNItemRecurrence: ModifyNItemRecurrenceUseCase;
 		getAllUniqueItemsByName: GetAllUniqueItemsByNameUseCase;
 		getItemsUntilDate: GetItemsUntilDateUseCase;
 		getAllItems: GetAllItemsUseCase;
+		itemsWithAccumulatedBalanceUseCase: ItemsWithAccumulatedBalanceUseCase;
 	};
 	scheduledItems: Item[];
 	updateItems: () => void;
@@ -32,10 +36,13 @@ export const ItemsContext = createContext<ItemsContextType>({
 		getAllItems: {} as GetAllItemsUseCase,
 		getAllUniqueItemsByName: {} as GetAllUniqueItemsByNameUseCase,
 		recordItem: {} as RecordItemUseCase,
+		recordItemRecurrence: {} as RecordItemRecurrenceUseCase,
 		getItemsUntilDate: {} as GetItemsUntilDateUseCase,
 		deleteItem: {} as DeleteItemUseCase,
 		updateItem: {} as UpdateItemUseCase,
 		modifyNItemRecurrence: {} as ModifyNItemRecurrenceUseCase,
+		itemsWithAccumulatedBalanceUseCase:
+			{} as ItemsWithAccumulatedBalanceUseCase,
 	},
 	scheduledItems: [],
 	updateItems: () => {},
@@ -66,9 +73,15 @@ export const getItemsContextDefault = (
 			),
 			getItemsUntilDate,
 			recordItem,
+			recordItemRecurrence: container.resolve(
+				"recordItemRecurrenceUseCase"
+			),
 			deleteItem,
 			updateItem,
 			modifyNItemRecurrence,
+			itemsWithAccumulatedBalanceUseCase: container.resolve(
+				"itemsWithAccumulatedBalanceUseCase"
+			),
 		},
 		scheduledItems,
 		updateItems,

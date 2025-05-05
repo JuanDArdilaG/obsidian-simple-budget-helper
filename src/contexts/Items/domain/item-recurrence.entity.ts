@@ -1,10 +1,6 @@
 import { Entity } from "contexts/Shared/domain";
 import { ItemRecurrenceFrequency } from "./item-recurrence-frequency.valueobject";
-import {
-	ItemRecurrenceModification,
-	ItemRecurrenceModificationPrimitives,
-	RecurrenceModifications,
-} from "./item-recurrence-modification.valueobject";
+import { ItemRecurrenceModificationPrimitives } from "./item-recurrence-modification.valueobject";
 import {
 	DateValueObject,
 	NumberValueObject,
@@ -12,13 +8,14 @@ import {
 import { ItemID } from "./item-id.valueobject";
 import { ItemDate } from "./item-date.valueobject";
 import { ItemRecurrenceUntilDate } from "./item-recurrence-untildate.valueobject";
+import { Logger } from "contexts/Shared/infrastructure/logger";
 
 export class ItemRecurrence extends Entity<ItemID, RecurrencePrimitives> {
+	readonly #logger = new Logger("ItemRecurrence");
 	constructor(
 		id: ItemID,
 		private readonly _startDate: DateValueObject,
 		private readonly _frequency: ItemRecurrenceFrequency,
-		private _modifications?: ItemRecurrenceModification[],
 		private _untilDate?: ItemRecurrenceUntilDate
 	) {
 		super(id);
@@ -29,7 +26,6 @@ export class ItemRecurrence extends Entity<ItemID, RecurrencePrimitives> {
 			this.id.copy(),
 			this._startDate,
 			this._frequency,
-			this._modifications?.map((mod) => mod.copy()),
 			this._untilDate
 		);
 	}
@@ -48,10 +44,6 @@ export class ItemRecurrence extends Entity<ItemID, RecurrencePrimitives> {
 
 	updateUntilDate(untilDate?: ItemRecurrenceUntilDate): void {
 		this._untilDate = untilDate;
-	}
-
-	get modifications(): ItemRecurrenceModification[] {
-		return this._modifications ?? [];
 	}
 
 	calculateNextDate(actualDate: ItemDate): ItemDate {
@@ -79,38 +71,11 @@ export class ItemRecurrence extends Entity<ItemID, RecurrencePrimitives> {
 		);
 	}
 
-	getModification(
-		n: NumberValueObject
-	): ItemRecurrenceModification | undefined {
-		return this._modifications?.find((mod) => mod.n.equalTo(n));
-	}
-
-	addModification(
-		n: NumberValueObject,
-		modifications: RecurrenceModifications
-	): void {
-		this._modifications ??= [];
-		const modification = new ItemRecurrenceModification(
-			this._id,
-			n,
-			modifications
-		);
-		const i = this._modifications.findIndex((mod) => mod.n.equalTo(n));
-		if (i !== -1) {
-			this._modifications[i] = modification;
-			return;
-		}
-		this._modifications.push(modification);
-	}
-
 	toPrimitives(): RecurrencePrimitives {
 		return {
 			startDate: this._startDate,
 			frequency: this._frequency.value,
 			untilDate: this._untilDate,
-			modifications: this._modifications
-				? this._modifications.map((m) => m.toPrimitives())
-				: undefined,
 		};
 	}
 
@@ -122,11 +87,6 @@ export class ItemRecurrence extends Entity<ItemID, RecurrencePrimitives> {
 			itemID,
 			new DateValueObject(startDate),
 			new ItemRecurrenceFrequency(frequency),
-			modifications
-				? modifications.map((m) =>
-						ItemRecurrenceModification.fromPrimitives(itemID, m)
-				  )
-				: undefined,
 			untilDate ? new ItemRecurrenceUntilDate(untilDate) : undefined
 		);
 	}

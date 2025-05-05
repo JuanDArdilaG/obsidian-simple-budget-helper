@@ -9,9 +9,11 @@ export type CreateSubCategoryUseCaseInput = SubCategory;
 export class CreateSubCategoryUseCase
 	implements CommandUseCase<CreateSubCategoryUseCaseInput>
 {
-	constructor(private _subCategoriesService: ISubCategoriesService) {}
+	constructor(
+		private readonly _subcategoriesService: ISubCategoriesService
+	) {}
 
 	async execute(subCategory: SubCategory): Promise<void> {
-		await this._subCategoriesService.create(subCategory);
+		await this._subcategoriesService.create(subCategory);
 	}
 }

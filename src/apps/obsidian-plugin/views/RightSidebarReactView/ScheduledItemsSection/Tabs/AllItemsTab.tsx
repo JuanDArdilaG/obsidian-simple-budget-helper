@@ -19,7 +19,7 @@ export const AllItemsTab = () => {
 			{selectedItem && (
 				<BudgetItemsListContextMenu
 					setAction={setAction}
-					item={selectedItem}
+					recurrent={selectedItem}
 				/>
 			)}
 			<RightSidebarReactTab title="All Items" subtitle>

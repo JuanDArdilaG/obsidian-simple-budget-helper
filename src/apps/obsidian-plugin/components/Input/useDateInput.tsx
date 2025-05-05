@@ -8,9 +8,9 @@ export const useDateInput = (props?: {
 	initialValue?: Date;
 	lock?: boolean;
 	setLock?: (lock: boolean) => void;
-	dateWithTime?: boolean;
+	withTime?: boolean;
 }) => {
-	const { label, initialValue, lock, setLock } = props ?? {};
+	const { label, initialValue, lock, setLock, withTime } = props ?? {};
 	const [date, setDate] = useState(initialValue ?? new Date());
 
 	return {
@@ -21,6 +21,7 @@ export const useDateInput = (props?: {
 					onChange={setDate}
 					label={label}
 					disabled={lock}
+					withTime={withTime}
 				/>
 			</WithLockField>
 		),

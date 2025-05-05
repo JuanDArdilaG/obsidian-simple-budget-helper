@@ -1,4 +1,3 @@
-import { Account, AccountBalance } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
 import { Item } from "contexts/Items/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
@@ -6,20 +5,6 @@ import { SubCategory } from "contexts/Subcategories/domain";
 import { ReportBalance } from "./report-balance.valueobject";
 import { NumberValueObject } from "@juandardilag/value-objects";
 import { GetAllCategoriesWithSubCategoriesUseCaseOutput } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
-
-export type ItemWithAccumulatedBalance = {
-	item: Item;
-	accountPrevBalance: AccountBalance;
-	accountBalance: AccountBalance;
-	toAccountPrevBalance?: AccountBalance;
-	toAccountBalance?: AccountBalance;
-};
-
-export type ItemWithAccounts = {
-	item: Item;
-	account: Account;
-	toAccount?: Account;
-};
 
 export type ItemsWithCategoryAndSubCategory = {
 	category: {
@@ -57,6 +42,17 @@ export class ItemsReport {
 		);
 	}
 
+	getYears(): number[] {
+		return [
+			...new Set(
+				this.items
+					.map((item) => item.recurrences)
+					.flat()
+					.map((r) => r.date.getFullYear())
+			),
+		];
+	}
+
 	getTotal(): ReportBalance {
 		return this.items.reduce(
 			(total, item) => total.plus(item.realPrice),
@@ -69,126 +65,6 @@ export class ItemsReport {
 			(total, item) => total.plus(item.pricePerMonth),
 			ReportBalance.zero()
 		);
-	}
-
-	preValidate(): boolean {
-		this.#logger.debug("preValidate", {
-			length: this.items.length,
-		});
-		return this.items.length > 0;
-	}
-
-	sort(): void {
-		this.items.sort((a, b) => a.date.compare(b.date));
-		this.#logger.debug("sort", {
-			items: [...this.items],
-		});
-	}
-
-	filter(): void {}
-
-	addAccounts(accounts: Account[]): ItemWithAccounts[] {
-		return this.items
-			.filter((item) => {
-				this.#logger.debug("addAccounts", {
-					item,
-					account: accounts.find((acc) =>
-						acc.id.equalTo(item.account)
-					),
-				});
-				return accounts.find((acc) => acc.id.equalTo(item.account));
-			})
-			.map((item) => ({
-				item,
-				account: accounts.find((acc) => acc.id.equalTo(item.account))!,
-				toAccount:
-					item.toAccount &&
-					accounts.find((acc) => acc.id.equalTo(item.toAccount!)),
-			}));
-	}
-
-	initialAccountsBalance(
-		itemsWithAccount: ItemWithAccounts[]
-	): Record<string, AccountBalance> {
-		const result: Record<string, AccountBalance> = {};
-		itemsWithAccount.forEach(({ account, toAccount }) => {
-			result[account.id.value] = account.balance;
-			if (toAccount) result[toAccount.id.value] = toAccount.balance;
-		});
-		this.#logger.debug("initialAccountsBalance", {
-			result,
-		});
-		return result;
-	}
-
-	addItemToAccountBalance(
-		itemWithAccount: ItemWithAccounts,
-		accountBalance: AccountBalance,
-		toAccountBalance?: AccountBalance
-	): {
-		newAccountBalance: AccountBalance;
-		newToAccountBalance?: AccountBalance;
-	} {
-		accountBalance = accountBalance.plus(
-			itemWithAccount.item.getRealPriceForAccount(itemWithAccount.account)
-		);
-
-		if (toAccountBalance && itemWithAccount.toAccount)
-			toAccountBalance = toAccountBalance.plus(
-				itemWithAccount.item.getRealPriceForAccount(
-					itemWithAccount.toAccount
-				)
-			);
-
-		this.#logger.debug("addItemToAccountBalance", {
-			itemWithAccount,
-			accountBalance,
-			toAccountBalance,
-		});
-
-		return {
-			newAccountBalance: accountBalance,
-			newToAccountBalance: toAccountBalance,
-		};
-	}
-
-	execute(accounts: Account[]): ItemWithAccumulatedBalance[] {
-		if (!this.preValidate()) return [];
-		this.sort();
-		this.filter();
-		const itemsWithAccount = this.addAccounts(accounts);
-		this.#logger.debug("itemsWithAccount", {
-			itemsWithAccount,
-		});
-		const initialAccountsBalance =
-			this.initialAccountsBalance(itemsWithAccount);
-
-		return itemsWithAccount.map(({ item, account, toAccount }) => {
-			const accountPrevBalance =
-				initialAccountsBalance[item.account.value];
-			const toAccountPrevBalance =
-				item.toAccount && initialAccountsBalance[item.toAccount.value];
-
-			const { newAccountBalance, newToAccountBalance } =
-				this.addItemToAccountBalance(
-					{ item, account, toAccount },
-					accountPrevBalance,
-					toAccountPrevBalance
-				);
-
-			initialAccountsBalance[item.account.value] = newAccountBalance;
-			if (item.toAccount && newToAccountBalance)
-				initialAccountsBalance[item.toAccount.value] =
-					newToAccountBalance;
-
-			return {
-				item,
-				accountPrevBalance,
-				accountBalance: newAccountBalance,
-				toAccountPrevBalance,
-				toAccountBalance: newToAccountBalance,
-			};
-		});
 	}
 
 	groupPerCategory(

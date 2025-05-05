@@ -1,14 +1,13 @@
 import { useLogger } from "apps/obsidian-plugin/hooks";
-import { Item } from "contexts/Items/domain";
+import { ERecurrenceState, Item } from "contexts/Items/domain";
 import { Forward } from "lucide-react";
 import { useState, useEffect, useMemo, useContext } from "react";
-import { RecordItemPanel } from "../../../../panels/RecordItemPanel";
 import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
 import { AccountsContext } from "../../Contexts";
-import { EditItemPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemPanel";
 import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
 import { ItemReportContext } from "../../Contexts/ItemReportContext";
 import { ReportBalance } from "contexts/Reports/domain";
+import { EditItemPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemPanel";
 
 export const AllItemsList = ({
 	items,
@@ -90,32 +89,41 @@ export const AllItemsList = ({
 		<div>
 			<ul>
 				{items
-					.toSorted((itemA, itemB) => itemA.date.compare(itemB.date))
 					.map((item) => {
+						const recurrence = item.recurrences.find(
+							(recurrence) =>
+								recurrence.state === ERecurrenceState.PENDING
+						);
+						return { item, recurrence };
+					})
+					.filter(({ recurrence }) => recurrence)
+					.toSorted(
+						(
+							{ recurrence: a, item: itemA },
+							{ recurrence: b, item: itemB }
+						) => {
+							const result = a!.date.compareTo(b!.date);
+							if (result !== 0) return result;
+							// Secondary sort criteria
+							return itemA.name.compareTo(itemB.name);
+						}
+					)
+					.map(({ item, recurrence }) => {
 						const account = getAccountByID(item.account);
 						const toAccount = item.toAccount
 							? getAccountByID(item.toAccount)
 							: undefined;
-						const remainingDays = item.date.remainingDays;
+						const remainingDays =
+							recurrence!.date.getRemainingDays() ?? 0;
 						const totalRecurrences =
 							item.recurrence?.totalRecurrences ?? 1;
 
 						let panelContent;
 						if (showPanel && item === showPanel.item) {
-							if (showPanel.action === "record") {
-								panelContent = (
-									<RecordItemPanel
-										item={item}
-										onClose={() => {
-											setShowPanel(undefined);
-											updateItems();
-										}}
-									/>
-								);
-							} else if (showPanel.action === "edit") {
+							if (showPanel.action === "edit") {
 								panelContent = (
 									<EditItemPanel
-										recurrence={item}
+										item={item}
 										onClose={() => {
 											setShowPanel(undefined);
 											updateItems();
@@ -134,20 +142,11 @@ export const AllItemsList = ({
 						return (
 							<li
 								key={item.id.value}
-								// onClick={() => {
-								// 	setShowPanel(undefined);
-								// }}
-								// onKeyDown={(e) => {
-								// 	if (e.key === "Enter") {
-								// 		setShowPanel(undefined);
-								// 	}
-								// }}
 								onContextMenu={(e) => {
 									e.preventDefault();
 									setSelectedItem(item);
 								}}
 								style={{
-									background: "none",
 									border: "none",
 									width: "100%",
 									textAlign: "left",
@@ -165,7 +164,7 @@ export const AllItemsList = ({
 													paddingLeft: "6px",
 												}}
 											>
-												{item.recurrence.frequency.toString()}
+												{item.recurrence?.frequency.toString()}
 											</span>
 										)}
 										<span
@@ -183,7 +182,7 @@ export const AllItemsList = ({
 												marginLeft: "15px",
 											}}
 										>
-											{item.date.toPrettyFormatDate()}
+											{recurrence!.date.toPrettyFormatDate()}
 											<br />
 											<span
 												style={{
@@ -191,7 +190,10 @@ export const AllItemsList = ({
 													color: remainingDaysColor,
 												}}
 											>
-												{item.date.remainingDaysStr}
+												{
+													recurrence!.date
+														.remainingDaysStr
+												}
 											</span>
 										</span>
 									</span>

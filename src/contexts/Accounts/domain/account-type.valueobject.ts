@@ -1,10 +1,10 @@
-import { EnumValueObject } from "contexts/Shared/domain";
+import { EnumValueObject } from "@juandardilag/value-objects";
 
 export type AccountTypeType = "asset" | "liability";
 
 export class AccountType extends EnumValueObject<AccountTypeType> {
 	constructor(value: AccountTypeType) {
-		super("Account Type", ["asset", "liability"], (val) => val, value);
+		super(["asset", "liability"], value);
 	}
 
 	static asset(): AccountType {

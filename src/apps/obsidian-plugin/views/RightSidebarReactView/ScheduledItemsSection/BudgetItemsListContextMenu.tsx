@@ -1,16 +1,16 @@
-import { Item } from "contexts/Items/domain";
+import { Item, ItemRecurrenceModification } from "contexts/Items/domain";
 import { ContextMenu } from "apps/obsidian-plugin/components/ContextMenu";
 import { Pencil } from "lucide-react";
 import { useLogger } from "../../../hooks/useLogger";
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import { AppContext, ItemsContext } from "..";
 import { ConfirmationModal } from "apps/obsidian-plugin/components/ConfirmationModal";
 
 export const BudgetItemsListContextMenu = ({
-	item,
+	recurrent,
 	setAction,
 }: {
-	item: Item;
+	recurrent: ItemRecurrenceModification | Item;
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
@@ -19,20 +19,18 @@ export const BudgetItemsListContextMenu = ({
 	const { plugin } = useContext(AppContext);
 	const {
 		useCases: { deleteItem },
+		scheduledItems,
 		updateItems,
 	} = useContext(ItemsContext);
+
+	const item = useMemo(() => {
+		return scheduledItems.find((i) => i.id.value === recurrent.id.value)!;
+	}, [scheduledItems, recurrent.id.value]);
 
 	return (
 		<ContextMenu
 			hookProps={{
 				invalidClickChecker: (e) => {
-					// logger.debug(
-					// 	"invalidClickChecker",
-					// 	{
-					// 		innerText: (e.target as HTMLElement)?.innerText,
-					// 	},
-					// 	{ on: false }
-					// );
 					return (e.target as HTMLElement)?.innerText === "Adjust";
 				},
 			}}
@@ -68,7 +66,7 @@ export const BudgetItemsListContextMenu = ({
 								plugin.app,
 								async (confirm) => {
 									if (confirm) {
-										await deleteItem.execute(item.id);
+										await deleteItem.execute(recurrent.id);
 										updateItems();
 									}
 								}

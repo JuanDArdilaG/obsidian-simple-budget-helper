@@ -1,19 +1,24 @@
 import { useLogger } from "apps/obsidian-plugin/hooks";
-import { Item } from "contexts/Items/domain";
+import { Item, ItemRecurrenceModification } from "contexts/Items/domain";
 import { Forward } from "lucide-react";
 import { useState, useEffect, useMemo, useContext } from "react";
-import { AccountsContext } from "../../Contexts";
-import { ItemsReport } from "contexts/Reports/domain";
+import { AccountsContext, ItemsContext } from "../../Contexts";
+import { AccountsReport, ItemsReport } from "contexts/Reports/domain";
 import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
-import { NumberValueObject } from "@juandardilag/value-objects";
+import {
+	DateValueObject,
+	NumberValueObject,
+} from "@juandardilag/value-objects";
 import { RecordItemPanel } from "apps/obsidian-plugin/panels/RecordItemPanel";
-import { EditItemPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemPanel";
+import { EditItemRecurrencePanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemRecurrencePanel";
 import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
 import { ItemReportContext } from "../../Contexts/ItemReportContext";
 import { AccountBalance, AccountName } from "contexts/Accounts/domain";
+import { ItemWithAccumulatedBalance } from "contexts/Items/application/items-with-accumulated-balance.usecase";
 
 export const CalendarItemsList = ({
 	items,
+	untilDate,
 	selectedItem,
 	setSelectedItem,
 	action,
@@ -21,8 +26,11 @@ export const CalendarItemsList = ({
 	updateItems,
 }: {
 	items: GetItemsUntilDateUseCaseOutput;
-	selectedItem?: Item;
-	setSelectedItem: React.Dispatch<React.SetStateAction<Item | undefined>>;
+	untilDate: Date;
+	selectedItem?: ItemRecurrenceModification;
+	setSelectedItem: React.Dispatch<
+		React.SetStateAction<ItemRecurrenceModification | undefined>
+	>;
 	action?: "edit" | "record";
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
@@ -30,24 +38,44 @@ export const CalendarItemsList = ({
 	updateItems: () => void;
 }) => {
 	const logger = useLogger("CalendarItemsList");
-	const { accounts, getAccountByID } = useContext(AccountsContext);
+	const { getAccountByID, accounts } = useContext(AccountsContext);
+	const report = useMemo(() => new AccountsReport(accounts), [accounts]);
+	const totalAssets = useMemo(() => report.getTotalForAssets(), [report]);
+
+	const {
+		useCases: { itemsWithAccumulatedBalanceUseCase },
+		scheduledItems,
+	} = useContext(ItemsContext);
 	const {
 		useCases: { getTotal },
 	} = useContext(ItemReportContext);
 
 	const [showPanel, setShowPanel] = useState<{
-		item: Item;
+		item: ItemRecurrenceModification;
 		action?: "edit" | "record";
 	}>();
 
 	const itemsReport = useMemo(
-		() => new ItemsReport(items.map((i) => i.item)),
+		() =>
+			new ItemsReport(
+				items
+					.map((item) =>
+						scheduledItems.find((i) =>
+							i.id.equalTo(item.recurrence.id)
+						)
+					)
+					.filter((item) => !!item)
+			),
 		[items]
 	);
-	const itemsWithAccountsBalance = useMemo(
-		() => itemsReport.execute(accounts),
-		[itemsReport, accounts]
-	);
+	const [itemsWithAccountsBalance, setItemsWithAccountsBalance] = useState<
+		ItemWithAccumulatedBalance[]
+	>([]);
+	useEffect(() => {
+		itemsWithAccumulatedBalanceUseCase
+			.execute(new DateValueObject(untilDate))
+			.then((items) => setItemsWithAccountsBalance(items));
+	}, [untilDate]);
 
 	const [total, setTotal] = useState(NumberValueObject.zero());
 	useEffect(() => {
@@ -72,7 +100,7 @@ export const CalendarItemsList = ({
 
 	useEffect(() => {
 		if (selectedItem) {
-			logger.debug("item selected for action", {
+			logger.debug("item selected for action.", {
 				selectedItem,
 				action,
 				showPanel,
@@ -88,13 +116,13 @@ export const CalendarItemsList = ({
 					textAlign: "right",
 					marginTop: 10,
 					marginBottom: 10,
+					fontSize: "1.3em",
 				}}
 			>
 				<div>
 					<b>Total Incomes:</b>{" "}
 					<span
 						style={{
-							fontSize: "1.2em",
 							color: "var(--color-green)",
 						}}
 					>
@@ -103,77 +131,97 @@ export const CalendarItemsList = ({
 				</div>
 				<div>
 					<b>Total Expenses:</b>{" "}
-					<span
-						style={{ fontSize: "1.2em", color: "var(--color-red)" }}
-					>
+					<span style={{ color: "var(--color-red)" }}>
 						{totalExpenses.toString()}
 					</span>
 				</div>
 				<div>
-					<b>Total:</b>{" "}
-					<span style={{ fontSize: "1.2em" }}>
-						{total.toString()}
-					</span>
+					<b>{total.isNegative() ? "Deficit" : "Surplus"}:</b>{" "}
+					<span>{total.toString()}</span>
+				</div>
+				<div>
+					<b>Today Assets:</b> <span>{totalAssets.toString()}</span>
+				</div>
+				<div>
+					<b>Balance:</b>{" "}
+					<span>{totalAssets.plus(total).toString()}</span>
 				</div>
 			</div>
 			<ul>
-				{itemsWithAccountsBalance.map(
-					(
-						{
-							item,
-							accountBalance,
-							accountPrevBalance,
-							toAccountBalance,
-							toAccountPrevBalance,
-						},
-						index
-					) => (
-						<>
-							<CalendarItemsListItem
-								key={item.id.value + index}
-								item={item}
-								accountName={
-									getAccountByID(item.account)?.name ??
-									AccountName.empty()
-								}
-								accountBalance={accountBalance}
-								accountPrevBalance={accountPrevBalance}
-								showPanel={showPanel}
-								setShowPanel={setShowPanel}
-								setSelectedItem={setSelectedItem}
-								setAction={setAction}
-								items={items}
-								updateItems={updateItems}
-							/>
-							{item.operation.isTransfer() &&
-								toAccountBalance &&
-								toAccountPrevBalance && (
-									<CalendarItemsListItem
-										key={
-											item.id.value + index + "-transfer"
-										}
-										item={item}
-										accountName={
-											(item.toAccount &&
-												getAccountByID(item.toAccount)
-													?.name) ??
-											AccountName.empty()
-										}
-										accountBalance={toAccountBalance}
-										accountPrevBalance={
-											toAccountPrevBalance
-										}
-										showPanel={showPanel}
-										setShowPanel={setShowPanel}
-										setSelectedItem={setSelectedItem}
-										setAction={setAction}
-										items={items}
-										updateItems={updateItems}
-									/>
-								)}
-						</>
-					)
-				)}
+				{itemsWithAccountsBalance
+					.map((recurrenceWithBalance) => ({
+						...recurrenceWithBalance,
+						realItem: scheduledItems.find((i) =>
+							i.id.equalTo(recurrenceWithBalance.recurrence.id)
+						),
+					}))
+					.filter(({ realItem }) => !!realItem)
+					.map(
+						(
+							{
+								n,
+								recurrence,
+								accountBalance,
+								accountPrevBalance,
+								toAccountBalance,
+								toAccountPrevBalance,
+								realItem,
+							},
+							index
+						) => (
+							<>
+								<CalendarItemsListItem
+									key={recurrence.id.value + index}
+									item={realItem!}
+									n={n}
+									recurrence={recurrence}
+									accountName={
+										getAccountByID(recurrence.account!)
+											?.name ?? AccountName.empty()
+									}
+									accountBalance={accountBalance}
+									accountPrevBalance={accountPrevBalance}
+									showPanel={showPanel}
+									setShowPanel={setShowPanel}
+									setSelectedItem={setSelectedItem}
+									setAction={setAction}
+									items={items}
+									updateItems={updateItems}
+								/>
+								{realItem!.operation.isTransfer() &&
+									toAccountBalance &&
+									toAccountPrevBalance && (
+										<CalendarItemsListItem
+											key={
+												recurrence.id.value +
+												index +
+												"-transfer"
+											}
+											item={realItem!}
+											n={n}
+											recurrence={recurrence}
+											accountName={
+												(recurrence.toAccount &&
+													getAccountByID(
+														recurrence.toAccount
+													)?.name) ??
+												AccountName.empty()
+											}
+											accountBalance={toAccountBalance}
+											accountPrevBalance={
+												toAccountPrevBalance
+											}
+											showPanel={showPanel}
+											setShowPanel={setShowPanel}
+											setSelectedItem={setSelectedItem}
+											setAction={setAction}
+											items={items}
+											updateItems={updateItems}
+										/>
+									)}
+							</>
+						)
+					)}
 			</ul>
 		</div>
 	);
@@ -181,6 +229,8 @@ export const CalendarItemsList = ({
 
 const CalendarItemsListItem = ({
 	item,
+	n,
+	recurrence,
 	accountName,
 	accountBalance,
 	accountPrevBalance,
@@ -192,32 +242,37 @@ const CalendarItemsListItem = ({
 	updateItems,
 }: {
 	item: Item;
+	n: NumberValueObject;
+	recurrence: ItemRecurrenceModification;
 	accountName: AccountName;
 	accountBalance: AccountBalance;
 	accountPrevBalance: AccountBalance;
 	showPanel:
 		| {
-				item: Item;
+				item: ItemRecurrenceModification;
 				action?: "edit" | "record";
 		  }
 		| undefined;
 	setShowPanel: React.Dispatch<
 		React.SetStateAction<
 			| {
-					item: Item;
+					item: ItemRecurrenceModification;
 					action?: "edit" | "record";
 			  }
 			| undefined
 		>
 	>;
-	setSelectedItem: React.Dispatch<React.SetStateAction<Item | undefined>>;
+	setSelectedItem: React.Dispatch<
+		React.SetStateAction<ItemRecurrenceModification | undefined>
+	>;
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
 	items: GetItemsUntilDateUseCaseOutput;
 	updateItems: () => void;
 }) => {
-	const remainingDays = item.date.remainingDays;
+	const logger = useLogger("CalendarItemsListItem");
+	const remainingDays = recurrence.date.getRemainingDays();
 	let remainingDaysColor = "";
 	if (remainingDays < -3) remainingDaysColor = "var(--color-red)";
 	else if (Math.abs(remainingDays) <= 3)
@@ -233,7 +288,8 @@ const CalendarItemsListItem = ({
 				onContextMenu={(e) => {
 					e.preventDefault();
 					setShowPanel(undefined);
-					setSelectedItem(item);
+					logger.debug("recurrence selected", { recurrence });
+					setSelectedItem(recurrence);
 				}}
 				onKeyDown={() => {}}
 			>
@@ -250,7 +306,7 @@ const CalendarItemsListItem = ({
 								marginLeft: "15px",
 							}}
 						>
-							{item.date.toPrettyFormatDate()}
+							{recurrence.date.toPrettyFormatDate()}
 							<br />
 							<span
 								style={{
@@ -258,7 +314,7 @@ const CalendarItemsListItem = ({
 									marginLeft: "15px",
 								}}
 							>
-								{item.date.remainingDaysStr}
+								{recurrence.date.remainingDaysStr}
 							</span>
 						</span>
 					</span>
@@ -266,8 +322,8 @@ const CalendarItemsListItem = ({
 						<PriceLabel
 							price={
 								item.operation.isTransfer()
-									? item.price.negate()
-									: item.realPrice
+									? recurrence.price!.negate()
+									: recurrence.price!
 							}
 							operation={item.operation}
 						/>
@@ -285,7 +341,7 @@ const CalendarItemsListItem = ({
 								size={19}
 								onClick={() => {
 									setAction("record");
-									setSelectedItem(item);
+									setSelectedItem(recurrence);
 								}}
 							/>
 						</span>
@@ -303,24 +359,22 @@ const CalendarItemsListItem = ({
 					</span>
 				</div>
 			</li>
-			{item === showPanel?.item && showPanel.action === "record" && (
-				<RecordItemPanel
+			{recurrence === showPanel?.item &&
+				showPanel.action === "record" && (
+					<RecordItemPanel
+						item={item}
+						recurrence={{ recurrence, n }}
+						onClose={() => {
+							updateItems();
+							setShowPanel(undefined);
+							setAction(undefined);
+						}}
+					/>
+				)}
+			{recurrence === showPanel?.item && showPanel.action === "edit" && (
+				<EditItemRecurrencePanel
 					item={item}
-					onClose={() => {
-						updateItems();
-						setShowPanel(undefined);
-						setAction(undefined);
-					}}
-				/>
-			)}
-			{item === showPanel?.item && showPanel.action === "edit" && (
-				<EditItemPanel
-					recurrence={
-						items.find((r) => r.item === item) ?? {
-							item,
-							n: NumberValueObject.zero(),
-						}
-					}
+					recurrence={{ recurrence, n }}
 					onClose={() => {
 						setShowPanel(undefined);
 						setAction(undefined);

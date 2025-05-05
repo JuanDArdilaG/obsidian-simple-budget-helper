@@ -15,6 +15,7 @@ import { GetAllUniqueTransactionsByNameUseCase } from "contexts/Transactions/app
 import { GetAllUniqueItemBrandsUseCase } from "contexts/Transactions/application/get-all-unique-item-brands.usecase";
 import { GetAllUniqueItemStoresUseCase } from "contexts/Transactions/application/get-all-unique-item-stores.usecase";
 import { ItemBrand, ItemStore } from "contexts/Items/domain";
+import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
 
 export type TransactionsContextType = {
 	useCases: {
@@ -26,6 +27,7 @@ export type TransactionsContextType = {
 		getAllUniqueItemBrands: GetAllUniqueItemBrandsUseCase;
 		getAllUniqueItemStores: GetAllUniqueItemStoresUseCase;
 		adjustAccount: AdjustAccountUseCase;
+		groupByCategoryWithAccumulatedBalance: GroupByCategoryWithAccumulatedBalanceUseCase;
 	};
 	transactions: Transaction[];
 	transactionsReport: TransactionsReport;
@@ -59,6 +61,8 @@ export const TransactionsContext = createContext<TransactionsContextType>({
 		getAllUniqueItemBrands: {} as GetAllUniqueItemBrandsUseCase,
 		getAllUniqueItemStores: {} as GetAllUniqueItemStoresUseCase,
 		adjustAccount: {} as AdjustAccountUseCase,
+		groupByCategoryWithAccumulatedBalance:
+			{} as GroupByCategoryWithAccumulatedBalanceUseCase,
 	},
 	transactions: [],
 	updateTransactions: () => {},
@@ -137,6 +141,9 @@ export const getTransactionsContextValues = (
 			getAllUniqueTransactionsByNameUseCase,
 			getAllUniqueItemBrands,
 			getAllUniqueItemStores,
+			groupByCategoryWithAccumulatedBalance: container.resolve(
+				"groupByCategoryWithAccumulatedBalanceUseCase"
+			),
 		},
 		transactions,
 		transactionsReport,

@@ -150,8 +150,9 @@ export function AccountingList({
 				/>
 			)}
 			<List className="accounting-list" subheader={<li />}>
-				{withAccumulatedBalanceTransactionsGrouped.map(
-					([date, withBalanceTransactions]) => (
+				{withAccumulatedBalanceTransactionsGrouped
+					.slice(0, 10)
+					.map(([date, withBalanceTransactions]) => (
 						<ListItem key={date}>
 							<List>
 								<ListSubheader
@@ -199,8 +200,7 @@ export function AccountingList({
 								)}
 							</List>
 						</ListItem>
-					)
-				)}
+					))}
 			</List>
 		</>
 	);

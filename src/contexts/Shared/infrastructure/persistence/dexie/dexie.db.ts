@@ -20,7 +20,7 @@ export class DexieDB extends DB {
 	}
 
 	#initializeTables() {
-		this.db.version(5).stores({
+		this.db.version(7).stores({
 			[this.config.accountsTableName]: Object.keys(
 				Account.emptyPrimitives()
 			).join(", "),
@@ -38,9 +38,4 @@ export class DexieDB extends DB {
 			).join(", "),
 		});
 	}
-
-	async query(
-		q: string,
-		params?: Record<string, string | number | null>
-	): Promise<any> {}
 }
