@@ -55,19 +55,19 @@ export const CalendarItemsList = ({
 		action?: "edit" | "record";
 	}>();
 
-	const itemsReport = useMemo(
-		() =>
-			new ItemsReport(
-				items
-					.map((item) =>
-						scheduledItems.find((i) =>
-							i.id.equalTo(item.recurrence.id)
-						)
-					)
-					.filter((item) => !!item)
-			),
-		[items]
-	);
+	const itemsReport = useMemo(() => {
+		const modifiedItems = items
+			.map(({ recurrence }) => {
+				const x = scheduledItems.find((i) =>
+					i.id.equalTo(recurrence.id)
+				);
+				x?.applyModification(recurrence);
+				return x;
+			})
+			.filter((item) => !!item);
+		logger.logger.debug("modifiedItems", { modifiedItems });
+		return new ItemsReport(modifiedItems);
+	}, [items]);
 	const [itemsWithAccountsBalance, setItemsWithAccountsBalance] = useState<
 		ItemWithAccumulatedBalance[]
 	>([]);
@@ -169,7 +169,7 @@ export const CalendarItemsList = ({
 							},
 							index
 						) => (
-							<>
+							<div key={recurrence.id.value + index}>
 								<CalendarItemsListItem
 									key={recurrence.id.value + index}
 									item={realItem!}
@@ -219,7 +219,7 @@ export const CalendarItemsList = ({
 											updateItems={updateItems}
 										/>
 									)}
-							</>
+							</div>
 						)
 					)}
 			</ul>

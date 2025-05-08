@@ -3,6 +3,7 @@ import { ItemsReport, ReportBalance } from "../domain";
 import { Account, IAccountsService } from "contexts/Accounts/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Item } from "contexts/Items/domain";
+import { PriceValueObject } from "@juandardilag/value-objects";
 
 type ItemsWithAccounts = {
 	item: Item;
@@ -72,18 +73,25 @@ export class ReportsService implements IReportsService {
 			type
 		);
 
+		this.#logger.debug("items", { items });
+
 		let total = ReportBalance.zero();
 		for (const { item, account, toAccount } of items) {
+			const prevTotal = new PriceValueObject(total.value);
 			const realPrice = item.realPrice;
+			this.#logger.debug("realPrice", { realPrice });
 			if (!realPrice.isZero()) {
 				total = total.plus(realPrice);
+				this.#logger.debug("updating total", { prevTotal, total });
 				continue;
 			}
 			if (account.type.isAsset() && toAccount?.type.isLiability())
 				total = total.plus(item.price.negate());
 			else if (account.type.isLiability() && toAccount?.type.isAsset())
 				total = total.plus(item.price);
+			this.#logger.debug("updating total", { prevTotal, total });
 		}
+		this.#logger.debug("total", { total });
 		return total;
 	}
 

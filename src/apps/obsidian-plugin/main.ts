@@ -48,6 +48,8 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 	}
 
 	async importDBBackup() {
+		await this.db.delete();
+		// await this.db.open();
 		const path = normalizePath(`${this.settings.rootFolder}/db/db.backup`);
 		const buffer = await this.app.vault.adapter.readBinary(path);
 		this.db = await importDB(new Blob([buffer]));

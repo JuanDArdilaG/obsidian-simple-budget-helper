@@ -199,6 +199,12 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 		return this._recurrences ?? [];
 	}
 
+	applyModification(modification: ItemRecurrenceModification): void {
+		modification.price && this.updatePrice(modification.price);
+		modification.account && this.updateAccount(modification.account);
+		modification.toAccount && this.updateToAccount(modification.toAccount);
+	}
+
 	createAllRecurrences(
 		max: NumberValueObject = new NumberValueObject(50)
 	): void {

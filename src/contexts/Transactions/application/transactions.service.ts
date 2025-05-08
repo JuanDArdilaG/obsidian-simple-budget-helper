@@ -153,13 +153,25 @@ export class TransactionsService implements ITransactionsService {
 
 	async delete(id: TransactionID): Promise<void> {
 		const transaction = await this.getByID(id);
+
+		await this._transactionsRepository.deleteById(id);
+
+		await this.#adjustAccountsOnDeletion(transaction);
+	}
+
+	async #adjustAccountsOnDeletion(transaction: Transaction) {
 		const account = await this._accountsService.getByID(
 			transaction.account
 		);
-
-		await this._transactionsRepository.deleteById(id);
 		account.adjustOnTransactionDeletion(transaction);
-
 		await this._accountsService.update(account);
+
+		const toAccount =
+			transaction.toAccount &&
+			(await this._accountsService.getByID(transaction.toAccount));
+		if (toAccount) {
+			toAccount.adjustOnTransactionDeletion(transaction);
+			await this._accountsService.update(toAccount);
+		}
 	}
 }

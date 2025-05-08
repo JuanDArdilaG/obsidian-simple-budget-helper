@@ -183,10 +183,9 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		let multiplier = 1;
 		if (this.operation.isTransfer()) {
 			if (this.account.equalTo(accountID)) multiplier = -1;
-			else if (this.toAccount)
-				multiplier = this.toAccount.equalTo(accountID) ? 1 : 0;
-		}
-		if (this.operation.isExpense()) multiplier = -multiplier;
+			else if (this.toAccount?.equalTo(accountID)) multiplier = 1;
+			else multiplier = 0;
+		} else if (this.operation.isExpense()) multiplier = -multiplier;
 		return new TransactionAmount(this._amount.toNumber() * multiplier);
 	}
 
