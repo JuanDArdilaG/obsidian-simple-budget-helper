@@ -56,7 +56,9 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 			`${this.settings.rootFolder}/db/${backupName}`
 		);
 		const buffer = await this.app.vault.adapter.readBinary(path);
-		await importInto(this.db.db, new Blob([buffer]));
+		await importInto(this.db.db, new Blob([buffer]), {
+			clearTablesBeforeImport: true,
+		});
 	}
 
 	async migrateItems(container: AwilixContainer) {
