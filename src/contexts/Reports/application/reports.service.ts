@@ -26,11 +26,13 @@ export class ReportsService implements IReportsService {
 		return await Promise.all(
 			report.items.map(async (item) => {
 				const account = await this._accountsService.getByID(
-					item.account
+					item.operation.account
 				);
 				const toAccount =
-					item.toAccount &&
-					(await this._accountsService.getByID(item.toAccount));
+					item.operation.toAccount &&
+					(await this._accountsService.getByID(
+						item.operation.toAccount
+					));
 				return { item, account, toAccount };
 			})
 		);
@@ -44,16 +46,16 @@ export class ReportsService implements IReportsService {
 		return items.filter(({ item, account, toAccount }) => {
 			if (
 				type === "expenses" &&
-				(item.operation.isExpense() ||
-					(item.operation.isTransfer() &&
+				(item.operation.type.isExpense() ||
+					(item.operation.type.isTransfer() &&
 						account.type.isAsset() &&
 						toAccount?.type.isLiability()))
 			)
 				return true;
 			if (
 				type === "incomes" &&
-				(item.operation.isIncome() ||
-					(item.operation.isTransfer() &&
+				(item.operation.type.isIncome() ||
+					(item.operation.type.isTransfer() &&
 						account.type.isLiability() &&
 						toAccount?.type.isAsset()))
 			)

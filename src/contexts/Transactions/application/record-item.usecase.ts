@@ -66,8 +66,8 @@ export class RecordItemUseCase
 		});
 
 		transaction.updateAmount(amount ?? item.price);
-		transaction.updateAccount(account ?? item.account);
-		transaction.updateToAccount(toAccount ?? item.toAccount);
+		transaction.updateAccount(account ?? item.operation.account);
+		transaction.updateToAccount(toAccount ?? item.operation.toAccount);
 
 		this.#logger.debug("transaction after update", { transaction });
 

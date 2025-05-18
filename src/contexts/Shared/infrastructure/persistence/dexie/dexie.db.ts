@@ -16,6 +16,9 @@ export class DexieDB extends DB {
 			chromeTransactionDurability: "strict",
 		});
 		this.#initializeTables();
+	}
+
+	async init() {
 		this.db.open();
 	}
 

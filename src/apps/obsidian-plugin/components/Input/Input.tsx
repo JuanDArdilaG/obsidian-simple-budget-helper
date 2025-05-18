@@ -31,6 +31,7 @@ export const Input = <T extends NonNullable<InputValue>>({
 				variant="standard"
 				value={value}
 				onChange={(e) => onChange(e.target.value as T)}
+				type={typeof value === "number" ? "number" : "text"}
 				slotProps={{
 					inputLabel: {
 						style: {

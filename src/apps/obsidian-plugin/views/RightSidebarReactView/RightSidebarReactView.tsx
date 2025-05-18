@@ -5,7 +5,6 @@ import {
 } from "../../components/SectionButtons";
 import { AccountingSection } from "./AccountingSection/AccountingSection";
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
-import { AwilixContainer } from "awilix";
 import { AppProviders } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import {
 	AccountsList,
@@ -15,11 +14,9 @@ import { DBSection } from "./DBSection";
 import { CategoriesList } from "./AccountingSection/CategoriesList";
 
 export const RightSidebarReactView = ({
-	container,
 	statusBarAddText,
 	plugin,
 }: {
-	container: AwilixContainer<any>;
 	plugin: SimpleBudgetHelperPlugin;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) => {
@@ -33,7 +30,7 @@ export const RightSidebarReactView = ({
 	}, [sectionSelection]);
 
 	return (
-		<AppProviders container={container} plugin={plugin}>
+		<AppProviders container={plugin.container} plugin={plugin}>
 			<SectionButtons
 				selected={sectionSelection}
 				setSelected={setSectionSelection}
@@ -41,10 +38,7 @@ export const RightSidebarReactView = ({
 
 			{sectionSelection === "scheduledItems" && <ScheduledItemsSection />}
 			{sectionSelection === "accounting" && (
-				<AccountingSection
-					app={plugin.app}
-					statusBarAddText={statusBarAddText}
-				/>
+				<AccountingSection statusBarAddText={statusBarAddText} />
 			)}
 			{sectionSelection === "accounts" && <AccountsList />}
 			{sectionSelection === "categories" && <CategoriesList />}

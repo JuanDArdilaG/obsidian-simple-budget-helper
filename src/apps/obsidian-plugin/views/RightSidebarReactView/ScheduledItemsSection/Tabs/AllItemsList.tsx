@@ -90,7 +90,7 @@ export const AllItemsList = ({
 			<ul>
 				{items
 					.map((item) => {
-						const recurrence = item.recurrences.find(
+						const recurrence = item.recurrence.recurrences.find(
 							(recurrence) =>
 								recurrence.state === ERecurrenceState.PENDING
 						);
@@ -109,9 +109,9 @@ export const AllItemsList = ({
 						}
 					)
 					.map(({ item, recurrence }) => {
-						const account = getAccountByID(item.account);
-						const toAccount = item.toAccount
-							? getAccountByID(item.toAccount)
+						const account = getAccountByID(item.operation.account);
+						const toAccount = item.operation.toAccount
+							? getAccountByID(item.operation.toAccount)
 							: undefined;
 						const remainingDays =
 							recurrence!.date.getRemainingDays() ?? 0;
@@ -200,11 +200,11 @@ export const AllItemsList = ({
 									<span style={{ textAlign: "right" }}>
 										<PriceLabel
 											price={
-												item.operation.isTransfer()
+												item.operation.type.isTransfer()
 													? item.price
 													: item.realPrice
 											}
-											operation={item.operation}
+											operation={item.operation.type}
 										/>
 										<span
 											style={{

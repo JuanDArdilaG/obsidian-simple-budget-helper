@@ -38,17 +38,14 @@ export const CreateItemForm = ({
 	const [locks, setLocks] = useState<{
 		[K in keyof Omit<Required<ItemPrimitives>, "id">]: boolean;
 	}>({
-		account: false,
 		name: false,
-		amount: false,
+		price: false,
 		brand: false,
 		category: false,
 		subCategory: false,
-		toAccount: false,
 		store: false,
 		operation: false,
 		recurrence: false,
-		recurrences: false,
 	});
 	const [item, setItem] = useState<ItemPrimitives>(Item.emptyPrimitives());
 	const [selectedItem, setSelectedItem] = useState<ItemPrimitives>();
@@ -58,16 +55,16 @@ export const CreateItemForm = ({
 	});
 	const { AccountSelect, account } = useAccountSelect({
 		label: "From",
-		initialValueID: item.account,
-		lock: locks.account,
-		setLock: (lock) => updateLock("account", lock),
+		initialValueID: item.operation.account,
+		// lock: locks.account,
+		// setLock: (lock) => updateLock("account", lock),
 	});
 	const { AccountSelect: ToAccountSelect, account: toAccount } =
 		useAccountSelect({
 			label: "To",
-			initialValueID: item.toAccount,
-			lock: locks.toAccount,
-			setLock: (lock) => updateLock("toAccount", lock),
+			initialValueID: item.operation.toAccount,
+			// lock: locks.toAccount,
+			// setLock: (lock) => updateLock("toAccount", lock),
 		});
 	const { CategorySelect, category } = useCategorySelect({
 		initialValueID: item.category,
@@ -94,13 +91,13 @@ export const CreateItemForm = ({
 			const toUpdate: Partial<ItemPrimitives> = {
 				operation: getLockedOrSelectedValue("operation"),
 				name: getLockedOrSelectedValue("name"),
-				amount: getLockedOrSelectedValue("amount"),
+				price: getLockedOrSelectedValue("price"),
 				category: getLockedOrSelectedValue("category"),
 				subCategory: getLockedOrSelectedValue("subCategory"),
 				brand: getLockedOrSelectedValue("brand"),
 				store: getLockedOrSelectedValue("store"),
-				account: getLockedOrSelectedValue("account"),
-				toAccount: getLockedOrSelectedValue("toAccount"),
+				// account: getLockedOrSelectedValue("account"),
+				// toAccount: getLockedOrSelectedValue("toAccount"),
 			};
 
 			logger.debug("item to update on creation", {
@@ -126,16 +123,17 @@ export const CreateItemForm = ({
 		if (newValues.name !== undefined) newItem.name = newValues.name;
 		if (newValues.operation !== undefined)
 			newItem.operation = newValues.operation;
-		if (newValues.amount !== undefined) newItem.amount = newValues.amount;
+		if (newValues.price !== undefined) newItem.price = newValues.price;
 		if (newValues.category !== undefined)
 			newItem.category = newValues.category;
 		if (newValues.subCategory !== undefined)
 			newItem.subCategory = newValues.subCategory;
 		if (newValues.brand !== undefined) newItem.brand = newValues.brand;
 		if (newValues.store !== undefined) newItem.store = newValues.store;
-		if (newValues.toAccount) newItem.toAccount = newValues.toAccount;
-		if (newValues.account !== undefined)
-			newItem.account = newValues.account;
+		if (newValues.operation?.toAccount)
+			newItem.operation.toAccount = newValues.operation?.toAccount;
+		if (newValues.operation?.account !== undefined)
+			newItem.operation.account = newValues.operation?.account;
 
 		logger.debug("item to create updated", {
 			newItem,
@@ -152,8 +150,11 @@ export const CreateItemForm = ({
 			id: ItemID.generate().value,
 			category: category?.id.value ?? "",
 			subCategory: subCategory?.id.value ?? "",
-			account: account?.id.value ?? "",
-			toAccount: toAccount?.id.value,
+			operation: {
+				...item.operation,
+				account: account?.id.value ?? "",
+				toAccount: toAccount?.id.value,
+			},
 		});
 
 		await onSubmit(itemToPersist, new TransactionDate(date));
@@ -162,16 +163,24 @@ export const CreateItemForm = ({
 		setSelectedItem(undefined);
 		setItem({
 			id: "",
-			account: locks.account ? item.account : "",
 			name: locks.name ? item.name : "",
-			amount: locks.amount ? item.amount : 0,
+			price: locks.price ? item.price : 0,
 			category: locks.category ? item.category : "",
 			subCategory: locks.subCategory ? item.subCategory : "",
 			brand: locks.brand ? item.brand : "",
 			store: locks.store ? item.store : "",
-			operation: locks.operation ? item.operation : "expense",
-			toAccount: locks.toAccount ? item.toAccount : "",
-			recurrences: [],
+			recurrence: {
+				recurrences: [],
+				startDate: new Date(),
+			},
+			operation: {
+				// type: locks.operation ? item.operation : "expense",
+				type: "expense",
+				// account: locks.account ? item.account : "",
+				account: item.operation.account,
+				// toAccount: locks.toAccount ? item.toAccount : "",
+				toAccount: item.operation.toAccount,
+			},
 		});
 	};
 
@@ -188,19 +197,21 @@ export const CreateItemForm = ({
 				getLabel={(item) => {
 					if (!item) return "";
 					const label = `${item.name} - ${
-						getAccountByID(new AccountID(item.account))?.name.value
+						getAccountByID(new AccountID(item.operation.account))
+							?.name.value
 					}${
-						item.operation === "transfer" && item.toAccount
+						item.operation.type === "transfer" &&
+						item.operation.toAccount
 							? ` -> ${
 									getAccountByID(
-										new AccountID(item.toAccount)
+										new AccountID(item.operation.toAccount)
 									)?.name.value
 							  } - `
 							: ""
 					}${
-						item.amount === 0
+						item.price === 0
 							? ""
-							: "  " + new ItemPrice(item.amount).toString()
+							: "  " + new ItemPrice(item.price).toString()
 					}`;
 					return label.length > 40
 						? label.slice(0, 40) + "..."
@@ -224,15 +235,15 @@ export const CreateItemForm = ({
 				<PriceInput
 					id="amount"
 					label="Amount"
-					isLocked={locks.amount}
-					setIsLocked={(value) => updateLock("amount", value)}
+					isLocked={locks.price}
+					setIsLocked={(value) => updateLock("price", value)}
 					value={
-						new PriceValueObject(item.amount, {
+						new PriceValueObject(item.price, {
 							withSign: false,
 							decimals: 2,
 						})
 					}
-					onChange={(amount) => update({ amount: amount.toNumber() })}
+					onChange={(amount) => update({ price: amount.toNumber() })}
 				/>
 			</div>
 			<div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -242,11 +253,14 @@ export const CreateItemForm = ({
 			<Select
 				id="type"
 				label="Type"
-				value={item.operation}
+				value={item.operation.type}
 				values={["expense", "income", "transfer"]}
 				onChange={(operation) => {
 					update({
-						operation: operation.toLowerCase() as OperationType,
+						operation: {
+							...item.operation,
+							type: operation.toLowerCase() as OperationType,
+						},
 					});
 				}}
 				isLocked={locks.operation}
@@ -261,9 +275,9 @@ export const CreateItemForm = ({
 				}}
 			>
 				{AccountSelect}
-				{item.operation === "transfer" && ToAccountSelect}
+				{item.operation.type === "transfer" && ToAccountSelect}
 			</div>
-			{item.operation === "expense" && (
+			{item.operation.type === "expense" && (
 				<div
 					style={{ display: "flex", justifyContent: "space-between" }}
 				>

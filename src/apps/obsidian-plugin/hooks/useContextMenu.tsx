@@ -34,7 +34,7 @@ export const useContextMenu = ({
 
 	const handleClick = useCallback(
 		(e: MouseEvent) => {
-			if (invalidClickChecker && invalidClickChecker(e)) return;
+			if (invalidClickChecker?.(e)) return;
 			if (showMenu && !lock) setShowMenu(false);
 		},
 		[showMenu]

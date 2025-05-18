@@ -6,7 +6,7 @@ import {
 	ItemsContext,
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { Item, ItemRecurrenceModification } from "contexts/Items/domain";
+import { Item, ItemRecurrenceInfo } from "contexts/Items/domain";
 import {
 	TransactionAmount,
 	TransactionDate,
@@ -22,7 +22,7 @@ export const RecordItemPanel = ({
 }: {
 	item: Item;
 	recurrence: {
-		recurrence: ItemRecurrenceModification;
+		recurrence: ItemRecurrenceInfo;
 		n: NumberValueObject;
 	};
 	onClose: () => void;
@@ -36,12 +36,12 @@ export const RecordItemPanel = ({
 	const { updateTransactions } = useContext(TransactionsContext);
 	const { AccountSelect, account } = useAccountSelect({
 		label: "From",
-		initialValueID: item.account.value,
+		initialValueID: item.operation.account.value,
 	});
 	const { AccountSelect: ToAccountSelect, account: toAccount } =
 		useAccountSelect({
 			label: "To",
-			initialValueID: item.toAccount?.value,
+			initialValueID: item.operation.toAccount?.value,
 		});
 	const [date, setDate] = useState<Date>(recurrence.date.value);
 	const [amount, setAmount] = useState(item.price.value);
@@ -51,7 +51,7 @@ export const RecordItemPanel = ({
 		<div className="record-budget-item-modal">
 			<h3>Record:</h3>
 			{AccountSelect}
-			{item.operation.isTransfer() && ToAccountSelect}
+			{item.operation.type.isTransfer() && ToAccountSelect}
 			<DateInput label="Date" value={date} onChange={setDate} />
 			<ReactMoneyInput
 				id="amount-input-react"

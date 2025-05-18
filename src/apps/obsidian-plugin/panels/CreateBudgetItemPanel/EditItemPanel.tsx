@@ -1,11 +1,9 @@
 import { useContext, useState } from "react";
 import {
 	Item,
-	ItemDate,
 	ItemName,
 	ItemRecurrence,
 	ItemRecurrenceFrequency,
-	ItemRecurrenceUntilDate,
 } from "contexts/Items/domain";
 import { ItemsContext, TransactionsContext } from "apps/obsidian-plugin/views";
 import {
@@ -16,11 +14,14 @@ import {
 	useSubCategorySelect,
 } from "apps/obsidian-plugin/components/Select";
 import { OperationType } from "contexts/Shared/domain";
-import { Checkbox, FormControlLabel } from "@mui/material";
 import { Input } from "apps/obsidian-plugin/components/Input/Input";
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { DateInput } from "apps/obsidian-plugin/components/Input/DateInput";
-import { DateValueObject } from "@juandardilag/value-objects";
+import {
+	DateValueObject,
+	NumberValueObject,
+} from "@juandardilag/value-objects";
+import { useCreateRecurrenceForm } from "./useCreateRecurrenceForm";
 
 export const EditItemPanel = ({
 	item,
@@ -37,12 +38,12 @@ export const EditItemPanel = ({
 
 	const { AccountSelect, account } = useAccountSelect({
 		label: "From",
-		initialValueID: item.account.value,
+		initialValueID: item.operation.account.value,
 	});
 	const { AccountSelect: ToAccountSelect, account: toAccount } =
 		useAccountSelect({
 			label: "To",
-			initialValueID: item.toAccount?.value,
+			initialValueID: item.operation.toAccount?.value,
 		});
 	const { CategorySelect, category } = useCategorySelect({
 		initialValueID: item.category.value,
@@ -52,25 +53,22 @@ export const EditItemPanel = ({
 		initialValueID: item.subCategory.value,
 	});
 
+	const {
+		RecurrenceForm,
+		untilDate,
+		frequencyString,
+		recurrenceType,
+		recurrences,
+	} = useCreateRecurrenceForm({ recurrence: item.recurrence });
+
 	const [name, setName] = useState(item.name.value);
 	const [amount, setAmount] = useState(item.price);
-	const [type, setType] = useState(item.operation.value);
+	const [type, setType] = useState(item.operation.type.value);
 
 	const [brand, setBrand] = useState(item.info?.value.brand?.value);
 	const [store, setStore] = useState(item.info?.value.store?.value);
-	const [frequency, setFrequency] = useState(
-		item.recurrence?.frequency.value
-	);
 
-	const [date, setDate] = useState(
-		item.recurrence?.startDate.value ?? item.recurrences[0].date
-	);
-	const [untilDate, setUntilDate] = useState(
-		item.recurrence?.untilDate?.value
-	);
-	const [withUntilDate, setWithUntilDate] = useState(
-		!!item.recurrence?.untilDate
-	);
+	const [date, setDate] = useState(item.recurrence.startDate.value);
 
 	return (
 		<div className="create-budget-item-modal">
@@ -102,27 +100,6 @@ export const EditItemPanel = ({
 			{CategorySelect}
 			{SubCategorySelect}
 			<DateInput value={date} onChange={setDate} label="Date" />
-
-			<FormControlLabel
-				control={
-					<Checkbox
-						checked={withUntilDate}
-						onChange={(e) => {
-							const checked = e.target.checked;
-							setUntilDate(checked ? new Date() : undefined);
-							setWithUntilDate(checked);
-						}}
-					/>
-				}
-				label="With Until Date"
-			/>
-			{withUntilDate ? (
-				<DateInput
-					value={untilDate}
-					onChange={setUntilDate}
-					label="Until Date"
-				/>
-			) : undefined}
 			<SelectWithCreation
 				id="brand"
 				label="Brand"
@@ -137,48 +114,40 @@ export const EditItemPanel = ({
 				items={stores.map((s) => s.value)}
 				onChange={setStore}
 			/>
-			<Input<string>
-				id="frequency"
-				label="Frequency"
-				value={frequency ?? ""}
-				onChange={setFrequency}
-				// error={
-				// 	!validation || validation.frequency ? undefined : "required"
-				// }
-			/>
+			{RecurrenceForm}
 			<button
 				onClick={async () => {
-					account &&
-						!account.id.equalTo(item.account) &&
-						item.updateAccount(account.id);
-					toAccount &&
-						item.toAccount &&
-						toAccount.id.equalTo(item.toAccount) &&
-						item.updateToAccount(toAccount?.id);
-					!amount.equalTo(item.price) && item.updatePrice(amount);
-					name !== item.name.value &&
-						item.updateName(new ItemName(name));
-					if (!item.recurrence)
-						item.recurrences[0].updateDate(new ItemDate(date));
-					category &&
-						!category.id.equalTo(item.category) &&
-						item.updateCategory(category.id);
-					subCategory &&
-						!subCategory.id.equalTo(item.subCategory) &&
-						item.updateSubCategory(subCategory.id);
-					item.recurrence &&
-						item.updateRecurrence(
-							new ItemRecurrence(
-								item.id,
-								new DateValueObject(date),
-								new ItemRecurrenceFrequency(
-									frequency ?? item.recurrence.frequency.value
-								),
-								withUntilDate && untilDate
-									? new ItemRecurrenceUntilDate(untilDate)
-									: item.recurrence.untilDate
-							)
-						);
+					account && item.operation.updateAccount(account.id);
+					item.operation.updateToAccount(toAccount?.id);
+					item.updatePrice(amount);
+					item.updateName(new ItemName(name));
+					item.recurrence.updateStartDate(new DateValueObject(date));
+					category && item.updateCategory(category.id);
+					subCategory && item.updateSubCategory(subCategory.id);
+					item.updateRecurrence(
+						recurrenceType === "oneTime"
+							? ItemRecurrence.oneTime(new DateValueObject(date))
+							: recurrenceType === "infinite"
+							? ItemRecurrence.infinite(
+									new DateValueObject(date),
+									new ItemRecurrenceFrequency(frequencyString)
+							  )
+							: untilDate
+							? ItemRecurrence.untilDate(
+									new DateValueObject(date),
+									new ItemRecurrenceFrequency(
+										frequencyString
+									),
+									new DateValueObject(untilDate)
+							  )
+							: ItemRecurrence.untilNRecurrences(
+									new DateValueObject(date),
+									new ItemRecurrenceFrequency(
+										frequencyString
+									),
+									new NumberValueObject(recurrences)
+							  )
+					);
 
 					await updateItem.execute(item);
 

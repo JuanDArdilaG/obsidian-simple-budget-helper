@@ -1,12 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from "react";
-import { AccountsListContextMenu } from "./AccountsListContextMenu";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
-import { Account } from "contexts/Accounts/domain";
-import {
-	AccountsContext,
-	ItemsContext,
-	TransactionsContext,
-} from "../Contexts";
+import { AccountsContext, ItemsContext } from "../Contexts";
 import { AccountsReport } from "contexts/Reports/domain/accounts-report.entity";
 import { CreateAccountPanel } from "apps/obsidian-plugin/panels/CreateAccountPanel";
 import {
@@ -19,17 +13,14 @@ import {
 import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
 import { DateValueObject } from "@juandardilag/value-objects";
 import { ItemWithAccumulatedBalance } from "contexts/Items/application/items-with-accumulated-balance.usecase";
+import { AccountsListItem } from "./AccountsListItem";
 
 export const AccountsList = () => {
 	const { accounts, updateAccounts } = useContext(AccountsContext);
 	const report = useMemo(() => new AccountsReport(accounts), [accounts]);
-	const { updateTransactions } = useContext(TransactionsContext);
 	const {
 		useCases: { itemsWithAccumulatedBalanceUseCase },
 	} = useContext(ItemsContext);
-
-	const [selectedAccount, setSelectedAccount] = useState<Account>();
-
 	const [showCreateForm, setShowCreateForm] = useState(false);
 
 	const [project, setProject] = useState(false);
@@ -76,15 +67,6 @@ export const AccountsList = () => {
 			handleRefresh={async () => updateAccounts()}
 			isCreating={showCreateForm}
 		>
-			{selectedAccount && (
-				<AccountsListContextMenu
-					account={selectedAccount}
-					onAdjust={async () => {
-						updateAccounts();
-						updateTransactions();
-					}}
-				/>
-			)}
 			{showCreateForm && (
 				<CreateAccountPanel
 					onCreate={() => {
@@ -128,14 +110,8 @@ export const AccountsList = () => {
 							accA.balance.value.toNumber()
 					)
 					.map((account) => (
-						<ListItem
-							key={account.id.value}
-							onContextMenu={() => setSelectedAccount(account)}
-						>
-							<Typography variant="body1">
-								{account.name.toString()}:{" "}
-								{account.balance.value.toString()}
-							</Typography>
+						<ListItem key={account.id.value}>
+							<AccountsListItem account={account} />
 						</ListItem>
 					))}
 			</List>
@@ -160,14 +136,8 @@ export const AccountsList = () => {
 							accA.balance.value.toNumber()
 					)
 					.map((account) => (
-						<ListItem
-							key={account.id.value}
-							onContextMenu={() => setSelectedAccount(account)}
-						>
-							<Typography variant="body1">
-								{account.name.toString()}:{" "}
-								{account.balance.value.toString()}
-							</Typography>
+						<ListItem key={account.id.value}>
+							<AccountsListItem account={account} />
 						</ListItem>
 					))}
 			</List>

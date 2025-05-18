@@ -1,4 +1,4 @@
-import { Item } from "contexts/Items/domain";
+import { Item, ItemPrimitivesOld } from "contexts/Items/domain";
 import { ItemID } from "contexts/Items/domain/item-id.valueobject";
 import { IItemsRepository } from "contexts/Items/domain/item-repository.interface";
 import { ItemPrimitives } from "contexts/Items/domain/item.entity";

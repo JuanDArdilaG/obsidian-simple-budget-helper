@@ -1,7 +1,7 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
 import {
 	ItemID,
-	ItemRecurrenceModification,
+	ItemRecurrenceInfo,
 	Item,
 	ItemPrimitives,
 } from "contexts/Items/domain";
@@ -14,7 +14,7 @@ export class ItemsServiceMock implements IItemsService {
 	modifyRecurrence(
 		id: ItemID,
 		n: NumberValueObject,
-		newRecurrence: ItemRecurrenceModification
+		newRecurrence: ItemRecurrenceInfo
 	): Promise<void> {
 		throw new Error("Method not implemented.");
 	}

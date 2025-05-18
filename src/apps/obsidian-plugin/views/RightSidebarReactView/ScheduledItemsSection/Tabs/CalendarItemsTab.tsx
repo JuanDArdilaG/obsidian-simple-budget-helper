@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
 import { BudgetItemsListContextMenu } from "../BudgetItemsListContextMenu";
-import { ItemDate, ItemRecurrenceModification } from "contexts/Items/domain";
+import { ItemDate, ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
 import { useLogger } from "apps/obsidian-plugin/hooks";
 import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
 import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
@@ -24,8 +24,10 @@ export const CalendarItemsTab = () => {
 				.addDays(-1),
 		});
 
-	const [selectedItem, setSelectedItem] =
-		useState<ItemRecurrenceModification>();
+	const [selectedItem, setSelectedItem] = useState<{
+		recurrence: ItemRecurrenceInfo;
+		itemID: ItemID;
+	}>();
 	const [action, setAction] = useState<"edit" | "record">();
 
 	const [items, setItems] = useState<GetItemsUntilDateUseCaseOutput>([]);

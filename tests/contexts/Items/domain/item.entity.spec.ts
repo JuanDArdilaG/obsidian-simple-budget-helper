@@ -5,78 +5,64 @@ import { DateValueObject } from "@juandardilag/value-objects";
 
 describe("remainingDays", () => {
 	it("should calculate remaining future 7 days correctly", () => {
-		const now = new Date();
 		const items = buildTestItems([
 			{
 				recurrence: {
 					frequency: "1w",
-					startDate: new Date(
-						now.getTime() + 7 * 24 * 60 * 60 * 1000
-					),
+					startDate: DateValueObject.createNowDate().addDays(7),
 				},
 			},
 		]);
 		const item = items[0].copy();
-		item.createAllRecurrences();
-		const str = item.recurrences[0].date.remainingDaysStr;
+
+		const str = item.recurrence.recurrences[0].date.remainingDaysStr;
 
 		expect(str).toBe("7 days");
 	});
 
 	it("should calculate remaining previous 7 days correctly", () => {
-		const now = new Date();
-		now.setHours(0, 0, 0, 0);
 		const items = buildTestItems([
 			{
 				recurrence: {
 					frequency: "1w",
-					startDate: new Date(
-						now.getTime() - 7 * 24 * 60 * 60 * 1000
-					),
+					startDate: DateValueObject.createNowDate().addDays(-7),
 				},
 			},
 		]);
 		const item = items[0].copy();
-		item.createAllRecurrences();
-		const str = item.recurrences[0].date.remainingDaysStr;
+		const str = item.recurrence.recurrences[0].date.remainingDaysStr;
 
 		expect(str).toBe("-7 days");
 	});
 
 	it("should calculate remaining 1 day correctly", () => {
-		const now = new Date();
-		now.setHours(0, 0, 0, 0);
 		const items = buildTestItems([
 			{
 				recurrence: {
 					frequency: "1w",
-					startDate: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+					startDate: DateValueObject.createNowDate().addDays(1),
 				},
 			},
 		]);
 		const item = items[0].copy();
-		item.createAllRecurrences();
 
-		const str = item.recurrences[0].date.remainingDaysStr;
+		const str = item.recurrence.recurrences[0].date.remainingDaysStr;
 
 		expect(str).toBe("1 day");
 	});
 
 	it("should calculate remaining 1 day correctly", () => {
-		const now = new Date();
-		now.setHours(0, 0, 0, 0);
 		const items = buildTestItems([
 			{
 				recurrence: {
 					frequency: "1w",
-					startDate: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+					startDate: DateValueObject.createNowDate().addDays(-1),
 				},
 			},
 		]);
 		const item = items[0].copy();
-		item.createAllRecurrences();
 
-		const str = item.recurrences[0].date.remainingDaysStr;
+		const str = item.recurrence.recurrences[0].date.remainingDaysStr;
 
 		expect(str).toBe("-1 day");
 	});
@@ -90,117 +76,42 @@ describe("createRecurretItemsBetweenDates", () => {
 			},
 		]);
 		const item = items[0].copy();
-		item.createAllRecurrences();
 
-		const recurrentItems = item
+		const recurrentItems = item.recurrence
 			.getRecurrencesUntilDate(ItemDate.createNowDate().addDays(7))
 			.map((r) => r.recurrence);
 
 		expect(recurrentItems.length).toBe(4);
-		expect(recurrentItems[0].date).toEqual(item.recurrences[0].date);
+		expect(recurrentItems[0].date).toEqual(
+			item.recurrence.recurrences[0].date
+		);
 		expect(recurrentItems[1].date).toEqual(
-			item.recurrences[0].date.addDays(2)
+			item.recurrence.recurrences[0].date.addDays(2)
 		);
 		expect(recurrentItems[2].date).toEqual(
-			item.recurrences[0].date.addDays(4)
+			item.recurrence.recurrences[0].date.addDays(4)
 		);
 		expect(recurrentItems[3].date).toEqual(
-			item.recurrences[0].date.addDays(6)
+			item.recurrence.recurrences[0].date.addDays(6)
 		);
 	});
 });
 
-describe("totalRecurrences", () => {
-	it("should return the minus one recurrence for a infinite scheduled item", () => {
-		const items = buildTestItems([{ recurrence: {} }]);
-		const item = items[0].copy();
-		const recurrences = item.recurrence?.totalRecurrences;
-
-		expect(recurrences).toBe(-1);
-	});
-
-	it("should return the total recurrences for a scheduled item with until date", () => {
-		const items = buildTestItems([
-			{
-				recurrence: {
-					frequency: "2d",
-					startDate: new Date(),
-					untilDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-				},
-			},
-		]);
-		const item = items[0].copy();
-		const recurrences = item.recurrence?.totalRecurrences;
-
-		expect(recurrences).toBe(8);
-	});
-});
-
-// describe("getNScheduledItemRecurrence", () => {
-// 	it("should return the n recurrence for a single scheduled item", async () => {
-// 		const items = buildTestItems(1);
-// 		const expectedItem = items[0].copy();
-// 		const item = items[0];
-// 		const recurrenceItem = item.getNItemRecurrence(10);
-
-// 		expect(recurrenceItem.id).toEqual(expectedItem.id);
-// 		expect(recurrenceItem.date).toEqual(expectedItem.date);
-// 	});
-
-// 	it("should return the n recurrence for a infinite scheduled item", async () => {
-// 		const items = buildTestItems([
-// 			{
-// 				recurrence: {
-// 					frequency: "2d",
-// 					startDate: new Date(2024, 0, 1),
-// 				},
-// 			},
-// 		]);
-// 		const expectedItem = items[0].copy();
-// 		const item = items[0];
-// 		const recurrenceItem = item.getNItemRecurrence(10);
-
-// 		expect(recurrenceItem.id).toEqual(expectedItem.id);
-// 		expect(recurrenceItem.date.value).toEqual(new Date(2024, 0, 21));
-// 	});
-
-// 	it("should return the total recurrences for a scheduled item with until date", async () => {
-// 		const items = buildTestItems([
-// 			{
-// 				recurrence: {
-// 					frequency: "2d",
-// 					startDate: new Date(2024, 0, 1),
-// 					untilDate: new Date(2024, 1, 1),
-// 				},
-// 			},
-// 		]);
-// 		const expectedItem = items[0].copy();
-// 		const item = items[0];
-// 		const recurrenceItem = item.getNItemRecurrence(10);
-
-// 		expect(recurrenceItem.id).toEqual(expectedItem.id);
-// 		expect(recurrenceItem.date.value).toEqual(new Date(2024, 0, 21));
-// 	});
-// });
-
-describe("createAllRecurrences", () => {
+describe("createRecurrences", () => {
 	it("should return the total recurrences for a scheduled item with until date", async () => {
 		const items = buildTestItems([
 			{
 				recurrence: {
 					frequency: "2d",
-					startDate: new Date(2024, 0, 1),
-					untilDate: new Date(2024, 0, 16),
+					startDate: new DateValueObject(new Date(2024, 0, 1)),
+					untilDate: new DateValueObject(new Date(2024, 0, 16)),
 				},
 			},
 		]);
-		const expectedItem = items[0].copy();
 		const item = items[0];
-		item.createAllRecurrences();
 
-		const recurrences = item.recurrences;
+		const recurrences = item.recurrence.recurrences;
 
-		expect(recurrences[0].id).toEqual(expectedItem.id);
 		expect(recurrences[0].date.value).toEqual(new Date(2024, 0, 1));
 		expect(recurrences[1].date.value).toEqual(new Date(2024, 0, 3));
 		expect(recurrences[2].date.value).toEqual(new Date(2024, 0, 5));
@@ -213,39 +124,15 @@ describe("createAllRecurrences", () => {
 });
 
 describe("createItemsUntilDate", () => {
-	// it("should return the total recurrences for an item", async () => {
-	// 	const items = buildTestItems([
-	// 		{
-	// 			date: new DateValueObject(new Date(2024, 0, 3)),
-	// 			recurrence: {
-	// 				frequency: "2d",
-	// 				startDate: new Date(2024, 0, 1),
-	// 				untilDate: new Date(2024, 1, 1),
-	// 			},
-	// 		},
-	// 	]);
-	// 	const expectedItem = items[0].copy();
-	// 	const item = items[0];
-	// 	const recurrences = item.createItemsUntilDate(
-	// 		new DateValueObject(new Date(2024, 0, 7))
-	// 	);
-
-	// 	expect(recurrences).toHaveLength(3);
-	// 	expect(recurrences[0].item.id).toEqual(expectedItem.id);
-	// 	expect(recurrences[0].item.date.value).toEqual(new Date(2024, 0, 3));
-	// 	expect(recurrences[1].item.date.value).toEqual(new Date(2024, 0, 5));
-	// 	expect(recurrences[2].item.date.value).toEqual(new Date(2024, 0, 7));
-	// });
-
 	it("should returns the recurrences correctly when a modification is before the item date", async () => {
 		const items = buildTestItems([
 			{
 				recurrence: {
 					frequency: "2d",
-					startDate: new Date(2024, 0, 1),
-					untilDate: new Date(2024, 1, 1),
+					startDate: new DateValueObject(new Date(2024, 0, 15)),
+					untilDate: new DateValueObject(new Date(2024, 1, 1)),
 				},
-				recurrences: [
+				modifications: [
 					{
 						date: new DateValueObject(new Date(2024, 0, 2)),
 						state: ERecurrenceState.PENDING,
@@ -253,15 +140,13 @@ describe("createItemsUntilDate", () => {
 				],
 			},
 		]);
-		const expectedItem = items[0].copy();
 		const item = items[0];
 
-		const recurrences = item.getRecurrencesUntilDate(
-			new DateValueObject(new Date(2024, 0, 2))
+		const recurrences = item.recurrence.getRecurrencesUntilDate(
+			new DateValueObject(new Date(2024, 0, 5))
 		);
 
 		expect(recurrences).toHaveLength(1);
-		expect(recurrences[0].recurrence.id).toEqual(expectedItem.id);
 		expect(recurrences[0].recurrence.date.value).toEqual(
 			new Date(2024, 0, 2)
 		);

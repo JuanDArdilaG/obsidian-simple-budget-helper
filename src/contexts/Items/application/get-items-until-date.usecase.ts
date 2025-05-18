@@ -4,12 +4,13 @@ import {
 	DateValueObject,
 	NumberValueObject,
 } from "@juandardilag/value-objects";
-import { ItemRecurrenceModification } from "contexts/Items/domain";
+import { Item, ItemRecurrenceInfo } from "contexts/Items/domain";
 import { IItemsService } from "../domain/items-service.interface";
 
 export type GetItemsUntilDateUseCaseInput = DateValueObject;
 export type ItemRecurrenceModificationWithN = {
-	recurrence: ItemRecurrenceModification;
+	item: Item;
+	recurrence: ItemRecurrenceInfo;
 	n: NumberValueObject;
 };
 
@@ -36,13 +37,23 @@ export class GetItemsUntilDateUseCase
 		});
 
 		const res: {
-			recurrence: ItemRecurrenceModification;
+			recurrence: ItemRecurrenceInfo;
 			n: NumberValueObject;
+			item: Item;
 		}[][] = [];
 
-		items.forEach((item) => {
-			res.push(item.getRecurrencesUntilDate(to));
-		});
+		for (const item of items) {
+			res.push(
+				await Promise.all(
+					item.recurrence
+						.getRecurrencesUntilDate(to)
+						.map(async (recurrence) => ({
+							...recurrence,
+							item,
+						}))
+				)
+			);
+		}
 
 		const itemsRes = res
 			.flat()

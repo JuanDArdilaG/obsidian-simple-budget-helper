@@ -1,5 +1,5 @@
 import { Logger } from "contexts/Shared/infrastructure/logger";
-import { ERecurrenceState, Item, ItemRecurrenceModification } from "../domain";
+import { ERecurrenceState, Item, ItemRecurrenceInfo } from "../domain";
 import {
 	Account,
 	AccountBalance,
@@ -15,7 +15,6 @@ import {
 	DateValueObject,
 	NumberValueObject,
 } from "@juandardilag/value-objects";
-import { IItemsService } from "../domain/items-service.interface";
 
 export type ItemWithAccounts = {
 	recurrence: ItemRecurrenceModificationWithN;
@@ -24,8 +23,9 @@ export type ItemWithAccounts = {
 };
 
 export type ItemWithAccumulatedBalance = {
+	item: Item;
 	n: NumberValueObject;
-	recurrence: ItemRecurrenceModification;
+	recurrence: ItemRecurrenceInfo;
 	accountPrevBalance: AccountBalance;
 	accountBalance: AccountBalance;
 	toAccountPrevBalance?: AccountBalance;
@@ -38,7 +38,6 @@ export class ItemsWithAccumulatedBalanceUseCase
 	readonly #logger = new Logger("ItemsWithAccumulatedBalanceService");
 
 	constructor(
-		private readonly _itemsService: IItemsService,
 		private readonly _accountsService: IAccountsService,
 		private readonly getItemsUntilDateUseCase: GetItemsUntilDateUseCase
 	) {}
@@ -53,7 +52,7 @@ export class ItemsWithAccumulatedBalanceUseCase
 		return this._accountsService.getAll();
 	}
 
-	preValidate(items: GetItemsUntilDateUseCaseOutput, _: Account[]): boolean {
+	preValidate(items: GetItemsUntilDateUseCaseOutput): boolean {
 		this.#logger.debug("preValidate", {
 			length: items.length,
 		});
@@ -85,26 +84,31 @@ export class ItemsWithAccumulatedBalanceUseCase
 		accounts: Account[]
 	): ItemWithAccounts[] {
 		return recurrences
-			.filter(({ recurrence }) => {
+			.filter(({ recurrence, item }) => {
 				this.#logger.debug("addAccounts", {
 					item: recurrence,
 					account: accounts.find((acc) =>
-						acc.id.equalTo(recurrence.account!)
+						acc.id.equalTo(
+							recurrence.account ?? item.operation.account
+						)
 					),
 				});
 				return accounts.find((acc) =>
-					acc.id.equalTo(recurrence.account!)
+					acc.id.equalTo(recurrence.account ?? item.operation.account)
 				);
 			})
-			.map((recurrence) => ({
-				recurrence,
+			.map(({ recurrence, item, n }) => ({
+				item,
+				recurrence: { recurrence, item, n },
 				account: accounts.find((acc) =>
-					acc.id.equalTo(recurrence.recurrence.account!)
+					acc.id.equalTo(recurrence.account ?? item.operation.account)
 				)!,
 				toAccount:
-					recurrence.recurrence.toAccount &&
+					item.operation.toAccount &&
 					accounts.find((acc) =>
-						acc.id.equalTo(recurrence.recurrence.toAccount!)
+						acc.id.equalTo(
+							recurrence.toAccount ?? item.operation.toAccount!
+						)
 					),
 			}));
 	}
@@ -124,20 +128,23 @@ export class ItemsWithAccumulatedBalanceUseCase
 	}
 
 	async addItemToAccountBalance(
-		{ recurrence: { recurrence }, account, toAccount }: ItemWithAccounts,
+		{
+			recurrence: { recurrence, item },
+			account,
+			toAccount,
+		}: ItemWithAccounts,
 		accountBalance: AccountBalance,
 		toAccountBalance?: AccountBalance
 	): Promise<{
 		newAccountBalance: AccountBalance;
 		newToAccountBalance?: AccountBalance;
 	}> {
-		const item: Item = await this._itemsService.getByID(recurrence.id);
 		const recurrenceAmount = recurrence.getRealPriceForAccount(
 			item.operation,
 			account,
 			item.price,
-			item.account,
-			item.toAccount
+			item.operation.account,
+			item.operation.toAccount
 		);
 		accountBalance = accountBalance.plus(recurrenceAmount);
 
@@ -147,8 +154,8 @@ export class ItemsWithAccumulatedBalanceUseCase
 					item.operation,
 					toAccount,
 					item.price,
-					item.account,
-					item.toAccount
+					item.operation.account,
+					item.operation.toAccount
 				)
 			);
 
@@ -171,9 +178,9 @@ export class ItemsWithAccumulatedBalanceUseCase
 		this.#logger.debug("execute", { untilDate });
 
 		const recurrenceItems = await this.getItems(untilDate);
+		if (!this.preValidate(recurrenceItems)) return [];
 
 		const accounts = await this.getAccounts();
-		if (!this.preValidate(recurrenceItems, accounts)) return [];
 
 		const sortedItems = this.sort(recurrenceItems);
 		const filteredItems = this.filter(sortedItems);
@@ -187,23 +194,21 @@ export class ItemsWithAccumulatedBalanceUseCase
 
 		const results = [];
 
-		for (const item of itemsWithAccount) {
+		for (const itemWithAccount of itemsWithAccount) {
 			const {
-				recurrence: { recurrence, n },
+				recurrence: { recurrence, n, item },
 				account,
 				toAccount,
-			} = item;
+			} = itemWithAccount;
 
-			const accountPrevBalance =
-				initialAccountsBalance[recurrence.account!.value];
+			const accountPrevBalance = initialAccountsBalance[account.id.value];
 			const toAccountPrevBalance =
-				recurrence.toAccount &&
-				initialAccountsBalance[recurrence.toAccount.value];
+				toAccount && initialAccountsBalance[toAccount.id.value];
 
 			const { newAccountBalance, newToAccountBalance } =
 				await this.addItemToAccountBalance(
 					{
-						recurrence: { recurrence, n },
+						recurrence: { recurrence, n, item },
 						account,
 						toAccount,
 					},
@@ -211,13 +216,13 @@ export class ItemsWithAccumulatedBalanceUseCase
 					toAccountPrevBalance
 				);
 
-			initialAccountsBalance[recurrence.account!.value] =
-				newAccountBalance;
-			if (recurrence.toAccount && newToAccountBalance)
-				initialAccountsBalance[recurrence.toAccount.value] =
+			initialAccountsBalance[account.id.value] = newAccountBalance;
+			if (toAccount && newToAccountBalance)
+				initialAccountsBalance[toAccount.id.value] =
 					newToAccountBalance;
 
 			results.push({
+				item,
 				n,
 				recurrence: recurrence,
 				accountPrevBalance,

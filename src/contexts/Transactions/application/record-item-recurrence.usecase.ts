@@ -64,10 +64,12 @@ export class RecordItemRecurrenceUseCase
 		});
 
 		transaction.updateAmount(amount ?? item.price);
-		transaction.updateAccount(account ?? item.account);
-		transaction.updateToAccount(toAccount ?? item.toAccount);
+		transaction.updateAccount(account ?? item.operation.account);
+		transaction.updateToAccount(toAccount ?? item.operation.toAccount);
 
-		item.recurrences[n.value].updateState(ERecurrenceState.COMPLETED);
+		item.recurrence.recurrences[n.value].updateState(
+			ERecurrenceState.COMPLETED
+		);
 
 		this.#logger.debug("transaction after update", { transaction });
 

@@ -1,9 +1,8 @@
 import {
 	ERecurrenceState,
 	ItemDate,
-	ItemID,
 	ItemPrice,
-	ItemRecurrenceModification,
+	ItemRecurrenceInfo,
 } from "contexts/Items/domain";
 import { describe, expect, it } from "vitest";
 import { buildTestItems } from "./buildTestItems";
@@ -12,8 +11,7 @@ import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 
 describe("updateState", () => {
 	it("should updates state", () => {
-		const itemRecurrenceModification = new ItemRecurrenceModification(
-			ItemID.generate(),
+		const itemRecurrenceModification = new ItemRecurrenceInfo(
 			ItemDate.createNowDate(),
 			ERecurrenceState.PENDING
 		);
@@ -32,9 +30,9 @@ describe("getRealPriceForAccount", () => {
 		const item = buildTestItems([
 			{
 				price: new ItemPrice(100),
-				operation: ItemOperation.expense(),
+				operation: ItemOperation.expense(account.id),
 				account: account.id,
-				recurrences: [
+				modifications: [
 					{
 						date: ItemDate.createNowDate(),
 						state: ERecurrenceState.PENDING,
@@ -44,12 +42,12 @@ describe("getRealPriceForAccount", () => {
 			},
 		])[0];
 
-		const result = item.recurrences[0].getRealPriceForAccount(
-			ItemOperation.expense(),
+		const result = item.recurrence.recurrences[0].getRealPriceForAccount(
+			ItemOperation.expense(account.id),
 			account,
 			item.price,
-			item.account,
-			item.toAccount
+			item.operation.account,
+			item.operation.toAccount
 		);
 
 		expect(result.value).toBe(-200);

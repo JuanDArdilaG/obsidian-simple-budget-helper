@@ -27,18 +27,18 @@ export type ItemsWithCategoryAndSubCategory = {
 };
 
 export class ItemsReport {
-	readonly #logger = new Logger("ItemsReport");
+	readonly _ = new Logger("ItemsReport");
 	constructor(readonly items: Item[]) {}
 
 	onlyExpenses(): ItemsReport {
 		return new ItemsReport(
-			this.items.filter((item) => item.operation.isExpense())
+			this.items.filter((item) => item.operation.type.isExpense())
 		);
 	}
 
 	onlyIncomes(): ItemsReport {
 		return new ItemsReport(
-			this.items.filter((item) => item.operation.isIncome())
+			this.items.filter((item) => item.operation.type.isIncome())
 		);
 	}
 
@@ -46,7 +46,7 @@ export class ItemsReport {
 		return [
 			...new Set(
 				this.items
-					.map((item) => item.recurrences)
+					.map((item) => item.recurrence.recurrences)
 					.flat()
 					.map((r) => r.date.getFullYear())
 			),
@@ -80,7 +80,7 @@ export class ItemsReport {
 		const expenses = NumberValueObject.zero();
 		const inverseOperation = NumberValueObject.zero();
 		this.items
-			.filter((item) => !item.operation.isTransfer())
+			.filter((item) => !item.operation.type.isTransfer())
 			.forEach((item) => {
 				const categoryWithSubCategories =
 					categoriesWithSubcategories.find(({ category }) =>

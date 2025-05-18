@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import {
 	Item,
 	ItemDate,
-	ItemRecurrenceModification,
+	ItemRecurrenceInfo,
 	ERecurrenceState,
 } from "contexts/Items/domain";
 import { ItemsContext, TransactionsContext } from "apps/obsidian-plugin/views";
@@ -25,7 +25,7 @@ export const EditItemRecurrencePanel = ({
 }: {
 	item: Item;
 	recurrence: {
-		recurrence: ItemRecurrenceModification;
+		recurrence: ItemRecurrenceInfo;
 		n: NumberValueObject;
 	};
 	onClose: () => void;
@@ -45,22 +45,15 @@ export const EditItemRecurrencePanel = ({
 			label: "To",
 			initialValueID: recurrence.toAccount?.value,
 		});
-	// const { CategorySelect, category } = useCategorySelect({
-	// 	initialValueID: item.category.value,
-	// });
-	// const { SubCategorySelect, subCategory } = useSubCategorySelect({
-	// 	category,
-	// 	initialValueID: item.subCategory.value,
-	// });
 
 	const [name, setName] = useState(item.name.value);
 	const [amount, setAmount] = useState(item.price);
-	const [type, setType] = useState(item.operation.value);
+	const [type, setType] = useState(item.operation.type.value);
 
 	const [brand, setBrand] = useState(item.info?.value.brand?.value);
 	const [store, setStore] = useState(item.info?.value.store?.value);
 	const [frequency, setFrequency] = useState(
-		item.recurrence?.frequency.value
+		item.recurrence?.frequency?.value
 	);
 
 	const [date, setDate] = useState(recurrence.date.value);
@@ -98,8 +91,6 @@ export const EditItemRecurrencePanel = ({
 			/>
 			{AccountSelect}
 			{type === "transfer" ? ToAccountSelect : undefined}
-			{/* {CategorySelect}
-			{SubCategorySelect} */}
 			<DateInput value={date} onChange={setDate} label="Date" />
 
 			<FormControlLabel
@@ -184,19 +175,19 @@ export const EditItemRecurrencePanel = ({
 					await modifyNItemRecurrence.execute({
 						id: item.id,
 						n: n,
-						newRecurrence: new ItemRecurrenceModification(
-							item.id,
+						newRecurrence: new ItemRecurrenceInfo(
 							date !== recurrence.date.value
 								? new ItemDate(date)
 								: recurrence.date,
 							ERecurrenceState.PENDING,
 							!amount.equalTo(item.price) ? amount : item.price,
-							account && !account.id.equalTo(item.account)
+							account &&
+							!account.id.equalTo(item.operation.account)
 								? account?.id
 								: undefined,
 							toAccount &&
-							item.toAccount &&
-							toAccount.id.equalTo(item.toAccount)
+							item.operation.toAccount &&
+							toAccount.id.equalTo(item.operation.toAccount)
 								? toAccount.id
 								: undefined
 						),

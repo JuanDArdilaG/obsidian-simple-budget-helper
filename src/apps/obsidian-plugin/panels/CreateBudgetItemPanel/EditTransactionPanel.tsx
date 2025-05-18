@@ -55,7 +55,10 @@ export const EditTransactionPanel = ({
 
 	return (
 		<div className="create-budget-item-modal">
-			<Typography variant="h4" style={{ marginTop: 15 }}>
+			<Typography
+				variant="h4"
+				style={{ marginTop: 15, color: "var(--text-normal)" }}
+			>
 				Edit Transaction
 			</Typography>
 			<Input

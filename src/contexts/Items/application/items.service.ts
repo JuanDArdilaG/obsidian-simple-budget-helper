@@ -4,7 +4,7 @@ import {
 	ItemID,
 	ItemPrimitives,
 	Item,
-	ItemRecurrenceModification,
+	ItemRecurrenceInfo,
 } from "contexts/Items/domain";
 import { NumberValueObject } from "@juandardilag/value-objects";
 import { InvalidArgumentError } from "contexts/Shared/domain";
@@ -21,7 +21,7 @@ export class ItemsService
 	async modifyRecurrence(
 		id: ItemID,
 		n: NumberValueObject,
-		newRecurrence: ItemRecurrenceModification
+		newRecurrence: ItemRecurrenceInfo
 	): Promise<void> {
 		const item = await this.getByID(id);
 		if (!item.recurrence)
@@ -30,7 +30,7 @@ export class ItemsService
 				id.toString(),
 				"item doesn't have recurrence"
 			);
-		item.recurrences[n.value] = newRecurrence;
+		item.recurrence.recurrences[n.value] = newRecurrence;
 		await this._itemsRepository.persist(item);
 	}
 }

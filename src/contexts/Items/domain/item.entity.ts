@@ -1,102 +1,112 @@
-import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { ItemID } from "./item-id.valueobject";
 import { ItemName } from "./item-name.valueobject";
 import { ItemPrice } from "./item-price.valueobject";
-import { ItemOperation } from "../../Shared/domain/Item/item-operation.valueobject";
-import { OperationType } from "contexts/Shared/domain/value-objects/operation.valueobject";
+import {
+	ItemOperation,
+	ItemOperationPrimitives,
+} from "../../Shared/domain/Item/item-operation.valueobject";
 import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
-import {
-	DateValueObject,
-	NumberValueObject,
-} from "@juandardilag/value-objects";
+import { DateValueObject } from "@juandardilag/value-objects";
 import { ItemProductInfo } from "./item-product-info.valueobject";
-import { ItemDate } from "./item-date.valueobject";
 import { ItemRecurrence, RecurrencePrimitives } from "./item-recurrence.entity";
 import {
-	ItemRecurrenceModification,
-	ItemRecurrenceModificationPrimitives,
-	ERecurrenceState,
+	ItemRecurrenceInfo,
+	ItemRecurrenceInfoPrimitives,
 } from "./item-recurrence-modification.valueobject";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { ItemBrand } from "./item-brand.valueobject";
 import { ItemStore } from "./item-store.valueobject";
+import { ItemRecurrenceFrequency } from "./item-recurrence-frequency.valueobject";
+import { OperationType } from "contexts/Shared/domain";
 
 export class Item extends Entity<ItemID, ItemPrimitives> {
-	readonly #logger = new Logger("Item");
-	constructor(
+	readonly _ = new Logger("Item");
+	private constructor(
 		id: ItemID,
-		private _operation: ItemOperation,
 		private _name: ItemName,
 		private _price: ItemPrice,
+		private _operation: ItemOperation,
 		private _category: CategoryID,
 		private _subCategory: SubCategoryID,
-		private _account: AccountID,
-		private _recurrences: ItemRecurrenceModification[],
-		private _toAccount?: AccountID,
-		private _recurrence?: ItemRecurrence,
+		private _recurrence: ItemRecurrence,
 		private readonly _info?: ItemProductInfo
 	) {
 		super(id);
 	}
 
-	create(
-		operation: ItemOperation,
+	static oneTime(
+		date: DateValueObject,
 		name: ItemName,
 		price: ItemPrice,
+		operation: ItemOperation,
 		category: CategoryID,
-		subCategory: SubCategoryID,
-		account: AccountID,
-		recurrences: ItemRecurrenceModification[],
-		toAccount?: AccountID,
-		recurrence?: ItemRecurrence,
-		info?: ItemProductInfo
+		subCategory: SubCategoryID
 	): Item {
 		const item = new Item(
 			ItemID.generate(),
-			operation,
 			name,
 			price,
+			operation,
 			category,
 			subCategory,
-			account,
-			recurrences,
-			toAccount,
-			recurrence,
-			info
+			ItemRecurrence.oneTime(date)
 		);
-		item.createAllRecurrences();
+		return item;
+	}
+
+	static infinite(
+		startDate: DateValueObject,
+		name: ItemName,
+		price: ItemPrice,
+		operation: ItemOperation,
+		category: CategoryID,
+		subCategory: SubCategoryID,
+		frequency: ItemRecurrenceFrequency
+	): Item {
+		const item = new Item(
+			ItemID.generate(),
+			name,
+			price,
+			operation,
+			category,
+			subCategory,
+			ItemRecurrence.infinite(startDate, frequency)
+		);
+		return item;
+	}
+
+	static untilDate(
+		name: ItemName,
+		price: ItemPrice,
+		operation: ItemOperation,
+		category: CategoryID,
+		subCategory: SubCategoryID,
+		frequency: ItemRecurrenceFrequency,
+		startDate: DateValueObject,
+		untilDate: DateValueObject
+	): Item {
+		const item = new Item(
+			ItemID.generate(),
+			name,
+			price,
+			operation,
+			category,
+			subCategory,
+			ItemRecurrence.untilDate(startDate, frequency, untilDate)
+		);
 		return item;
 	}
 
 	copy(): Item {
 		return new Item(
 			this._id,
-			this._operation,
 			this._name,
 			this._price,
-			this._category,
-			this._subCategory,
-			this._account,
-			this._recurrences,
-			this._toAccount,
-			this._recurrence,
-			this._info
-		);
-	}
-
-	copyWithNegativeAmount(): Item {
-		return new Item(
-			this._id,
 			this._operation,
-			this._name,
-			this._price.negate(),
 			this._category,
 			this._subCategory,
-			this._account,
-			this._recurrences,
-			this._toAccount,
 			this._recurrence,
 			this._info
 		);
@@ -131,8 +141,8 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 	}
 
 	get realPrice(): ItemPrice {
-		if (this._operation.isIncome()) return this._price;
-		else if (this._operation.isExpense()) return this._price.negate();
+		if (this._operation.type.isIncome()) return this._price;
+		else if (this._operation.type.isExpense()) return this._price.negate();
 		return ItemPrice.zero();
 	}
 
@@ -165,177 +175,34 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 		return this._info;
 	}
 
-	get account(): AccountID {
-		return this._account;
-	}
-
-	updateAccount(account: AccountID) {
-		this._account = account;
-	}
-
-	get toAccount(): AccountID | undefined {
-		return this._toAccount;
-	}
-
-	updateToAccount(toAccount: AccountID | undefined) {
-		this._toAccount = toAccount;
-	}
-
-	// advanceDateToNextDate() {
-	// 	if (!this._recurrence) return;
-	// 	this.updateDate(this._recurrence.calculateNextDate(this._date));
-	// }
-
-	get recurrence(): ItemRecurrence | undefined {
+	get recurrence(): ItemRecurrence {
 		return this._recurrence;
 	}
 
-	updateRecurrence(recurrence: ItemRecurrence | undefined) {
+	updateRecurrence(recurrence: ItemRecurrence) {
+		recurrence.createRecurrences();
 		this._recurrence = recurrence;
-		this.createAllRecurrences();
 	}
 
-	get recurrences(): ItemRecurrenceModification[] {
-		return this._recurrences ?? [];
-	}
-
-	applyModification(modification: ItemRecurrenceModification): void {
+	applyModification(modification: ItemRecurrenceInfo): void {
 		modification.price && this.updatePrice(modification.price);
-		modification.account && this.updateAccount(modification.account);
-		modification.toAccount && this.updateToAccount(modification.toAccount);
+		modification.account &&
+			this._operation.updateAccount(modification.account);
+		modification.toAccount &&
+			this._operation.updateToAccount(modification.toAccount);
 	}
-
-	createAllRecurrences(
-		max: NumberValueObject = new NumberValueObject(50)
-	): void {
-		if (!this._recurrence) {
-			this._recurrences = [
-				new ItemRecurrenceModification(
-					this.id,
-					ItemDate.createNowDate(),
-					ERecurrenceState.PENDING
-				),
-			];
-			return;
-		}
-
-		this._recurrences = [];
-
-		let i = NumberValueObject.zero();
-		const recurrences: ItemRecurrenceModification[] = [];
-		let nextDate = new ItemDate(this._recurrence.startDate);
-
-		while (
-			max.greaterThan(i) &&
-			(!this._recurrence.untilDate ||
-				nextDate.isLessOrEqualThan(this._recurrence.untilDate))
-		) {
-			recurrences.push(
-				new ItemRecurrenceModification(
-					this.id,
-					nextDate,
-					ERecurrenceState.PENDING
-				)
-			);
-			nextDate = nextDate.next(this._recurrence.frequency);
-			i = i.plus(new NumberValueObject(1));
-		}
-
-		this._recurrences = recurrences;
-	}
-
-	getRecurrencesUntilDate(
-		to: DateValueObject
-	): { recurrence: ItemRecurrenceModification; n: NumberValueObject }[] {
-		if (!this._recurrences) return [];
-		this._recurrences.sort((a, b) => a.date.compareTo(b.date));
-		const filteredRecurrences = this._recurrences
-			.map((recurrence, i) => ({
-				recurrence: new ItemRecurrenceModification(
-					recurrence.id,
-					recurrence.date,
-					recurrence.state,
-					recurrence.price ?? this._price,
-					recurrence.account ?? this._account,
-					recurrence.toAccount ?? this._toAccount
-				),
-				n: new NumberValueObject(i),
-			}))
-			.filter(
-				({ recurrence }) =>
-					// recurrence.item.date.isGreaterOrEqualThan(this.date) &&
-					recurrence.state === ERecurrenceState.PENDING &&
-					recurrence.date.isLessOrEqualThan(to)
-			);
-
-		this.#logger.debug("filteredRecurrences", {
-			this: this,
-			filteredRecurrences,
-		});
-
-		return filteredRecurrences;
-	}
-
-	// getNItemRecurrence(n: number): Item {
-	// 	if (!this._recurrence) return this;
-	// 	const item: Item = this.copy();
-	// 	let count = 0;
-	// 	let nextDate = new ItemDate(this._recurrence.startDate);
-	// 	while (
-	// 		count < n &&
-	// 		(!this._recurrence.untilDate ||
-	// 			nextDate.isLessOrEqualThan(this._recurrence.untilDate))
-	// 	) {
-	// 		nextDate = nextDate.next(this._recurrence.frequency);
-	// 		count++;
-	// 		if (count === n) item._date = new ItemDate(nextDate);
-	// 	}
-	// 	return item;
-	// }
-
-	// updateOnRecord(recordDate: ItemDate, newAmount?: ItemPrice): void {
-	// 	const amount = newAmount ?? this._price;
-	// 	if (!this._recurrence?.frequency) return;
-	// 	const prevNextDate = new ItemDate(this._date);
-	// 	this.updateDate(this._date.next(this._recurrence.frequency));
-	// 	const nextDate = new ItemDate(this._date);
-
-	// 	this.#logger.debug("calculating next date", {
-	// 		frequency: this._recurrence.frequency,
-	// 		prev: prevNextDate,
-	// 		next: nextDate,
-	// 	});
-
-	// 	this.#logger.debug("checking permanent changes", {
-	// 		amount: {
-	// 			change: !!amount,
-	// 			from: this._price,
-	// 			to: amount,
-	// 		},
-	// 		recordDate: {
-	// 			change: recordDate.compare(prevNextDate) !== 0,
-	// 			from: prevNextDate,
-	// 			to: recordDate.next(this._recurrence.frequency),
-	// 		},
-	// 	});
-
-	// 	this.updateDate(nextDate);
-	// }
 
 	toPrimitives(): ItemPrimitives {
 		return {
 			id: this._id.value,
-			operation: this._operation.value,
 			name: this._name.value,
-			amount: this._price.value,
+			price: this._price.value,
+			operation: this._operation.toPrimitives(),
 			category: this._category.value,
 			subCategory: this._subCategory.value,
 			brand: this._info?.value.brand?.value,
 			store: this._info?.value.store?.value,
-			account: this._account.value,
-			toAccount: this.toAccount?.value,
 			recurrence: this._recurrence?.toPrimitives(),
-			recurrences: this._recurrences?.map((r) => r.toPrimitives()),
 		};
 	}
 
@@ -343,48 +210,84 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 		return {
 			id: "",
 			name: "",
-			account: "",
 			category: "",
 			subCategory: "",
-			amount: 0,
-			operation: "expense",
+			price: 0,
+			operation: {
+				type: "expense",
+				account: "",
+				toAccount: undefined,
+			},
 			brand: "",
 			store: "",
-			toAccount: "",
-			recurrence: undefined,
-			recurrences: [],
+			recurrence: {
+				startDate: new Date(),
+				recurrences: [],
+				frequency: undefined,
+				untilDate: undefined,
+			},
 		};
 	}
 
 	static fromPrimitives({
 		id,
-		operation,
 		name,
-		amount,
+		price,
+		operation,
 		category,
 		subCategory,
 		brand,
 		store,
-		account,
-		toAccount,
 		recurrence,
-		recurrences,
 	}: ItemPrimitives): Item {
 		return new Item(
 			new ItemID(id),
-			new ItemOperation(operation),
 			new ItemName(name),
-			new ItemPrice(amount),
+			new ItemPrice(price),
+			ItemOperation.fromPrimitives(operation),
 			new CategoryID(category),
 			new SubCategoryID(subCategory),
-			new AccountID(account),
-			recurrences.map((r) =>
-				ItemRecurrenceModification.fromPrimitives({ ...r, itemID: id })
-			),
-			toAccount ? new AccountID(toAccount) : undefined,
-			recurrence
-				? ItemRecurrence.fromPrimitives(new ItemID(id), recurrence)
-				: undefined,
+			ItemRecurrence.fromPrimitives(recurrence),
+			brand || store
+				? new ItemProductInfo({
+						brand: brand ? new ItemBrand(brand) : undefined,
+						store: store ? new ItemStore(store) : undefined,
+				  })
+				: undefined
+		);
+	}
+
+	static fromPrimitivesOld({
+		id,
+		name,
+		date,
+		amount,
+		operation,
+		category,
+		subCategory,
+		brand,
+		store,
+		recurrence,
+		account,
+		toAccount,
+	}: ItemPrimitivesOld): Item {
+		return new Item(
+			new ItemID(id),
+			new ItemName(name),
+			new ItemPrice(amount),
+			ItemOperation.fromPrimitives({
+				type: operation,
+				account,
+				toAccount,
+			}),
+			new CategoryID(category),
+			new SubCategoryID(subCategory),
+			ItemRecurrence.fromPrimitives({
+				startDate: recurrence?.startDate ?? date,
+				recurrences: [],
+				frequency: recurrence?.frequency,
+				untilDate: recurrence?.untilDate,
+			}),
 			brand || store
 				? new ItemProductInfo({
 						brand: brand ? new ItemBrand(brand) : undefined,
@@ -397,8 +300,21 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 
 export type ItemPrimitives = {
 	id: string;
+	name: string;
+	price: number;
+	operation: ItemOperationPrimitives;
+	category: string;
+	subCategory: string;
+	brand?: string;
+	store?: string;
+	recurrence: RecurrencePrimitives;
+};
+
+export type ItemPrimitivesOld = {
+	id: string;
 	operation: OperationType;
 	name: string;
+	date: Date;
 	amount: number;
 	category: string;
 	subCategory: string;
@@ -406,6 +322,10 @@ export type ItemPrimitives = {
 	store?: string;
 	account: string;
 	toAccount?: string;
-	recurrence?: RecurrencePrimitives;
-	recurrences: ItemRecurrenceModificationPrimitives[];
+	recurrence?: {
+		startDate: Date;
+		frequency: string;
+		modifications?: ItemRecurrenceInfoPrimitives[];
+		untilDate?: Date;
+	};
 };

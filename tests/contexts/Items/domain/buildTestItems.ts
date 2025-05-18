@@ -5,14 +5,11 @@ import {
 	ERecurrenceState,
 	Item,
 	ItemDate,
-	ItemID,
 	ItemName,
 	ItemPrice,
-	ItemRecurrence,
 	ItemRecurrenceFrequency,
-	ItemRecurrenceModification,
-	ItemRecurrenceModificationPrimitives,
-	ItemRecurrenceUntilDate,
+	ItemRecurrenceInfo,
+	ItemRecurrenceInfoPrimitives,
 } from "contexts/Items/domain";
 import { ItemOperation } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
@@ -24,81 +21,96 @@ type ItemConfig = {
 	operation?: ItemOperation;
 	recurrence?: {
 		frequency?: string;
-		startDate?: Date;
-		untilDate?: Date;
+		startDate?: DateValueObject;
+		untilDate?: DateValueObject;
 	};
-	recurrences?: Partial<ItemRecurrenceModificationPrimitives>[];
+	modifications?: Partial<ItemRecurrenceInfoPrimitives>[];
 };
 
 export const buildTestItems = (config: ItemConfig[] | number): Item[] => {
 	let items: Item[] = [];
 	if (typeof config === "number") {
 		for (let i = 0; i < config; i++) {
-			const itemID = ItemID.generate();
-			items.push(
-				new Item(
-					itemID,
-					ItemOperation.expense(),
-					new ItemName("test"),
-					new ItemPrice(100),
-					CategoryID.generate(),
-					SubCategoryID.generate(),
-					AccountID.generate(),
-					[
-						new ItemRecurrenceModification(
-							itemID,
-							ItemDate.createNowDate(),
-							ERecurrenceState.PENDING
-						),
-					],
-					AccountID.generate()
-				)
+			const item = Item.oneTime(
+				DateValueObject.createNowDate(),
+				new ItemName("test"),
+				new ItemPrice(100),
+				ItemOperation.expense(AccountID.generate()),
+				CategoryID.generate(),
+				SubCategoryID.generate()
 			);
+			item.recurrence.updateRecurrences([
+				new ItemRecurrenceInfo(
+					ItemDate.createNowDate(),
+					ERecurrenceState.PENDING
+				),
+			]);
+			items.push(item);
 		}
 	} else {
-		const itemID = ItemID.generate();
 		items = config.map(
 			({
 				price,
 				operation,
 				recurrence,
-				recurrences,
+				modifications,
 				account,
 				toAccount,
-			}) =>
-				new Item(
-					itemID,
-					operation ?? ItemOperation.expense(),
+			}) => {
+				const startDate =
+					recurrence?.startDate ?? DateValueObject.createNowDate();
+				let item = Item.oneTime(
+					startDate,
 					new ItemName("test"),
 					price ?? new ItemPrice(100),
+					operation ??
+						ItemOperation.expense(account ?? AccountID.generate()),
 					CategoryID.generate(),
-					SubCategoryID.generate(),
-					account ?? AccountID.generate(),
-					recurrences?.map((r) =>
-						ItemRecurrenceModification.fromPrimitives({
-							itemID: itemID.value,
-							date: new Date(),
-							state: ERecurrenceState.PENDING,
-							...r,
-						})
-					) ?? [],
-					toAccount ?? AccountID.generate(),
-					recurrence &&
-						new ItemRecurrence(
-							itemID,
-							recurrence.startDate
-								? new DateValueObject(recurrence.startDate)
-								: DateValueObject.createNowDate(),
-							new ItemRecurrenceFrequency(
-								recurrence.frequency ?? "1mo"
+					SubCategoryID.generate()
+				);
+				if (recurrence?.frequency) {
+					item = Item.infinite(
+						startDate,
+						new ItemName("test"),
+						price ?? new ItemPrice(100),
+						operation ??
+							ItemOperation.expense(
+								account ?? AccountID.generate()
 							),
+						CategoryID.generate(),
+						SubCategoryID.generate(),
+						new ItemRecurrenceFrequency(recurrence.frequency)
+					);
+					if (recurrence.untilDate) {
+						item = Item.untilDate(
+							new ItemName("test"),
+							price ?? new ItemPrice(100),
+							operation ??
+								ItemOperation.expense(
+									account ?? AccountID.generate()
+								),
+							CategoryID.generate(),
+							SubCategoryID.generate(),
+							new ItemRecurrenceFrequency(recurrence.frequency),
+							startDate,
 							recurrence.untilDate
-								? new ItemRecurrenceUntilDate(
-										recurrence.untilDate
-								  )
-								: undefined
+						);
+					}
+				}
+
+				if (modifications)
+					item.recurrence.updateRecurrences(
+						modifications.map((r) =>
+							ItemRecurrenceInfo.fromPrimitives({
+								date: new Date(),
+								state: ERecurrenceState.PENDING,
+								...r,
+							})
 						)
-				)
+					);
+
+				return item;
+			}
 		);
 	}
 

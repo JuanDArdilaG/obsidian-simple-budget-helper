@@ -14,3 +14,4 @@ export * from './item-recurrence.entity';
 export * from './item-repository.interface';
 export * from './item-store.valueobject';
 export * from './item.entity';
+export * from './items-service.interface';

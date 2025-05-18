@@ -33,15 +33,17 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	static fromItem(item: Item, date: TransactionDate): Transaction {
 		return new Transaction(
 			TransactionID.generate(),
-			item.account,
+			item.operation.account,
 			item.name,
-			item.operation,
+			item.operation.type,
 			item.category,
 			item.subCategory,
 			date,
 			item.price,
 			item.id,
-			item.operation.isTransfer() ? item.toAccount : undefined,
+			item.operation.type.isTransfer()
+				? item.operation.toAccount
+				: undefined,
 			item.info
 		);
 	}

@@ -1,7 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { AccountingList } from "./AccountingList";
 import { AccountingSectionSelection } from "./AccountingSectionButtons";
-import { App } from "obsidian";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 import { CreateTransactionPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/CreateTransactionPanel";
@@ -9,10 +8,8 @@ import { Transaction } from "contexts/Transactions/domain";
 import { TransactionsContext } from "../Contexts";
 
 export const AccountingSection = ({
-	app,
 	statusBarAddText,
 }: {
-	app: App;
 	statusBarAddText: (val: string | DocumentFragment) => void;
 }) => {
 	const { updateFilteredTransactions } = useContext(TransactionsContext);
@@ -31,9 +28,7 @@ export const AccountingSection = ({
 		<RightSidebarReactTab
 			title="Accounting"
 			handleCreate={async () => setShowCreateForm(!showCreateForm)}
-			handleRefresh={async () => {
-				updateFilteredTransactions();
-			}}
+			handleRefresh={async () => updateFilteredTransactions()}
 			isCreating={showCreateForm}
 		>
 			{showCreateForm && (
@@ -44,7 +39,6 @@ export const AccountingSection = ({
 			)}
 			{sectionSelection === "movements" && (
 				<AccountingList
-					app={app}
 					statusBarAddText={statusBarAddText}
 					selection={selection}
 					setSelection={setSelection}

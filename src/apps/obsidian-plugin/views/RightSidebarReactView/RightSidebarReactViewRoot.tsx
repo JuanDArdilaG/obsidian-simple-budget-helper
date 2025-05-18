@@ -4,16 +4,16 @@ import { Root, createRoot } from "react-dom/client";
 import { RightSidebarReactView } from "./RightSidebarReactView";
 import { views } from "apps/obsidian-plugin/config";
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
-import { AwilixContainer } from "awilix";
 
 export class RightSidebarReactViewRoot extends ItemView {
 	root: Root | null = null;
 
 	constructor(
 		leaf: WorkspaceLeaf,
-		private _plugin: SimpleBudgetHelperPlugin,
-		private _statusBarAddText: (val: string | DocumentFragment) => void,
-		private _container: AwilixContainer<any>
+		private readonly _plugin: SimpleBudgetHelperPlugin,
+		private readonly _statusBarAddText: (
+			val: string | DocumentFragment
+		) => void
 	) {
 		super(leaf);
 	}
@@ -35,7 +35,6 @@ export class RightSidebarReactViewRoot extends ItemView {
 		this.root?.render(
 			<StrictMode>
 				<RightSidebarReactView
-					container={this._container}
 					plugin={this._plugin}
 					statusBarAddText={(text) => this._statusBarAddText(text)}
 				/>

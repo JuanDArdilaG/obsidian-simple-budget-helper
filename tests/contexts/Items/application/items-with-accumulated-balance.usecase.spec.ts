@@ -18,11 +18,9 @@ describe("execute", () => {
 				account: accounts[0].id,
 			},
 		]);
-		items.forEach((i) => i.createAllRecurrences());
 		const itemsService = new ItemsServiceMock(items);
 		const accountsService = new AccountsServiceMock(accounts);
 		const useCase = new ItemsWithAccumulatedBalanceUseCase(
-			itemsService,
 			accountsService,
 			new GetItemsUntilDateUseCase(itemsService)
 		);

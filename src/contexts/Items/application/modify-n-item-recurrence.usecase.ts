@@ -1,12 +1,12 @@
 import { CommandUseCase } from "contexts/Shared/domain";
-import { ItemID, ItemRecurrenceModification } from "contexts/Items/domain";
+import { ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
 import { NumberValueObject } from "@juandardilag/value-objects";
 import { ItemsService } from "./items.service";
 
 export type ModifyNItemRecurrenceUseCaseInput = {
 	id: ItemID;
 	n: NumberValueObject;
-	newRecurrence: ItemRecurrenceModification;
+	newRecurrence: ItemRecurrenceInfo;
 };
 
 export class ModifyNItemRecurrenceUseCase

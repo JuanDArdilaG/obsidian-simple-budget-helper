@@ -1,7 +1,6 @@
-import { Item, ItemRecurrenceModification } from "contexts/Items/domain";
+import { Item, ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
 import { ContextMenu } from "apps/obsidian-plugin/components/ContextMenu";
 import { Pencil } from "lucide-react";
-import { useLogger } from "../../../hooks/useLogger";
 import { useContext, useMemo } from "react";
 import { AppContext, ItemsContext } from "..";
 import { ConfirmationModal } from "apps/obsidian-plugin/components/ConfirmationModal";
@@ -10,12 +9,11 @@ export const BudgetItemsListContextMenu = ({
 	recurrent,
 	setAction,
 }: {
-	recurrent: ItemRecurrenceModification | Item;
+	recurrent: { recurrence: ItemRecurrenceInfo; itemID: ItemID } | Item;
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
 }) => {
-	const logger = useLogger("BudgetItemsListContextMenu");
 	const { plugin } = useContext(AppContext);
 	const {
 		useCases: { deleteItem },
@@ -23,9 +21,14 @@ export const BudgetItemsListContextMenu = ({
 		updateItems,
 	} = useContext(ItemsContext);
 
+	const id = useMemo(
+		() => (recurrent instanceof Item ? recurrent.id : recurrent.itemID),
+		[recurrent]
+	);
+
 	const item = useMemo(() => {
-		return scheduledItems.find((i) => i.id.value === recurrent.id.value)!;
-	}, [scheduledItems, recurrent.id.value]);
+		return scheduledItems.find((i) => i.id.value === id.value)!;
+	}, [scheduledItems, id]);
 
 	return (
 		<ContextMenu
@@ -66,7 +69,7 @@ export const BudgetItemsListContextMenu = ({
 								plugin.app,
 								async (confirm) => {
 									if (confirm) {
-										await deleteItem.execute(recurrent.id);
+										await deleteItem.execute(id);
 										updateItems();
 									}
 								}

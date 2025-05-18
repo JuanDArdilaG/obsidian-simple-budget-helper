@@ -1,7 +1,7 @@
 import { ItemDate } from "./item-date.valueobject";
 import { Account, AccountID } from "contexts/Accounts/domain";
-import { Entity, ItemOperation } from "contexts/Shared/domain";
-import { ItemID, ItemPrice } from "contexts/Items/domain";
+import { ItemOperation } from "contexts/Shared/domain";
+import { ItemPrice } from "contexts/Items/domain";
 import { PriceValueObject } from "@juandardilag/value-objects";
 
 export enum ERecurrenceState {
@@ -10,31 +10,14 @@ export enum ERecurrenceState {
 	COMPLETED = "completed",
 }
 
-export class ItemRecurrenceModification extends Entity<
-	ItemID,
-	ItemRecurrenceModificationPrimitives
-> {
+export class ItemRecurrenceInfo {
 	constructor(
-		id: ItemID,
 		private _date: ItemDate,
 		private _state: ERecurrenceState,
 		private _price?: ItemPrice,
 		private _account?: AccountID,
 		private _toAccount?: AccountID
-	) {
-		super(id);
-	}
-
-	copy(): ItemRecurrenceModification {
-		return new ItemRecurrenceModification(
-			this.id,
-			this._date,
-			this._state,
-			this._price,
-			this._account,
-			this._toAccount
-		);
-	}
+	) {}
 
 	get date(): ItemDate {
 		return this._date;
@@ -84,7 +67,7 @@ export class ItemRecurrenceModification extends Entity<
 		thisToAccount?: AccountID
 	): PriceValueObject {
 		let multiplier = 1;
-		if (operation.isTransfer()) {
+		if (operation.type.isTransfer()) {
 			if (account.id.equalTo(this._account ?? thisAccount))
 				multiplier = -1;
 			else if (thisToAccount)
@@ -94,16 +77,15 @@ export class ItemRecurrenceModification extends Entity<
 					? 1
 					: 0;
 		}
-		if (operation.isExpense()) multiplier = -multiplier;
+		if (operation.type.isExpense()) multiplier = -multiplier;
 		if (account.type.isLiability()) multiplier = -multiplier;
 		return new PriceValueObject(
 			(this.price?.toNumber() ?? thisPrice.toNumber()) * multiplier
 		);
 	}
 
-	toPrimitives(): ItemRecurrenceModificationPrimitives {
+	toPrimitives(): ItemRecurrenceInfoPrimitives {
 		return {
-			itemID: this.id.value,
 			date: this._date,
 			state: this._state,
 			amount: this._price?.value,
@@ -113,15 +95,13 @@ export class ItemRecurrenceModification extends Entity<
 	}
 
 	static fromPrimitives({
-		itemID,
 		date,
 		amount,
 		account,
 		toAccount,
 		state,
-	}: ItemRecurrenceModificationPrimitives): ItemRecurrenceModification {
-		return new ItemRecurrenceModification(
-			new ItemID(itemID),
+	}: ItemRecurrenceInfoPrimitives): ItemRecurrenceInfo {
+		return new ItemRecurrenceInfo(
 			new ItemDate(date),
 			state,
 			amount ? new ItemPrice(amount) : undefined,
@@ -131,8 +111,7 @@ export class ItemRecurrenceModification extends Entity<
 	}
 }
 
-export type ItemRecurrenceModificationPrimitives = {
-	itemID: string;
+export type ItemRecurrenceInfoPrimitives = {
 	date: Date;
 	state: ERecurrenceState;
 	amount?: number;

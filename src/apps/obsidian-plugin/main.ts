@@ -1,5 +1,4 @@
-import Dexie from "dexie";
-import { exportDB, importDB } from "dexie-export-import";
+import { exportDB, importInto } from "dexie-export-import";
 import { App, normalizePath, Plugin, PluginManifest } from "obsidian";
 import { SettingTab } from "./SettingTab";
 import { buildContainer } from "contexts/Shared/infrastructure/di/container";
@@ -15,19 +14,23 @@ import { UpdateItemUseCase } from "contexts/Items/application/update-item.usecas
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
-	db: Dexie;
+	db: DexieDB;
 	logger: Logger;
+	container = buildContainer();
 
 	constructor(app: App, manifest: PluginManifest) {
 		super(app, manifest);
 		this.logger = new Logger("main");
+		this.db = this.container.resolve("_db") as DexieDB;
 	}
 
-	async exportDBBackup() {
+	async exportDBBackup(backupName: string = "db.backup") {
 		const folder = normalizePath(`${this.settings.rootFolder}/db`);
-		const path = normalizePath(`${this.settings.rootFolder}/db/db.backup`);
+		const path = normalizePath(
+			`${this.settings.rootFolder}/db/${backupName}`
+		);
 		const writeBackup = async () => {
-			const blob = await exportDB(this.db);
+			const blob = await exportDB(this.db.db);
 			this.logger.debugB("writing backup", { folder, path }).log();
 			await this.app.vault.adapter.writeBinary(
 				path,
@@ -47,12 +50,13 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		}
 	}
 
-	async importDBBackup() {
-		await this.db.delete();
-		// await this.db.open();
-		const path = normalizePath(`${this.settings.rootFolder}/db/db.backup`);
+	async importDBBackup(backupName: string = "db.backup") {
+		// await this.db.db.delete();
+		const path = normalizePath(
+			`${this.settings.rootFolder}/db/${backupName}`
+		);
 		const buffer = await this.app.vault.adapter.readBinary(path);
-		this.db = await importDB(new Blob([buffer]));
+		await importInto(this.db.db, new Blob([buffer]));
 	}
 
 	async migrateItems(container: AwilixContainer) {
@@ -64,7 +68,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 			container.resolve<UpdateItemUseCase>("updateItemUseCase");
 		await Promise.all(
 			items.map(async (item) => {
-				item.createAllRecurrences();
+				item.recurrence.createRecurrences();
 				console.log({ item });
 				await updateItemUseCase.execute(item);
 			})
@@ -74,32 +78,37 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		Logger.setDebugMode(this.settings.debugMode);
-		const container = buildContainer();
-		// await this.migrateItems(container);
-		this.db = (container.resolve("_db") as DexieDB).db;
 
 		await initStoragePersistence();
 		const storageQuota = await showEstimatedQuota();
 		this.logger.debug("storage quota", { storageQuota });
 
+		await this.importDBBackup("sync.backup");
+		await this.db.init();
+
 		const statusBarItem = this.addStatusBarItem();
 		this.registerView(
 			views.LIST_BUDGET_ITEMS_REACT.type,
 			(leaf) =>
-				new RightSidebarReactViewRoot(
-					leaf,
-					this,
-					(text) => statusBarItem.setText(text),
-					container
+				new RightSidebarReactViewRoot(leaf, this, (text) =>
+					statusBarItem.setText(text)
 				)
 		);
 
 		this.addSettingTab(new SettingTab(this.app, this));
 		LeftMenuItems.RightSidebarPanel(this);
+
+		this.registerInterval(
+			window.setInterval(
+				async () => await this.exportDBBackup("sync.backup"),
+				2 * 60 * 1000
+			)
+		);
 	}
 
 	onunload(): void {
 		this.logger.debug("onunload");
+		this.exportDBBackup("sync.backup");
 		persist();
 	}
 
