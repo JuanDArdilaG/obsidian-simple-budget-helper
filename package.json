@@ -49,6 +49,7 @@
 		"awilix": "^12.0.5",
 		"dayjs": "^1.11.13",
 		"dexie": "^4.0.11",
+		"dexie-cloud-addon": "^4.0.11",
 		"dexie-export-import": "^4.1.4",
 		"lucide-react": "^0.473.0",
 		"nanoid": "^5.0.9",

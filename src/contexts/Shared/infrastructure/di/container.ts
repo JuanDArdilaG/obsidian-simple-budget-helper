@@ -3,9 +3,7 @@ import {
 	asClass,
 	InjectionMode,
 	AwilixContainer,
-	asValue,
 } from "awilix";
-import { Config } from "../config/config";
 
 import { CategoriesDexieRepository } from "contexts/Categories/infrastructure/persistence/dexie/categories-dexie.repository";
 import { ReportsService } from "contexts/Reports/application/reports.service";
@@ -56,7 +54,6 @@ const container = createContainer({
 
 export function buildContainer(): AwilixContainer {
 	container.register({
-		config: asValue(Config),
 		_logger: asClass(Logger).singleton(),
 		_db: asClass(DexieDB).singleton(),
 	});

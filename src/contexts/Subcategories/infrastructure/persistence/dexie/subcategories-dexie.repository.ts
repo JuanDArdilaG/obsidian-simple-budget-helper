@@ -14,8 +14,8 @@ export class SubcategoriesDexieRepository
 	extends DexieRepository<SubCategory, SubCategoryID, SubcategoryPrimitives>
 	implements ISubCategoriesRepository
 {
-	constructor(config: typeof Config, protected readonly _db: DexieDB) {
-		super(_db, config.subCategoriesTableName);
+	constructor(protected readonly _db: DexieDB) {
+		super(_db, Config.subCategoriesTableName);
 	}
 
 	async findAllByCategory(categoryID: CategoryID): Promise<SubCategory[]> {

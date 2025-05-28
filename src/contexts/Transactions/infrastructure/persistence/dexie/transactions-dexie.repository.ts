@@ -13,8 +13,8 @@ export class TransactionsDexieRepository
 	extends DexieRepository<Transaction, TransactionID, TransactionPrimitives>
 	implements ITransactionsRepository
 {
-	constructor(config: typeof Config, protected readonly _db: DexieDB) {
-		super(_db, config.transactionsTableName);
+	constructor(protected readonly _db: DexieDB) {
+		super(_db, Config.transactionsTableName);
 	}
 
 	async findAllUniqueItemBrands(): Promise<ItemBrand[]> {

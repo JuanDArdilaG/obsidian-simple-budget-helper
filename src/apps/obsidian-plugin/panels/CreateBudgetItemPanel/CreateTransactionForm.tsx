@@ -269,7 +269,7 @@ export const CreateTransactionForm = ({
 					value={
 						new PriceValueObject(transaction.amount, {
 							withSign: false,
-							decimals: 2,
+							decimals: 0,
 						})
 					}
 					onChange={(amount) => update({ amount: amount.value })}

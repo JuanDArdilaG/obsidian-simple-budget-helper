@@ -1,4 +1,5 @@
 import Dexie from "dexie";
+import dexieCloud from "dexie-cloud-addon";
 import { DB } from "../db";
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { Account } from "contexts/Accounts/domain";
@@ -10,33 +11,38 @@ import { Item } from "contexts/Items/domain";
 export class DexieDB extends DB {
 	readonly db: Dexie;
 
-	constructor(readonly config: typeof Config) {
+	constructor() {
 		super();
-		this.db = new Dexie(config.dbName, {
-			chromeTransactionDurability: "strict",
+		this.db = new Dexie("BudgetHelper", {
+			addons: [dexieCloud],
+		});
+		this.db.cloud.configure({
+			databaseUrl: "https://zwigj72e8.dexie.cloud",
+			requireAuth: true,
+			tryUseServiceWorker: false,
 		});
 		this.#initializeTables();
 	}
 
 	async init() {
-		this.db.open();
+		await this.db.open();
 	}
 
 	#initializeTables() {
 		this.db.version(7).stores({
-			[this.config.accountsTableName]: Object.keys(
+			[Config.accountsTableName]: Object.keys(
 				Account.emptyPrimitives()
 			).join(", "),
-			[this.config.categoriesTableName]: Object.keys(
+			[Config.categoriesTableName]: Object.keys(
 				Category.emptyPrimitives()
 			).join(", "),
-			[this.config.itemsTableName]: Object.keys(
-				Item.emptyPrimitives()
-			).join(", "),
-			[this.config.subCategoriesTableName]: Object.keys(
+			[Config.itemsTableName]: Object.keys(Item.emptyPrimitives()).join(
+				", "
+			),
+			[Config.subCategoriesTableName]: Object.keys(
 				SubCategory.emptyPrimitives()
 			).join(", "),
-			[this.config.transactionsTableName]: Object.keys(
+			[Config.transactionsTableName]: Object.keys(
 				Transaction.emptyPrimitives()
 			).join(", "),
 		});

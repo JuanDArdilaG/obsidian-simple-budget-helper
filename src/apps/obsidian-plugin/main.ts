@@ -1,5 +1,5 @@
-import { exportDB, importInto } from "dexie-export-import";
 import { App, normalizePath, Plugin, PluginManifest } from "obsidian";
+import { exportDB, importInto } from "dexie-export-import";
 import { SettingTab } from "./SettingTab";
 import { buildContainer } from "contexts/Shared/infrastructure/di/container";
 import { Logger } from "../../contexts/Shared/infrastructure/logger";
@@ -41,7 +41,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 			await writeBackup();
 		} catch (error) {
 			if (error.code === "ENOENT") {
-				this.logger.debugB("creating backup directory").log();
+				this.logger.debugB("creating backup directory.").log();
 				await this.app.vault.adapter.mkdir(folder);
 				await writeBackup();
 				return;
@@ -58,7 +58,9 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		const buffer = await this.app.vault.adapter.readBinary(path);
 		await importInto(this.db.db, new Blob([buffer]), {
 			clearTablesBeforeImport: true,
+			acceptNameDiff: true,
 		});
+		await this.db.db.cloud.sync({ wait: false, purpose: "push" });
 	}
 
 	async migrateItems(container: AwilixContainer) {
@@ -85,7 +87,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		const storageQuota = await showEstimatedQuota();
 		this.logger.debug("storage quota", { storageQuota });
 
-		await this.importDBBackup("sync.backup");
+		// await this.importDBBackup("sync.backup");
 		await this.db.init();
 
 		const statusBarItem = this.addStatusBarItem();
@@ -99,18 +101,10 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 
 		this.addSettingTab(new SettingTab(this.app, this));
 		LeftMenuItems.RightSidebarPanel(this);
-
-		this.registerInterval(
-			window.setInterval(
-				async () => await this.exportDBBackup("sync.backup"),
-				2 * 60 * 1000
-			)
-		);
 	}
 
 	onunload(): void {
 		this.logger.debug("onunload");
-		this.exportDBBackup("sync.backup");
 		persist();
 	}
 

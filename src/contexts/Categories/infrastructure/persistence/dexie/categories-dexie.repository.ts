@@ -13,8 +13,8 @@ export class CategoriesDexieRepository
 	extends DexieRepository<Category, CategoryID, CategoryPrimitives>
 	implements ICategoriesRepository
 {
-	constructor(config: typeof Config, protected readonly _db: DexieDB) {
-		super(_db, config.categoriesTableName);
+	constructor(protected readonly _db: DexieDB) {
+		super(_db, Config.categoriesTableName);
 	}
 
 	async findByName(name: CategoryName): Promise<Category | null> {

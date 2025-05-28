@@ -13,8 +13,8 @@ export class AccountsDexieRepository
 	extends DexieRepository<Account, AccountID, AccountPrimitives>
 	implements IAccountsRepository
 {
-	constructor(config: typeof Config, protected readonly _db: DexieDB) {
-		super(_db, config.accountsTableName);
+	constructor(protected readonly _db: DexieDB) {
+		super(_db, Config.accountsTableName);
 	}
 
 	async findByName(name: AccountName): Promise<Account | null> {

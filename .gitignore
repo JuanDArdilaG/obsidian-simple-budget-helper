@@ -27,3 +27,5 @@ yalc.lock
 
 #test
 coverage
+
+dexie*

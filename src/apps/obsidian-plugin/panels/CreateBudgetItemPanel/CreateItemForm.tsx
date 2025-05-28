@@ -240,7 +240,7 @@ export const CreateItemForm = ({
 					value={
 						new PriceValueObject(item.price, {
 							withSign: false,
-							decimals: 2,
+							decimals: 0,
 						})
 					}
 					onChange={(amount) => update({ price: amount.toNumber() })}
