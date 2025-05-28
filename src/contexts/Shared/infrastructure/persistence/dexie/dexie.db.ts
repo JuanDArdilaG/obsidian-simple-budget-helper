@@ -18,7 +18,8 @@ export class DexieDB extends DB {
 		});
 		this.db.cloud.configure({
 			databaseUrl: "https://zwigj72e8.dexie.cloud",
-			requireAuth: true,
+			requireAuth: false,
+			periodicSync: { minInterval: 60 },
 			tryUseServiceWorker: false,
 		});
 		this.#initializeTables();
