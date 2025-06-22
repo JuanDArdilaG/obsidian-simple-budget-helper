@@ -1,17 +1,17 @@
-import { App } from "obsidian";
-import { DB } from "../db";
-import { LocalFileManager } from "./local-file-manager";
-import { ConflictResolver } from "./conflict-resolver";
-import { BackupManager } from "./backup-manager";
-import { DataVersioning } from "./data-versioning";
-import { Logger } from "../../logger";
-import Dexie from "dexie";
-import { Config } from "contexts/Shared/infrastructure/config/config";
 import { Account } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
+import { Item } from "contexts/Items/domain";
+import { Config } from "contexts/Shared/infrastructure/config/config";
 import { SubCategory } from "contexts/Subcategories/domain";
 import { Transaction } from "contexts/Transactions/domain";
-import { Item } from "contexts/Items/domain";
+import Dexie from "dexie";
+import { App } from "obsidian";
+import { Logger } from "../../logger";
+import { DB } from "../db";
+import { BackupManager } from "./backup-manager";
+import { ConflictResolver } from "./conflict-resolver";
+import { DataVersioning } from "./data-versioning";
+import { LocalFileManager } from "./local-file-manager";
 
 // Static flags to prevent multiple intervals across all instances
 let globalAutoSyncInterval: number | undefined;
@@ -54,9 +54,6 @@ export class LocalDB extends DB {
 
 			// Create initial backup
 			await this.backupManager.createBackup(this.db, this.dbId);
-
-			// Start periodic auto-sync
-			this.startAutoSync();
 
 			this.logger.debug("local dexie initialized successfully");
 		} catch (error) {
@@ -229,11 +226,13 @@ export class LocalDB extends DB {
 			}
 
 			this.logger.debug("Creating backup", { backupName, hasData });
-			return await this.backupManager.createBackup(
+			const backupInfo = await this.backupManager.createBackup(
 				this.db,
 				this.dbId,
 				backupName
 			);
+			await this.backupManager.cleanupOldBackups();
+			return backupInfo;
 		} catch (error) {
 			this.logger.error(error);
 			throw error;

@@ -1,214 +1,357 @@
 import {
 	Accordion,
+	AccordionDetails,
 	AccordionSummary,
 	Typography,
-	AccordionDetails,
+	useMediaQuery,
+	useTheme,
 } from "@mui/material";
-import { Pencil, Trash2 } from "lucide-react";
-import { useContext, useMemo, useState } from "react";
-import {
-	AccountsContext,
-	AppContext,
-	CategoriesContext,
-	TransactionsContext,
-} from "../Contexts";
+import { Button } from "apps/obsidian-plugin/components/Button";
+import { ConfirmationModal } from "apps/obsidian-plugin/components/ConfirmationModal";
 import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
 import { EditTransactionPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel";
-import { TransactionWithAccumulatedBalance } from "contexts/Reports/domain";
-import { ConfirmationModal } from "apps/obsidian-plugin/components/ConfirmationModal";
-import { Button } from "apps/obsidian-plugin/components/Button";
 import { Transaction } from "contexts/Transactions/domain";
+import { Pencil, Trash2 } from "lucide-react";
+import React, { useCallback, useContext, useMemo, useState } from "react";
+import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
+import { DisplayableTransactionWithAccumulatedBalance } from "./AccountingList";
 
-export const AccountingListItem = ({
-	transactionWithBalance: { transaction, balance, prevBalance },
-	selection,
-	setSelection,
-}: {
-	transactionWithBalance: TransactionWithAccumulatedBalance;
-	selection: Transaction[];
-	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
-}) => {
-	const { plugin } = useContext(AppContext);
-	const { updateAccounts, getAccountByID } = useContext(AccountsContext);
-	const { getCategoryByID, getSubCategoryByID } =
-		useContext(CategoriesContext);
-	const {
-		updateTransactions,
-		updateFilteredTransactions,
-		useCases: { deleteTransaction },
-	} = useContext(TransactionsContext);
+export const AccountingListItem = React.memo(
+	({
+		transactionWithBalance: { transaction, balance, prevBalance, display },
+		selection,
+		setSelection,
+	}: {
+		transactionWithBalance: DisplayableTransactionWithAccumulatedBalance;
+		selection: Transaction[];
+		setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
+	}) => {
+		const theme = useTheme();
+		const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+		const isTablet = useMediaQuery(theme.breakpoints.down("md"));
 
-	const [editing, setEditing] = useState(false);
+		const { plugin } = useContext(AppContext);
+		const { updateAccounts } = useContext(AccountsContext);
+		const {
+			updateTransactions,
+			updateFilteredTransactions,
+			useCases: { deleteTransaction },
+		} = useContext(TransactionsContext);
 
-	const account = useMemo(
-		() =>
-			getAccountByID(
-				transaction.operation.isTransfer() &&
-					transaction.toAccount &&
-					transaction.amount.isNegative()
-					? transaction.toAccount
-					: transaction.account
-			),
-		[transaction]
-	);
-	if (!account) return <></>;
+		const [editing, setEditing] = useState(false);
 
-	return (
-		<Accordion
-			onChange={() => setSelection([])}
-			style={{
-				width: "100%",
-				marginTop: "5px",
-				marginBottom: "5px",
-				paddingTop: "5px",
-				paddingBottom: "5px",
-				backgroundColor: "var(--background-primary)",
-			}}
-		>
-			<AccordionSummary
+		// Memoize selection state
+		const isSelected = useMemo(
+			() => selection.includes(transaction),
+			[selection, transaction]
+		);
+
+		// Memoize delete handler
+		const handleDelete = useCallback(async () => {
+			new ConfirmationModal(plugin.app, async (confirm) => {
+				if (confirm) {
+					await deleteTransaction.execute(transaction.id);
+					updateFilteredTransactions();
+					setSelection([]);
+				}
+			}).open();
+		}, [
+			plugin.app,
+			deleteTransaction,
+			transaction.id,
+			updateFilteredTransactions,
+			setSelection,
+		]);
+
+		// Memoize edit handler
+		const handleEdit = useCallback(async () => {
+			setEditing(!editing);
+		}, [editing]);
+
+		// Memoize update handler
+		const handleUpdate = useCallback(async () => {
+			setEditing(false);
+			updateTransactions();
+			updateAccounts();
+			setSelection([]);
+		}, [updateTransactions, updateAccounts, setSelection]);
+
+		// Memoize accordion change handler
+		const handleAccordionChange = useCallback(() => {
+			setSelection([]);
+		}, [setSelection]);
+
+		if (!display.accountName) return <></>;
+
+		return (
+			<Accordion
+				onChange={handleAccordionChange}
 				style={{
+					width: "100%",
+					marginTop: "4px",
+					marginBottom: "4px",
+					paddingTop: "4px",
+					paddingBottom: "4px",
 					backgroundColor: "var(--background-primary)",
-					border: "none",
-					boxShadow: "none",
 				}}
-				expandIcon={<></>}
-				aria-controls={`transaction-${transaction.id}-content`}
-				id={`transaction-${transaction.id}-header`}
 			>
-				<div
-					className="accounting-list-item"
+				<AccordionSummary
 					style={{
-						padding: "8px",
-						backgroundColor: selection.includes(transaction)
-							? "var(--background-modifier-hover)"
-							: "var(--background-primary)",
+						backgroundColor: "var(--background-primary)",
+						border: "none",
+						boxShadow: "none",
+						padding: isMobile ? "4px" : "8px",
 					}}
+					expandIcon={<></>}
+					aria-controls={`transaction-${transaction.id}-content`}
+					id={`transaction-${transaction.id}-header`}
 				>
 					<div
+						className="accounting-list-item"
 						style={{
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "flex-start",
-							justifyContent: "space-around",
-							height: "100%",
+							padding: isMobile ? "4px" : "8px",
+							backgroundColor: isSelected
+								? "var(--background-modifier-hover)"
+								: "var(--background-primary)",
+							width: "100%",
 						}}
 					>
-						<Typography variant="body1">
-							{transaction.name.toString()}
-						</Typography>
-						<div style={{ width: "100%", marginTop: "5px" }}>
-							<div style={{ marginBottom: "3px" }}>
-								<Typography variant="body2">
-									<b>Category:</b>{" "}
-									{getCategoryByID(
-										transaction.category
-									)?.name.toString() ?? ""}
+						{/* Mobile Layout - Stacked */}
+						{isMobile ? (
+							<div style={{ width: "100%" }}>
+								{/* Transaction Name */}
+								<Typography
+									variant="body2"
+									style={{
+										fontWeight: "bold",
+										marginBottom: "4px",
+										wordBreak: "break-word",
+									}}
+								>
+									{display.truncatedTransactionName}
 								</Typography>
+
+								{/* Category and SubCategory - Compact */}
+								<div style={{ marginBottom: "4px" }}>
+									<Typography
+										variant="caption"
+										style={{ color: "var(--text-muted)" }}
+									>
+										{display.truncatedCategoryName}
+										{display.subCategoryName &&
+											` • ${display.truncatedSubCategoryName}`}
+									</Typography>
+								</div>
+
+								{/* Amount and Account - Inline */}
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+										marginBottom: "2px",
+									}}
+								>
+									<span
+										style={{
+											fontSize: "12px",
+											color: "var(--text-muted)",
+										}}
+									>
+										{display.truncatedAccountName}
+									</span>
+									{display.realAmount && (
+										<PriceLabel
+											price={display.realAmount}
+											operation={transaction.operation}
+										/>
+									)}
+								</div>
+
+								{/* Balance and Time - Compact */}
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+									}}
+								>
+									<div
+										style={{
+											fontSize: "11px",
+											color: "var(--text-muted)",
+										}}
+									>
+										<PriceLabel price={prevBalance} /> →{" "}
+										<PriceLabel price={balance} />
+									</div>
+									<span
+										style={{
+											fontSize: "11px",
+											color: "var(--text-muted)",
+										}}
+									>
+										{display.formattedTime}
+									</span>
+								</div>
 							</div>
-							<div>
-								<Typography variant="body2">
-									<b>SubCategory:</b>{" "}
-									{
-										getSubCategoryByID(
-											transaction.subCategory
-										)?.name.value
-									}
-								</Typography>
+						) : (
+							/* Desktop Layout - Two Columns */
+							<div
+								style={{
+									display: "flex",
+									justifyContent: "space-between",
+									width: "100%",
+									gap: isTablet ? "8px" : "16px",
+								}}
+							>
+								<div
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										alignItems: "flex-start",
+										justifyContent: "space-around",
+										height: "100%",
+										flex: 1,
+										minWidth: 0, // Allow text truncation
+									}}
+								>
+									<Typography
+										variant="body2"
+										style={{
+											fontWeight: "bold",
+											wordBreak: "break-word",
+											marginBottom: "4px",
+										}}
+									>
+										{display.transactionName}
+									</Typography>
+									<div style={{ width: "100%" }}>
+										<div style={{ marginBottom: "2px" }}>
+											<Typography
+												variant="caption"
+												style={{
+													color: "var(--text-muted)",
+												}}
+											>
+												<b>Category:</b>{" "}
+												{display.categoryName.toString() ??
+													""}
+											</Typography>
+										</div>
+										<div>
+											<Typography
+												variant="caption"
+												style={{
+													color: "var(--text-muted)",
+												}}
+											>
+												<b>SubCategory:</b>{" "}
+												{display.subCategoryName ?? ""}
+											</Typography>
+										</div>
+									</div>
+								</div>
+								<div
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										alignItems: "flex-end",
+										justifyContent: "space-around",
+										minWidth: "fit-content",
+									}}
+								>
+									<div>
+										<span
+											style={{
+												fontSize: "12px",
+												color: "var(--text-muted)",
+											}}
+										>
+											{display.formattedTime}
+										</span>
+									</div>
+									<div
+										style={{
+											display: "flex",
+											gap: "8px",
+											alignItems: "center",
+											marginBottom: "4px",
+											flexWrap: "wrap",
+										}}
+									>
+										<span
+											style={{
+												fontSize: "12px",
+												color: "var(--text-muted)",
+											}}
+										>
+											{display.accountName.toString() ??
+												""}
+										</span>
+										{display.realAmount && (
+											<PriceLabel
+												price={display.realAmount}
+												operation={
+													transaction.operation
+												}
+											/>
+										)}
+									</div>
+									<div
+										style={{
+											fontSize: "11px",
+											color: "var(--text-muted)",
+										}}
+									>
+										<PriceLabel price={prevBalance} /> →{" "}
+										<PriceLabel price={balance} />
+									</div>
+								</div>
 							</div>
-						</div>
+						)}
 					</div>
-					<div
+				</AccordionSummary>
+				<AccordionDetails
+					style={{
+						backgroundColor: "var(--background-primary)",
+						display: "flex",
+						justifyContent: "center",
+						alignItems: "center",
+						paddingTop: isMobile ? "12px" : "20px",
+						paddingBottom: isMobile ? "12px" : "20px",
+						gap: isMobile ? "8px" : "10px",
+						flexWrap: "wrap",
+					}}
+				>
+					<Button
+						label={isMobile ? "" : "Edit"}
+						icon={<Pencil size={isMobile ? 14 : 16} />}
 						style={{
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "flex-end",
-							justifyContent: "space-around",
+							cursor: "pointer",
+							borderBottom: "1px solid black",
+							minWidth: isMobile ? "40px" : "auto",
 						}}
-					>
-						<div>
-							<span className="light-text">
-								{transaction.date.toLocaleTimeString(
-									"default",
-									{
-										hour: "2-digit",
-										minute: "2-digit",
-									}
-								)}
-							</span>{" "}
-						</div>
-						<div
-							style={{
-								display: "flex",
-								gap: "10px",
-								alignItems: "stretch",
-								marginBottom: 5,
-							}}
-						>
-							<span>{account?.name.toString() ?? ""}</span>
-							<PriceLabel
-								price={transaction.getRealAmountForAccount(
-									account.id
-								)}
-								operation={transaction.operation}
-							/>
-						</div>
-						<div className="small">
-							<div>
-								<PriceLabel price={prevBalance} /> {"→"}{" "}
-								<PriceLabel price={balance} />
-							</div>
-						</div>
-					</div>
-				</div>
-			</AccordionSummary>
-			<AccordionDetails
-				style={{
-					backgroundColor: "var(--background-primary)",
-					display: "flex",
-					justifyContent: "center",
-					alignItems: "center",
-					paddingTop: 20,
-					gap: 10,
-				}}
-			>
-				<Button
-					label="Edit"
-					icon={<Pencil size={16} />}
-					style={{
-						cursor: "pointer",
-						borderBottom: "1px solid black",
-					}}
-					onClick={async () => setEditing(!editing)}
-				/>
-				<Button
-					label="Delete"
-					icon={<Trash2 size={16} />}
-					style={{
-						cursor: "pointer",
-						borderBottom: "1px solid black",
-					}}
-					onClick={async () => {
-						new ConfirmationModal(plugin.app, async (confirm) => {
-							if (confirm) {
-								await deleteTransaction.execute(transaction.id);
-								updateFilteredTransactions();
-								setSelection([]);
-							}
-						}).open();
-					}}
-				/>
-				{editing && (
-					<EditTransactionPanel
-						onUpdate={async () => {
-							setEditing(false);
-							updateTransactions();
-							updateAccounts();
-							setSelection([]);
-						}}
-						transaction={transaction}
+						onClick={handleEdit}
 					/>
-				)}
-			</AccordionDetails>
-		</Accordion>
-	);
-};
+					<Button
+						label={isMobile ? "" : "Delete"}
+						icon={<Trash2 size={isMobile ? 14 : 16} />}
+						style={{
+							cursor: "pointer",
+							borderBottom: "1px solid black",
+							minWidth: isMobile ? "40px" : "auto",
+						}}
+						onClick={handleDelete}
+					/>
+					{editing && (
+						<EditTransactionPanel
+							transaction={transaction}
+							onUpdate={handleUpdate}
+						/>
+					)}
+				</AccordionDetails>
+			</Accordion>
+		);
+	}
+);

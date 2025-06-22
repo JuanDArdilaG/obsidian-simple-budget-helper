@@ -1,12 +1,12 @@
-import { LocalDB } from "./local.db";
-import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
-import { IDValueObject } from "contexts/Shared/domain/value-objects/id/id.valueobject";
+import { Criteria } from "contexts/Shared/domain/criteria";
 import {
 	Entity,
 	EntityComposedValue,
 } from "contexts/Shared/domain/entity.abstract";
-import { Criteria } from "contexts/Shared/domain/criteria";
+import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
+import { IDValueObject } from "contexts/Shared/domain/value-objects/id/id.valueobject";
 import { IndexableType } from "dexie";
+import { LocalDB } from "./local.db";
 
 export abstract class LocalRepository<
 	ID extends IDValueObject,

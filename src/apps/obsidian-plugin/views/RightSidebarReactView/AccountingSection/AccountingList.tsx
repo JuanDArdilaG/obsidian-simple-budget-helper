@@ -6,14 +6,20 @@ import {
 	ListItem,
 	ListItemButton,
 	ListSubheader,
+	useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { PerformanceMonitor } from "apps/obsidian-plugin/components/PerformanceMonitor";
 import { useAccountSelect } from "apps/obsidian-plugin/components/Select/useAccountSelect";
 import { useCategorySelect } from "apps/obsidian-plugin/components/Select/useCategorySelect";
 import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/useSubCategorySelect";
 import { useLazyLoading } from "apps/obsidian-plugin/hooks/useLazyLoading";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
-import { TransactionsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import {
+	AccountsContext,
+	CategoriesContext,
+	TransactionsContext,
+} from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { TransactionWithAccumulatedBalance } from "contexts/Reports/domain";
 import { Transaction } from "contexts/Transactions/domain";
 import {
@@ -24,18 +30,34 @@ import {
 	useRef,
 	useState,
 } from "react";
+import AutoSizer from "react-virtualized-auto-sizer";
 import { VariableSizeList as VirtualList } from "react-window";
 import { AccountingListItem } from "./AccountingListItem";
+
+export type DisplayableTransactionWithAccumulatedBalance =
+	TransactionWithAccumulatedBalance & {
+		display: {
+			accountName: string;
+			categoryName: string;
+			subCategoryName: string;
+			realAmount: PriceValueObject | null;
+			formattedTime: string;
+			transactionName: string;
+			truncatedTransactionName: string;
+			truncatedCategoryName: string;
+			truncatedSubCategoryName: string;
+			truncatedAccountName: string;
+		};
+	};
 
 // Configuration for lazy loading
 const ITEMS_PER_PAGE = 20;
 const INITIAL_ITEMS = 10;
 const BASE_ITEM_HEIGHT = 60; // Base height for date header
-const TRANSACTION_HEIGHT = 88; // Height per transaction
-const MAX_HEIGHT = 600; // Maximum height of the list
+const TRANSACTION_HEIGHT = 80; // Height per transaction
+const MOBILE_TRANSACTION_HEIGHT = 100; // Further increased height for mobile to prevent clipping
 
 export function AccountingList({
-	statusBarAddText,
 	selection,
 	setSelection,
 }: Readonly<{
@@ -43,9 +65,15 @@ export function AccountingList({
 	selection: Transaction[];
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
 }>) {
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
 	const { logger } = useLogger("AccountingList");
 	const { setFilters, filteredTransactionsReport } =
 		useContext(TransactionsContext);
+	const { getAccountByID } = useContext(AccountsContext);
+	const { getCategoryByID, getSubCategoryByID } =
+		useContext(CategoriesContext);
 
 	// Performance tracking
 	const [renderTime, setRenderTime] = useState<number>(0);
@@ -68,27 +96,90 @@ export function AccountingList({
 	});
 
 	const handleAuxClick = (transaction: Transaction) => {
-		setSelection((prevSelection) =>
-			prevSelection.includes(transaction)
-				? prevSelection.filter((item) => item !== transaction)
-				: [...prevSelection, transaction]
+		setSelection((prev: Transaction[]) =>
+			prev.includes(transaction)
+				? prev.filter((item) => item !== transaction)
+				: [...prev, transaction]
 		);
 	};
 
 	useEffect(() => {
 		setFilters([account?.id, category?.id, subCategory?.id]);
-	}, [account, category, subCategory]);
+	}, [account, category, subCategory, setFilters]);
 
 	const withAccumulatedBalanceTransactionsGrouped = useMemo(() => {
 		const startTime = performance.now();
-		const res: [date: string, TransactionWithAccumulatedBalance[]][] = [];
+		const res: [
+			date: string,
+			DisplayableTransactionWithAccumulatedBalance[]
+		][] = [];
+
+		// Helper for truncation
+		const truncateText = (text: string, maxLength: number) => {
+			return text.length > maxLength
+				? text.substring(0, maxLength) + "..."
+				: text;
+		};
+
 		filteredTransactionsReport
 			.withAccumulatedBalance()
 			.forEach((withBalanceTransaction) => {
-				const date =
-					withBalanceTransaction.transaction.date.toLocaleDateString();
+				const { transaction } = withBalanceTransaction;
+
+				// All the calculations from AccountingListItem go here
+				const account = getAccountByID(
+					transaction.operation.isTransfer() &&
+						transaction.toAccount &&
+						transaction.amount.isNegative()
+						? transaction.toAccount
+						: transaction.account
+				);
+				const category = getCategoryByID(transaction.category);
+				const subCategory = getSubCategoryByID(transaction.subCategory);
+				const realAmount = account?.id
+					? transaction.getRealAmountForAccount(account.id)
+					: null;
+				const formattedTime = transaction.date.toLocaleTimeString(
+					"default",
+					{
+						hour: "2-digit",
+						minute: "2-digit",
+					}
+				);
+				const transactionName = transaction.name.toString();
+				const accountName = account?.name.toString() ?? "";
+				const categoryName = category?.name.toString() ?? "";
+				const subCategoryName = subCategory?.name.value ?? "";
+
+				const displayableTransaction: DisplayableTransactionWithAccumulatedBalance =
+					{
+						...withBalanceTransaction,
+						display: {
+							accountName,
+							categoryName,
+							subCategoryName,
+							realAmount,
+							formattedTime,
+							transactionName,
+							truncatedTransactionName: truncateText(
+								transactionName,
+								30
+							),
+							truncatedCategoryName: truncateText(
+								categoryName,
+								20
+							),
+							truncatedSubCategoryName: truncateText(
+								subCategoryName,
+								15
+							),
+							truncatedAccountName: truncateText(accountName, 15),
+						},
+					};
+
+				const date = transaction.date.toLocaleDateString();
 				if (!res.find((r) => r[0] === date)) res.push([date, []]);
-				res.last()?.[1].push(withBalanceTransaction);
+				res.last()?.[1].push(displayableTransaction);
 			});
 		const endTime = performance.now();
 		setRenderTime(endTime - startTime);
@@ -97,7 +188,13 @@ export function AccountingList({
 			renderTime: endTime - startTime,
 		});
 		return res;
-	}, [filteredTransactionsReport]);
+	}, [
+		filteredTransactionsReport,
+		getAccountByID,
+		getCategoryByID,
+		getSubCategoryByID,
+		logger,
+	]);
 
 	// Use lazy loading hook
 	const { visibleItems, isLoading, hasMoreItems, loadMoreItems, resetItems } =
@@ -131,7 +228,7 @@ export function AccountingList({
 			const [date, withBalanceTransactions] = visibleTransactions[index];
 
 			return (
-				<div style={style}>
+				<div style={style} data-date-group={index}>
 					<ListItem>
 						<List style={{ width: "100%" }}>
 							<ListSubheader
@@ -149,19 +246,23 @@ export function AccountingList({
 								})}
 							</ListSubheader>
 							{withBalanceTransactions.map(
-								({ transaction, balance, prevBalance }) => (
+								(transactionWithBalance) => (
 									<ListItemButton
-										key={transaction.id.toString()}
+										key={transactionWithBalance.transaction.id.toString()}
 										onAuxClick={() =>
-											handleAuxClick(transaction)
+											handleAuxClick(
+												transactionWithBalance.transaction
+											)
 										}
+										style={{
+											padding: isMobile ? "2px" : "8px",
+											minHeight: "auto",
+										}}
 									>
 										<AccountingListItem
-											transactionWithBalance={{
-												transaction,
-												balance,
-												prevBalance,
-											}}
+											transactionWithBalance={
+												transactionWithBalance
+											}
 											selection={selection}
 											setSelection={setSelection}
 										/>
@@ -173,202 +274,100 @@ export function AccountingList({
 				</div>
 			);
 		},
-		[visibleTransactions, selection, setSelection, handleAuxClick]
+		[visibleTransactions, selection, setSelection, handleAuxClick, isMobile]
 	);
+
+	const getItemSize = (index: number) => {
+		return (
+			BASE_ITEM_HEIGHT +
+			(isMobile ? MOBILE_TRANSACTION_HEIGHT : TRANSACTION_HEIGHT) *
+				(visibleTransactions[index]?.[1].length ?? 1)
+		);
+	};
+
+	const onItemsRendered = ({
+		visibleStopIndex,
+	}: {
+		visibleStartIndex: number;
+		visibleStopIndex: number;
+	}) => {
+		const lastVisibleIndex = visibleStopIndex;
+		if (
+			!isLoading &&
+			hasMoreItems &&
+			lastVisibleIndex >= visibleTransactions.length - 1
+		) {
+			loadMoreItems();
+		}
+	};
 
 	useEffect(() => {
 		logger.debug("selection changed", { selection });
-		statusBarAddText(
-			selection.length > 0
-				? `Selected ${
-						selection.length
-				  } records. Balance: ${new PriceValueObject(
-						selection.reduce(
-							(total, transaction) =>
-								total +
-								transaction.amount.toNumber() *
-									(transaction.operation.isIncome() ? 1 : -1),
-							0
-						)
-				  ).toString()}`
-				: ""
-		);
 	}, [selection]);
 
-	// Calculate total height for virtual list
-	const totalHeight = useMemo(() => {
-		return Math.min(visibleItems * TRANSACTION_HEIGHT, MAX_HEIGHT);
-	}, [visibleItems]);
-
-	// Calculate variable height for each date group
-	const getItemSize = useCallback(
-		(index: number) => {
-			if (index >= visibleTransactions.length) return BASE_ITEM_HEIGHT;
-			const [, transactions] = visibleTransactions[index];
-			return BASE_ITEM_HEIGHT + transactions.length * TRANSACTION_HEIGHT;
-		},
-		[visibleTransactions]
-	);
-
-	// Calculate total content height for scroll detection
-	const totalContentHeight = useMemo(() => {
-		return visibleTransactions.reduce((total, _, index) => {
-			return total + getItemSize(index);
-		}, 0);
-	}, [visibleTransactions, getItemSize]);
-
-	// Virtual list scroll handler for infinite scroll
-	const handleVirtualScroll = useCallback(
-		({
-			scrollOffset,
-			scrollUpdateWasRequested,
-		}: {
-			scrollOffset: number;
-			scrollUpdateWasRequested: boolean;
-		}) => {
-			if (scrollUpdateWasRequested) return;
-
-			const containerHeight = totalHeight;
-			const scrollPosition = scrollOffset + containerHeight;
-			const threshold = 200; // Pixels from bottom to trigger load
-
-			if (
-				totalContentHeight - scrollPosition < threshold &&
-				hasMoreItems &&
-				!isLoading
-			) {
-				loadMoreItems();
-			}
-		},
-		[
-			totalHeight,
-			totalContentHeight,
-			hasMoreItems,
-			isLoading,
-			loadMoreItems,
-		]
-	);
-
-	// Toggle performance monitor with Ctrl+Shift+P
-	useEffect(() => {
-		const handleKeyPress = (event: KeyboardEvent) => {
-			if (event.ctrlKey && event.shiftKey && event.key === "P") {
-				setShowPerformanceMonitor((prev) => !prev);
-			}
-		};
-
-		window.addEventListener("keydown", handleKeyPress);
-		return () => window.removeEventListener("keydown", handleKeyPress);
-	}, []);
-
 	return (
-		<>
-			{/* Performance Monitor */}
-			{showPerformanceMonitor && (
-				<PerformanceMonitor
-					itemCount={withAccumulatedBalanceTransactionsGrouped.length}
-					visibleItems={visibleItems}
-					renderTime={renderTime}
-				/>
-			)}
-
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "center",
-					alignItems: "center",
-					gap: 15,
-					flexWrap: "wrap",
-					marginTop: 10,
-					marginBottom: 10,
-				}}
-			>
-				<h4>Filters:</h4>
-				<div style={{ minWidth: 150 }}>{AccountSelect}</div>
-				<div style={{ minWidth: 150 }}>{CategorySelect}</div>
-				<div style={{ minWidth: 150 }}>{SubCategorySelect}</div>
-			</div>
-
-			{/* Performance info */}
-			<div
-				style={{
-					padding: "8px",
-					fontSize: "12px",
-					color: "var(--text-muted)",
-					textAlign: "center",
-				}}
-			>
-				Showing {visibleItems} of{" "}
-				{withAccumulatedBalanceTransactionsGrouped.length} date groups
-				{hasMoreItems && ` • Scroll to load more`}
-				{renderTime > 0 && ` • Render: ${renderTime.toFixed(2)}ms`}
-				{/* Performance monitor hint */}
-				<div style={{ fontSize: "10px", marginTop: "4px" }}>
-					Press Ctrl+Shift+P to toggle performance monitor
+		<Box
+			sx={{
+				display: "flex",
+				flexDirection: "column",
+				height: "100%",
+				maxHeight: "100%",
+				overflow: "hidden",
+			}}
+		>
+			<Box sx={{ p: 1, borderBottom: 1, borderColor: "divider" }}>
+				<button onClick={() => setShowPerformanceMonitor((s) => !s)}>
+					Toggle performance
+				</button>
+				{showPerformanceMonitor && (
+					<PerformanceMonitor
+						renderTime={renderTime}
+						itemCount={
+							withAccumulatedBalanceTransactionsGrouped.length
+						}
+						visibleItems={visibleItems}
+					/>
+				)}
+				<div
+					style={{
+						display: "flex",
+						flexDirection: "row",
+						gap: "8px",
+					}}
+				>
+					{AccountSelect}
+					{CategorySelect}
+					{SubCategorySelect}
 				</div>
-			</div>
+			</Box>
 
-			<Box
-				style={{
-					height: totalHeight,
-					overflow: "hidden",
-					border: "1px solid var(--background-modifier-border)",
-					borderRadius: "4px",
-					marginBottom: 10,
-				}}
-			>
-				{visibleTransactions.length > 0 ? (
-					<VirtualList
-						height={totalHeight}
-						itemCount={visibleTransactions.length}
-						itemSize={getItemSize}
-						width="100%"
-						itemData={visibleTransactions}
-						overscanCount={3} // Pre-render 3 items above/below viewport
-						onScroll={handleVirtualScroll}
-						ref={virtualListRef}
-						style={{
-							marginBottom: 20,
-						}}
-					>
-						{renderVirtualItem}
-					</VirtualList>
-				) : (
+			<Box sx={{ flex: 1, overflow: "auto", paddingBottom: "50px" }}>
+				<AutoSizer>
+					{({ height, width }) => (
+						<VirtualList
+							ref={virtualListRef}
+							height={height} // Adjust as needed
+							itemCount={visibleTransactions.length}
+							itemSize={getItemSize}
+							onItemsRendered={onItemsRendered}
+							width={width}
+						>
+							{renderVirtualItem}
+						</VirtualList>
+					)}
+				</AutoSizer>
+				{isLoading && (
 					<Box
-						style={{
+						sx={{
 							display: "flex",
 							justifyContent: "center",
-							alignItems: "center",
-							height: "100%",
-							color: "var(--text-muted)",
+							py: 2,
 						}}
 					>
-						No transactions found
+						<CircularProgress />
 					</Box>
 				)}
 			</Box>
-
-			{/* Loading indicator */}
-			{isLoading && (
-				<Box
-					style={{
-						display: "flex",
-						justifyContent: "center",
-						alignItems: "center",
-						padding: "16px",
-					}}
-				>
-					<CircularProgress size={24} />
-					<span
-						style={{
-							marginLeft: "8px",
-							color: "var(--text-muted)",
-						}}
-					>
-						Loading more items...
-					</span>
-				</Box>
-			)}
-		</>
+		</Box>
 	);
 }

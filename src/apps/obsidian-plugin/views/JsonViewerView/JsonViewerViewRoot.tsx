@@ -1,9 +1,9 @@
-import { TextFileView, WorkspaceLeaf, TFile } from "obsidian";
-import { Root, createRoot } from "react-dom/client";
-import { StrictMode } from "react";
-import { JsonViewerView } from "./JsonViewerView";
 import { views } from "apps/obsidian-plugin/config";
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
+import { TFile, TextFileView, WorkspaceLeaf } from "obsidian";
+import { StrictMode } from "react";
+import { Root, createRoot } from "react-dom/client";
+import { JsonViewerView } from "./JsonViewerView";
 
 export class JsonViewerViewRoot extends TextFileView {
 	root: Root | null = null;
