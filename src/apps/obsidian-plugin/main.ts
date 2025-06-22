@@ -82,8 +82,6 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		// Initialize local database
 		await this.db.init(this.settings.dbId);
 
-		await this.importDBBackup("db.json");
-
 		const statusBarItem = this.addStatusBarItem();
 		this.registerView(
 			views.LIST_BUDGET_ITEMS_REACT.type,
