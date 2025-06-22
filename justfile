@@ -10,6 +10,57 @@ alias t := test
 test:
     npm run test
 
+# Start Obsidian with debugging enabled
+debug-obsidian:
+    #!/usr/bin/env bash
+    echo "🚀 Starting Obsidian with debugging enabled..."
+    open -a Obsidian --args --enable-logging --remote-debugging-port=9222
+    echo "✅ Obsidian started with debugging on port 9222"
+    echo "🔗 You can now attach the Chrome debugger to localhost:9222"
+
+# Start development server with debugging
+debug-dev:
+    #!/usr/bin/env bash
+    echo "🔧 Starting development server with debugging..."
+    npm run dev &
+    sleep 3
+    echo "🚀 Starting Obsidian with debugging..."
+    open -a Obsidian --args --enable-logging --remote-debugging-port=9222
+    echo "✅ Development environment ready!"
+    echo "🔗 Chrome DevTools: localhost:9222"
+    echo "📝 VS Code: Use '🔗 Attach to Obsidian (Chrome)' configuration"
+
+# Open Chrome DevTools for debugging
+debug-chrome:
+    #!/usr/bin/env bash
+    echo "🌐 Opening Chrome DevTools..."
+    open -a "Google Chrome" --args --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug
+    echo "✅ Chrome DevTools opened on port 9222"
+
+# Show debugging information
+debug-info:
+    #!/usr/bin/env bash
+    echo "🔍 Debugging Information:"
+    echo "=========================="
+    echo "📁 Workspace: $(pwd)"
+    echo "📦 Package: $(node -p "require('./package.json').name")"
+    echo "🏷️  Version: $(node -p "require('./package.json').version")"
+    echo "🔧 Obsidian Version: $(node -p "require('./package.json').devDependencies.obsidian")"
+    echo ""
+    echo "🚀 Available Debug Configurations:"
+    echo "  • 🔍 Debug Obsidian Plugin (Chrome DevTools)"
+    echo "  • 🐛 Debug Plugin Main Process"
+    echo "  • 🔗 Attach to Obsidian (Chrome)"
+    echo "  • 🔗 Attach to Obsidian (Node)"
+    echo "  • 🧪 Debug with Hot Reload"
+    echo "  • 🚀 Full Debug Session"
+    echo ""
+    echo "📋 Quick Commands:"
+    echo "  • just debug-obsidian    - Start Obsidian with debugging"
+    echo "  • just debug-dev         - Start dev server + Obsidian"
+    echo "  • just debug-chrome      - Open Chrome DevTools"
+    echo "  • just debug-info        - Show this information"
+
 # Bump version in manifest.json
 bump type="patch":
     #!/usr/bin/env bash
@@ -61,6 +112,7 @@ deploy type="patch": (bump type) build
     #!/usr/bin/env bash
     # Get the new version from manifest.json
     new_version=$(node -p "require('./manifest.json').version")
+    
     # Commit the version change
     git add manifest.json
     git commit -m "chore: bump version to $new_version"

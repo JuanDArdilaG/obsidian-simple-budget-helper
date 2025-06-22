@@ -1,16 +1,16 @@
-import { ItemRecurrenceFrequency } from "./item-recurrence-frequency.valueobject";
 import {
 	DateValueObject,
 	NumberValueObject,
 } from "@juandardilag/value-objects";
-import { ItemDate } from "./item-date.valueobject";
-import { ItemRecurrenceUntilDate } from "./item-recurrence-untildate.valueobject";
 import { Logger } from "contexts/Shared/infrastructure/logger";
+import { ItemDate } from "./item-date.valueobject";
+import { ItemRecurrenceFrequency } from "./item-recurrence-frequency.valueobject";
 import {
 	ERecurrenceState,
 	ItemRecurrenceInfo,
 	ItemRecurrenceInfoPrimitives,
 } from "./item-recurrence-modification.valueobject";
+import { ItemRecurrenceUntilDate } from "./item-recurrence-untildate.valueobject";
 
 export class ItemRecurrence {
 	readonly _ = new Logger("ItemRecurrence");
@@ -216,12 +216,14 @@ export class ItemRecurrence {
 		untilDate,
 	}: RecurrencePrimitives): ItemRecurrence {
 		return new ItemRecurrence(
-			new DateValueObject(startDate),
+			new DateValueObject(new Date(startDate)),
 			recurrences.map((recurrence) =>
 				ItemRecurrenceInfo.fromPrimitives(recurrence)
 			),
 			frequency ? new ItemRecurrenceFrequency(frequency) : undefined,
-			untilDate ? new ItemRecurrenceUntilDate(untilDate) : undefined
+			untilDate
+				? new ItemRecurrenceUntilDate(new Date(untilDate))
+				: undefined
 		);
 	}
 }

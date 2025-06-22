@@ -1,20 +1,20 @@
-import { ItemID } from "contexts/Items/domain/item-id.valueobject";
-import { TransactionID } from "./transaction-id.valueobject";
-import { TransactionOperation } from "./transaction-operation.valueobject";
-import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
-import { TransactionDate } from "./transaction-date.valueobject";
-import { TransactionAmount } from "./transaction-amount.valueobject";
-import { Item } from "contexts/Items/domain/item.entity";
-import { TransactionName } from "./item-name.valueobject";
-import { OperationType } from "contexts/Shared/domain";
-import { CategoryID } from "contexts/Categories/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
-import { Entity } from "contexts/Shared/domain/entity.abstract";
-import { ItemBrand, ItemProductInfo, ItemStore } from "contexts/Items/domain";
 import {
 	DateValueObject,
 	NumberValueObject,
 } from "@juandardilag/value-objects";
+import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
+import { CategoryID } from "contexts/Categories/domain";
+import { ItemBrand, ItemProductInfo, ItemStore } from "contexts/Items/domain";
+import { ItemID } from "contexts/Items/domain/item-id.valueobject";
+import { Item } from "contexts/Items/domain/item.entity";
+import { OperationType } from "contexts/Shared/domain";
+import { Entity } from "contexts/Shared/domain/entity.abstract";
+import { SubCategoryID } from "contexts/Subcategories/domain";
+import { TransactionName } from "./item-name.valueobject";
+import { TransactionAmount } from "./transaction-amount.valueobject";
+import { TransactionDate } from "./transaction-date.valueobject";
+import { TransactionID } from "./transaction-id.valueobject";
+import { TransactionOperation } from "./transaction-operation.valueobject";
 
 export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	constructor(
@@ -247,7 +247,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			new TransactionOperation(operation),
 			new CategoryID(category),
 			new SubCategoryID(subCategory),
-			new TransactionDate(date),
+			new TransactionDate(new Date(date)),
 			new TransactionAmount(amount),
 			updatedAt
 				? new DateValueObject(new Date(updatedAt))

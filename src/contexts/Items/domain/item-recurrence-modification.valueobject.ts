@@ -1,8 +1,8 @@
-import { ItemDate } from "./item-date.valueobject";
-import { Account, AccountID } from "contexts/Accounts/domain";
-import { ItemOperation } from "contexts/Shared/domain";
-import { ItemPrice } from "contexts/Items/domain";
 import { PriceValueObject } from "@juandardilag/value-objects";
+import { Account, AccountID } from "contexts/Accounts/domain";
+import { ItemPrice } from "contexts/Items/domain";
+import { ItemOperation } from "contexts/Shared/domain";
+import { ItemDate } from "./item-date.valueobject";
 
 export enum ERecurrenceState {
 	PENDING = "pending",
@@ -102,7 +102,7 @@ export class ItemRecurrenceInfo {
 		state,
 	}: ItemRecurrenceInfoPrimitives): ItemRecurrenceInfo {
 		return new ItemRecurrenceInfo(
-			new ItemDate(date),
+			new ItemDate(new Date(date)),
 			state,
 			amount ? new ItemPrice(amount) : undefined,
 			account ? new AccountID(account) : undefined,
