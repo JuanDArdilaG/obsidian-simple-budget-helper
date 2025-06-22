@@ -7,30 +7,65 @@ import { Category } from "contexts/Categories/domain";
 import { SubCategory } from "contexts/Subcategories/domain";
 import { Transaction } from "contexts/Transactions/domain";
 import { Item } from "contexts/Items/domain";
+import { Logger } from "../../logger";
 
 export class DexieDB extends DB {
-	readonly db: Dexie;
+	db: Dexie;
+	logger: Logger = new Logger("DexieDB");
 
 	constructor() {
 		super();
-		this.db = new Dexie("BudgetHelper", {
-			addons: [dexieCloud],
-		});
-		this.db.cloud.configure({
-			databaseUrl: "https://zwigj72e8.dexie.cloud",
-			requireAuth: false,
-			periodicSync: { minInterval: 60 },
-			tryUseServiceWorker: false,
-		});
-		this.#initializeTables();
 	}
 
-	async init() {
-		await this.db.open();
+	async init(dbId: string) {
+		try {
+			this.logger.debug("initializing dexie");
+			this.db = new Dexie(`BudgetHelper-${dbId}`, {
+				addons: [dexieCloud],
+			});
+			this.logger.debug("configuring dexie");
+
+			this.db.cloud.configure({
+				databaseUrl: "https://zwigj72e8.dexie.cloud",
+				requireAuth: true,
+				// periodicSync: { minInterval: 60 },
+			});
+			this.logger.debug("initializing tables");
+			this.#initializeTables();
+
+			this.logger.debug("opening db");
+			await this.db.open();
+
+			// const path = normalizePath("Budget/db/sync.backup");
+			// this.logger.debug("loading backup", { path });
+			// const buffer = await app.vault.adapter.readBinary(path);
+
+			// this.logger.debug("importing backup");
+			// await importInto(this.db, new Blob([buffer]), {
+			// 	clearTablesBeforeImport: true,
+			// 	acceptNameDiff: true,
+			// 	acceptVersionDiff: true,
+			// });
+
+			this.logger.debug("pulling sync");
+			this.db.cloud.sync({ wait: false, purpose: "pull" });
+		} catch (error) {
+			this.logger.error(error);
+		}
+
+		// const blob = await exportDB(oldDb);
+		// await importInto(this.db, blob, {
+		// 	acceptNameDiff: true,
+		// 	acceptVersionDiff: true,
+		// });
+		// this.db.import(blob, {
+		// 	acceptNameDiff: true,
+		// 	acceptVersionDiff: true,
+		// });
 	}
 
 	#initializeTables() {
-		this.db.version(7).stores({
+		this.db.version(1).stores({
 			[Config.accountsTableName]: Object.keys(
 				Account.emptyPrimitives()
 			).join(", "),

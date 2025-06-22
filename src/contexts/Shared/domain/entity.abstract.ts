@@ -1,3 +1,4 @@
+import { DateValueObject } from "@juandardilag/value-objects";
 import { IDValueObject } from "./value-objects/id/id.valueobject";
 
 type AtomicValue = string | number | Date | undefined;
@@ -15,10 +16,21 @@ export abstract class Entity<
 	EntityID extends IDValueObject,
 	EntityPrimitives extends EntityComposedValue
 > {
-	constructor(protected _id: EntityID) {}
+	constructor(
+		protected _id: EntityID,
+		protected _updatedAt: DateValueObject
+	) {}
 
 	get id(): EntityID {
 		return this._id;
+	}
+
+	get updatedAt(): DateValueObject {
+		return this._updatedAt;
+	}
+
+	protected updateTimestamp(): void {
+		this._updatedAt = DateValueObject.createNowDate();
 	}
 
 	abstract toPrimitives(): EntityPrimitives;

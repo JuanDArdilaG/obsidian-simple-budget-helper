@@ -8,6 +8,7 @@ import { TransactionID } from "../../../../src/contexts/Transactions/domain/tran
 import { TransactionOperation } from "../../../../src/contexts/Transactions/domain/transaction-operation.valueobject";
 import { SubCategoryID } from "../../../../src/contexts/Subcategories/domain/subcategory-id.valueobject";
 import { CategoryID } from "../../../../src/contexts/Categories/domain/category-id.valueobject";
+import { DateValueObject } from "@juandardilag/value-objects";
 
 type TestBudgetSimpleConfig = {
 	date?: Date;
@@ -45,6 +46,7 @@ export const buildTestTransactions = (
 						: SubCategoryID.generate(),
 					new TransactionDate(date ?? new Date()),
 					new TransactionAmount(amount ?? 100),
+					DateValueObject.createNowDate(),
 					undefined,
 					toAccount ? new AccountID(toAccount) : undefined
 				);
@@ -61,7 +63,8 @@ export const buildTestTransactions = (
 				CategoryID.generate(),
 				SubCategoryID.generate(),
 				new TransactionDate(new Date()),
-				new TransactionAmount(100)
+				new TransactionAmount(100),
+				DateValueObject.createNowDate()
 			);
 			testTransactions.push(transaction);
 		}

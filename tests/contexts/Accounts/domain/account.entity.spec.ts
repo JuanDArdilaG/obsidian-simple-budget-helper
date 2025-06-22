@@ -7,7 +7,7 @@ import {
 	AccountName,
 } from "../../../../src/contexts/Accounts/domain";
 import { buildTestTransactions } from "../../Reports/domain/buildTestTransactions";
-import { PriceValueObject } from "@juandardilag/value-objects";
+import { DateValueObject, PriceValueObject } from "@juandardilag/value-objects";
 
 describe("adjustOnTransactionDeletion", () => {
 	it("account balance should be adjust on expense transaction", () => {
@@ -58,6 +58,7 @@ const buildTestAccount = (): Account => {
 		AccountID.generate(),
 		AccountType.asset(),
 		new AccountName("name"),
-		new AccountBalance(PriceValueObject.zero())
+		new AccountBalance(PriceValueObject.zero()),
+		DateValueObject.createNowDate()
 	);
 };

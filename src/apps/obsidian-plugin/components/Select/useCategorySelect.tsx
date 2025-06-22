@@ -10,6 +10,7 @@ export const useCategorySelect = ({
 	lock,
 	setLock,
 	overrideCategoriesIDs,
+	error,
 }: {
 	label?: string;
 	initialValueName?: CategoryName;
@@ -17,6 +18,7 @@ export const useCategorySelect = ({
 	lock?: boolean;
 	setLock?: (lock: boolean) => void;
 	overrideCategoriesIDs?: CategoryID[];
+	error?: string;
 }) => {
 	const [categoryName, setCategoryName] = useState(
 		initialValueName?.value ?? ""
@@ -74,7 +76,7 @@ export const useCategorySelect = ({
 				onChange={(category) => setCategoryName(category)}
 				isLocked={lock}
 				setIsLocked={setLock ? (lock) => setLock(lock) : undefined}
-				// error={errors?.category}
+				error={error}
 			/>
 		),
 		category: category,

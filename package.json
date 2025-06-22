@@ -6,7 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"create-index": "cti ./src/contexts/**/domain",
-		"dev": "npm run test && node esbuild.config.mjs",
+		"dev": "node esbuild.config.mjs",
 		"test": "vitest run",
 		"test:coverage": "vitest run --coverage",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
@@ -43,7 +43,8 @@
 		"@emotion/react": "^11.14.0",
 		"@emotion/styled": "^11.14.0",
 		"@juandardilag/value-objects": "^2.1.0",
-		"@mui/material": "^6.4.11",
+		"@mui/icons-material": "^7.1.2",
+		"@mui/material": "^7.1.2",
 		"@mui/x-charts": "^8.2.0",
 		"@mui/x-date-pickers": "^8.0.0-beta.3",
 		"awilix": "^12.0.5",

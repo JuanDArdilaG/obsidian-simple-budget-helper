@@ -91,10 +91,10 @@ export const EditTransactionPanel = ({
 				onClick={async () => {
 					date.setSeconds(0);
 
-					if (!account) return logger.error("account not selected");
-					if (!category) return logger.error("category not selected");
+					if (!account) return logger.debug("account not selected");
+					if (!category) return logger.debug("category not selected");
 					if (!subCategory)
-						return logger.error("subCategory not selected");
+						return logger.debug("subCategory not selected");
 
 					transaction.updateName(new TransactionName(name));
 					transaction.updateDate(new TransactionDate(date));

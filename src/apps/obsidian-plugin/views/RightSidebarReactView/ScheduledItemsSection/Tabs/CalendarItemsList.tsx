@@ -79,6 +79,7 @@ export const CalendarItemsList = ({
 	const [itemsWithAccountsBalance, setItemsWithAccountsBalance] = useState<
 		ItemWithAccumulatedBalance[]
 	>([]);
+
 	useEffect(() => {
 		itemsWithAccumulatedBalanceUseCase
 			.execute(new DateValueObject(untilDate))

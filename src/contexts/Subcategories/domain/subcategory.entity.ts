@@ -1,18 +1,25 @@
 import { SubCategoryID, SubCategoryName } from "contexts/Subcategories/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
+import { DateValueObject } from "@juandardilag/value-objects";
 
 export class SubCategory extends Entity<SubCategoryID, SubcategoryPrimitives> {
 	constructor(
 		id: SubCategoryID,
 		private readonly _category: CategoryID,
-		private readonly _name: SubCategoryName
+		private readonly _name: SubCategoryName,
+		updatedAt: DateValueObject
 	) {
-		super(id);
+		super(id, updatedAt);
 	}
 
 	static create(category: CategoryID, name: SubCategoryName): SubCategory {
-		return new SubCategory(SubCategoryID.generate(), category, name);
+		return new SubCategory(
+			SubCategoryID.generate(),
+			category,
+			name,
+			DateValueObject.createNowDate()
+		);
 	}
 
 	get id(): SubCategoryID {
@@ -32,6 +39,7 @@ export class SubCategory extends Entity<SubCategoryID, SubcategoryPrimitives> {
 			id: this._id.value,
 			category: this._category.value,
 			name: this._name.value,
+			updatedAt: this._updatedAt.toISOString(),
 		};
 	}
 
@@ -39,12 +47,17 @@ export class SubCategory extends Entity<SubCategoryID, SubcategoryPrimitives> {
 		id,
 		category,
 		name,
+		updatedAt,
 	}: SubcategoryPrimitives): SubCategory {
-		return new SubCategory(
+		const subcategory = new SubCategory(
 			new SubCategoryID(id),
 			new CategoryID(category),
-			new SubCategoryName(name)
+			new SubCategoryName(name),
+			updatedAt
+				? new DateValueObject(new Date(updatedAt))
+				: DateValueObject.createNowDate()
 		);
+		return subcategory;
 	}
 
 	static emptyPrimitives(): SubcategoryPrimitives {
@@ -52,6 +65,7 @@ export class SubCategory extends Entity<SubCategoryID, SubcategoryPrimitives> {
 			id: "",
 			category: "",
 			name: "",
+			updatedAt: new Date().toISOString(),
 		};
 	}
 }
@@ -60,4 +74,5 @@ export type SubcategoryPrimitives = {
 	id: string;
 	category: string;
 	name: string;
+	updatedAt: string;
 };

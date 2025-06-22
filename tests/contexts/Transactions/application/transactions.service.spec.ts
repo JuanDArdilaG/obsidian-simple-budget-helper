@@ -13,6 +13,7 @@ import { SubCategoriesService } from "contexts/Subcategories/application/subcate
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 import { Transaction } from "contexts/Transactions/domain";
 import { TransactionsRepositoryMock } from "../domain/transactions-repository.mock";
+import { DateValueObject } from "@juandardilag/value-objects";
 
 describe("update", () => {
 	it("should update from account for transfer transaction", async () => {
@@ -21,19 +22,22 @@ describe("update", () => {
 				AccountID.generate(),
 				AccountType.asset(),
 				new AccountName("test"),
-				AccountBalance.zero()
+				AccountBalance.zero(),
+				DateValueObject.createNowDate()
 			),
 			new Account(
 				AccountID.generate(),
 				AccountType.asset(),
 				new AccountName("test2"),
-				AccountBalance.zero()
+				AccountBalance.zero(),
+				DateValueObject.createNowDate()
 			),
 			new Account(
 				AccountID.generate(),
 				AccountType.asset(),
 				new AccountName("test3"),
-				AccountBalance.zero()
+				AccountBalance.zero(),
+				DateValueObject.createNowDate()
 			),
 		];
 		const transactions = buildTestTransactions([

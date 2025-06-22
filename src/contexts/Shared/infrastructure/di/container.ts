@@ -5,15 +5,12 @@ import {
 	AwilixContainer,
 } from "awilix";
 
-import { CategoriesDexieRepository } from "contexts/Categories/infrastructure/persistence/dexie/categories-dexie.repository";
 import { ReportsService } from "contexts/Reports/application/reports.service";
 import { CreateAccountUseCase } from "contexts/Accounts/application/create-account.usecase";
-import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.db";
 import { GetAllCategoriesUseCase } from "contexts/Categories/application/get-all-categories.usecase";
 import { AccountsService } from "contexts/Accounts/application/accounts.service";
 import { GetAllAccountNamesUseCase } from "contexts/Accounts/application/get-all-account-names.usecase";
 import { GetAllAccountsUseCase } from "contexts/Accounts/application/get-all-accounts.usecase";
-import { AccountsDexieRepository } from "contexts/Accounts/infrastructure/persistence/dexie/accounts-dexie.repository";
 import { GetAllUniqueItemBrandsUseCase } from "contexts/Transactions/application/get-all-unique-item-brands.usecase";
 import { GetAllUniqueItemStoresUseCase } from "contexts/Transactions/application/get-all-unique-item-stores.usecase";
 import { GetAllUniqueItemsByNameUseCase } from "contexts/Items/application/get-all-unique-items-by-name.usecase";
@@ -23,15 +20,13 @@ import { SubCategoriesService } from "contexts/Subcategories/application/subcate
 import { CategoriesService } from "contexts/Categories/application/categories.service";
 import { CreateCategoryUseCase } from "contexts/Categories/application/create-category.usecase";
 import { GetAllCategoriesWithSubCategoriesUseCase } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
-import { SubcategoriesDexieRepository } from "contexts/Subcategories/infrastructure/persistence/dexie/subcategories-dexie.repository";
-import { TransactionsDexieRepository } from "contexts/Transactions/infrastructure/persistence/dexie/transactions-dexie.repository";
 import { AdjustAccountUseCase } from "contexts/Transactions/application/adjust-account.usecase";
 import { DeleteTransactionUseCase } from "contexts/Transactions/application/delete-transaction.usecase";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
 import { RecordTransactionUseCase } from "contexts/Transactions/application/record-transaction.usecase";
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 import { UpdateTransactionUseCase } from "contexts/Transactions/application/update-transaction.usecase";
-import { ItemsDexieRepository } from "contexts/Items/infrastructure/persistence/dexie/items-dexie.repository";
+import { ItemsLocalRepository } from "contexts/Items/infrastructure/persistence/local/items-local.repository";
 import { ItemsService } from "contexts/Items/application/items.service";
 import { CreateItemUseCase } from "contexts/Items/application/create-item.usecase";
 import { DeleteItemUseCase } from "contexts/Items/application/delete-item.usecase";
@@ -47,20 +42,26 @@ import { GetTotalUseCase } from "contexts/Reports/application/get-total.usecase"
 import { ItemsWithAccumulatedBalanceUseCase } from "contexts/Items/application/items-with-accumulated-balance.usecase";
 import { RecordItemRecurrenceUseCase } from "contexts/Transactions/application/record-item-recurrence.usecase";
 import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
+import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
+import { AccountsLocalRepository } from "contexts/Accounts/infrastructure/persistence/local/accounts-local.repository";
+import { CategoriesLocalRepository } from "contexts/Categories/infrastructure/persistence/local/categories-local.repository";
+import { SubcategoriesLocalRepository } from "contexts/Subcategories/infrastructure/persistence/local/subcategories-local.repository";
+import { TransactionsLocalRepository } from "contexts/Transactions/infrastructure/persistence/local/transactions-local.repository";
 
 const container = createContainer({
 	injectionMode: InjectionMode.CLASSIC,
 });
 
-export function buildContainer(): AwilixContainer {
+export function buildContainer(localDB?: LocalDB): AwilixContainer {
 	container.register({
 		_logger: asClass(Logger).singleton(),
-		_db: asClass(DexieDB).singleton(),
 	});
 
 	// ITEMS
 	container.register({
-		_itemsRepository: asClass(ItemsDexieRepository).singleton(),
+		_itemsRepository: asClass(ItemsLocalRepository)
+			.singleton()
+			.inject(() => ({ _db: localDB })),
 		_itemsService: asClass(ItemsService).singleton(),
 		createItemUseCase: asClass(CreateItemUseCase).singleton(),
 		getAllItemsUseCase: asClass(GetAllItemsUseCase).singleton(),
@@ -80,7 +81,9 @@ export function buildContainer(): AwilixContainer {
 
 	// ACCOUNTS
 	container.register({
-		_accountsRepository: asClass(AccountsDexieRepository).singleton(),
+		_accountsRepository: asClass(AccountsLocalRepository)
+			.singleton()
+			.inject(() => ({ _db: localDB })),
 		_accountsService: asClass(AccountsService).singleton(),
 		createAccountUseCase: asClass(CreateAccountUseCase).singleton(),
 		getAllAccountNamesUseCase: asClass(
@@ -91,9 +94,9 @@ export function buildContainer(): AwilixContainer {
 
 	// TRANSACTIONS
 	container.register({
-		_transactionsRepository: asClass(
-			TransactionsDexieRepository
-		).singleton(),
+		_transactionsRepository: asClass(TransactionsLocalRepository)
+			.singleton()
+			.inject(() => ({ _db: localDB })),
 		_transactionsService: asClass(TransactionsService).singleton(),
 		getAllTransactionsUseCase: asClass(
 			GetAllTransactionsUseCase
@@ -119,10 +122,12 @@ export function buildContainer(): AwilixContainer {
 
 	// CATEGORIES
 	container.register({
-		_categoriesRepository: asClass(CategoriesDexieRepository).singleton(),
-		_subCategoriesRepository: asClass(
-			SubcategoriesDexieRepository
-		).singleton(),
+		_categoriesRepository: asClass(CategoriesLocalRepository)
+			.singleton()
+			.inject(() => ({ _db: localDB })),
+		_subCategoriesRepository: asClass(SubcategoriesLocalRepository)
+			.singleton()
+			.inject(() => ({ _db: localDB })),
 		_categoriesService: asClass(CategoriesService).singleton(),
 		_subcategoriesService: asClass(SubCategoriesService).singleton(),
 		createCategoryUseCase: asClass(CreateCategoryUseCase).singleton(),

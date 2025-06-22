@@ -2,6 +2,7 @@ import { MainSidebarSections } from "./components/SectionButtons";
 import { ScheduledItemsSectionSelection } from "./views";
 
 export type SimpleBudgetHelperSettings = {
+	dbId: string;
 	rootFolder: string;
 	debugMode: boolean;
 	lastTab: {
@@ -11,6 +12,7 @@ export type SimpleBudgetHelperSettings = {
 };
 
 export const DEFAULT_SETTINGS: SimpleBudgetHelperSettings = {
+	dbId: "",
 	rootFolder: "Budget",
 	debugMode: false,
 	lastTab: {

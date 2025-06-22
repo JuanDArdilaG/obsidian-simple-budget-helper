@@ -5,6 +5,7 @@ import {
 	AccountName,
 	AccountType,
 } from "contexts/Accounts/domain";
+import { DateValueObject } from "@juandardilag/value-objects";
 
 export const buildTestAccounts = (n: number) => {
 	return new Array(n)
@@ -15,7 +16,8 @@ export const buildTestAccounts = (n: number) => {
 					AccountID.generate(),
 					AccountType.asset(),
 					new AccountName("test"),
-					AccountBalance.zero()
+					AccountBalance.zero(),
+					DateValueObject.createNowDate()
 				)
 		);
 };

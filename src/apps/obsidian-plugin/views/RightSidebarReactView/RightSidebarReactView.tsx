@@ -10,8 +10,8 @@ import {
 	AccountsList,
 	ScheduledItemsSection,
 } from "apps/obsidian-plugin/views";
-import { DBSection } from "./DBSection";
 import { CategoriesList } from "./AccountingSection/CategoriesList";
+import { LocalPersistenceSettings } from "../../components/LocalPersistenceSettings";
 
 export const RightSidebarReactView = ({
 	statusBarAddText,
@@ -42,7 +42,9 @@ export const RightSidebarReactView = ({
 			)}
 			{sectionSelection === "accounts" && <AccountsList />}
 			{sectionSelection === "categories" && <CategoriesList />}
-			{sectionSelection === "DB" && <DBSection />}
+			{sectionSelection === "localPersistence" && (
+				<LocalPersistenceSettings plugin={plugin} />
+			)}
 		</AppProviders>
 	);
 };

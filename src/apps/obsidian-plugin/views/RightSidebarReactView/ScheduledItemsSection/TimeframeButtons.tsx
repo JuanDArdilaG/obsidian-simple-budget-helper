@@ -13,7 +13,7 @@ export const TimeframeButtons = ({
 	selected,
 	setSelected,
 }: {
-	selected: CalendarTimeframe;
+	selected?: CalendarTimeframe;
 	setSelected: (selected: CalendarTimeframe) => void;
 }) => {
 	return (

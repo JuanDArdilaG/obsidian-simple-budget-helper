@@ -15,4 +15,9 @@ export const views = {
 		title: "Simple Budget Helper",
 		icon: "dice",
 	},
+	JSON_VIEWER: {
+		type: "json-viewer-view",
+		title: "JSON Viewer",
+		icon: "file-code",
+	},
 } as const;

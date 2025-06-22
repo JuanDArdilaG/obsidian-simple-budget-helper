@@ -8,6 +8,7 @@ import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput
 import { ItemsContext } from "../../Contexts/ItemsContext";
 import { CalendarItemsList } from "./CalendarItemsList";
 import { DateValueObject } from "@juandardilag/value-objects";
+import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
 
 export const CalendarItemsTab = () => {
 	const { logger } = useLogger("CalendarRightSidebarReactTab");
@@ -15,14 +16,20 @@ export const CalendarItemsTab = () => {
 		useCases: { getItemsUntilDate },
 	} = useContext(ItemsContext);
 
-	const { DateInput: UntilDateFilterInput, date: untilDateFilter } =
-		useDateInput({
-			id: "untilDateFilter",
-			initialValue: DateValueObject.createNowDate()
-				.updateDay(1)
-				.updateMonth(new Date().getMonth() + 1)
-				.addDays(-1),
-		});
+	const [untilDate, setUntilDate] = useState<Date>(
+		DateValueObject.createNowDate()
+			.updateDay(1)
+			.updateMonth(new Date().getMonth() + 1)
+			.addDays(-1)
+	);
+	const {
+		DateInput: UntilDateFilterInput,
+		date: untilDateFilter,
+		setDate: setUntilDateFilter,
+	} = useDateInput({
+		id: "untilDateFilter",
+		initialValue: untilDate,
+	});
 
 	const [selectedItem, setSelectedItem] = useState<{
 		recurrence: ItemRecurrenceInfo;
@@ -31,26 +38,51 @@ export const CalendarItemsTab = () => {
 	const [action, setAction] = useState<"edit" | "record">();
 
 	const [items, setItems] = useState<GetItemsUntilDateUseCaseOutput>([]);
-	const [updateItemsUntilDate, setUpdateItemsUntilDate] = useState(true);
+	const [timeframe, setTimeframe] = useState<CalendarTimeframe>();
 
 	useEffect(() => {
-		setUpdateItemsUntilDate(true);
+		setUntilDate(untilDateFilter);
 	}, [untilDateFilter]);
 
 	useEffect(() => {
-		if (updateItemsUntilDate) {
-			getItemsUntilDate
-				.execute(new ItemDate(untilDateFilter))
-				.then((items) => {
-					logger.debug("getItemsUntilDate", {
-						untilDateFilter,
-						items,
-					});
-					setItems(items);
-				});
-			setUpdateItemsUntilDate(false);
-		}
-	}, [updateItemsUntilDate]);
+		if (!timeframe) return;
+		let date = DateValueObject.createNowDate();
+		if (timeframe === "3days")
+			date = DateValueObject.createNowDate().addDays(3);
+		if (timeframe === "week")
+			date = DateValueObject.createNowDate().addDays(7);
+		if (timeframe === "2weeks")
+			date = DateValueObject.createNowDate().addDays(14);
+		if (timeframe === "month")
+			date = DateValueObject.createNowDate().updateMonth(
+				new Date().getMonth() + 1
+			);
+		if (timeframe === "3months")
+			date = DateValueObject.createNowDate().updateMonth(
+				new Date().getMonth() + 3
+			);
+		if (timeframe === "year")
+			date = DateValueObject.createNowDate().updateMonth(
+				new Date().getMonth() + 12
+			);
+		if (timeframe === "3years")
+			date = DateValueObject.createNowDate().updateMonth(
+				new Date().getMonth() + 36
+			);
+
+		setUntilDate(date);
+		setUntilDateFilter(date);
+	}, [timeframe]);
+
+	useEffect(() => {
+		getItemsUntilDate.execute(new ItemDate(untilDate)).then((items) => {
+			logger.debug("getItemsUntilDate", {
+				untilDate,
+				items,
+			});
+			setItems(items);
+		});
+	}, [untilDate]);
 
 	return (
 		<>
@@ -61,17 +93,21 @@ export const CalendarItemsTab = () => {
 				/>
 			)}
 			<RightSidebarReactTab title={"Upcoming Schedules"} subtitle>
-				<div style={{ width: "40%", margin: "15px auto" }}>
+				<div style={{ display: "flex", justifyContent: "center" }}>
 					{UntilDateFilterInput}
 				</div>
+				<TimeframeButtons
+					selected={timeframe}
+					setSelected={setTimeframe}
+				/>
 				<CalendarItemsList
 					items={items}
-					untilDate={untilDateFilter}
+					untilDate={untilDate}
 					selectedItem={selectedItem}
 					setSelectedItem={setSelectedItem}
 					action={action}
 					setAction={setAction}
-					updateItems={() => setUpdateItemsUntilDate(true)}
+					updateItems={() => {}}
 				/>
 			</RightSidebarReactTab>
 		</>

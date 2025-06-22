@@ -16,7 +16,8 @@ type LoggerBodyValues =
 	| Date
 	| boolean
 	| object
-	| undefined;
+	| undefined
+	| unknown;
 
 type LoggerBody = {
 	[k: string]: LoggerBodyValues | LoggerBodyValues[];
@@ -29,7 +30,8 @@ type LoggerBodyMappedValues =
 	| object
 	| boolean
 	| EntityComposedValue
-	| undefined;
+	| undefined
+	| unknown;
 
 type LoggerBodyMapped =
 	| {
@@ -61,10 +63,10 @@ export class Logger {
 		});
 	}
 
-	error(title: string, body?: LoggerBody) {
+	error(e: Error) {
 		console.error({
-			_title: `${this._name}: ${title}`,
-			...this.#mapBody(body),
+			_title: `${this._name}: ${e.message}`,
+			...this.#mapBody({ stack: e.stack, name: e.name }),
 		});
 	}
 

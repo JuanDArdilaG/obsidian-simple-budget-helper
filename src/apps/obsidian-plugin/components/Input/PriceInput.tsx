@@ -1,5 +1,11 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
-import { FormControl, InputLabel, Input, InputAdornment } from "@mui/material";
+import {
+	FormControl,
+	InputLabel,
+	Input,
+	InputAdornment,
+	FormHelperText,
+} from "@mui/material";
 import { WithLockField } from "../WithLockField";
 
 export const PriceInput = ({
@@ -9,6 +15,7 @@ export const PriceInput = ({
 	onChange,
 	isLocked,
 	setIsLocked,
+	error,
 }: {
 	id: string;
 	label: string;
@@ -16,14 +23,17 @@ export const PriceInput = ({
 	onChange: (value: PriceValueObject) => void;
 	isLocked?: boolean;
 	setIsLocked?: (value: boolean) => void;
+	error?: string;
 }) => {
 	return (
 		<WithLockField isLocked={isLocked} setIsLocked={setIsLocked}>
-			<FormControl fullWidth variant="standard">
+			<FormControl fullWidth variant="standard" error={!!error}>
 				<InputLabel
 					htmlFor={id}
 					style={{
-						color: "var(--text-normal)",
+						color: error
+							? "var(--text-error)"
+							: "var(--text-normal)",
 						paddingLeft: 15,
 					}}
 				>
@@ -48,6 +58,7 @@ export const PriceInput = ({
 							"var(--background-modifier-form-field)",
 						color: "var(--text-normal)",
 						padding: 5,
+						borderColor: error ? "var(--text-error)" : undefined,
 					}}
 					disabled={isLocked}
 					slotProps={{
@@ -62,6 +73,13 @@ export const PriceInput = ({
 						},
 					}}
 				/>
+				{error && (
+					<FormHelperText
+						style={{ color: "var(--text-error)", marginLeft: 0 }}
+					>
+						{error}
+					</FormHelperText>
+				)}
 			</FormControl>
 		</WithLockField>
 	);

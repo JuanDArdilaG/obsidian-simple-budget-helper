@@ -11,7 +11,10 @@ import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { ItemBrand, ItemProductInfo, ItemStore } from "contexts/Items/domain";
-import { NumberValueObject } from "@juandardilag/value-objects";
+import {
+	DateValueObject,
+	NumberValueObject,
+} from "@juandardilag/value-objects";
 
 export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	constructor(
@@ -23,11 +26,12 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		private _subCategory: SubCategoryID,
 		private _date: TransactionDate,
 		private _amount: TransactionAmount,
+		updatedAt: DateValueObject,
 		private readonly _item?: ItemID,
 		private _toAccount?: AccountID,
 		private readonly _productInfo?: ItemProductInfo
 	) {
-		super(id);
+		super(id, updatedAt);
 	}
 
 	static fromItem(item: Item, date: TransactionDate): Transaction {
@@ -40,6 +44,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			item.subCategory,
 			date,
 			item.price,
+			DateValueObject.createNowDate(),
 			item.id,
 			item.operation.type.isTransfer()
 				? item.operation.toAccount
@@ -64,7 +69,8 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			category,
 			subCategory,
 			TransactionDate.createNowDate(),
-			amount
+			amount,
+			DateValueObject.createNowDate()
 		);
 	}
 
@@ -78,6 +84,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			this._subCategory,
 			this._date,
 			this._amount,
+			this._updatedAt,
 			this._item,
 			this._toAccount,
 			this._productInfo
@@ -94,6 +101,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			this._subCategory,
 			this._date,
 			this._amount.negate(),
+			this._updatedAt,
 			this._item,
 			this._toAccount,
 			this._productInfo
@@ -114,6 +122,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 
 	updateName(name: TransactionName): void {
 		this._name = name;
+		this.updateTimestamp();
 	}
 
 	get date(): TransactionDate {
@@ -122,6 +131,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 
 	updateDate(date: TransactionDate): void {
 		this._date = date;
+		this.updateTimestamp();
 	}
 
 	get operation(): TransactionOperation {
@@ -130,6 +140,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 
 	updateOperation(operation: TransactionOperation): void {
 		this._operation = operation;
+		this.updateTimestamp();
 	}
 
 	get account(): AccountID {
@@ -142,10 +153,12 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 
 	updateAccount(account: AccountID): void {
 		this._account = account;
+		this.updateTimestamp();
 	}
 
 	updateToAccount(toAccount?: AccountID): void {
 		this._toAccount = toAccount;
+		this.updateTimestamp();
 	}
 
 	get category(): CategoryID {
@@ -154,6 +167,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 
 	updateCategory(category: CategoryID) {
 		this._category = category;
+		this.updateTimestamp();
 	}
 
 	get subCategory(): SubCategoryID {
@@ -162,6 +176,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 
 	updateSubCategory(subCategory: SubCategoryID) {
 		this._subCategory = subCategory;
+		this.updateTimestamp();
 	}
 
 	get amount(): TransactionAmount {
@@ -179,6 +194,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 
 	updateAmount(amount: TransactionAmount) {
 		this._amount = amount;
+		this.updateTimestamp();
 	}
 
 	getRealAmountForAccount(accountID: AccountID): TransactionAmount {
@@ -205,6 +221,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			store: this._productInfo?.value.store?.value,
 			category: this._category.value,
 			subCategory: this._subCategory.value,
+			updatedAt: this._updatedAt.toISOString(),
 		};
 	}
 
@@ -221,8 +238,9 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		store,
 		category,
 		subCategory,
+		updatedAt,
 	}: TransactionPrimitives): Transaction {
-		return new Transaction(
+		const transaction = new Transaction(
 			new TransactionID(id),
 			new AccountID(account),
 			new TransactionName(name),
@@ -231,6 +249,9 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			new SubCategoryID(subCategory),
 			new TransactionDate(date),
 			new TransactionAmount(amount),
+			updatedAt
+				? new DateValueObject(new Date(updatedAt))
+				: DateValueObject.createNowDate(),
 			item ? new ItemID(item) : undefined,
 			toAccount ? new AccountID(toAccount) : undefined,
 			brand || store
@@ -240,6 +261,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 				  })
 				: undefined
 		);
+		return transaction;
 	}
 
 	static emptyPrimitives(): TransactionPrimitives {
@@ -255,6 +277,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			store: "",
 			category: "",
 			subCategory: "",
+			updatedAt: new Date().toISOString(),
 		};
 	}
 }
@@ -272,4 +295,5 @@ export type TransactionPrimitives = {
 	amount: number;
 	brand?: string;
 	store?: string;
+	updatedAt: string;
 };

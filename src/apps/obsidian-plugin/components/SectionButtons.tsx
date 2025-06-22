@@ -1,4 +1,4 @@
-import { CalendarSync, Database, Landmark, ListCollapse } from "lucide-react";
+import { CalendarSync, Landmark, ListCollapse, Settings } from "lucide-react";
 import { JSX } from "react";
 import { Button } from "./Button";
 
@@ -7,7 +7,7 @@ export type MainSidebarSections =
 	| "accounting"
 	| "accounts"
 	| "categories"
-	| "DB";
+	| "localPersistence";
 
 export const SectionButtons = ({
 	selected,
@@ -67,16 +67,16 @@ export const SectionButtons = ({
 				onClick={() => setSelected("categories")}
 			/>
 			<SectionButton
-				type="DB"
-				label="DB"
+				type="localPersistence"
+				label="Settings"
 				icon={
-					<Database
+					<Settings
 						size={16}
 						style={{ color: "var(--color-cyan)" }}
 					/>
 				}
 				selected={selected}
-				onClick={() => setSelected("DB")}
+				onClick={() => setSelected("localPersistence")}
 			/>
 		</div>
 	);
@@ -92,7 +92,7 @@ export const SectionButton = ({
 	label: string;
 	icon?: JSX.Element;
 	type: string;
-	selected: string;
+	selected?: string;
 	onClick: () => void;
 }) => {
 	return (

@@ -3,6 +3,7 @@ import {
 	InputLabel,
 	MenuItem,
 	Select as MuiSelect,
+	FormHelperText,
 } from "@mui/material";
 import { JSX, useEffect, useState } from "react";
 import { WithLockField } from "../WithLockField";
@@ -52,11 +53,13 @@ export const Select = <T extends string | number>({
 			setIsLocked={setIsLocked}
 			style={{ width: "100%" }}
 		>
-			<FormControl fullWidth>
+			<FormControl fullWidth error={!!error}>
 				<InputLabel
 					id={`${id}-label`}
 					style={{
-						color: "var(--text-muted)",
+						color: error
+							? "var(--text-error)"
+							: "var(--text-muted)",
 						paddingLeft: 0,
 						padding: 5,
 					}}
@@ -86,6 +89,13 @@ export const Select = <T extends string | number>({
 				>
 					{options}
 				</MuiSelect>
+				{error && (
+					<FormHelperText
+						style={{ color: "var(--text-error)", marginLeft: 0 }}
+					>
+						{error}
+					</FormHelperText>
+				)}
 			</FormControl>
 		</WithLockField>
 	);

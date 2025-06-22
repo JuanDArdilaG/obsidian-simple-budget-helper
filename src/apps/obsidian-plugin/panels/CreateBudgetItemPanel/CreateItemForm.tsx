@@ -46,6 +46,7 @@ export const CreateItemForm = ({
 		store: false,
 		operation: false,
 		recurrence: false,
+		updatedAt: false,
 	});
 	const [item, setItem] = useState<ItemPrimitives>(Item.emptyPrimitives());
 	const [selectedItem, setSelectedItem] = useState<ItemPrimitives>();
@@ -181,6 +182,7 @@ export const CreateItemForm = ({
 				// toAccount: locks.toAccount ? item.toAccount : "",
 				toAccount: item.operation.toAccount,
 			},
+			updatedAt: new Date().toISOString(),
 		});
 	};
 

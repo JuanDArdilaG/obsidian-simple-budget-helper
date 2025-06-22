@@ -9,12 +9,14 @@ export const useAccountSelect = ({
 	initialValueID,
 	lock,
 	setLock,
+	error,
 }: {
 	label?: string;
 	initialValueName?: AccountName;
 	initialValueID?: string;
 	lock?: boolean;
 	setLock?: (lock: boolean) => void;
+	error?: string;
 }) => {
 	const [accountName, setAccountName] = useState(
 		initialValueName?.value ?? ""
@@ -59,7 +61,7 @@ export const useAccountSelect = ({
 				onChange={(account) => setAccountName(account)}
 				isLocked={lock}
 				setIsLocked={setLock ? (lock) => setLock(lock) : undefined}
-				// error={errors?.account}
+				error={error}
 			/>
 		),
 		account,

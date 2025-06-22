@@ -16,6 +16,7 @@ export const useSubCategorySelect = ({
 	lock,
 	setLock,
 	overrideSubCategoriesIDs,
+	error,
 }: {
 	label?: string;
 	initialValueName?: SubCategoryName;
@@ -24,6 +25,7 @@ export const useSubCategorySelect = ({
 	lock?: boolean;
 	setLock?: (lock: boolean) => void;
 	overrideSubCategoriesIDs?: SubCategoryID[];
+	error?: string;
 }) => {
 	const [subCategoryName, setSubCategoryName] = useState(
 		initialValueName?.value ?? ""
@@ -84,7 +86,7 @@ export const useSubCategorySelect = ({
 				onChange={(subCategory) => setSubCategoryName(subCategory)}
 				isLocked={lock}
 				setIsLocked={setLock ? (lock) => setLock(lock) : undefined}
-				// error={errors?.subCategory}
+				error={error}
 			/>
 		),
 		subCategory,

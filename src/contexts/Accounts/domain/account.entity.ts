@@ -1,4 +1,5 @@
 import {
+	DateValueObject,
 	NumberValueObject,
 	PriceValueObject,
 } from "@juandardilag/value-objects";
@@ -20,9 +21,10 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		id: AccountID,
 		private readonly _type: AccountType,
 		private readonly _name: AccountName,
-		private _balance: AccountBalance
+		private _balance: AccountBalance,
+		updatedAt: DateValueObject
 	) {
-		super(id);
+		super(id, updatedAt);
 	}
 
 	static create(type: AccountType, name: AccountName): Account {
@@ -30,7 +32,8 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			AccountID.generate(),
 			type,
 			name,
-			AccountBalance.zero()
+			AccountBalance.zero(),
+			DateValueObject.createNowDate()
 		);
 	}
 
@@ -48,6 +51,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 
 	updateBalance(balance: AccountBalance) {
 		this._balance = balance;
+		this.updateTimestamp();
 	}
 
 	adjustFromTransaction(transaction: Transaction) {
@@ -62,6 +66,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 				.getRealAmountForAccount(this._id)
 				.times(new NumberValueObject(this._type.isAsset() ? 1 : -1))
 		);
+		this.updateTimestamp();
 	}
 
 	adjustOnTransactionUpdate(
@@ -77,12 +82,14 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		this._balance = this._balance
 			.sustract(prevTransaction.getRealAmountForAccount(this.id))
 			.plus(transaction.getRealAmountForAccount(this.id));
+		this.updateTimestamp();
 	}
 
 	adjustOnTransactionDeletion(transaction: Transaction) {
 		this._balance = this._balance.sustract(
 			transaction.getRealAmountForAccount(this.id)
 		);
+		this.updateTimestamp();
 	}
 
 	toPrimitives(): AccountPrimitives {
@@ -91,6 +98,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			type: this._type.value,
 			name: this._name.value,
 			balance: this._balance.value.value,
+			updatedAt: this._updatedAt.toISOString(),
 		};
 	}
 
@@ -99,13 +107,18 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		type,
 		name,
 		balance,
+		updatedAt,
 	}: AccountPrimitives): Account {
-		return new Account(
+		const account = new Account(
 			new AccountID(id),
 			new AccountType(type),
 			new AccountName(name),
-			new AccountBalance(new PriceValueObject(balance))
+			new AccountBalance(new PriceValueObject(balance)),
+			updatedAt
+				? new DateValueObject(new Date(updatedAt))
+				: DateValueObject.createNowDate()
 		);
+		return account;
 	}
 
 	static emptyPrimitives(): AccountPrimitives {
@@ -114,6 +127,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			type: "asset",
 			name: "",
 			balance: 0,
+			updatedAt: new Date().toISOString(),
 		};
 	}
 }
@@ -123,4 +137,5 @@ export type AccountPrimitives = {
 	type: AccountTypeType;
 	name: string;
 	balance: number;
+	updatedAt: string;
 };

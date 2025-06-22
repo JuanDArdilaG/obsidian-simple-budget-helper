@@ -1,57 +1,54 @@
 import { App, normalizePath, Plugin, PluginManifest } from "obsidian";
-import { exportDB, importInto } from "dexie-export-import";
 import { SettingTab } from "./SettingTab";
 import { buildContainer } from "contexts/Shared/infrastructure/di/container";
 import { Logger } from "../../contexts/Shared/infrastructure/logger";
-import { RightSidebarReactViewRoot } from "apps/obsidian-plugin/views";
-import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.db";
+import {
+	RightSidebarReactViewRoot,
+	JsonViewerViewRoot,
+} from "apps/obsidian-plugin/views";
+import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
 import { views } from "./config";
 import { LeftMenuItems } from "./ribbonIcon";
 import { SimpleBudgetHelperSettings, DEFAULT_SETTINGS } from "./PluginSettings";
 import { AwilixContainer } from "awilix";
 import { GetAllItemsUseCase } from "contexts/Items/application/get-all-items.usecase";
 import { UpdateItemUseCase } from "contexts/Items/application/update-item.usecase";
+import { UUIDValueObject } from "@juandardilag/value-objects";
+import { importInto } from "dexie-export-import";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
-	db: DexieDB;
+	db: LocalDB;
 	logger: Logger;
-	container = buildContainer();
+	container: AwilixContainer;
 
 	constructor(app: App, manifest: PluginManifest) {
 		super(app, manifest);
 		this.logger = new Logger("main");
-		this.db = this.container.resolve("_db") as DexieDB;
+		this.db = new LocalDB(app);
+		this.container = buildContainer(this.db);
 	}
 
 	async exportDBBackup(backupName: string = "db.backup") {
-		const folder = normalizePath(`${this.settings.rootFolder}/db`);
-		const path = normalizePath(
-			`${this.settings.rootFolder}/db/${backupName}`
-		);
-		const writeBackup = async () => {
-			const blob = await exportDB(this.db.db);
-			this.logger.debugB("writing backup", { folder, path }).log();
-			await this.app.vault.adapter.writeBinary(
-				path,
-				await blob.arrayBuffer()
-			);
-		};
 		try {
-			await writeBackup();
+			const backupInfo = await this.db.createBackup(backupName);
+			this.logger.debug("Database backup created", { backupInfo });
+			return backupInfo;
 		} catch (error) {
-			if (error.code === "ENOENT") {
-				this.logger.debugB("creating backup directory.").log();
-				await this.app.vault.adapter.mkdir(folder);
-				await writeBackup();
-				return;
-			}
+			this.logger.error(error);
 			throw error;
 		}
 	}
 
 	async importDBBackup(backupName: string = "db.backup") {
-		// await this.db.db.delete();
+		// try {
+		// 	await this.db.restoreFromBackup(backupName);
+		// 	this.logger.debug("Database backup restored successfully");
+		// } catch (error) {
+		// 	this.logger.error(error);
+		// 	throw error;
+		// }
+
 		const path = normalizePath(
 			`${this.settings.rootFolder}/db/${backupName}`
 		);
@@ -59,8 +56,8 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		await importInto(this.db.db, new Blob([buffer]), {
 			clearTablesBeforeImport: true,
 			acceptNameDiff: true,
+			acceptVersionDiff: true,
 		});
-		await this.db.db.cloud.sync({ wait: false, purpose: "push" });
 	}
 
 	async migrateItems(container: AwilixContainer) {
@@ -80,15 +77,23 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 	}
 
 	async onload() {
+		this.logger.debug("Plugin onload started");
+
 		await this.loadSettings();
+		if (!this.settings.dbId) {
+			this.settings.dbId = UUIDValueObject.random().value;
+			await this.saveSettings();
+		}
 		Logger.setDebugMode(this.settings.debugMode);
 
 		await initStoragePersistence();
 		const storageQuota = await showEstimatedQuota();
 		this.logger.debug("storage quota", { storageQuota });
 
-		// await this.importDBBackup("sync.backup");
-		await this.db.init();
+		// Initialize local database
+		await this.db.init(this.settings.dbId);
+
+		await this.importDBBackup("db.json");
 
 		const statusBarItem = this.addStatusBarItem();
 		this.registerView(
@@ -101,11 +106,35 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 
 		this.addSettingTab(new SettingTab(this.app, this));
 		LeftMenuItems.RightSidebarPanel(this);
+
+		this.logger.debug("Starting intervals");
+		this.registerInterval(this.db.startAutoSync());
+		this.registerInterval(this.db.startPeriodicBackups());
+		this.logger.debug("Plugin onload completed");
+
+		// Register JSON viewer view
+		this.registerView(
+			views.JSON_VIEWER.type,
+			(leaf) => new JsonViewerViewRoot(leaf, this)
+		);
+
+		// Register JSON file extension handler
+		this.registerExtensions(["json"], "json-viewer-view");
 	}
 
 	onunload(): void {
-		this.logger.debug("onunload");
+		this.logger.debug("Plugin onunload started");
+
+		// Stop all intervals
+		this.db.stopIntervals();
+
+		// Sync data to local files before unloading
+		this.db.sync().catch((error) => {
+			this.logger.error(error);
+		});
 		persist();
+
+		this.logger.debug("Plugin onunload completed");
 	}
 
 	async loadSettings() {

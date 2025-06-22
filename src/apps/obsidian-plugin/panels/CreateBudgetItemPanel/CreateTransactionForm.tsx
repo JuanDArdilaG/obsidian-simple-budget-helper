@@ -24,6 +24,147 @@ import { AccountID } from "contexts/Accounts/domain";
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { ButtonGroup, Button } from "@mui/material";
 import { CreateCategoryModal } from "apps/obsidian-plugin/Category/CreateCategoryModal";
+import React from "react";
+
+// Validation interface
+interface ValidationErrors {
+	name?: string;
+	amount?: string;
+	account?: string;
+	toAccount?: string;
+	category?: string;
+	subCategory?: string;
+	date?: string;
+	operation?: string;
+	brand?: string;
+	store?: string;
+}
+
+// Validation hook
+const useTransactionValidation = (
+	transaction: TransactionPrimitives,
+	date: Date
+) => {
+	const [errors, setErrors] = useState<ValidationErrors>({});
+
+	const validate = (): boolean => {
+		const newErrors: ValidationErrors = {};
+
+		// Name validation
+		if (!transaction.name || transaction.name.trim() === "") {
+			newErrors.name = "Transaction name is required";
+		} else if (transaction.name.length < 2) {
+			newErrors.name = "Transaction name must be at least 2 characters";
+		} else if (transaction.name.length > 100) {
+			newErrors.name =
+				"Transaction name must be less than 100 characters";
+		}
+
+		// Amount validation
+		if (transaction.amount === undefined || transaction.amount === null) {
+			newErrors.amount = "Amount is required";
+		} else if (typeof transaction.amount !== "number") {
+			newErrors.amount = "Amount must be a number";
+		} else if (transaction.amount <= 0) {
+			newErrors.amount = "Amount must be greater than 0";
+		} else if (transaction.amount > 999999999) {
+			newErrors.amount = "Amount is too large";
+		}
+
+		// Account validation
+		if (!transaction.account || transaction.account.trim() === "") {
+			newErrors.account = "Account is required";
+		}
+
+		// To Account validation (only for transfers)
+		if (transaction.operation === "transfer") {
+			if (!transaction.toAccount || transaction.toAccount.trim() === "") {
+				newErrors.toAccount =
+					"Destination account is required for transfers";
+			} else if (transaction.toAccount === transaction.account) {
+				newErrors.toAccount =
+					"Destination account must be different from source account";
+			}
+		}
+
+		// Category validation
+		if (!transaction.category || transaction.category.trim() === "") {
+			newErrors.category = "Category is required";
+		}
+
+		// SubCategory validation
+		if (!transaction.subCategory || transaction.subCategory.trim() === "") {
+			newErrors.subCategory = "Subcategory is required";
+		}
+
+		// Date validation
+		if (!date || isNaN(date.getTime())) {
+			newErrors.date = "Valid date is required";
+		} else {
+			const now = new Date();
+			const futureLimit = new Date(
+				now.getFullYear() + 10,
+				now.getMonth(),
+				now.getDate()
+			);
+			const pastLimit = new Date(
+				now.getFullYear() - 10,
+				now.getMonth(),
+				now.getDate()
+			);
+
+			if (date > futureLimit) {
+				newErrors.date =
+					"Date cannot be more than 10 years in the future";
+			} else if (date < pastLimit) {
+				newErrors.date =
+					"Date cannot be more than 10 years in the past";
+			}
+		}
+
+		// Operation validation
+		if (
+			!transaction.operation ||
+			!["expense", "income", "transfer"].includes(transaction.operation)
+		) {
+			newErrors.operation = "Valid operation type is required";
+		}
+
+		// Brand validation (only for expenses)
+		if (transaction.operation === "expense" && transaction.brand) {
+			if (transaction.brand.length > 50) {
+				newErrors.brand = "Brand name must be less than 50 characters";
+			}
+		}
+
+		// Store validation (only for expenses)
+		if (transaction.operation === "expense" && transaction.store) {
+			if (transaction.store.length > 50) {
+				newErrors.store = "Store name must be less than 50 characters";
+			}
+		}
+
+		setErrors(newErrors);
+		return Object.keys(newErrors).length === 0;
+	};
+
+	const getFieldError = (
+		field: keyof ValidationErrors
+	): string | undefined => {
+		return errors[field];
+	};
+
+	const clearErrors = () => {
+		setErrors({});
+	};
+
+	return {
+		validate,
+		getFieldError,
+		clearErrors,
+		errors,
+	};
+};
 
 export const CreateTransactionForm = ({
 	items,
@@ -63,6 +204,7 @@ export const CreateTransactionForm = ({
 		operation: false,
 		brand: false,
 		store: false,
+		updatedAt: false,
 	});
 
 	const updateLock = (key: keyof TransactionPrimitives, value: boolean) => {
@@ -77,16 +219,29 @@ export const CreateTransactionForm = ({
 	const [selectedTransaction, setSelectedTransaction] =
 		useState<TransactionPrimitives>(Transaction.emptyPrimitives());
 
-	const { DateInput, date } = useDateInput({
+	const { DateInput: DateInputBase, date } = useDateInput({
 		id: "date",
 		lock: locks.date,
 		setLock: (lock) => updateLock("date", lock),
 	});
+
+	// Initialize validation with the actual date
+	const { validate, getFieldError, clearErrors } = useTransactionValidation(
+		transaction,
+		date
+	);
+
+	// Create DateInput with error prop
+	const DateInput = React.cloneElement(DateInputBase, {
+		error: getFieldError("date"),
+	});
+
 	const { AccountSelect, account } = useAccountSelect({
 		label: "From",
 		initialValueID: transaction.account,
 		lock: locks.account,
 		setLock: (lock) => updateLock("account", lock),
+		error: getFieldError("account"),
 	});
 	const { AccountSelect: ToAccountSelect, account: toAccount } =
 		useAccountSelect({
@@ -94,17 +249,20 @@ export const CreateTransactionForm = ({
 			initialValueID: transaction.toAccount,
 			lock: locks.toAccount,
 			setLock: (lock) => updateLock("toAccount", lock),
+			error: getFieldError("toAccount"),
 		});
 	const { CategorySelect, category } = useCategorySelect({
 		initialValueID: transaction.category,
 		lock: locks.category,
 		setLock: (lock) => updateLock("category", lock),
+		error: getFieldError("category"),
 	});
 	const { SubCategorySelect, subCategory } = useSubCategorySelect({
 		category,
 		initialValueID: transaction.subCategory,
 		lock: locks.subCategory,
 		setLock: (lock) => updateLock("subCategory", lock),
+		error: getFieldError("subCategory"),
 	});
 
 	const getLockedOrSelectedValue = <T,>(
@@ -177,40 +335,56 @@ export const CreateTransactionForm = ({
 	const handleSubmit = (withClose: boolean) => async () => {
 		if (!transaction) return;
 
-		const itemToPersist = Transaction.fromPrimitives({
-			...transaction,
-			id: TransactionID.generate().value,
-			category: category?.id.value ?? "",
-			subCategory: subCategory?.id.value ?? "",
-			account: account?.id.value ?? "",
-			toAccount: toAccount?.id.value,
-			date,
-		});
+		// Validate before submission
+		if (!validate()) {
+			logger.debug("Validation failed");
+			return;
+		}
 
-		await recordTransaction.execute(itemToPersist);
+		try {
+			const itemToPersist = Transaction.fromPrimitives({
+				...transaction,
+				id: TransactionID.generate().value,
+				category: category?.id.value ?? "",
+				subCategory: subCategory?.id.value ?? "",
+				account: account?.id.value ?? "",
+				toAccount: toAccount?.id.value,
+				date,
+			});
 
-		updateTransactions();
-		updateAccounts();
-		updateBrands();
-		updateStores();
+			await recordTransaction.execute(itemToPersist);
 
-		onCreate();
+			updateTransactions();
+			updateAccounts();
+			updateBrands();
+			updateStores();
 
-		if (withClose) return close();
-		setSelectedTransaction(Transaction.emptyPrimitives());
-		setTransaction({
-			id: "",
-			account: locks.account ? transaction.account : "",
-			name: locks.name ? transaction.name : "",
-			amount: locks.amount ? transaction.amount : 0,
-			category: locks.category ? transaction.category : "",
-			subCategory: locks.subCategory ? transaction.subCategory : "",
-			brand: locks.brand ? transaction.brand : "",
-			store: locks.store ? transaction.store : "",
-			operation: locks.operation ? transaction.operation : "expense",
-			toAccount: locks.toAccount ? transaction.toAccount : "",
-			date,
-		});
+			onCreate();
+
+			if (withClose) return close();
+			setSelectedTransaction(Transaction.emptyPrimitives());
+			setTransaction({
+				id: "",
+				account: locks.account ? transaction.account : "",
+				name: locks.name ? transaction.name : "",
+				amount: locks.amount ? transaction.amount : 0,
+				category: locks.category ? transaction.category : "",
+				subCategory: locks.subCategory ? transaction.subCategory : "",
+				brand: locks.brand ? transaction.brand : "",
+				store: locks.store ? transaction.store : "",
+				operation: locks.operation ? transaction.operation : "expense",
+				toAccount: locks.toAccount ? transaction.toAccount : "",
+				date,
+				updatedAt: new Date().toISOString(),
+			});
+			clearErrors();
+		} catch (error) {
+			logger.error(
+				error instanceof Error
+					? error
+					: new Error("Error creating transaction")
+			);
+		}
 	};
 
 	return (
@@ -254,7 +428,7 @@ export const CreateTransactionForm = ({
 				onChange={(name) => update({ name })}
 				isLocked={locks.name}
 				setIsLocked={(value) => updateLock("name", value)}
-				// error={validation.check("name") ?? undefined}
+				error={getFieldError("name")}
 			/>
 			<div
 				style={{
@@ -276,6 +450,7 @@ export const CreateTransactionForm = ({
 					isLocked={locks.amount}
 					setIsLocked={(value) => updateLock("amount", value)}
 					label="Amount"
+					error={getFieldError("amount")}
 				/>
 			</div>
 			<div
@@ -311,7 +486,7 @@ export const CreateTransactionForm = ({
 				}}
 				isLocked={locks.operation}
 				setIsLocked={(value) => updateLock("operation", value)}
-				// error={errors?.operation}
+				error={getFieldError("operation")}
 			/>
 			<div
 				style={{
@@ -335,7 +510,7 @@ export const CreateTransactionForm = ({
 						onChange={(brand) => update({ brand })}
 						isLocked={locks.brand}
 						setIsLocked={(value) => updateLock("brand", value)}
-						// error={validation.check("brand") ?? undefined}
+						error={getFieldError("brand")}
 					/>
 					<SelectWithCreation
 						id="store"
@@ -346,7 +521,7 @@ export const CreateTransactionForm = ({
 						onChange={(store) => update({ store })}
 						isLocked={locks.store}
 						setIsLocked={(value) => updateLock("store", value)}
-						// error={validation.check("store") ?? undefined}
+						error={getFieldError("store")}
 					/>
 				</div>
 			)}

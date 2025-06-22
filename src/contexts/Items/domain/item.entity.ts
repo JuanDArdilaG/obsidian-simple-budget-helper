@@ -31,9 +31,10 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 		private _category: CategoryID,
 		private _subCategory: SubCategoryID,
 		private _recurrence: ItemRecurrence,
+		updatedAt: DateValueObject,
 		private readonly _info?: ItemProductInfo
 	) {
-		super(id);
+		super(id, updatedAt);
 	}
 
 	static oneTime(
@@ -51,7 +52,8 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 			operation,
 			category,
 			subCategory,
-			ItemRecurrence.oneTime(date)
+			ItemRecurrence.oneTime(date),
+			DateValueObject.createNowDate()
 		);
 		return item;
 	}
@@ -72,7 +74,8 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 			operation,
 			category,
 			subCategory,
-			ItemRecurrence.infinite(startDate, frequency)
+			ItemRecurrence.infinite(startDate, frequency),
+			DateValueObject.createNowDate()
 		);
 		return item;
 	}
@@ -94,7 +97,8 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 			operation,
 			category,
 			subCategory,
-			ItemRecurrence.untilDate(startDate, frequency, untilDate)
+			ItemRecurrence.untilDate(startDate, frequency, untilDate),
+			DateValueObject.createNowDate()
 		);
 		return item;
 	}
@@ -108,6 +112,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 			this._category,
 			this._subCategory,
 			this._recurrence,
+			this._updatedAt,
 			this._info
 		);
 	}
@@ -122,6 +127,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 
 	updateOperation(operation: ItemOperation): void {
 		this._operation = operation;
+		this.updateTimestamp();
 	}
 
 	get name(): ItemName {
@@ -130,6 +136,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 
 	updateName(name: ItemName): void {
 		this._name = name;
+		this.updateTimestamp();
 	}
 
 	get price(): ItemPrice {
@@ -138,6 +145,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 
 	updatePrice(price: ItemPrice) {
 		this._price = price;
+		this.updateTimestamp();
 	}
 
 	get realPrice(): ItemPrice {
@@ -153,6 +161,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 
 	set price(amount: ItemPrice) {
 		this._price = amount;
+		this.updateTimestamp();
 	}
 
 	get category(): CategoryID {
@@ -161,6 +170,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 
 	updateCategory(category: CategoryID): void {
 		this._category = category;
+		this.updateTimestamp();
 	}
 
 	get subCategory(): SubCategoryID {
@@ -169,6 +179,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 
 	updateSubCategory(subCategory: SubCategoryID): void {
 		this._subCategory = subCategory;
+		this.updateTimestamp();
 	}
 
 	get info(): ItemProductInfo | undefined {
@@ -182,6 +193,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 	updateRecurrence(recurrence: ItemRecurrence) {
 		recurrence.createRecurrences();
 		this._recurrence = recurrence;
+		this.updateTimestamp();
 	}
 
 	applyModification(modification: ItemRecurrenceInfo): void {
@@ -190,6 +202,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 			this._operation.updateAccount(modification.account);
 		modification.toAccount &&
 			this._operation.updateToAccount(modification.toAccount);
+		this.updateTimestamp();
 	}
 
 	toPrimitives(): ItemPrimitives {
@@ -203,6 +216,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 			brand: this._info?.value.brand?.value,
 			store: this._info?.value.store?.value,
 			recurrence: this._recurrence?.toPrimitives(),
+			updatedAt: this._updatedAt.toISOString(),
 		};
 	}
 
@@ -226,6 +240,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 				frequency: undefined,
 				untilDate: undefined,
 			},
+			updatedAt: new Date().toISOString(),
 		};
 	}
 
@@ -239,8 +254,9 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 		brand,
 		store,
 		recurrence,
+		updatedAt,
 	}: ItemPrimitives): Item {
-		return new Item(
+		const item = new Item(
 			new ItemID(id),
 			new ItemName(name),
 			new ItemPrice(price),
@@ -248,6 +264,9 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 			new CategoryID(category),
 			new SubCategoryID(subCategory),
 			ItemRecurrence.fromPrimitives(recurrence),
+			updatedAt
+				? new DateValueObject(new Date(updatedAt))
+				: DateValueObject.createNowDate(),
 			brand || store
 				? new ItemProductInfo({
 						brand: brand ? new ItemBrand(brand) : undefined,
@@ -255,6 +274,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 				  })
 				: undefined
 		);
+		return item;
 	}
 
 	static fromPrimitivesOld({
@@ -288,6 +308,7 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 				frequency: recurrence?.frequency,
 				untilDate: recurrence?.untilDate,
 			}),
+			new DateValueObject(new Date()),
 			brand || store
 				? new ItemProductInfo({
 						brand: brand ? new ItemBrand(brand) : undefined,
@@ -308,6 +329,7 @@ export type ItemPrimitives = {
 	brand?: string;
 	store?: string;
 	recurrence: RecurrencePrimitives;
+	updatedAt: string;
 };
 
 export type ItemPrimitivesOld = {
