@@ -1,4 +1,4 @@
-import { App, normalizePath, Plugin, PluginManifest } from "obsidian";
+import { App, Plugin, PluginManifest } from "obsidian";
 import { SettingTab } from "./SettingTab";
 import { buildContainer } from "contexts/Shared/infrastructure/di/container";
 import { Logger } from "../../contexts/Shared/infrastructure/logger";
@@ -14,7 +14,6 @@ import { AwilixContainer } from "awilix";
 import { GetAllItemsUseCase } from "contexts/Items/application/get-all-items.usecase";
 import { UpdateItemUseCase } from "contexts/Items/application/update-item.usecase";
 import { UUIDValueObject } from "@juandardilag/value-objects";
-import { importInto } from "dexie-export-import";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
@@ -41,23 +40,13 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 	}
 
 	async importDBBackup(backupName: string = "db.backup") {
-		// try {
-		// 	await this.db.restoreFromBackup(backupName);
-		// 	this.logger.debug("Database backup restored successfully");
-		// } catch (error) {
-		// 	this.logger.error(error);
-		// 	throw error;
-		// }
-
-		const path = normalizePath(
-			`${this.settings.rootFolder}/db/${backupName}`
-		);
-		const buffer = await this.app.vault.adapter.readBinary(path);
-		await importInto(this.db.db, new Blob([buffer]), {
-			clearTablesBeforeImport: true,
-			acceptNameDiff: true,
-			acceptVersionDiff: true,
-		});
+		try {
+			await this.db.restoreFromBackup(backupName);
+			this.logger.debug("Database backup restored successfully");
+		} catch (error) {
+			this.logger.error(error);
+			throw error;
+		}
 	}
 
 	async migrateItems(container: AwilixContainer) {
