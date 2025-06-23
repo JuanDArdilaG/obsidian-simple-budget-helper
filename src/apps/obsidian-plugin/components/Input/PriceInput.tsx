@@ -1,10 +1,10 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
 import {
 	FormControl,
-	InputLabel,
+	FormHelperText,
 	Input,
 	InputAdornment,
-	FormHelperText,
+	InputLabel,
 } from "@mui/material";
 import { WithLockField } from "../WithLockField";
 
@@ -16,14 +16,16 @@ export const PriceInput = ({
 	isLocked,
 	setIsLocked,
 	error,
+	disabled,
 }: {
 	id: string;
 	label: string;
 	value: PriceValueObject;
-	onChange: (value: PriceValueObject) => void;
+	onChange?: (value: PriceValueObject) => void;
 	isLocked?: boolean;
 	setIsLocked?: (value: boolean) => void;
 	error?: string;
+	disabled?: boolean;
 }) => {
 	return (
 		<WithLockField isLocked={isLocked} setIsLocked={setIsLocked}>
@@ -51,7 +53,7 @@ export const PriceInput = ({
 					}
 					value={value.toString()}
 					onChange={(e) =>
-						onChange(PriceValueObject.fromString(e.target.value))
+						onChange?.(PriceValueObject.fromString(e.target.value))
 					}
 					style={{
 						backgroundColor:
@@ -60,7 +62,7 @@ export const PriceInput = ({
 						padding: 5,
 						borderColor: error ? "var(--text-error)" : undefined,
 					}}
-					disabled={isLocked}
+					disabled={isLocked || disabled}
 					slotProps={{
 						input: {
 							style: {

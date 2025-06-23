@@ -7,17 +7,21 @@ export const Input = <T extends NonNullable<InputValue>>({
 	label,
 	value,
 	onChange,
+	onBlur,
 	isLocked,
 	setIsLocked,
 	style,
+	error,
 }: {
 	id: string;
 	label: string;
 	value?: T;
 	onChange: (value: T) => void;
+	onBlur?: () => void;
 	isLocked?: boolean;
 	setIsLocked?: (value: boolean) => void;
 	style?: React.CSSProperties;
+	error?: string;
 }) => {
 	return (
 		<WithLockField
@@ -31,7 +35,10 @@ export const Input = <T extends NonNullable<InputValue>>({
 				variant="standard"
 				value={value}
 				onChange={(e) => onChange(e.target.value as T)}
+				onBlur={onBlur}
 				type={typeof value === "number" ? "number" : "text"}
+				error={!!error}
+				helperText={error}
 				slotProps={{
 					inputLabel: {
 						style: {

@@ -4,7 +4,6 @@ import {
 	CircularProgress,
 	List,
 	ListItem,
-	ListItemButton,
 	ListSubheader,
 	useMediaQuery,
 } from "@mui/material";
@@ -55,7 +54,7 @@ const ITEMS_PER_PAGE = 20;
 const INITIAL_ITEMS = 10;
 const BASE_ITEM_HEIGHT = 60; // Base height for date header
 const TRANSACTION_HEIGHT = 80; // Height per transaction
-const MOBILE_TRANSACTION_HEIGHT = 100; // Further increased height for mobile to prevent clipping
+const MOBILE_TRANSACTION_HEIGHT = 130; // Increased height for mobile to accommodate action buttons
 
 export function AccountingList({
 	selection,
@@ -78,6 +77,9 @@ export function AccountingList({
 	// Performance tracking
 	const [renderTime, setRenderTime] = useState<number>(0);
 	const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
+	const [editingTransactionId, setEditingTransactionId] = useState<
+		string | null
+	>(null);
 
 	// Virtual list ref for resetting cache
 	const virtualListRef = useRef<VirtualList>(null);
@@ -247,7 +249,7 @@ export function AccountingList({
 							</ListSubheader>
 							{withBalanceTransactions.map(
 								(transactionWithBalance) => (
-									<ListItemButton
+									<ListItem
 										key={transactionWithBalance.transaction.id.toString()}
 										onAuxClick={() =>
 											handleAuxClick(
@@ -260,13 +262,19 @@ export function AccountingList({
 										}}
 									>
 										<AccountingListItem
+											editingTransactionId={
+												editingTransactionId
+											}
+											setEditingTransactionId={
+												setEditingTransactionId
+											}
 											transactionWithBalance={
 												transactionWithBalance
 											}
 											selection={selection}
 											setSelection={setSelection}
 										/>
-									</ListItemButton>
+									</ListItem>
 								)
 							)}
 						</List>
@@ -274,7 +282,13 @@ export function AccountingList({
 				</div>
 			);
 		},
-		[visibleTransactions, selection, setSelection, handleAuxClick, isMobile]
+		[
+			visibleTransactions,
+			selection,
+			setSelection,
+			isMobile,
+			editingTransactionId,
+		]
 	);
 
 	const getItemSize = (index: number) => {
