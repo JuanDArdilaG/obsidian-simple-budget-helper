@@ -1,9 +1,8 @@
-import { IReportsService } from "../domain/reports-service.interface";
-import { ItemsReport, ReportBalance } from "../domain";
 import { Account, IAccountsService } from "contexts/Accounts/domain";
-import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Item } from "contexts/Items/domain";
-import { PriceValueObject } from "@juandardilag/value-objects";
+import { Logger } from "contexts/Shared/infrastructure/logger";
+import { ItemsReport, ReportBalance } from "../domain";
+import { IReportsService } from "../domain/reports-service.interface";
 
 type ItemsWithAccounts = {
 	item: Item;
@@ -79,19 +78,22 @@ export class ReportsService implements IReportsService {
 
 		let total = ReportBalance.zero();
 		for (const { item, account, toAccount } of items) {
-			const prevTotal = new PriceValueObject(total.value);
-			const realPrice = item.realPrice;
-			this.#logger.debug("realPrice", { realPrice });
-			if (!realPrice.isZero()) {
-				total = total.plus(realPrice);
-				this.#logger.debug("updating total", { prevTotal, total });
-				continue;
+			if (item.operation.type.isTransfer()) {
+				// Handle transfers based on account types
+				if (account.type.isAsset() && toAccount?.type.isLiability()) {
+					total = total.plus(item.price.negate());
+				} else if (
+					account.type.isLiability() &&
+					toAccount?.type.isAsset()
+				) {
+					total = total.plus(item.price);
+				}
+				// Asset to Asset and Liability to Liability transfers are neutral (not added to total)
+			} else {
+				// Handle income and expense operations
+				total = total.plus(item.realPrice);
 			}
-			if (account.type.isAsset() && toAccount?.type.isLiability())
-				total = total.plus(item.price.negate());
-			else if (account.type.isLiability() && toAccount?.type.isAsset())
-				total = total.plus(item.price);
-			this.#logger.debug("updating total", { prevTotal, total });
+			this.#logger.debug("updating total", { total });
 		}
 		this.#logger.debug("total", { total });
 		return total;
@@ -110,15 +112,21 @@ export class ReportsService implements IReportsService {
 
 		let total = ReportBalance.zero();
 		for (const { item, account, toAccount } of items) {
-			const pricePerMonth = item.pricePerMonth;
-			if (!pricePerMonth.isZero()) {
-				total = total.plus(pricePerMonth);
-				continue;
+			if (item.operation.type.isTransfer()) {
+				// Handle transfers based on account types
+				if (account.type.isAsset() && toAccount?.type.isLiability()) {
+					total = total.plus(item.pricePerMonth.negate());
+				} else if (
+					account.type.isLiability() &&
+					toAccount?.type.isAsset()
+				) {
+					total = total.plus(item.pricePerMonth);
+				}
+				// Asset to Asset and Liability to Liability transfers are neutral (not added to total)
+			} else {
+				// Handle income and expense operations
+				total = total.plus(item.pricePerMonth);
 			}
-			if (account.type.isAsset() && toAccount?.type.isLiability())
-				total = total.plus(item.price.negate());
-			else if (account.type.isLiability() && toAccount?.type.isAsset())
-				total = total.plus(item.price);
 		}
 		return total;
 	}

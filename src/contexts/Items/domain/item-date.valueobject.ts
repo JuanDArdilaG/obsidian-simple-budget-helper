@@ -2,9 +2,10 @@ import { DateValueObject } from "@juandardilag/value-objects";
 import { ItemRecurrenceFrequency } from "./item-recurrence-frequency.valueobject";
 
 export class ItemDate extends DateValueObject {
-	constructor(value: Date) {
-		value.setSeconds(0, 0);
-		super(value);
+	constructor(value: Date | DateValueObject) {
+		const date = new Date(value.getTime()); // Create a copy to avoid mutation
+		date.setSeconds(0, 0);
+		super(date);
 	}
 
 	static createNowDate(): ItemDate {
@@ -32,7 +33,7 @@ export class ItemDate extends DateValueObject {
 
 	next(frequency: ItemRecurrenceFrequency): ItemDate {
 		const frequencyObject = frequency.toObject();
-		if (!frequencyObject) return this;
+		if (!frequencyObject) return new ItemDate(this.value);
 
 		const nextDate = new Date(this.getTime());
 		nextDate.setFullYear(

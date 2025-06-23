@@ -50,7 +50,14 @@ export class AccountsServiceMock implements IAccountsService {
 		this._accounts[existingAccount] = account;
 	}
 
-	adjustOnTransaction(transaction: Transaction): Promise<void> {
-		throw new Error("Method not implemented.");
+	async adjustOnTransaction(transaction: Transaction): Promise<void> {
+		const account = await this.getByID(transaction.account);
+		account.adjustFromTransaction(transaction);
+		const toAccount = transaction.toAccount
+			? await this.getByID(transaction.toAccount)
+			: undefined;
+		if (toAccount) {
+			toAccount.adjustFromTransaction(transaction);
+		}
 	}
 }

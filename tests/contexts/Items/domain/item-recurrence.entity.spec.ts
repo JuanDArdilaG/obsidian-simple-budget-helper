@@ -1,6 +1,11 @@
+import {
+	DateValueObject,
+	NumberValueObject,
+} from "@juandardilag/value-objects";
+import { ItemRecurrenceFrequency } from "contexts/Items/domain/item-recurrence-frequency.valueobject";
+import { ItemRecurrence } from "contexts/Items/domain/item-recurrence.entity";
 import { describe, expect, it } from "vitest";
 import { buildTestItems } from "./buildTestItems";
-import { DateValueObject } from "@juandardilag/value-objects";
 
 describe("totalRecurrences", () => {
 	it("should return minus one for a recurrence with infinite schedule", () => {
@@ -46,53 +51,36 @@ describe("totalRecurrences", () => {
 	});
 });
 
-// describe("updateUntilDateFromRecurrencesCount", () => {
-// 	it("should update the until date for a single time item", () => {
-// 		const items = buildTestItems([
-// 			{
-// 				recurrence: {
-// 					frequency: "2d",
-// 					startDate: DateValueObject.createNowDate(),
-// 				},
-// 			},
-// 		]);
-// 		const item = items[0].copy();
-// 		item.recurrence?.updateUntilDateFromRecurrencesCount(1);
+describe("untilNRecurrences", () => {
+	it("should create a recurrence for a single time item", () => {
+		const recurrence = ItemRecurrence.untilNRecurrences(
+			DateValueObject.createNowDate(),
+			new ItemRecurrenceFrequency("2d"),
+			new NumberValueObject(1)
+		);
 
-// 		expect(item.recurrence?.untilDate?.value).toEqual(
-// 			item.recurrence?.startDate.value
-// 		);
-// 	});
+		expect(recurrence.totalRecurrences).toBe(1);
+	});
 
-// 	it("should update the until date for a scheduled item with 5 recurrences", () => {
-// 		const items = buildTestItems([
-// 			{
-// 				recurrence: {
-// 					frequency: "2d",
-// 					startDate: new DateValueObject(new Date(2024, 0, 1)),
-// 				},
-// 			},
-// 		]);
-// 		const item = items[0].copy();
-// 		item.recurrence?.updateUntilDateFromRecurrencesCount(5);
+	it("should create a recurrence for a scheduled item with 5 recurrences", () => {
+		const recurrence = ItemRecurrence.untilNRecurrences(
+			new DateValueObject(new Date(2024, 0, 1)),
+			new ItemRecurrenceFrequency("2d"),
+			new NumberValueObject(5)
+		);
 
-// 		expect(item.recurrence?.untilDate?.value).toEqual(
-// 			new Date("2024-01-09")
-// 		);
-// 	});
+		expect(recurrence.untilDate?.value).toEqual(new Date(2024, 0, 9));
+		expect(recurrence.totalRecurrences).toBe(5);
+	});
 
-// 	it("should update the until date for a scheduled item with 5 recurrences", () => {
-// 		const items = buildTestItems([
-// 			{
-// 				recurrence: {
-// 					frequency: "1mo",
-// 					startDate: new DateValueObject(new Date(2024, 0, 1)),
-// 				},
-// 			},
-// 		]);
-// 		const item = items[0].copy();
-// 		item.recurrence?.updateUntilDateFromRecurrencesCount(3);
+	it("should create a recurrence for a scheduled item with 3 recurrences", () => {
+		const recurrence = ItemRecurrence.untilNRecurrences(
+			new DateValueObject(new Date(2024, 0, 1)),
+			new ItemRecurrenceFrequency("1mo"),
+			new NumberValueObject(3)
+		);
 
-// 		expect(item.recurrence?.untilDate?.value).toEqual(new Date(2024, 2, 1));
-// 	});
-// });
+		expect(recurrence.untilDate?.value).toEqual(new Date(2024, 2, 1));
+		expect(recurrence.totalRecurrences).toBe(3);
+	});
+});

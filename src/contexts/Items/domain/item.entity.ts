@@ -1,25 +1,25 @@
-import { ItemID } from "./item-id.valueobject";
-import { ItemName } from "./item-name.valueobject";
-import { ItemPrice } from "./item-price.valueobject";
+import { DateValueObject } from "@juandardilag/value-objects";
+import { CategoryID } from "contexts/Categories/domain";
+import { OperationType } from "contexts/Shared/domain";
+import { Entity } from "contexts/Shared/domain/entity.abstract";
+import { Logger } from "contexts/Shared/infrastructure/logger";
+import { SubCategoryID } from "contexts/Subcategories/domain";
 import {
 	ItemOperation,
 	ItemOperationPrimitives,
 } from "../../Shared/domain/Item/item-operation.valueobject";
-import { CategoryID } from "contexts/Categories/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
-import { Entity } from "contexts/Shared/domain/entity.abstract";
-import { DateValueObject } from "@juandardilag/value-objects";
+import { ItemBrand } from "./item-brand.valueobject";
+import { ItemID } from "./item-id.valueobject";
+import { ItemName } from "./item-name.valueobject";
+import { ItemPrice } from "./item-price.valueobject";
 import { ItemProductInfo } from "./item-product-info.valueobject";
-import { ItemRecurrence, RecurrencePrimitives } from "./item-recurrence.entity";
+import { ItemRecurrenceFrequency } from "./item-recurrence-frequency.valueobject";
 import {
 	ItemRecurrenceInfo,
 	ItemRecurrenceInfoPrimitives,
 } from "./item-recurrence-modification.valueobject";
-import { Logger } from "contexts/Shared/infrastructure/logger";
-import { ItemBrand } from "./item-brand.valueobject";
+import { ItemRecurrence, RecurrencePrimitives } from "./item-recurrence.entity";
 import { ItemStore } from "./item-store.valueobject";
-import { ItemRecurrenceFrequency } from "./item-recurrence-frequency.valueobject";
-import { OperationType } from "contexts/Shared/domain";
 
 export class Item extends Entity<ItemID, ItemPrimitives> {
 	readonly _ = new Logger("Item");
@@ -155,7 +155,15 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 	}
 
 	get pricePerMonth(): ItemPrice {
-		if (!this._recurrence?.frequency) return this.realPrice;
+		if (!this._recurrence?.frequency) {
+			if (this._operation.type.isTransfer()) return this._price;
+			return this.realPrice;
+		}
+
+		if (this._operation.type.isTransfer()) {
+			return this._price.times(this._recurrence.perMonthRelation);
+		}
+
 		return this.realPrice.times(this._recurrence.perMonthRelation);
 	}
 

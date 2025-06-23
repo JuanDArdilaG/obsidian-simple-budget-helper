@@ -7,6 +7,33 @@ export class ItemRecurrenceFrequency extends StringValueObject {
 	static readonly MONTH_DAYS_RELATION = new NumberValueObject(30.4167);
 
 	toObject(): FrequencyObject | undefined {
+		switch (this.value.toLowerCase()) {
+			case "daily":
+				return {
+					years: new NumberValueObject(0),
+					months: new NumberValueObject(0),
+					days: new NumberValueObject(1),
+				};
+			case "weekly":
+				return {
+					years: new NumberValueObject(0),
+					months: new NumberValueObject(0),
+					days: new NumberValueObject(7),
+				};
+			case "monthly":
+				return {
+					years: new NumberValueObject(0),
+					months: new NumberValueObject(1),
+					days: new NumberValueObject(0),
+				};
+			case "yearly":
+				return {
+					years: new NumberValueObject(1),
+					months: new NumberValueObject(0),
+					days: new NumberValueObject(0),
+				};
+		}
+
 		const regex = /(?:(\d*)y)?(?:(\d*)mo)?(?:(\d*)w)?(?:(\d*)d)?/;
 		const match = regex.exec(this.toString());
 		if (!match) return undefined;

@@ -72,7 +72,7 @@ export class ItemRecurrence {
 		const recurrence = new ItemRecurrence(
 			startDate,
 			[],
-			undefined,
+			frequency,
 			untilDate
 		);
 		recurrence.createRecurrences();
@@ -182,11 +182,15 @@ export class ItemRecurrence {
 	get totalRecurrences(): number {
 		if (!this.untilDate) return -1;
 		if (!this.frequency) return 1;
-		let nextDate = new ItemDate(this.startDate);
+		let nextDateTime = new ItemDate(this.startDate).getTime();
+		const untilDateTime = this.untilDate.getTime();
 		let count = 0;
-		while (nextDate.isLessOrEqualThan(this.untilDate)) {
+		let currentDate = new ItemDate(this.startDate);
+
+		while (nextDateTime <= untilDateTime) {
 			count++;
-			nextDate = nextDate.next(this.frequency);
+			currentDate = currentDate.next(this.frequency);
+			nextDateTime = currentDate.getTime();
 		}
 		return count;
 	}

@@ -1,10 +1,10 @@
+import { NumberValueObject } from "@juandardilag/value-objects";
+import { GetAllCategoriesWithSubCategoriesUseCaseOutput } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 import { Category } from "contexts/Categories/domain";
 import { Item } from "contexts/Items/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { SubCategory } from "contexts/Subcategories/domain";
 import { ReportBalance } from "./report-balance.valueobject";
-import { NumberValueObject } from "@juandardilag/value-objects";
-import { GetAllCategoriesWithSubCategoriesUseCaseOutput } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 
 export type ItemsWithCategoryAndSubCategory = {
 	category: {
@@ -39,6 +39,61 @@ export class ItemsReport {
 	onlyIncomes(): ItemsReport {
 		return new ItemsReport(
 			this.items.filter((item) => item.operation.type.isIncome())
+		);
+	}
+
+	onlyInfiniteRecurrent(): ItemsReport {
+		return new ItemsReport(
+			this.items.filter(
+				(item) => item.recurrence?.totalRecurrences === -1
+			)
+		);
+	}
+
+	onlyFiniteRecurrent(): ItemsReport {
+		return new ItemsReport(
+			this.items.filter(
+				(item) => item.recurrence?.totalRecurrences !== -1
+			)
+		);
+	}
+
+	/**
+	 * Returns all items that are expenses (excluding transfers)
+	 */
+	getExpenseItems(): Item[] {
+		return this.items.filter((item) => item.operation.type.isExpense());
+	}
+
+	/**
+	 * Returns all items that are incomes (excluding transfers)
+	 */
+	getIncomeItems(): Item[] {
+		return this.items.filter((item) => item.operation.type.isIncome());
+	}
+
+	/**
+	 * Returns all transfer items
+	 */
+	getTransferItems(): Item[] {
+		return this.items.filter((item) => item.operation.type.isTransfer());
+	}
+
+	/**
+	 * Returns infinite recurrent items
+	 */
+	getInfiniteRecurrentItems(): Item[] {
+		return this.items.filter(
+			(item) => item.recurrence?.totalRecurrences === -1
+		);
+	}
+
+	/**
+	 * Returns finite recurrent items
+	 */
+	getFiniteRecurrentItems(): Item[] {
+		return this.items.filter(
+			(item) => item.recurrence?.totalRecurrences !== -1
 		);
 	}
 

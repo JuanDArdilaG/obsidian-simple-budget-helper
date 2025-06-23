@@ -49,6 +49,12 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		return this._balance;
 	}
 
+	get realBalance(): PriceValueObject {
+		return this._balance.value.times(
+			new NumberValueObject(this._type.isAsset() ? 1 : -1)
+		);
+	}
+
 	updateBalance(balance: AccountBalance) {
 		this._balance = balance;
 		this.updateTimestamp();
@@ -62,9 +68,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			balance: this._balance.value,
 		});
 		this._balance = this._balance.plus(
-			transaction
-				.getRealAmountForAccount(this._id)
-				.times(new NumberValueObject(this._type.isAsset() ? 1 : -1))
+			transaction.getRealAmountForAccount(this._id)
 		);
 		this.updateTimestamp();
 	}

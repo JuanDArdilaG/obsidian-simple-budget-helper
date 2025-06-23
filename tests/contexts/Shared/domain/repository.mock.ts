@@ -36,7 +36,12 @@ export class RepositoryMock<
 	}
 
 	async deleteById(id: ID): Promise<boolean> {
-		throw new Error("Method not implemented.");
+		const index = this.items.findIndex((t) => t.id.equalTo(id));
+		if (index > -1) {
+			this.items.splice(index, 1);
+			return true;
+		}
+		return false;
 	}
 
 	async exists(id: ID): Promise<boolean> {
