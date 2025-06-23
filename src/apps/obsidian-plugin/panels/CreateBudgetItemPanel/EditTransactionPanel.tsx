@@ -1,29 +1,31 @@
-import { useContext, useState } from "react";
-import { TransactionsContext } from "apps/obsidian-plugin/views";
+import { Typography } from "@mui/material";
+import { Button } from "apps/obsidian-plugin/components/Button";
+import { Input } from "apps/obsidian-plugin/components/Input/Input";
+import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
+import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
 import {
 	Select,
 	useAccountSelect,
 	useCategorySelect,
 	useSubCategorySelect,
 } from "apps/obsidian-plugin/components/Select";
+import { useLogger } from "apps/obsidian-plugin/hooks";
+import { TransactionsContext } from "apps/obsidian-plugin/views";
 import {
 	Transaction,
 	TransactionDate,
 	TransactionName,
 } from "contexts/Transactions/domain";
-import { Input } from "apps/obsidian-plugin/components/Input/Input";
-import { useLogger } from "apps/obsidian-plugin/hooks";
-import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
-import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
-import { Typography } from "@mui/material";
-import { Button } from "apps/obsidian-plugin/components/Button";
+import { useContext, useState } from "react";
 
 export const EditTransactionPanel = ({
 	transaction,
 	onUpdate,
+	onClose,
 }: {
 	transaction: Transaction;
 	onUpdate: () => Promise<void>;
+	onClose: () => void;
 }) => {
 	const { logger } = useLogger("EditTransactionPanel");
 	const {
@@ -107,6 +109,7 @@ export const EditTransactionPanel = ({
 
 					await updateTransaction.execute(transaction);
 					await onUpdate();
+					onClose();
 				}}
 			/>
 		</div>

@@ -1,7 +1,7 @@
-import { useContext, useEffect, useMemo, useState } from "react";
-import { Select } from "./Select";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { Account, AccountID, AccountName } from "contexts/Accounts/domain";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { Select } from "./Select";
 
 export const useAccountSelect = ({
 	label,

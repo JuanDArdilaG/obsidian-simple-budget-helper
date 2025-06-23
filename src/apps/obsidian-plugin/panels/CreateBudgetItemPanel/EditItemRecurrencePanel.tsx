@@ -1,22 +1,22 @@
-import { useContext, useState } from "react";
-import {
-	Item,
-	ItemDate,
-	ItemRecurrenceInfo,
-	ERecurrenceState,
-} from "contexts/Items/domain";
-import { ItemsContext, TransactionsContext } from "apps/obsidian-plugin/views";
+import { NumberValueObject } from "@juandardilag/value-objects";
+import { Checkbox, FormControlLabel } from "@mui/material";
+import { DateInput } from "apps/obsidian-plugin/components/Input/DateInput";
+import { Input } from "apps/obsidian-plugin/components/Input/Input";
+import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import {
 	Select,
 	SelectWithCreation,
 	useAccountSelect,
 } from "apps/obsidian-plugin/components/Select";
+import { ItemsContext, TransactionsContext } from "apps/obsidian-plugin/views";
+import {
+	ERecurrenceState,
+	Item,
+	ItemDate,
+	ItemRecurrenceInfo,
+} from "contexts/Items/domain";
 import { OperationType } from "contexts/Shared/domain";
-import { Checkbox, FormControlLabel } from "@mui/material";
-import { NumberValueObject } from "@juandardilag/value-objects";
-import { Input } from "apps/obsidian-plugin/components/Input/Input";
-import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
-import { DateInput } from "apps/obsidian-plugin/components/Input/DateInput";
+import { useContext, useState } from "react";
 
 export const EditItemRecurrencePanel = ({
 	item,
@@ -132,46 +132,9 @@ export const EditItemRecurrencePanel = ({
 				label="Frequency"
 				value={frequency ?? ""}
 				onChange={setFrequency}
-				// error={
-				// 	!validation || validation.frequency ? undefined : "required"
-				// }
 			/>
 			<button
 				onClick={async () => {
-					// if (recurrence instanceof Item && item.recurrence) {
-					// 	account &&
-					// 		!account.id.equalTo(item.account) &&
-					// 		item.updateAccount(account.id);
-					// 	toAccount &&
-					// 		item.toAccount &&
-					// 		toAccount.id.equalTo(item.toAccount) &&
-					// 		item.updateToAccount(toAccount?.id);
-					// 	!amount.equalTo(item.price) && item.updatePrice(amount);
-					// 	name !== item.name.value &&
-					// 		item.updateName(new ItemName(name));
-					// 	category &&
-					// 		!category.id.equalTo(item.category) &&
-					// 		item.updateCategory(category.id);
-					// 	subCategory &&
-					// 		!subCategory.id.equalTo(item.subCategory) &&
-					// 		item.updateSubCategory(subCategory.id);
-					// 	frequency &&
-					// 		frequency !== item.recurrence?.frequency.value &&
-					// 		item.updateRecurrence(
-					// 			new ItemRecurrence(
-					// 				item.id,
-					// 				item.recurrence.startDate,
-					// 				new ItemRecurrenceFrequency(frequency),
-					// 				withUntilDate
-					// 					? new ItemRecurrenceUntilDate(
-					// 							untilDate ?? new Date()
-					// 					  )
-					// 					: undefined
-					// 			)
-					// 		);
-
-					// 	await updateItem.execute(item);
-					// } else {
 					await modifyNItemRecurrence.execute({
 						id: item.id,
 						n: n,

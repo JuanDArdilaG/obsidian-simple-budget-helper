@@ -1,15 +1,15 @@
-import { useContext } from "react";
+import { NumberValueObject } from "@juandardilag/value-objects";
+import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
+import { ItemsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import {
 	ItemDate,
 	ItemRecurrence,
 	ItemRecurrenceFrequency,
 	ItemRecurrenceUntilDate,
 } from "contexts/Items/domain";
-import { ItemsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
+import { useContext, useState } from "react";
 import { CreateItemForm } from "./CreateItemForm";
 import { useCreateRecurrenceForm } from "./useCreateRecurrenceForm";
-import { NumberValueObject } from "@juandardilag/value-objects";
 
 export const CreateItemPanel = ({ close }: { close: () => void }) => {
 	const { logger } = useLogger("CreateItemPanel");
@@ -19,18 +19,24 @@ export const CreateItemPanel = ({ close }: { close: () => void }) => {
 		useCases: { createItem },
 	} = useContext(ItemsContext);
 
+	const [showErrors, setShowErrors] = useState(false);
+
 	const {
 		RecurrenceForm,
 		untilDate,
 		recurrenceType,
 		recurrences,
 		frequencyString,
-	} = useCreateRecurrenceForm({});
+		isValid,
+	} = useCreateRecurrenceForm({ showErrors });
 
 	return (
 		<CreateItemForm
 			close={close}
 			items={scheduledItems}
+			isValid={isValid}
+			showErrors={showErrors}
+			onAttemptSubmit={() => setShowErrors(true)}
 			onSubmit={async (item, date) => {
 				if (untilDate)
 					item.updateRecurrence(

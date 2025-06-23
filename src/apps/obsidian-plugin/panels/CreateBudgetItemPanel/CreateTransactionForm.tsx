@@ -1,35 +1,41 @@
-import { useContext, useEffect, useState, PropsWithChildren } from "react";
 import { PriceValueObject } from "@juandardilag/value-objects";
-import {
-	Transaction,
-	TransactionID,
-	TransactionPrimitives,
-	TransactionAmount,
-} from "contexts/Transactions/domain";
-import {
-	AccountsContext,
-	TransactionsContext,
-} from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import { Button, ButtonGroup } from "@mui/material";
+import { CreateCategoryModal } from "apps/obsidian-plugin/Category/CreateCategoryModal";
+import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
 import {
 	Select,
 	SelectWithCreation,
 	useCategorySelect,
 	useSubCategorySelect,
 } from "apps/obsidian-plugin/components/Select";
-import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 import { useAccountSelect } from "apps/obsidian-plugin/components/Select/useAccountSelect";
-import { OperationType } from "contexts/Shared/domain";
-import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
+import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
+import {
+	AccountsContext,
+	TransactionsContext,
+} from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { AccountID } from "contexts/Accounts/domain";
-import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
-import { ButtonGroup, Button } from "@mui/material";
-import { CreateCategoryModal } from "apps/obsidian-plugin/Category/CreateCategoryModal";
-import React from "react";
+import { OperationType } from "contexts/Shared/domain";
+import {
+	Transaction,
+	TransactionAmount,
+	TransactionID,
+	TransactionPrimitives,
+} from "contexts/Transactions/domain";
+import { evaluate } from "mathjs";
+import React, {
+	PropsWithChildren,
+	useContext,
+	useEffect,
+	useState,
+} from "react";
+import { Input } from "../../components/Input/Input";
 
 // Validation interface
 interface ValidationErrors {
 	name?: string;
 	amount?: string;
+	calculation?: string;
 	account?: string;
 	toAccount?: string;
 	category?: string;
@@ -219,6 +225,9 @@ export const CreateTransactionForm = ({
 	const [selectedTransaction, setSelectedTransaction] =
 		useState<TransactionPrimitives>(Transaction.emptyPrimitives());
 
+	const [amountInput, setAmountInput] = useState<string>("0");
+	const [calculationError, setCalculationError] = useState<string>();
+
 	const { DateInput: DateInputBase, date } = useDateInput({
 		id: "date",
 		lock: locks.date,
@@ -276,6 +285,12 @@ export const CreateTransactionForm = ({
 		useState(false);
 
 	useEffect(() => {
+		setAmountInput(
+			new PriceValueObject(transaction.amount ?? 0).toString()
+		);
+	}, [transaction.amount]);
+
+	useEffect(() => {
 		if (selectedTransaction) {
 			logger.debug("selected item on creation", {
 				selectedTransaction,
@@ -330,6 +345,26 @@ export const CreateTransactionForm = ({
 		});
 
 		setTransaction(newTransaction);
+	};
+
+	const handleAmountBlur = () => {
+		try {
+			const amount = amountInput.replaceAll(",", "").replace("$", "");
+			console.log("amount", amount);
+			const evaluated = evaluate(amount);
+			if (
+				typeof evaluated === "number" &&
+				isFinite(evaluated) &&
+				evaluated > 0
+			) {
+				update({ amount: evaluated });
+				setCalculationError(undefined);
+			} else {
+				setCalculationError("Invalid result");
+			}
+		} catch {
+			setCalculationError("Invalid expression");
+		}
 	};
 
 	const handleSubmit = (withClose: boolean) => async () => {
@@ -435,22 +470,17 @@ export const CreateTransactionForm = ({
 					display: "flex",
 					justifyContent: "space-between",
 					gap: "5px",
+					alignItems: "flex-end",
 				}}
 			>
 				{DateInput}
-				<PriceInput
+				<Input<string>
 					id="amount"
-					value={
-						new PriceValueObject(transaction.amount, {
-							withSign: false,
-							decimals: 0,
-						})
-					}
-					onChange={(amount) => update({ amount: amount.value })}
-					isLocked={locks.amount}
-					setIsLocked={(value) => updateLock("amount", value)}
 					label="Amount"
-					error={getFieldError("amount")}
+					value={amountInput}
+					onChange={setAmountInput}
+					onBlur={handleAmountBlur}
+					error={calculationError || getFieldError("amount")}
 				/>
 			</div>
 			<div

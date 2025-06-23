@@ -8,13 +8,17 @@ import {
 } from "@mui/material";
 import { DateInput } from "apps/obsidian-plugin/components/Input/DateInput";
 import { Input } from "apps/obsidian-plugin/components/Input/Input";
-import { ItemRecurrence } from "contexts/Items/domain";
+import { ItemRecurrence, ItemRecurrenceFrequency } from "contexts/Items/domain";
 import { useEffect, useState } from "react";
+
+type FrequencyType = "daily" | "weekly" | "monthly" | "yearly" | "other";
 
 export const useCreateRecurrenceForm = ({
 	recurrence,
+	showErrors,
 }: {
 	recurrence?: ItemRecurrence;
+	showErrors?: boolean;
 }) => {
 	const [type, setType] = useState(
 		recurrence?.untilDate ? "byDate" : "byTotal"
@@ -35,6 +39,16 @@ export const useCreateRecurrenceForm = ({
 			: "other"
 	);
 	const [recurrences, setRecurrences] = useState(0);
+	const [frequencyType, setFrequencyType] = useState<FrequencyType>("other");
+
+	const [errors, setErrors] = useState<{
+		recurrences: string | undefined;
+		frequencyString: string | undefined;
+	}>({
+		recurrences: undefined,
+		frequencyString: undefined,
+	});
+	const [isValid, setIsValid] = useState(false);
 
 	useEffect(() => {
 		if (recurrenceType === "oneTime") {
@@ -44,23 +58,61 @@ export const useCreateRecurrenceForm = ({
 		}
 	}, [recurrenceType]);
 
+	useEffect(() => {
+		if (frequencyType !== "other") {
+			setFrequencyString(frequencyType);
+		}
+	}, [frequencyType]);
+
+	useEffect(() => {
+		const newErrors: {
+			recurrences: string | undefined;
+			frequencyString: string | undefined;
+		} = {
+			recurrences: undefined,
+			frequencyString: undefined,
+		};
+		let formIsValid = true;
+
+		if (type === "byTotal" && recurrenceType === "other") {
+			if (!recurrences || recurrences <= 0) {
+				newErrors.recurrences = "Must be greater than 0";
+				formIsValid = false;
+			}
+		}
+
+		if (recurrenceType !== "oneTime" && frequencyType === "other") {
+			if (!frequencyString.trim()) {
+				newErrors.frequencyString = "Frequency is required";
+				formIsValid = false;
+			} else {
+				const freq = new ItemRecurrenceFrequency(frequencyString);
+				const freqObj = freq.toObject();
+				if (
+					!freqObj?.days.value &&
+					!freqObj?.months.value &&
+					!freqObj?.years.value
+				) {
+					newErrors.frequencyString = "Invalid frequency format";
+					formIsValid = false;
+				}
+			}
+		}
+
+		setErrors(newErrors);
+		setIsValid(formIsValid);
+	}, [type, recurrenceType, recurrences, frequencyType, frequencyString]);
+
 	const RecurrenceForm = (
-		<>
-			<Typography variant="h6">Recurrence Config</Typography>
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-around",
-				}}
-			>
-				<FormControl>
-					<FormLabel id="demo-row-radio-buttons-group-label">
-						Type
-					</FormLabel>
+		<div className="recurrence-form-container">
+			<Typography variant="h6" gutterBottom>
+				Recurrence Config
+			</Typography>
+			<div className="recurrence-form-controls">
+				<FormControl component="fieldset">
+					<FormLabel component="legend">Type</FormLabel>
 					<RadioGroup
 						row
-						aria-labelledby="demo-row-radio-buttons-group-label"
-						name="row-radio-buttons-group"
 						value={type}
 						onChange={(e) =>
 							setType(
@@ -72,73 +124,122 @@ export const useCreateRecurrenceForm = ({
 					>
 						<FormControlLabel
 							value="byTotal"
-							control={<Radio />}
+							control={<Radio size="small" />}
 							label="By Total"
 						/>
 						<FormControlLabel
 							value="byDate"
-							control={<Radio />}
+							control={<Radio size="small" />}
 							label="By Date"
 						/>
 					</RadioGroup>
 				</FormControl>
-				{type === "byDate" ? (
-					<DateInput value={untilDate} onChange={setUntilDate} />
-				) : (
-					<FormControl>
-						<FormLabel id="demo-row-radio-buttons-group-label">
-							Total
-						</FormLabel>
-						<RadioGroup
-							row
-							aria-labelledby="demo-row-radio-buttons-group-label"
-							name="row-radio-buttons-group"
-							value={recurrenceType}
-							onChange={(e) =>
-								setRecurrencesType(
-									(e.target as HTMLInputElement).value as
-										| "infinite"
-										| "oneTime"
-										| "other"
-								)
-							}
-						>
-							<FormControlLabel
-								value="oneTime"
-								control={<Radio />}
-								label="1"
-							/>
-							<FormControlLabel
-								value="infinite"
-								control={<Radio />}
-								label="∞"
-							/>
-							<FormControlLabel
-								value="other"
-								control={<Radio />}
-								label="Other"
-							/>
-						</RadioGroup>
-						{recurrenceType === "other" && (
-							<Input<number>
-								id="frequency"
-								label=""
-								value={recurrences}
-								onChange={setRecurrences}
-							/>
-						)}
-					</FormControl>
-				)}
+
+				<div className="recurrence-type-details">
+					{type === "byDate" ? (
+						<DateInput value={untilDate} onChange={setUntilDate} />
+					) : (
+						<FormControl component="fieldset">
+							<FormLabel component="legend">Total</FormLabel>
+							<RadioGroup
+								row
+								value={recurrenceType}
+								onChange={(e) =>
+									setRecurrencesType(
+										(e.target as HTMLInputElement).value as
+											| "infinite"
+											| "oneTime"
+											| "other"
+									)
+								}
+							>
+								<FormControlLabel
+									value="oneTime"
+									control={<Radio size="small" />}
+									label="1"
+								/>
+								<FormControlLabel
+									value="infinite"
+									control={<Radio size="small" />}
+									label="∞"
+								/>
+								<FormControlLabel
+									value="other"
+									control={<Radio size="small" />}
+									label="Other"
+								/>
+							</RadioGroup>
+							{recurrenceType === "other" && (
+								<Input<number>
+									id="recurrences"
+									label="Times"
+									value={recurrences}
+									onChange={setRecurrences}
+									error={
+										showErrors
+											? errors.recurrences
+											: undefined
+									}
+								/>
+							)}
+						</FormControl>
+					)}
+				</div>
 			</div>
+
 			{recurrenceType !== "oneTime" && (
-				<Input<string>
-					id="frequency"
-					label="Frequency String"
-					value={frequencyString}
-					onChange={setFrequencyString}
-				/>
+				<FormControl component="fieldset" className="frequency-control">
+					<FormLabel component="legend">Frequency</FormLabel>
+					<RadioGroup
+						row
+						value={frequencyType}
+						onChange={(e) =>
+							setFrequencyType(
+								(e.target as HTMLInputElement)
+									.value as FrequencyType
+							)
+						}
+					>
+						<FormControlLabel
+							value="daily"
+							control={<Radio size="small" />}
+							label="Daily"
+						/>
+						<FormControlLabel
+							value="weekly"
+							control={<Radio size="small" />}
+							label="Weekly"
+						/>
+						<FormControlLabel
+							value="monthly"
+							control={<Radio size="small" />}
+							label="Monthly"
+						/>
+						<FormControlLabel
+							value="yearly"
+							control={<Radio size="small" />}
+							label="Yearly"
+						/>
+						<FormControlLabel
+							value="other"
+							control={<Radio size="small" />}
+							label="Other"
+						/>
+					</RadioGroup>
+					{frequencyType === "other" && (
+						<Input<string>
+							id="frequency"
+							label="Frequency String"
+							value={frequencyString}
+							onChange={setFrequencyString}
+							error={
+								showErrors ? errors.frequencyString : undefined
+							}
+						/>
+					)}
+				</FormControl>
 			)}
-		</>
+		</div>
 	);
 	return {
 		RecurrenceForm,
@@ -146,5 +247,6 @@ export const useCreateRecurrenceForm = ({
 		recurrenceType,
 		recurrences,
 		frequencyString,
+		isValid,
 	};
 };

@@ -1,0 +1,6 @@
+---
+description: 
+globs: *.tsx
+alwaysApply: true
+---
+For UI changes, they should be implemented to work correctly on tablets and mobile devices.

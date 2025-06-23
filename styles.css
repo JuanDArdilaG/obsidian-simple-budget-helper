@@ -145,3 +145,45 @@ input {
 .MuiChartsLegend-label {
 	color: var(--text-normal);
 }
+
+.form-row {
+	display: flex;
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.form-row > * {
+	flex: 1;
+}
+
+.recurrence-form-container {
+	margin-top: 16px;
+}
+
+.recurrence-form-controls {
+	display: flex;
+	gap: 16px;
+	flex-wrap: wrap;
+	align-items: flex-start;
+}
+
+.recurrence-type-details {
+	display: flex;
+	flex-direction: column;
+}
+
+.frequency-control {
+	margin-top: 16px;
+}
+
+@media (max-width: 480px) {
+	.form-row {
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	.recurrence-form-controls {
+		flex-direction: column;
+		gap: 10px;
+	}
+}
