@@ -37,6 +37,16 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		);
 	}
 
+	copy(): Account {
+		return new Account(
+			this._id,
+			this._type,
+			this._name,
+			this._balance,
+			this._updatedAt
+		);
+	}
+
 	get type(): AccountType {
 		return this._type;
 	}
