@@ -74,9 +74,24 @@ export class ItemsWithAccumulatedBalanceUseCase
 	filter(
 		items: GetItemsUntilDateUseCaseOutput
 	): GetItemsUntilDateUseCaseOutput {
-		return items.filter(
-			({ recurrence }) => recurrence.state === ERecurrenceState.PENDING
+		this.#logger.debug("filter", {
+			totalItems: items.length,
+			itemsByState: items.reduce((acc, item) => {
+				const state = item.recurrence.state;
+				acc[state] = (acc[state] || 0) + 1;
+				return acc;
+			}, {} as Record<string, number>),
+		});
+
+		const filtered = items.filter(
+			({ recurrence }) => recurrence.state !== ERecurrenceState.DELETED
 		);
+
+		this.#logger.debug("filtered", {
+			filteredCount: filtered.length,
+		});
+
+		return filtered;
 	}
 
 	addAccounts(
@@ -114,15 +129,29 @@ export class ItemsWithAccumulatedBalanceUseCase
 	}
 
 	initialAccountsBalance(
-		itemsWithAccount: ItemWithAccounts[]
+		itemsWithAccount: ItemWithAccounts[],
+		allAccounts: Account[]
 	): Record<string, AccountBalance> {
 		const result: Record<string, AccountBalance> = {};
+
+		// Initialize all accounts with their current balance
+		allAccounts.forEach((account) => {
+			result[account.id.value] = account.balance;
+		});
+
+		// Override with any accounts that have transactions (this shouldn't change anything but ensures consistency)
 		itemsWithAccount.forEach(({ account, toAccount }) => {
 			result[account.id.value] = account.balance;
 			if (toAccount) result[toAccount.id.value] = toAccount.balance;
 		});
+
 		this.#logger.debug("initialAccountsBalance", {
-			result,
+			totalAccounts: allAccounts.length,
+			accountsWithTransactions: itemsWithAccount.length,
+			accountBalances: Object.keys(result).map((accountId) => ({
+				accountId,
+				balance: result[accountId].value.toString(),
+			})),
 		});
 		return result;
 	}
@@ -178,9 +207,25 @@ export class ItemsWithAccumulatedBalanceUseCase
 		this.#logger.debug("execute", { untilDate });
 
 		const recurrenceItems = await this.getItems(untilDate);
+		this.#logger.debug("recurrenceItems", {
+			count: recurrenceItems.length,
+			items: recurrenceItems.map((item) => ({
+				itemName: item.item.name.toString(),
+				date: item.recurrence.date.toString(),
+				state: item.recurrence.state,
+			})),
+		});
+
 		if (!this.preValidate(recurrenceItems)) return [];
 
 		const accounts = await this.getAccounts();
+		this.#logger.debug("accounts", {
+			count: accounts.length,
+			accounts: accounts.map((acc) => ({
+				name: acc.name.toString(),
+				balance: acc.balance.value.toString(),
+			})),
+		});
 
 		const sortedItems = this.sort(recurrenceItems);
 		const filteredItems = this.filter(sortedItems);
@@ -190,7 +235,7 @@ export class ItemsWithAccumulatedBalanceUseCase
 			itemsWithAccount,
 		});
 		const initialAccountsBalance: Record<string, AccountBalance> =
-			this.initialAccountsBalance(itemsWithAccount);
+			this.initialAccountsBalance(itemsWithAccount, accounts);
 
 		const results = [];
 
@@ -231,6 +276,15 @@ export class ItemsWithAccumulatedBalanceUseCase
 				toAccountBalance: newToAccountBalance,
 			});
 		}
+
+		this.#logger.debug("final results", {
+			count: results.length,
+			results: results.map((result) => ({
+				itemName: result.item.name.toString(),
+				accountBalance: result.accountBalance.value.toString(),
+				date: result.recurrence.date.toString(),
+			})),
+		});
 
 		return results;
 	}

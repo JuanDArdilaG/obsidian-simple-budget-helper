@@ -1,9 +1,7 @@
-import { useContext, useEffect, useMemo, useState } from "react";
-import { RightSidebarReactTab } from "../RightSidebarReactTab";
-import { AccountsContext, ItemsContext } from "../Contexts";
-import { AccountsReport } from "contexts/Reports/domain/accounts-report.entity";
-import { CreateAccountPanel } from "apps/obsidian-plugin/panels/CreateAccountPanel";
+import { DateValueObject } from "@juandardilag/value-objects";
 import {
+	Alert,
+	Box,
 	Checkbox,
 	FormControlLabel,
 	List,
@@ -11,54 +9,200 @@ import {
 	Typography,
 } from "@mui/material";
 import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
-import { DateValueObject } from "@juandardilag/value-objects";
+import { CreateAccountPanel } from "apps/obsidian-plugin/panels/CreateAccountPanel";
+import { Account } from "contexts/Accounts/domain";
 import { ItemWithAccumulatedBalance } from "contexts/Items/application/items-with-accumulated-balance.usecase";
+import { AccountsReport } from "contexts/Reports/domain/accounts-report.entity";
+import React, { useContext, useEffect, useMemo, useState } from "react";
+import { AccountsContext, ItemsContext } from "../Contexts";
+import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { AccountsListItem } from "./AccountsListItem";
 
 export const AccountsList = () => {
 	const { accounts, updateAccounts } = useContext(AccountsContext);
-	const report = useMemo(() => new AccountsReport(accounts), [accounts]);
 	const {
 		useCases: { itemsWithAccumulatedBalanceUseCase },
 	} = useContext(ItemsContext);
 	const [showCreateForm, setShowCreateForm] = useState(false);
 
-	const [project, setProject] = useState(false);
-	const { date, DateInput } = useDateInput({
+	const [showProjectedBalances, setShowProjectedBalances] = useState(false);
+	const { date, DateInput, setDate } = useDateInput({
 		initialValue: new Date(),
-		label: "Date",
-		lock: !project,
+		label: "Balance Date",
+		lock: false, // Always allow date selection
+		withTime: false, // Hide time selection
 	});
 
 	const [itemsWithAccountsBalance, setItemsWithAccountsBalance] = useState<
 		ItemWithAccumulatedBalance[]
 	>([]);
-	useEffect(() => {
-		itemsWithAccumulatedBalanceUseCase
-			.execute(new DateValueObject(date))
-			.then(setItemsWithAccountsBalance);
-	}, [date]);
 
-	const accountsWithBalance = useMemo(
-		() =>
-			accounts.map((account) => {
-				const newBalance = project
-					? itemsWithAccountsBalance.findLast(
-							({ recurrence: item }) =>
-								item.account?.equalTo(account.id)
-					  )?.accountBalance ?? account.balance
-					: account.balance;
-				account.updateBalance(newBalance);
-				console.log({
-					project,
-					account: account.toPrimitives(),
-					itemsWithAccountsBalance,
-					newBalance: newBalance.value.value,
+	const [isLoadingProjection, setIsLoadingProjection] = useState(false);
+
+	// Set the time to 23:59:59 whenever the date changes
+	useEffect(() => {
+		const dateWithEndTime = new Date(date);
+		dateWithEndTime.setHours(23, 59, 59, 999);
+		if (dateWithEndTime.getTime() !== date.getTime()) {
+			setDate(dateWithEndTime);
+		}
+	}, [date, setDate]);
+
+	// Helper function to calculate the impact of a transaction on a specific account
+	const calculateTransactionImpact = (
+		item: ItemWithAccumulatedBalance,
+		account: Account
+	) => {
+		const { recurrence, item: originalItem } = item;
+
+		// Get the real price for this account from the recurrence
+		const impact = recurrence.getRealPriceForAccount(
+			originalItem.operation,
+			account,
+			originalItem.fromAmount,
+			originalItem.operation.account,
+			originalItem.operation.toAccount
+		);
+
+		return impact;
+	};
+
+	// Load projected balances when date or projection toggle changes
+	useEffect(() => {
+		if (showProjectedBalances) {
+			setIsLoadingProjection(true);
+			itemsWithAccumulatedBalanceUseCase
+				.execute(new DateValueObject(date))
+				.then((result: ItemWithAccumulatedBalance[]) => {
+					console.log("Projected balances result:", {
+						totalItems: result.length,
+						items: result.map((item) => ({
+							itemName: item.item.name.toString(),
+							date: item.recurrence.date.toString(),
+							state: item.recurrence.state,
+							accountBalance:
+								item.accountBalance.value.toString(),
+							account: item.recurrence.account?.value,
+							itemOperationAccount:
+								item.item.operation.account.value,
+							itemOperationToAccount:
+								item.item.operation.toAccount?.value,
+						})),
+					});
+					setItemsWithAccountsBalance(result);
+					setIsLoadingProjection(false);
+				})
+				.catch((error) => {
+					console.error(
+						"Error calculating projected balances:",
+						error
+					);
+					setIsLoadingProjection(false);
 				});
-				return account;
-			}),
-		[accounts, itemsWithAccountsBalance, project]
+		} else {
+			setItemsWithAccountsBalance([]);
+		}
+	}, [date, showProjectedBalances, itemsWithAccumulatedBalanceUseCase]);
+
+	const accountsWithBalance = useMemo(() => {
+		console.log("Calculating accountsWithBalance:", {
+			showProjectedBalances,
+			itemsWithAccountsBalance: itemsWithAccountsBalance.length,
+			accounts: accounts.length,
+		});
+
+		return accounts.map((account) => {
+			if (!showProjectedBalances) {
+				return account; // Use current balance
+			}
+
+			// Find all items that affect this account
+			const accountItems = itemsWithAccountsBalance.filter(
+				({ recurrence, item }: ItemWithAccumulatedBalance) => {
+					// Check if this account is involved in the transaction
+					const isMainAccount =
+						recurrence.account?.equalTo(account.id) ||
+						item.operation.account.equalTo(account.id);
+					const isToAccount = item.operation.toAccount?.equalTo(
+						account.id
+					);
+
+					return isMainAccount || isToAccount;
+				}
+			);
+
+			console.log(`Account ${account.name.toString()}:`, {
+				originalBalance: account.balance.value.toString(),
+				accountItemsCount: accountItems.length,
+				accountItems: accountItems.map((item) => ({
+					itemName: item.item.name.toString(),
+					accountBalance: item.accountBalance.value.toString(),
+					date: item.recurrence.date.toString(),
+					isMainAccount:
+						item.recurrence.account?.equalTo(account.id) ||
+						item.item.operation.account.equalTo(account.id),
+					isToAccount: item.item.operation.toAccount?.equalTo(
+						account.id
+					),
+				})),
+			});
+
+			// Calculate the projected balance by processing transactions chronologically
+			let projectedBalance = account.balance; // Start with current balance
+
+			if (accountItems.length > 0) {
+				// Sort items by date to ensure chronological order
+				const sortedItems = accountItems.sort((a, b) =>
+					a.recurrence.date.compareTo(b.recurrence.date)
+				);
+
+				// Process each transaction chronologically
+				for (const item of sortedItems) {
+					// Calculate the impact of this transaction on the account
+					const impact = calculateTransactionImpact(item, account);
+					const previousBalance = projectedBalance;
+					projectedBalance = projectedBalance.plus(impact);
+
+					console.log(
+						`Transaction ${item.item.name.toString()} on ${item.recurrence.date.toString()}:`,
+						{
+							previousBalance: previousBalance.value.toString(),
+							impact: impact.value.toString(),
+							newBalance: projectedBalance.value.toString(),
+						}
+					);
+				}
+
+				console.log(
+					`Account ${account.name.toString()} final projected balance:`,
+					projectedBalance.value.toString()
+				);
+			}
+
+			if (accountItems.length > 0) {
+				// Create a copy of the account with the projected balance
+				const accountCopy = account.copy();
+				accountCopy.updateBalance(projectedBalance);
+				console.log(
+					`Updated ${account.name.toString()} balance to:`,
+					projectedBalance.value.toString()
+				);
+				return accountCopy;
+			}
+
+			console.log(
+				`No projected balance found for ${account.name.toString()}, using current balance`
+			);
+			return account; // Fallback to current balance
+		});
+	}, [accounts, itemsWithAccountsBalance, showProjectedBalances]);
+
+	const projectedReport = useMemo(
+		() => new AccountsReport(accountsWithBalance),
+		[accountsWithBalance]
 	);
+
+	const isProjectingToFuture = date > new Date();
 
 	return (
 		<RightSidebarReactTab
@@ -76,19 +220,45 @@ export const AccountsList = () => {
 				/>
 			)}
 
-			<FormControlLabel
-				control={
-					<Checkbox
-						checked={project}
-						onChange={(e) => {
-							const checked = e.target.checked;
-							setProject(checked);
-						}}
-					/>
-				}
-				label="Project"
-			/>
-			{DateInput}
+			<Box sx={{ mb: 2 }}>
+				{DateInput}
+
+				<FormControlLabel
+					control={
+						<Checkbox
+							checked={showProjectedBalances}
+							onChange={(
+								e: React.ChangeEvent<HTMLInputElement>
+							) => {
+								setShowProjectedBalances(e.target.checked);
+							}}
+							disabled={isLoadingProjection}
+						/>
+					}
+					label={`Show balances as of ${date.toLocaleDateString()}`}
+				/>
+
+				{showProjectedBalances && isProjectingToFuture && (
+					<Alert severity="info" sx={{ mt: 1, mb: 1 }}>
+						Showing projected balances including scheduled items
+						through {date.toLocaleDateString()}
+					</Alert>
+				)}
+
+				{showProjectedBalances && !isProjectingToFuture && (
+					<Alert severity="warning" sx={{ mt: 1, mb: 1 }}>
+						Showing historical balances as of{" "}
+						{date.toLocaleDateString()}
+					</Alert>
+				)}
+
+				{isLoadingProjection && (
+					<Alert severity="info" sx={{ mt: 1, mb: 1 }}>
+						Calculating projected balances...
+					</Alert>
+				)}
+			</Box>
+
 			<Typography variant="h4">
 				Assets{" "}
 				<span
@@ -98,7 +268,14 @@ export const AccountsList = () => {
 						paddingLeft: "5px",
 					}}
 				>
-					Total: {report.getTotalForAssets().toString()}
+					Total: {projectedReport.getTotalForAssets().toString()}
+					{showProjectedBalances && (
+						<span
+							style={{ fontStyle: "italic", marginLeft: "5px" }}
+						>
+							(as of {date.toLocaleDateString()})
+						</span>
+					)}
 				</span>
 			</Typography>
 			<List>
@@ -115,6 +292,7 @@ export const AccountsList = () => {
 						</ListItem>
 					))}
 			</List>
+
 			<Typography variant="h4">
 				Liabilities{" "}
 				<span
@@ -124,7 +302,14 @@ export const AccountsList = () => {
 						paddingLeft: "5px",
 					}}
 				>
-					Total: {report.getTotalForLiabilites().toString()}
+					Total: {projectedReport.getTotalForLiabilites().toString()}
+					{showProjectedBalances && (
+						<span
+							style={{ fontStyle: "italic", marginLeft: "5px" }}
+						>
+							(as of {date.toLocaleDateString()})
+						</span>
+					)}
 				</span>
 			</Typography>
 			<List>
@@ -141,8 +326,16 @@ export const AccountsList = () => {
 						</ListItem>
 					))}
 			</List>
+
 			<br />
-			<div>Total: {report.getTotal().toString()}</div>
+			<div>
+				Total: {projectedReport.getTotal().toString()}
+				{showProjectedBalances && (
+					<span style={{ fontStyle: "italic", marginLeft: "5px" }}>
+						(as of {date.toLocaleDateString()})
+					</span>
+				)}
+			</div>
 		</RightSidebarReactTab>
 	);
 };
