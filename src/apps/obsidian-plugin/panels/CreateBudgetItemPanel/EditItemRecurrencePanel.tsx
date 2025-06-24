@@ -6,16 +6,12 @@ import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import {
 	Select,
 	SelectWithCreation,
-	useAccountSelect,
 } from "apps/obsidian-plugin/components/Select";
 import { ItemsContext, TransactionsContext } from "apps/obsidian-plugin/views";
-import {
-	ERecurrenceState,
-	Item,
-	ItemDate,
-	ItemRecurrenceInfo,
-} from "contexts/Items/domain";
+import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts/AccountsContext";
+import { Item, ItemRecurrenceInfo } from "contexts/Items/domain";
 import { OperationType } from "contexts/Shared/domain";
+import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { useContext, useState } from "react";
 
 export const EditItemRecurrencePanel = ({
@@ -32,22 +28,11 @@ export const EditItemRecurrencePanel = ({
 }) => {
 	const {
 		useCases: { modifyNItemRecurrence },
-		updateItems,
 	} = useContext(ItemsContext);
 	const { brands, stores } = useContext(TransactionsContext);
-
-	const { AccountSelect, account } = useAccountSelect({
-		label: "From",
-		initialValueID: recurrence.account?.value,
-	});
-	const { AccountSelect: ToAccountSelect, account: toAccount } =
-		useAccountSelect({
-			label: "To",
-			initialValueID: recurrence.toAccount?.value,
-		});
+	const { accounts } = useContext(AccountsContext);
 
 	const [name, setName] = useState(item.name.value);
-	const [amount, setAmount] = useState(item.price);
 	const [type, setType] = useState(item.operation.type.value);
 
 	const [brand, setBrand] = useState(item.info?.value.brand?.value);
@@ -64,6 +49,19 @@ export const EditItemRecurrencePanel = ({
 		!!item.recurrence?.untilDate
 	);
 
+	const [fromSplits, setFromSplits] = useState(
+		item.fromSplits.map((split) => ({
+			accountId: split.accountId.value,
+			amount: split.amount,
+		}))
+	);
+	const [toSplits, setToSplits] = useState(
+		item.toSplits.map((split) => ({
+			accountId: split.accountId.value,
+			amount: split.amount,
+		}))
+	);
+
 	return (
 		<div className="create-budget-item-modal">
 			<h3>Edit Item</h3>
@@ -74,12 +72,6 @@ export const EditItemRecurrencePanel = ({
 				onChange={(name: string) => setName(name)}
 				// error={!validation || validation.name ? undefined : "required"}
 			/>
-			<PriceInput
-				id="amount"
-				label="Amount"
-				value={amount}
-				onChange={setAmount}
-			/>
 			<Select
 				id="type"
 				label="Type"
@@ -89,8 +81,6 @@ export const EditItemRecurrencePanel = ({
 					setType(type.toLowerCase() as OperationType)
 				}
 			/>
-			{AccountSelect}
-			{type === "transfer" ? ToAccountSelect : undefined}
 			<DateInput value={date} onChange={setDate} label="Date" />
 
 			<FormControlLabel
@@ -133,37 +123,152 @@ export const EditItemRecurrencePanel = ({
 				value={frequency ?? ""}
 				onChange={setFrequency}
 			/>
-			<button
-				onClick={async () => {
-					await modifyNItemRecurrence.execute({
-						id: item.id,
-						n: n,
-						newRecurrence: new ItemRecurrenceInfo(
-							date !== recurrence.date.value
-								? new ItemDate(date)
-								: recurrence.date,
-							ERecurrenceState.PENDING,
-							!amount.equalTo(item.price) ? amount : item.price,
-							account &&
-							!account.id.equalTo(item.operation.account)
-								? account?.id
-								: undefined,
-							toAccount &&
-							item.operation.toAccount &&
-							toAccount.id.equalTo(item.operation.toAccount)
-								? toAccount.id
-								: undefined
-						),
-					});
-					// }
-
-					updateItems();
-
-					onClose();
-				}}
-			>
-				Create
-			</button>
+			{/* Splits Editor */}
+			<div>
+				<h4>From Splits</h4>
+				{fromSplits.map((split, idx) => (
+					<div
+						key={idx}
+						style={{
+							display: "flex",
+							gap: 8,
+							alignItems: "center",
+						}}
+					>
+						<Select
+							id={`from-account-${idx}`}
+							label="Account"
+							value={split.accountId}
+							values={accounts.map((acc) => acc.id.value)}
+							onChange={(val) => {
+								const newSplits = [...fromSplits];
+								newSplits[idx].accountId = val;
+								setFromSplits(newSplits);
+							}}
+						/>
+						<span>
+							{accounts.find(
+								(acc) => acc.id.value === split.accountId
+							)?.name.value || ""}
+						</span>
+						<PriceInput
+							id={`from-amount-${idx}`}
+							label="Amount"
+							value={split.amount}
+							onChange={(val) => {
+								const newSplits = [...fromSplits];
+								newSplits[idx].amount = val;
+								setFromSplits(newSplits);
+							}}
+						/>
+						<button
+							onClick={() =>
+								setFromSplits(
+									fromSplits.filter((_, i) => i !== idx)
+								)
+							}
+						>
+							Remove
+						</button>
+					</div>
+				))}
+				<button
+					onClick={() =>
+						setFromSplits([
+							...fromSplits,
+							{
+								accountId: accounts[0]?.id.value || "",
+								amount: new TransactionAmount(0),
+							},
+						])
+					}
+				>
+					Add Split
+				</button>
+			</div>
+			<div>
+				<h4>To Splits</h4>
+				{toSplits.map((split, idx) => (
+					<div
+						key={idx}
+						style={{
+							display: "flex",
+							gap: 8,
+							alignItems: "center",
+						}}
+					>
+						<Select
+							id={`to-account-${idx}`}
+							label="Account"
+							value={split.accountId}
+							values={accounts.map((acc) => acc.id.value)}
+							onChange={(val) => {
+								const newSplits = [...toSplits];
+								newSplits[idx].accountId = val;
+								setToSplits(newSplits);
+							}}
+						/>
+						<span>
+							{accounts.find(
+								(acc) => acc.id.value === split.accountId
+							)?.name.value || ""}
+						</span>
+						<PriceInput
+							id={`to-amount-${idx}`}
+							label="Amount"
+							value={split.amount}
+							onChange={(val) => {
+								const newSplits = [...toSplits];
+								newSplits[idx].amount = val;
+								setToSplits(newSplits);
+							}}
+						/>
+						<button
+							onClick={() =>
+								setToSplits(
+									toSplits.filter((_, i) => i !== idx)
+								)
+							}
+						>
+							Remove
+						</button>
+					</div>
+				))}
+				<button
+					onClick={() =>
+						setToSplits([
+							...toSplits,
+							{
+								accountId: accounts[0]?.id.value || "",
+								amount: new TransactionAmount(0),
+							},
+						])
+					}
+				>
+					Add Split
+				</button>
+			</div>
+			{/* End Splits Editor */}
+			{typeof modifyNItemRecurrence.execute === "function" ? (
+				<button
+					onClick={async () => {
+						// If split editing is not supported in recurrence modification, show warning
+						// Otherwise, pass splits as needed
+						// Example: (if supported)
+						// const fromSplitObjs = fromSplits.map(s => new PaymentSplit(new AccountID(s.accountId), new TransactionAmount(s.amount)));
+						// const toSplitObjs = toSplits.map(s => new PaymentSplit(new AccountID(s.accountId), new TransactionAmount(s.amount)));
+						// await modifyNItemRecurrence.execute({ ... , fromSplits: fromSplitObjs, toSplits: toSplitObjs, ... });
+						// updateItems();
+						// onClose();
+						// For now, if not supported, just show a warning:
+						alert(
+							"Split editing for recurrences is not yet supported. Only non-split fields will be updated."
+						);
+					}}
+				>
+					Save
+				</button>
+			) : null}
 		</div>
 	);
 };

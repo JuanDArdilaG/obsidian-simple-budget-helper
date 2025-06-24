@@ -53,18 +53,26 @@ export const CreateItemForm = ({
 		operation: false,
 		recurrence: false,
 		updatedAt: false,
+		fromSplits: false,
+		toSplits: false,
 	});
-	const [item, setItem] = useState<ItemPrimitives>(Item.emptyPrimitives());
+	const [item, setItem] = useState<ItemPrimitives>({
+		...Item.emptyPrimitives(),
+		fromSplits: [{ accountId: "", amount: 0 }],
+		toSplits: [],
+	});
 	const [selectedItem, setSelectedItem] = useState<ItemPrimitives>();
 
 	const [errors, setErrors] = useState<{
 		name: string | undefined;
-		price: string | undefined;
+		fromSplits: string | undefined;
+		toSplits: string | undefined;
 		account: string | undefined;
 		toAccount: string | undefined;
 	}>({
 		name: undefined,
-		price: undefined,
+		fromSplits: undefined,
+		toSplits: undefined,
 		account: undefined,
 		toAccount: undefined,
 	});
@@ -73,17 +81,11 @@ export const CreateItemForm = ({
 	const { DateInput, date } = useDateInput({
 		id: "date",
 	});
-	const { AccountSelect, account } = useAccountSelect({
+	const { AccountSelect } = useAccountSelect({
 		label: "From",
 		initialValueID: item.operation.account,
 		error: showErrors ? errors.account : undefined,
 	});
-	const { AccountSelect: ToAccountSelect, account: toAccount } =
-		useAccountSelect({
-			label: "To",
-			initialValueID: item.operation.toAccount,
-			error: showErrors ? errors.toAccount : undefined,
-		});
 	const { CategorySelect, category } = useCategorySelect({
 		initialValueID: item.category,
 		lock: locks.category,
@@ -104,19 +106,28 @@ export const CreateItemForm = ({
 	};
 
 	useEffect(() => {
+		// Calculate total from fromSplits
+		const totalAmount = (item.fromSplits || []).reduce(
+			(sum, split) => sum + (split.amount || 0),
+			0
+		);
 		const newErrors = {
 			name: !item.name.trim() ? "Name is required" : undefined,
-			price:
-				item.price <= 0 ? "Amount must be greater than 0" : undefined,
-			account: !account ? "Account is required" : undefined,
+			fromSplits:
+				totalAmount <= 0 ? "Amount must be greater than 0" : undefined,
+			toSplits: undefined,
+			account: !(item.fromSplits && item.fromSplits[0]?.accountId)
+				? "Account is required"
+				: undefined,
 			toAccount:
-				item.operation.type === "transfer" && !toAccount
+				item.operation.type === "transfer" &&
+				!(item.toSplits && item.toSplits[0]?.accountId)
 					? "To account is required"
 					: undefined,
 		};
 		setErrors(newErrors);
 		setIsFormValid(!Object.values(newErrors).some((err) => err));
-	}, [item, account, toAccount]);
+	}, [item]);
 
 	useEffect(() => {
 		if (selectedItem) {
@@ -124,7 +135,8 @@ export const CreateItemForm = ({
 			const toUpdate: Partial<ItemPrimitives> = {
 				operation: getLockedOrSelectedValue("operation"),
 				name: getLockedOrSelectedValue("name"),
-				price: getLockedOrSelectedValue("price"),
+				fromSplits: getLockedOrSelectedValue("fromSplits"),
+				toSplits: getLockedOrSelectedValue("toSplits"),
 				category: getLockedOrSelectedValue("category"),
 				subCategory: getLockedOrSelectedValue("subCategory"),
 				brand: getLockedOrSelectedValue("brand"),
@@ -154,7 +166,10 @@ export const CreateItemForm = ({
 		if (newValues.name !== undefined) newItem.name = newValues.name;
 		if (newValues.operation !== undefined)
 			newItem.operation = newValues.operation;
-		if (newValues.price !== undefined) newItem.price = newValues.price;
+		if (newValues.fromSplits !== undefined)
+			newItem.fromSplits = newValues.fromSplits;
+		if (newValues.toSplits !== undefined)
+			newItem.toSplits = newValues.toSplits;
 		if (newValues.category !== undefined)
 			newItem.category = newValues.category;
 		if (newValues.subCategory !== undefined)
@@ -175,44 +190,22 @@ export const CreateItemForm = ({
 
 	const handleSubmit = (withClose: boolean) => async () => {
 		if (!item) return;
-
 		const itemToPersist = Item.fromPrimitives({
 			...item,
 			id: ItemID.generate().value,
 			category: category?.id.value ?? "",
 			subCategory: subCategory?.id.value ?? "",
-			operation: {
-				...item.operation,
-				account: account?.id.value ?? "",
-				toAccount: toAccount?.id.value,
-			},
+			fromSplits: item.fromSplits,
+			toSplits: item.toSplits,
+			operation: item.operation,
 		});
-
 		await onSubmit(itemToPersist, new TransactionDate(date));
-
 		if (withClose) return close();
 		setSelectedItem(undefined);
 		setItem({
-			id: "",
-			name: locks.name ? item.name : "",
-			price: locks.price ? item.price : 0,
-			category: locks.category ? item.category : "",
-			subCategory: locks.subCategory ? item.subCategory : "",
-			brand: locks.brand ? item.brand : "",
-			store: locks.store ? item.store : "",
-			recurrence: {
-				recurrences: [],
-				startDate: new Date(),
-			},
-			operation: {
-				// type: locks.operation ? item.operation : "expense",
-				type: "expense",
-				// account: locks.account ? item.account : "",
-				account: item.operation.account,
-				// toAccount: locks.toAccount ? item.toAccount : "",
-				toAccount: item.operation.toAccount,
-			},
-			updatedAt: new Date().toISOString(),
+			...Item.emptyPrimitives(),
+			fromSplits: [{ accountId: "", amount: 0 }],
+			toSplits: [],
 		});
 	};
 
@@ -248,9 +241,12 @@ export const CreateItemForm = ({
 							  } - `
 							: ""
 					}${
-						item.price === 0
+						item.fromSplits?.[0]?.amount === 0
 							? ""
-							: "  " + new ItemPrice(item.price).toString()
+							: "  " +
+							  new ItemPrice(
+									item.fromSplits?.[0]?.amount ?? 0
+							  ).toString()
 					}`;
 					return label.length > 40
 						? label.slice(0, 40) + "..."
@@ -271,13 +267,19 @@ export const CreateItemForm = ({
 					isLocked={locks.price}
 					setIsLocked={(value) => updateLock("price", value)}
 					value={
-						new PriceValueObject(item.price, {
-							withSign: false,
-							decimals: 0,
-						})
+						new PriceValueObject(
+							item.fromSplits?.reduce(
+								(sum, split) => sum + split.amount,
+								0
+							) ?? 0,
+							{
+								withSign: false,
+								decimals: 0,
+							}
+						)
 					}
 					onChange={(amount) => update({ price: amount.toNumber() })}
-					error={showErrors ? errors.price : undefined}
+					error={showErrors ? errors.fromSplits : undefined}
 				/>
 			</div>
 			<div className="form-row">
@@ -298,7 +300,6 @@ export const CreateItemForm = ({
 					setIsLocked={(value) => updateLock("operation", value)}
 				/>
 				{AccountSelect}
-				{item.operation.type === "transfer" && ToAccountSelect}
 			</div>
 			<div className="form-row">
 				{CategorySelect}

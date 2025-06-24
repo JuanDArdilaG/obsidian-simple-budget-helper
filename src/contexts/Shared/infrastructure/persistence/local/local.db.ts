@@ -185,10 +185,15 @@ export class LocalDB extends DB {
 				throw new Error("Invalid data format");
 			}
 
-			// Check version compatibility
-			if (!this.dataVersioning.isCompatible(data.version)) {
+			// Check if migration is needed (when version is different from current)
+			const currentVersion = this.dataVersioning.getCurrentVersion();
+			if (data.version !== currentVersion) {
 				this.logger.debug(
-					"Data version mismatch, attempting migration"
+					"Data version differs from current version, attempting migration",
+					{
+						dataVersion: data.version,
+						currentVersion: currentVersion,
+					}
 				);
 				data = (await this.dataVersioning.migrateData(
 					data

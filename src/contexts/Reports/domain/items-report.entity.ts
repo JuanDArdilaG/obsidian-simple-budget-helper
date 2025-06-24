@@ -1,4 +1,5 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
+import { AccountID, AccountType } from "contexts/Accounts/domain";
 import { GetAllCategoriesWithSubCategoriesUseCaseOutput } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 import { Category } from "contexts/Categories/domain";
 import { Item } from "contexts/Items/domain";
@@ -28,6 +29,9 @@ export type ItemsWithCategoryAndSubCategory = {
 
 export class ItemsReport {
 	readonly _ = new Logger("ItemsReport");
+	private static defaultAccountTypeLookup = () => {
+		return new AccountType("asset");
+	};
 	constructor(readonly items: Item[]) {}
 
 	onlyExpenses(): ItemsReport {
@@ -115,23 +119,33 @@ export class ItemsReport {
 		);
 	}
 
-	getTotalPerMonth(): ReportBalance {
+	getTotalPerMonth(
+		accountTypeLookup?: (id: AccountID) => AccountType
+	): ReportBalance {
+		const lookup =
+			accountTypeLookup || ItemsReport.defaultAccountTypeLookup;
 		return this.items.reduce(
-			(total, item) => total.plus(item.pricePerMonth),
+			(total, item) =>
+				total.plus(item.getPricePerMonthWithAccountTypes(lookup)),
 			ReportBalance.zero()
 		);
 	}
 
 	groupPerCategory(
-		categoriesWithSubcategories: GetAllCategoriesWithSubCategoriesUseCaseOutput
+		categoriesWithSubcategories: GetAllCategoriesWithSubCategoriesUseCaseOutput,
+		accountTypeLookup?: (id: AccountID) => AccountType
 	): {
 		perMonthExpensesPercentage: NumberValueObject;
 		perMonthInverseOperationPercentage: NumberValueObject;
 		items: ItemsWithCategoryAndSubCategory[];
 	} {
+		const lookup =
+			accountTypeLookup || ItemsReport.defaultAccountTypeLookup;
 		const res: ItemsWithCategoryAndSubCategory[] = [];
-		const totalExpenses = this.onlyExpenses().getTotalPerMonth().abs();
-		const totalIncomes = this.onlyIncomes().getTotalPerMonth().abs();
+		const totalExpenses = this.onlyExpenses()
+			.getTotalPerMonth(lookup)
+			.abs();
+		const totalIncomes = this.onlyIncomes().getTotalPerMonth(lookup).abs();
 		const expenses = NumberValueObject.zero();
 		const inverseOperation = NumberValueObject.zero();
 		this.items
@@ -157,10 +171,12 @@ export class ItemsReport {
 					});
 					r = res.last();
 				}
+				const itemPricePerMonth =
+					item.getPricePerMonthWithAccountTypes(lookup);
 				if (r?.category.percentageOperation !== undefined)
 					r.category.percentageOperation =
 						r.category.percentageOperation.plus(
-							item.pricePerMonth.abs()
+							itemPricePerMonth.abs()
 						);
 				let rS = r?.subCategoriesItems.find(({ subCategory }) =>
 					subCategory.subCategory.id.equalTo(item.subCategory)
@@ -185,16 +201,16 @@ export class ItemsReport {
 				if (rS?.subCategory.percentageOperation !== undefined)
 					rS.subCategory.percentageOperation =
 						rS.subCategory.percentageOperation.plus(
-							item.pricePerMonth.abs()
+							itemPricePerMonth.abs()
 						);
 				rS?.items.push({
 					item,
-					percentageOperation: item.pricePerMonth
+					percentageOperation: itemPricePerMonth
 						.abs()
 						.divide(totalExpenses)
 						.times(new NumberValueObject(100))
 						.fixed(2),
-					percentageInverseOperation: item.pricePerMonth
+					percentageInverseOperation: itemPricePerMonth
 						.abs()
 						.divide(totalIncomes)
 						.times(new NumberValueObject(100))

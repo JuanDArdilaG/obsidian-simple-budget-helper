@@ -1,11 +1,12 @@
-import { describe, expect, it } from "vitest";
-import { buildTestTransactions } from "../domain/buildTestTransactions";
+import { AccountID } from "contexts/Accounts/domain";
+import { Category, CategoryName } from "contexts/Categories/domain";
 import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
 import { TransactionsReport } from "contexts/Reports/domain";
+import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
+import { describe, expect, it } from "vitest";
 import { CategoriesServiceMock } from "../../Categories/application/categories-service.mock";
 import { SubcategoriesServiceMock } from "../../Subcategories/application/subcategories-service.mock";
-import { Category, CategoryName } from "contexts/Categories/domain";
-import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
+import { buildTestTransactions } from "../domain/buildTestTransactions";
 
 describe("execute", () => {
 	it("should group by category with accumulated balance for two transactions", async () => {
@@ -32,12 +33,14 @@ describe("execute", () => {
 				category: categoriesService.categories[0].id.value,
 				subcategory: subcategoriesService.subcategories[0].id.value,
 				operation: "expense",
+				account: AccountID.generate().value,
 			},
 			{
 				amount: 200,
 				category: categoriesService.categories[0].id.value,
 				subcategory: subcategoriesService.subcategories[1].id.value,
 				operation: "income",
+				account: AccountID.generate().value,
 			},
 		]);
 		const report = new TransactionsReport(transactions);

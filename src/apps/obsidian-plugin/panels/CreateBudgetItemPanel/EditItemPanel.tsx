@@ -1,11 +1,11 @@
-import { useContext, useState } from "react";
 import {
-	Item,
-	ItemName,
-	ItemRecurrence,
-	ItemRecurrenceFrequency,
-} from "contexts/Items/domain";
-import { ItemsContext, TransactionsContext } from "apps/obsidian-plugin/views";
+	DateValueObject,
+	NumberValueObject,
+	PriceValueObject,
+} from "@juandardilag/value-objects";
+import { DateInput } from "apps/obsidian-plugin/components/Input/DateInput";
+import { Input } from "apps/obsidian-plugin/components/Input/Input";
+import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import {
 	Select,
 	SelectWithCreation,
@@ -13,14 +13,17 @@ import {
 	useCategorySelect,
 	useSubCategorySelect,
 } from "apps/obsidian-plugin/components/Select";
-import { OperationType } from "contexts/Shared/domain";
-import { Input } from "apps/obsidian-plugin/components/Input/Input";
-import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
-import { DateInput } from "apps/obsidian-plugin/components/Input/DateInput";
+import { ItemsContext, TransactionsContext } from "apps/obsidian-plugin/views";
 import {
-	DateValueObject,
-	NumberValueObject,
-} from "@juandardilag/value-objects";
+	Item,
+	ItemName,
+	ItemRecurrence,
+	ItemRecurrenceFrequency,
+} from "contexts/Items/domain";
+import { OperationType } from "contexts/Shared/domain";
+import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
+import { useContext, useState } from "react";
 import { useCreateRecurrenceForm } from "./useCreateRecurrenceForm";
 
 export const EditItemPanel = ({
@@ -38,12 +41,12 @@ export const EditItemPanel = ({
 
 	const { AccountSelect, account } = useAccountSelect({
 		label: "From",
-		initialValueID: item.operation.account.value,
+		initialValueID: item.fromSplits[0]?.accountId.value,
 	});
 	const { AccountSelect: ToAccountSelect, account: toAccount } =
 		useAccountSelect({
 			label: "To",
-			initialValueID: item.operation.toAccount?.value,
+			initialValueID: item.toSplits[0]?.accountId.value,
 		});
 	const { CategorySelect, category } = useCategorySelect({
 		initialValueID: item.category.value,
@@ -62,7 +65,7 @@ export const EditItemPanel = ({
 	} = useCreateRecurrenceForm({ recurrence: item.recurrence });
 
 	const [name, setName] = useState(item.name.value);
-	const [amount, setAmount] = useState(item.price);
+	const [amount, setAmount] = useState(item.fromAmount.value);
 	const [type, setType] = useState(item.operation.type.value);
 
 	const [brand, setBrand] = useState(item.info?.value.brand?.value);
@@ -83,8 +86,8 @@ export const EditItemPanel = ({
 			<PriceInput
 				id="amount"
 				label="Amount"
-				value={amount}
-				onChange={setAmount}
+				value={new PriceValueObject(amount)}
+				onChange={(val) => setAmount(val.toNumber())}
 			/>
 			<Select
 				id="type"
@@ -117,9 +120,22 @@ export const EditItemPanel = ({
 			{RecurrenceForm}
 			<button
 				onClick={async () => {
-					account && item.operation.updateAccount(account.id);
-					item.operation.updateToAccount(toAccount?.id);
-					item.updatePrice(amount);
+					if (account) {
+						item.setFromSplits([
+							new PaymentSplit(
+								account.id,
+								new TransactionAmount(amount)
+							),
+						]);
+					}
+					if (toAccount) {
+						item.setToSplits([
+							new PaymentSplit(
+								toAccount.id,
+								new TransactionAmount(amount)
+							),
+						]);
+					}
 					item.updateName(new ItemName(name));
 					item.recurrence.updateStartDate(new DateValueObject(date));
 					category && item.updateCategory(category.id);

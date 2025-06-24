@@ -1,7 +1,7 @@
-import { App, normalizePath } from "obsidian";
-import { exportDB, importInto } from "dexie-export-import";
-import { Logger } from "../../logger";
 import Dexie from "dexie";
+import { exportDB, importInto } from "dexie-export-import";
+import { App, normalizePath } from "obsidian";
+import { Logger } from "../../logger";
 
 export interface BackupInfo {
 	name: string;
@@ -52,7 +52,11 @@ export class BackupManager {
 
 			// Export database to blob
 			const blob = await exportDB(db);
+
+			// Convert blob to base64 string using Buffer for proper binary handling
 			const arrayBuffer = await blob.arrayBuffer();
+			const uint8Array = new Uint8Array(arrayBuffer);
+			const base64Data = Buffer.from(uint8Array).toString("base64");
 
 			// Create backup metadata
 			const backupData = {
@@ -65,7 +69,7 @@ export class BackupManager {
 						? `Manual backup: ${backupName}`
 						: "Automatic backup",
 				},
-				data: Array.from(new Uint8Array(arrayBuffer)),
+				data: base64Data,
 			};
 
 			// Save backup to file
@@ -109,9 +113,20 @@ export class BackupManager {
 				throw new Error("Invalid backup format");
 			}
 
-			// Convert data back to blob
-			const uint8Array = new Uint8Array(backupData.data);
-			const blob = new Blob([uint8Array]);
+			let blob: Blob;
+
+			// Handle both old array format and new base64 format
+			if (Array.isArray(backupData.data)) {
+				// Old format: array of numbers
+				const uint8Array = new Uint8Array(backupData.data);
+				blob = new Blob([uint8Array]);
+			} else if (typeof backupData.data === "string") {
+				// New format: base64 string using Buffer for proper binary handling
+				const uint8Array = Buffer.from(backupData.data, "base64");
+				blob = new Blob([uint8Array]);
+			} else {
+				throw new Error("Unsupported backup data format");
+			}
 
 			// Import backup into database
 			await importInto(db, blob, {
@@ -232,12 +247,18 @@ export class BackupManager {
 			const fileContent = await this.app.vault.adapter.read(path);
 			const backupData = JSON.parse(fileContent);
 
-			// Basic validation
-			return !!(
-				backupData.metadata &&
-				backupData.data &&
-				Array.isArray(backupData.data)
+			// Basic validation for both old and new formats
+			const hasValidMetadata = !!backupData.metadata;
+			const hasValidData = !!(
+				(
+					backupData.data &&
+					(Array.isArray(backupData.data) || // Old format: array
+						(typeof backupData.data === "string" &&
+							backupData.data.length > 0))
+				) // New format: base64 string
 			);
+
+			return hasValidMetadata && hasValidData;
 		} catch (error) {
 			this.logger.error(error);
 			return false;

@@ -59,6 +59,7 @@ export const AccountingListItem = ({
 	} = useContext(TransactionsContext);
 
 	const isEditing = editingTransactionId === transaction.id.toString();
+	const isTransfer = transaction.operation.isTransfer();
 
 	const isSelected = useMemo(
 		() =>
@@ -186,6 +187,16 @@ export const AccountingListItem = ({
 										color: "var(--text-muted)",
 									}}
 								>
+									{isTransfer &&
+									display.realAmount?.toNumber() &&
+									display.realAmount.toNumber() < 0
+										? "← "
+										: ""}
+									{isTransfer &&
+									display.realAmount?.toNumber() &&
+									display.realAmount.toNumber() > 0
+										? "→ "
+										: ""}
 									{display.truncatedAccountName}
 								</span>
 							</div>
@@ -308,6 +319,16 @@ export const AccountingListItem = ({
 											color: "var(--text-muted)",
 										}}
 									>
+										{isTransfer &&
+										display.realAmount?.toNumber() &&
+										display.realAmount.toNumber() < 0
+											? "← "
+											: ""}
+										{isTransfer &&
+										display.realAmount?.toNumber() &&
+										display.realAmount.toNumber() > 0
+											? "→ "
+											: ""}
 										{display.accountName.toString() ?? ""}
 									</span>
 									{display.realAmount && (

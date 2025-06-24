@@ -13,6 +13,8 @@ import {
 } from "contexts/Items/domain";
 import { ItemOperation } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
+import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 
 type ItemConfig = {
 	price?: ItemPrice;
@@ -27,14 +29,24 @@ type ItemConfig = {
 	modifications?: Partial<ItemRecurrenceInfoPrimitives>[];
 };
 
+// Helper to create splits for test items
+function makeSplits(account?: AccountID, amount: number = 100): PaymentSplit[] {
+	return account
+		? [new PaymentSplit(account, new TransactionAmount(Math.abs(amount)))]
+		: [];
+}
+
 export const buildTestItems = (config: ItemConfig[] | number): Item[] => {
 	let items: Item[] = [];
 	if (typeof config === "number") {
 		for (let i = 0; i < config; i++) {
+			const fromSplits = makeSplits(AccountID.generate(), 100);
+			const toSplits: PaymentSplit[] = [];
 			const item = Item.oneTime(
 				DateValueObject.createNowDate(),
 				new ItemName("test"),
-				new ItemPrice(100),
+				fromSplits,
+				toSplits,
 				ItemOperation.expense(AccountID.generate()),
 				CategoryID.generate(),
 				SubCategoryID.generate()
@@ -59,12 +71,23 @@ export const buildTestItems = (config: ItemConfig[] | number): Item[] => {
 			}) => {
 				const startDate =
 					recurrence?.startDate ?? DateValueObject.createNowDate();
+				const absPrice = price ? Math.abs(price.value) : 100;
+
+				// Determine the accounts to use for splits
+				const fromAccount =
+					account ||
+					(operation ? operation.account : AccountID.generate());
+				const toAccountForSplits = toAccount || operation?.toAccount;
+
+				const fromSplits = makeSplits(fromAccount, absPrice);
+				const toSplits = makeSplits(toAccountForSplits, absPrice);
+
 				let item = Item.oneTime(
 					startDate,
 					new ItemName("test"),
-					price ?? new ItemPrice(100),
-					operation ??
-						ItemOperation.expense(account ?? AccountID.generate()),
+					fromSplits,
+					toSplits,
+					operation ?? ItemOperation.expense(fromAccount),
 					CategoryID.generate(),
 					SubCategoryID.generate()
 				);
@@ -72,11 +95,9 @@ export const buildTestItems = (config: ItemConfig[] | number): Item[] => {
 					item = Item.infinite(
 						startDate,
 						new ItemName("test"),
-						price ?? new ItemPrice(100),
-						operation ??
-							ItemOperation.expense(
-								account ?? AccountID.generate()
-							),
+						fromSplits,
+						toSplits,
+						operation ?? ItemOperation.expense(fromAccount),
 						CategoryID.generate(),
 						SubCategoryID.generate(),
 						new ItemRecurrenceFrequency(recurrence.frequency)
@@ -84,11 +105,9 @@ export const buildTestItems = (config: ItemConfig[] | number): Item[] => {
 					if (recurrence.untilDate) {
 						item = Item.untilDate(
 							new ItemName("test"),
-							price ?? new ItemPrice(100),
-							operation ??
-								ItemOperation.expense(
-									account ?? AccountID.generate()
-								),
+							fromSplits,
+							toSplits,
+							operation ?? ItemOperation.expense(fromAccount),
 							CategoryID.generate(),
 							SubCategoryID.generate(),
 							new ItemRecurrenceFrequency(recurrence.frequency),

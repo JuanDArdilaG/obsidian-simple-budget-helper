@@ -40,7 +40,7 @@ export class GetAllTransactionsUseCase
 		if (subCategoryFilter)
 			filterCriteria.where("subCategory", subCategoryFilter.value);
 
-		let transactions = await this._transactionsRepository.findByCriteria(
+		const transactions = await this._transactionsRepository.findByCriteria(
 			filterCriteria
 		);
 

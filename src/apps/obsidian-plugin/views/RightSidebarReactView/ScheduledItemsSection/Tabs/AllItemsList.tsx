@@ -2,9 +2,11 @@ import { PriceValueObject } from "@juandardilag/value-objects";
 import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
 import { useLogger } from "apps/obsidian-plugin/hooks";
 import { EditItemPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemPanel";
+import { AccountID, AccountType } from "contexts/Accounts/domain";
 import { ERecurrenceState, Item } from "contexts/Items/domain";
 import { ReportBalance } from "contexts/Reports/domain";
 import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
+import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { ChevronDown, ChevronRight, Forward, X } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import {
@@ -61,18 +63,18 @@ export const AllItemsList = ({
 		[displayedItems]
 	);
 
-	const chartItems = useMemo(() => {
-		return items.filter((item) =>
-			item.recurrence.recurrences.some(
-				(recurrence) => recurrence.state !== ERecurrenceState.DELETED
-			)
-		);
-	}, [items]);
+	// const chartItems = useMemo(() => {
+	// 	return items.filter((item) =>
+	// 		item.recurrence.recurrences.some(
+	// 			(recurrence) => recurrence.state !== ERecurrenceState.DELETED
+	// 		)
+	// 	);
+	// }, [items]);
 
-	const chartItemsReport = useMemo(
-		() => new ItemsReport(chartItems),
-		[chartItems]
-	);
+	// const chartItemsReport = useMemo(
+	// 	() => new ItemsReport(chartItems),
+	// 	[chartItems]
+	// );
 
 	const [showPanel, setShowPanel] = useState<{
 		item: Item;
@@ -188,11 +190,18 @@ export const AllItemsList = ({
 	const [selectedMonthData, setSelectedMonthData] =
 		useState<MonthlyData | null>(null);
 
+	// Define the accountTypeLookup function
+	const accountTypeLookup = (id: AccountID): AccountType => {
+		const account = getAccountByID(id);
+		if (!account) return new AccountType("asset"); // fallback or throw if preferred
+		return account.type;
+	};
+
 	// Helper functions to get filtered items
 	const getInfiniteExpenseItems = () => {
-		const expenseItems = chartItemsReport.getExpenseItems();
-		const transferItems = chartItemsReport.getTransferItems();
-		const infiniteItems = chartItemsReport.getInfiniteRecurrentItems();
+		const expenseItems = displayedItemsReport.getExpenseItems();
+		const transferItems = displayedItemsReport.getTransferItems();
+		const infiniteItems = displayedItemsReport.getInfiniteRecurrentItems();
 
 		// Filter expense items that are infinite recurrent
 		const infiniteExpenseItems = expenseItems.filter((item: Item) =>
@@ -218,13 +227,19 @@ export const AllItemsList = ({
 		return [
 			...infiniteExpenseItems,
 			...infiniteAssetToLiabilityTransfers,
-		].sort((a, b) => a.pricePerMonth.compareTo(b.pricePerMonth));
+		].sort((a, b) =>
+			a
+				.getPricePerMonthWithAccountTypes(accountTypeLookup)
+				.compareTo(
+					b.getPricePerMonthWithAccountTypes(accountTypeLookup)
+				)
+		);
 	};
 
 	const getFiniteExpenseItems = () => {
-		const expenseItems = chartItemsReport.getExpenseItems();
-		const transferItems = chartItemsReport.getTransferItems();
-		const finiteItems = chartItemsReport.getFiniteRecurrentItems();
+		const expenseItems = displayedItemsReport.getExpenseItems();
+		const transferItems = displayedItemsReport.getTransferItems();
+		const finiteItems = displayedItemsReport.getFiniteRecurrentItems();
 
 		// Filter expense items that are finite recurrent
 		const finiteExpenseItems = expenseItems.filter((item: Item) =>
@@ -248,13 +263,18 @@ export const AllItemsList = ({
 		);
 
 		return [...finiteExpenseItems, ...finiteAssetToLiabilityTransfers].sort(
-			(a, b) => a.pricePerMonth.compareTo(b.pricePerMonth)
+			(a, b) =>
+				a
+					.getPricePerMonthWithAccountTypes(accountTypeLookup)
+					.compareTo(
+						b.getPricePerMonthWithAccountTypes(accountTypeLookup)
+					)
 		);
 	};
 
 	const getIncomeItems = () => {
-		const incomeItems = chartItemsReport.getIncomeItems();
-		const transferItems = chartItemsReport.getTransferItems();
+		const incomeItems = displayedItemsReport.getIncomeItems();
+		const transferItems = displayedItemsReport.getTransferItems();
 
 		// Filter transfer items that are Liability to Asset
 		const liabilityToAssetTransfers = transferItems.filter((item: Item) => {
@@ -264,13 +284,17 @@ export const AllItemsList = ({
 		});
 
 		return [...incomeItems, ...liabilityToAssetTransfers].sort((a, b) =>
-			a.pricePerMonth.compareTo(b.pricePerMonth)
+			a
+				.getPricePerMonthWithAccountTypes(accountTypeLookup)
+				.compareTo(
+					b.getPricePerMonthWithAccountTypes(accountTypeLookup)
+				)
 		);
 	};
 
 	const getTotalExpenseItems = () => {
-		const expenseItems = chartItemsReport.getExpenseItems();
-		const transferItems = chartItemsReport.getTransferItems();
+		const expenseItems = displayedItemsReport.getExpenseItems();
+		const transferItems = displayedItemsReport.getTransferItems();
 
 		// Filter transfer items that are Asset to Liability
 		const assetToLiabilityTransfers = transferItems.filter((item: Item) => {
@@ -280,7 +304,11 @@ export const AllItemsList = ({
 		});
 
 		return [...expenseItems, ...assetToLiabilityTransfers].sort((a, b) =>
-			a.pricePerMonth.compareTo(b.pricePerMonth)
+			a
+				.getPricePerMonthWithAccountTypes(accountTypeLookup)
+				.compareTo(
+					b.getPricePerMonthWithAccountTypes(accountTypeLookup)
+				)
 		);
 	};
 
@@ -329,16 +357,11 @@ export const AllItemsList = ({
 							now.getMonth();
 
 						if (monthIndex >= 0 && monthIndex < 12) {
-							let price: number;
-							if (item.operation.type.isTransfer()) {
-								price = item.price.value;
-							} else {
-								// For expenses, realPrice is negative, but we want to show it as positive in the chart
-								price =
-									type === "expense"
-										? Math.abs(item.realPrice.value)
-										: item.realPrice.value;
-							}
+							let price = 0;
+							price = item.fromSplits.reduce(
+								(sum, s) => sum + s.amount.value,
+								0
+							);
 
 							if (type === "income") {
 								months[monthIndex].income += price;
@@ -364,13 +387,13 @@ export const AllItemsList = ({
 					now.getMonth();
 
 				if (monthIndex >= 0 && monthIndex < 12) {
-					const realAmount = transaction.realAmount.toNumber();
-
-					if (realAmount > 0) {
-						months[monthIndex].income += realAmount;
+					if (transaction.operation.isIncome()) {
+						const amount = transaction.fromAmount.value;
+						months[monthIndex].income += amount;
 						months[monthIndex].incomeTransactions.push(transaction);
-					} else if (realAmount < 0) {
-						months[monthIndex].expense += Math.abs(realAmount);
+					} else if (transaction.operation.isExpense()) {
+						const amount = transaction.fromAmount.value;
+						months[monthIndex].expense += amount;
 						months[monthIndex].expenseTransactions.push(
 							transaction
 						);
@@ -397,7 +420,7 @@ export const AllItemsList = ({
 		});
 
 		setChartData(finalMonths);
-	}, [chartItemsReport, getAccountByID, transactions, accounts]);
+	}, [displayedItemsReport, getAccountByID, transactions, accounts]);
 
 	const handleLegendClick = (data: Payload) => {
 		const { dataKey } = data;
@@ -542,11 +565,7 @@ export const AllItemsList = ({
 									</span>
 									<span style={{ textAlign: "right" }}>
 										<PriceLabel
-											price={
-												item.operation.type.isTransfer()
-													? item.price
-													: item.realPrice
-											}
+											price={item.fromAmount}
 											operation={item.operation.type}
 										/>
 										<span
@@ -574,7 +593,11 @@ export const AllItemsList = ({
 										>
 											<div>
 												Per Month ≈{" "}
-												{item.pricePerMonth.toString()}
+												{item
+													.getPricePerMonthWithAccountTypes(
+														accountTypeLookup
+													)
+													.toString()}
 											</div>
 											<div>
 												{account?.name.toString()}
@@ -837,7 +860,7 @@ export const AllItemsList = ({
 													: undefined;
 												const price =
 													item.operation.type.isTransfer()
-														? item.price
+														? item.fromAmount
 														: item.realPrice;
 
 												return (
@@ -927,7 +950,7 @@ export const AllItemsList = ({
 													: undefined;
 												const price =
 													item.operation.type.isTransfer()
-														? item.price
+														? item.fromAmount
 														: item.realPrice;
 
 												return (
@@ -1010,15 +1033,45 @@ export const AllItemsList = ({
 									>
 										{selectedMonthData.incomeTransactions.map(
 											(transaction, index) => {
-												const account = getAccountByID(
-													transaction.account
-												);
-												const toAccount =
-													transaction.toAccount
-														? getAccountByID(
-																transaction.toAccount
-														  )
-														: undefined;
+												const fromAccounts =
+													transaction.fromSplits
+														.map(
+															(s: PaymentSplit) =>
+																getAccountByID(
+																	s.accountId
+																)?.name.value ||
+																""
+														)
+														.join(", ");
+												const toAccounts =
+													transaction.toSplits
+														.map(
+															(s: PaymentSplit) =>
+																getAccountByID(
+																	s.accountId
+																)?.name.value ||
+																""
+														)
+														.join(", ");
+												const amount =
+													transaction.toSplits.reduce(
+														(
+															sum: number,
+															s: PaymentSplit
+														) =>
+															sum +
+															s.amount.value,
+														0
+													) -
+													transaction.fromSplits.reduce(
+														(
+															sum: number,
+															s: PaymentSplit
+														) =>
+															sum +
+															s.amount.value,
+														0
+													);
 
 												return (
 													<div
@@ -1053,10 +1106,12 @@ export const AllItemsList = ({
 																		"0.8em",
 																}}
 															>
-																{account?.name.toString()}
-																{toAccount
-																	? ` → ${toAccount.name}`
-																	: ""}
+																{`${fromAccounts}${
+																	toAccounts
+																		? " → " +
+																		  toAccounts
+																		: ""
+																}`}
 															</div>
 														</div>
 														<div
@@ -1066,7 +1121,7 @@ export const AllItemsList = ({
 																	"bold",
 															}}
 														>
-															{transaction.amount.toString()}
+															{amount.toString()}
 														</div>
 													</div>
 												);
@@ -1101,15 +1156,45 @@ export const AllItemsList = ({
 									>
 										{selectedMonthData.expenseTransactions.map(
 											(transaction, index) => {
-												const account = getAccountByID(
-													transaction.account
-												);
-												const toAccount =
-													transaction.toAccount
-														? getAccountByID(
-																transaction.toAccount
-														  )
-														: undefined;
+												const fromAccounts =
+													transaction.fromSplits
+														.map(
+															(s: PaymentSplit) =>
+																getAccountByID(
+																	s.accountId
+																)?.name.value ||
+																""
+														)
+														.join(", ");
+												const toAccounts =
+													transaction.toSplits
+														.map(
+															(s: PaymentSplit) =>
+																getAccountByID(
+																	s.accountId
+																)?.name.value ||
+																""
+														)
+														.join(", ");
+												const amount =
+													transaction.toSplits.reduce(
+														(
+															sum: number,
+															s: PaymentSplit
+														) =>
+															sum +
+															s.amount.value,
+														0
+													) -
+													transaction.fromSplits.reduce(
+														(
+															sum: number,
+															s: PaymentSplit
+														) =>
+															sum +
+															s.amount.value,
+														0
+													);
 
 												return (
 													<div
@@ -1144,10 +1229,12 @@ export const AllItemsList = ({
 																		"0.8em",
 																}}
 															>
-																{account?.name.toString()}
-																{toAccount
-																	? ` → ${toAccount.name}`
-																	: ""}
+																{`${fromAccounts}${
+																	toAccounts
+																		? " → " +
+																		  toAccounts
+																		: ""
+																}`}
 															</div>
 														</div>
 														<div
@@ -1157,7 +1244,7 @@ export const AllItemsList = ({
 																	"bold",
 															}}
 														>
-															{transaction.amount.toString()}
+															{amount.toString()}
 														</div>
 													</div>
 												);
@@ -1278,7 +1365,11 @@ export const AllItemsList = ({
 									<span
 										style={{ color: "var(--color-green)" }}
 									>
-										{item.pricePerMonth.toString()}
+										{item
+											.getPricePerMonthWithAccountTypes(
+												accountTypeLookup
+											)
+											.toString()}
 									</span>
 								</div>
 							))}
@@ -1356,7 +1447,11 @@ export const AllItemsList = ({
 											color: "var(--color-red)",
 										}}
 									>
-										{item.pricePerMonth.toString()}
+										{item
+											.getPricePerMonthWithAccountTypes(
+												accountTypeLookup
+											)
+											.toString()}
 									</span>
 								</div>
 							))}
@@ -1432,7 +1527,11 @@ export const AllItemsList = ({
 									<span
 										style={{ color: "var(--color-orange)" }}
 									>
-										{item.pricePerMonth.toString()}
+										{item
+											.getPricePerMonthWithAccountTypes(
+												accountTypeLookup
+											)
+											.toString()}
 									</span>
 								</div>
 							))}
@@ -1506,7 +1605,11 @@ export const AllItemsList = ({
 								>
 									<span>{item.name.value}</span>
 									<span style={{ color: "var(--color-red)" }}>
-										{item.pricePerMonth.toString()}
+										{item
+											.getPricePerMonthWithAccountTypes(
+												accountTypeLookup
+											)
+											.toString()}
 									</span>
 								</div>
 							))}

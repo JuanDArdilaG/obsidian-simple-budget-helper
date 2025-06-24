@@ -1,20 +1,20 @@
-import { Logger } from "contexts/Shared/infrastructure/logger";
-import { ERecurrenceState, Item, ItemRecurrenceInfo } from "../domain";
+import {
+	DateValueObject,
+	NumberValueObject,
+} from "@juandardilag/value-objects";
 import {
 	Account,
 	AccountBalance,
 	IAccountsService,
 } from "contexts/Accounts/domain";
 import { QueryUseCase } from "contexts/Shared/domain";
+import { Logger } from "contexts/Shared/infrastructure/logger";
+import { ERecurrenceState, Item, ItemRecurrenceInfo } from "../domain";
 import {
 	GetItemsUntilDateUseCase,
 	GetItemsUntilDateUseCaseOutput,
 	ItemRecurrenceModificationWithN,
 } from "./get-items-until-date.usecase";
-import {
-	DateValueObject,
-	NumberValueObject,
-} from "@juandardilag/value-objects";
 
 export type ItemWithAccounts = {
 	recurrence: ItemRecurrenceModificationWithN;
@@ -142,7 +142,7 @@ export class ItemsWithAccumulatedBalanceUseCase
 		const recurrenceAmount = recurrence.getRealPriceForAccount(
 			item.operation,
 			account,
-			item.price,
+			item.fromAmount,
 			item.operation.account,
 			item.operation.toAccount
 		);
@@ -153,7 +153,7 @@ export class ItemsWithAccumulatedBalanceUseCase
 				recurrence.getRealPriceForAccount(
 					item.operation,
 					toAccount,
-					item.price,
+					item.toAmount,
 					item.operation.account,
 					item.operation.toAccount
 				)
