@@ -1,7 +1,8 @@
-import { Account, IAccountsService } from "contexts/Accounts/domain";
+import { Account, AccountID, IAccountsService } from "contexts/Accounts/domain";
 import { Item } from "contexts/Items/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
-import { ItemsReport, ReportBalance } from "../domain";
+import { ReportBalance } from "../domain";
+import { ItemsReport } from "../domain/items-report.entity";
 import { IReportsService } from "../domain/reports-service.interface";
 
 type ItemsWithAccounts = {
@@ -78,20 +79,20 @@ export class ReportsService implements IReportsService {
 
 		let total = ReportBalance.zero();
 		for (const { item, account, toAccount } of items) {
-			if (item.operation.type.isTransfer()) {
-				// Handle transfers based on account types
+			if (item.operation.type.isIncome()) {
+				total = total.plus(item.fromAmount);
+			} else if (item.operation.type.isExpense()) {
+				total = total.plus(item.fromAmount.negate());
+			} else if (item.operation.type.isTransfer()) {
 				if (account.type.isAsset() && toAccount?.type.isLiability()) {
-					total = total.plus(item.price.negate());
+					total = total.plus(item.fromAmount.negate());
 				} else if (
 					account.type.isLiability() &&
 					toAccount?.type.isAsset()
 				) {
-					total = total.plus(item.price);
+					total = total.plus(item.fromAmount);
 				}
 				// Asset to Asset and Liability to Liability transfers are neutral (not added to total)
-			} else {
-				// Handle income and expense operations
-				total = total.plus(item.realPrice);
 			}
 			this.#logger.debug("updating total", { total });
 		}
@@ -112,21 +113,18 @@ export class ReportsService implements IReportsService {
 
 		let total = ReportBalance.zero();
 		for (const { item, account, toAccount } of items) {
-			if (item.operation.type.isTransfer()) {
-				// Handle transfers based on account types
-				if (account.type.isAsset() && toAccount?.type.isLiability()) {
-					total = total.plus(item.pricePerMonth.negate());
-				} else if (
-					account.type.isLiability() &&
-					toAccount?.type.isAsset()
-				) {
-					total = total.plus(item.pricePerMonth);
-				}
-				// Asset to Asset and Liability to Liability transfers are neutral (not added to total)
-			} else {
-				// Handle income and expense operations
-				total = total.plus(item.pricePerMonth);
-			}
+			// Create account type lookup function
+			const accountTypeLookup = (id: AccountID) => {
+				if (id.value === account.id.value) return account.type;
+				if (toAccount && id.value === toAccount.id.value)
+					return toAccount.type;
+				throw new Error(`Account ${id.value} not found in lookup`);
+			};
+
+			// Use the item's getPricePerMonthWithAccountTypes method to handle recurring conversions
+			const monthlyPrice =
+				item.getPricePerMonthWithAccountTypes(accountTypeLookup);
+			total = total.plus(monthlyPrice);
 		}
 		return total;
 	}

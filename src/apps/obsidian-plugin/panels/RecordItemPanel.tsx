@@ -1,19 +1,20 @@
-import { useContext, useState } from "react";
-import { ReactMoneyInput } from "react-input-price";
-import { useAccountSelect } from "apps/obsidian-plugin/components/Select/useAccountSelect";
+import { NumberValueObject } from "@juandardilag/value-objects";
 import {
 	AccountsContext,
 	ItemsContext,
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { Item, ItemRecurrenceInfo } from "contexts/Items/domain";
 import {
 	TransactionAmount,
 	TransactionDate,
 } from "contexts/Transactions/domain";
-import { useLogger } from "../hooks";
+import { useContext, useState } from "react";
+import { ReactMoneyInput } from "react-input-price";
 import { DateInput } from "../components/Input/DateInput";
-import { NumberValueObject } from "@juandardilag/value-objects";
+import { Select } from "../components/Select/Select";
+import { useLogger } from "../hooks";
 
 export const RecordItemPanel = ({
 	item,
@@ -34,30 +35,142 @@ export const RecordItemPanel = ({
 	} = useContext(ItemsContext);
 	const { updateAccounts } = useContext(AccountsContext);
 	const { updateTransactions } = useContext(TransactionsContext);
-	const { AccountSelect, account } = useAccountSelect({
-		label: "From",
-		initialValueID: item.operation.account.value,
-	});
-	const { AccountSelect: ToAccountSelect, account: toAccount } =
-		useAccountSelect({
-			label: "To",
-			initialValueID: item.operation.toAccount?.value,
-		});
+	const { accounts } = useContext(AccountsContext);
+	const [fromSplits, setFromSplits] = useState(
+		item.fromSplits.map((split) => ({
+			accountId: split.accountId.value,
+			amount: split.amount,
+		}))
+	);
+	const [toSplits, setToSplits] = useState(
+		item.toSplits.map((split) => ({
+			accountId: split.accountId.value,
+			amount: split.amount,
+		}))
+	);
 	const [date, setDate] = useState<Date>(recurrence.date.value);
-	const [amount, setAmount] = useState(item.price.value);
 	const [isPermanent, setIsPermanent] = useState(false);
 
 	return (
 		<div className="record-budget-item-modal">
 			<h3>Record:</h3>
-			{AccountSelect}
-			{item.operation.type.isTransfer() && ToAccountSelect}
+			<div>
+				<h4>From Splits</h4>
+				{fromSplits.map((split, idx) => (
+					<div
+						key={idx}
+						style={{
+							display: "flex",
+							gap: 8,
+							alignItems: "center",
+						}}
+					>
+						<Select
+							id={`from-account-${idx}`}
+							label="Account"
+							value={split.accountId}
+							values={accounts.map((acc) => acc.id.value)}
+							onChange={(val) => {
+								const newSplits = [...fromSplits];
+								newSplits[idx].accountId = val;
+								setFromSplits(newSplits);
+							}}
+						/>
+						<ReactMoneyInput
+							id={`from-amount-${idx}`}
+							initialValue={split.amount.toNumber()}
+							onValueChange={(priceVO) => {
+								const newSplits = [...fromSplits];
+								newSplits[idx].amount = new TransactionAmount(
+									priceVO.toNumber()
+								);
+								setFromSplits(newSplits);
+							}}
+						/>
+						<button
+							onClick={() =>
+								setFromSplits(
+									fromSplits.filter((_, i) => i !== idx)
+								)
+							}
+						>
+							Remove
+						</button>
+					</div>
+				))}
+				<button
+					onClick={() =>
+						setFromSplits([
+							...fromSplits,
+							{
+								accountId: accounts[0]?.id.value || "",
+								amount: new TransactionAmount(0),
+							},
+						])
+					}
+				>
+					Add Split
+				</button>
+			</div>
+			<div>
+				<h4>To Splits</h4>
+				{toSplits.map((split, idx) => (
+					<div
+						key={idx}
+						style={{
+							display: "flex",
+							gap: 8,
+							alignItems: "center",
+						}}
+					>
+						<Select
+							id={`to-account-${idx}`}
+							label="Account"
+							value={split.accountId}
+							values={accounts.map((acc) => acc.id.value)}
+							onChange={(val) => {
+								const newSplits = [...toSplits];
+								newSplits[idx].accountId = val;
+								setToSplits(newSplits);
+							}}
+						/>
+						<ReactMoneyInput
+							id={`to-amount-${idx}`}
+							initialValue={split.amount.toNumber()}
+							onValueChange={(priceVO) => {
+								const newSplits = [...toSplits];
+								newSplits[idx].amount = new TransactionAmount(
+									priceVO.toNumber()
+								);
+								setToSplits(newSplits);
+							}}
+						/>
+						<button
+							onClick={() =>
+								setToSplits(
+									toSplits.filter((_, i) => i !== idx)
+								)
+							}
+						>
+							Remove
+						</button>
+					</div>
+				))}
+				<button
+					onClick={() =>
+						setToSplits([
+							...toSplits,
+							{
+								accountId: accounts[0]?.id.value || "",
+								amount: new TransactionAmount(0),
+							},
+						])
+					}
+				>
+					Add Split
+				</button>
+			</div>
 			<DateInput label="Date" value={date} onChange={setDate} />
-			<ReactMoneyInput
-				id="amount-input-react"
-				initialValue={item.price.toNumber()}
-				onValueChange={(priceVO) => setAmount(priceVO.toNumber())}
-			/>
 			<div style={{ display: "flex", alignItems: "center" }}>
 				<input
 					id="permanent-input"
@@ -71,26 +184,22 @@ export const RecordItemPanel = ({
 			</div>
 			<button
 				onClick={async () => {
-					// if (recurrence instanceof Item || !item.recurrence) {
-					// 	await recordItem.execute({
-					// 		itemID: item.id,
-					// 		account: account?.id,
-					// 		toAccount: toAccount?.id,
-					// 		amount: new TransactionAmount(amount),
-					// 		date: new TransactionDate(date),
-					// 		permanentChanges: isPermanent,
-					// 	});
-					// } else {
+					// Only the first split of each is used due to current use case limitations
 					await recordItemRecurrence.execute({
 						itemID: item.id,
 						n,
-						account: account?.id,
-						toAccount: toAccount?.id,
-						amount: new TransactionAmount(amount),
+						account: fromSplits[0]
+							? new AccountID(fromSplits[0].accountId)
+							: undefined,
+						toAccount: toSplits[0]
+							? new AccountID(toSplits[0].accountId)
+							: undefined,
+						amount: fromSplits[0]
+							? fromSplits[0].amount
+							: undefined,
 						date: new TransactionDate(date),
 						permanentChanges: isPermanent,
 					});
-					// }
 					if (!item.recurrence) {
 						logger.debug("eliminating", { item });
 						await deleteItem.execute(item.id);

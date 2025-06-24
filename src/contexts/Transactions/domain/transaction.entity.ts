@@ -1,7 +1,4 @@
-import {
-	DateValueObject,
-	NumberValueObject,
-} from "@juandardilag/value-objects";
+import { DateValueObject } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { CategoryID } from "contexts/Categories/domain";
 import { ItemBrand, ItemProductInfo, ItemStore } from "contexts/Items/domain";
@@ -9,8 +6,13 @@ import { ItemID } from "contexts/Items/domain/item-id.valueobject";
 import { Item } from "contexts/Items/domain/item.entity";
 import { OperationType } from "contexts/Shared/domain";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
+import { InvalidArgumentError } from "contexts/Shared/domain/errors/invalid-argument.error";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { TransactionName } from "./item-name.valueobject";
+import {
+	PaymentSplit,
+	PaymentSplitPrimitives,
+} from "./payment-split.valueobject";
 import { TransactionAmount } from "./transaction-amount.valueobject";
 import { TransactionDate } from "./transaction-date.valueobject";
 import { TransactionID } from "./transaction-id.valueobject";
@@ -19,57 +21,67 @@ import { TransactionOperation } from "./transaction-operation.valueobject";
 export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	constructor(
 		id: TransactionID,
-		private _account: AccountID,
+		private _fromSplits: PaymentSplit[],
+		private _toSplits: PaymentSplit[],
 		private _name: TransactionName,
 		private _operation: TransactionOperation,
 		private _category: CategoryID,
 		private _subCategory: SubCategoryID,
 		private _date: TransactionDate,
-		private _amount: TransactionAmount,
 		updatedAt: DateValueObject,
 		private readonly _item?: ItemID,
-		private _toAccount?: AccountID,
 		private readonly _productInfo?: ItemProductInfo
 	) {
 		super(id, updatedAt);
+		this.validateTransferOperation();
+	}
+
+	/**
+	 * Validates that transfer operations have a toSplits array
+	 */
+	private validateTransferOperation(): void {
+		if (this._operation.isTransfer() && this._toSplits.length === 0) {
+			throw new InvalidArgumentError(
+				"Transaction",
+				"toSplits",
+				"Transfer operations must have a toSplits array"
+			);
+		}
 	}
 
 	static fromItem(item: Item, date: TransactionDate): Transaction {
 		return new Transaction(
 			TransactionID.generate(),
-			item.operation.account,
+			item.fromSplits,
+			item.toSplits,
 			item.name,
 			item.operation.type,
 			item.category,
 			item.subCategory,
 			date,
-			item.price,
 			DateValueObject.createNowDate(),
 			item.id,
-			item.operation.type.isTransfer()
-				? item.operation.toAccount
-				: undefined,
 			item.info
 		);
 	}
 
 	static createWithoutItem(
-		account: AccountID,
+		fromSplits: PaymentSplit[],
+		toSplits: PaymentSplit[],
 		name: TransactionName,
 		operation: TransactionOperation,
 		category: CategoryID,
-		subCategory: SubCategoryID,
-		amount: TransactionAmount
+		subCategory: SubCategoryID
 	): Transaction {
 		return new Transaction(
 			TransactionID.generate(),
-			account,
+			fromSplits,
+			toSplits,
 			name,
 			operation,
 			category,
 			subCategory,
 			TransactionDate.createNowDate(),
-			amount,
 			DateValueObject.createNowDate()
 		);
 	}
@@ -77,35 +89,44 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	copy(): Transaction {
 		return new Transaction(
 			TransactionID.generate(),
-			this._account,
+			[...this._fromSplits],
+			[...this._toSplits],
 			this._name,
 			this._operation,
 			this._category,
 			this._subCategory,
 			this._date,
-			this._amount,
 			this._updatedAt,
 			this._item,
-			this._toAccount,
 			this._productInfo
 		);
 	}
 
-	copyWithNegativeAmount(): Transaction {
-		return new Transaction(
-			TransactionID.generate(),
-			this._account,
-			this._name,
-			this._operation,
-			this._category,
-			this._subCategory,
-			this._date,
-			this._amount.negate(),
-			this._updatedAt,
-			this._item,
-			this._toAccount,
-			this._productInfo
-		);
+	get fromSplits(): PaymentSplit[] {
+		return this._fromSplits;
+	}
+
+	get fromAmount(): TransactionAmount {
+		return PaymentSplit.totalAmount(this._fromSplits);
+	}
+
+	get toSplits(): PaymentSplit[] {
+		return this._toSplits;
+	}
+
+	get toAmount(): TransactionAmount {
+		return PaymentSplit.totalAmount(this._toSplits);
+	}
+
+	setFromSplits(splits: PaymentSplit[]): void {
+		this._fromSplits = splits;
+		this.updateTimestamp();
+	}
+
+	setToSplits(splits: PaymentSplit[]): void {
+		this._toSplits = splits;
+		this.validateTransferOperation();
+		this.updateTimestamp();
 	}
 
 	get id(): TransactionID {
@@ -140,24 +161,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 
 	updateOperation(operation: TransactionOperation): void {
 		this._operation = operation;
-		this.updateTimestamp();
-	}
-
-	get account(): AccountID {
-		return this._account;
-	}
-
-	get toAccount(): AccountID | undefined {
-		return this._toAccount;
-	}
-
-	updateAccount(account: AccountID): void {
-		this._account = account;
-		this.updateTimestamp();
-	}
-
-	updateToAccount(toAccount?: AccountID): void {
-		this._toAccount = toAccount;
+		this.validateTransferOperation();
 		this.updateTimestamp();
 	}
 
@@ -179,32 +183,21 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		this.updateTimestamp();
 	}
 
-	get amount(): TransactionAmount {
-		return this._amount;
-	}
-
-	get realAmount(): TransactionAmount {
-		if (this.operation.isTransfer()) return TransactionAmount.zero();
-		return this._amount.times(
-			this.operation.isExpense()
-				? new NumberValueObject(-1)
-				: new NumberValueObject(1)
-		);
-	}
-
-	updateAmount(amount: TransactionAmount) {
-		this._amount = amount;
-		this.updateTimestamp();
-	}
-
 	getRealAmountForAccount(accountID: AccountID): TransactionAmount {
-		let multiplier = 1;
-		if (this.operation.isTransfer()) {
-			if (this.account.equalTo(accountID)) multiplier = -1;
-			else if (this.toAccount?.equalTo(accountID)) multiplier = 1;
-			else multiplier = 0;
-		} else if (this.operation.isExpense()) multiplier = -multiplier;
-		return new TransactionAmount(this._amount.toNumber() * multiplier);
+		const fromSplits = this._fromSplits.filter((split) =>
+			split.accountId.equalTo(accountID)
+		);
+		const toSplits = this._toSplits.filter((split) =>
+			split.accountId.equalTo(accountID)
+		);
+		const totalTo = PaymentSplit.totalAmount(toSplits).toNumber();
+		const totalFrom = PaymentSplit.totalAmount(fromSplits).toNumber();
+		if (this._operation.value === "transfer") {
+			return new TransactionAmount(totalTo - totalFrom);
+		}
+		return new TransactionAmount(
+			this._operation.value === "expense" ? -totalFrom : totalFrom
+		);
 	}
 
 	toPrimitives(): TransactionPrimitives {
@@ -212,15 +205,14 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			id: this._id.value,
 			item: this._item?.value,
 			name: this._name.value,
-			account: this._account.value,
-			toAccount: this._toAccount?.value,
-			operation: this._operation.value,
-			date: this._date,
-			amount: this._amount.value,
-			brand: this._productInfo?.value.brand?.value,
-			store: this._productInfo?.value.store?.value,
 			category: this._category.value,
 			subCategory: this._subCategory.value,
+			fromSplits: this._fromSplits.map((s) => s.toPrimitives()),
+			toSplits: this._toSplits.map((s) => s.toPrimitives()),
+			operation: this._operation.value,
+			date: this._date,
+			brand: this._productInfo?.value.brand?.value,
+			store: this._productInfo?.value.store?.value,
 			updatedAt: this._updatedAt.toISOString(),
 		};
 	}
@@ -229,31 +221,55 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		id,
 		item,
 		name,
-		account,
-		toAccount,
-		operation,
-		date,
-		amount,
-		brand,
-		store,
 		category,
 		subCategory,
+		fromSplits,
+		toSplits,
+		account,
+		toAccount,
+		amount,
+		operation,
+		date,
+		brand,
+		store,
 		updatedAt,
 	}: TransactionPrimitives): Transaction {
-		const transaction = new Transaction(
+		// Backward compatibility: if fromSplits/toSplits are missing, use account/toAccount
+		let _fromSplits: PaymentSplit[] = [];
+		let _toSplits: PaymentSplit[] = [];
+		if (fromSplits && fromSplits.length > 0) {
+			_fromSplits = fromSplits.map(PaymentSplit.fromPrimitives);
+		} else if (account) {
+			_fromSplits = [
+				new PaymentSplit(
+					new AccountID(account),
+					new TransactionAmount(amount ?? 0)
+				),
+			];
+		}
+		if (toSplits && toSplits.length > 0) {
+			_toSplits = toSplits.map(PaymentSplit.fromPrimitives);
+		} else if (toAccount) {
+			_toSplits = [
+				new PaymentSplit(
+					new AccountID(toAccount),
+					new TransactionAmount(amount ?? 0)
+				),
+			];
+		}
+		return new Transaction(
 			new TransactionID(id),
-			new AccountID(account),
+			_fromSplits,
+			_toSplits,
 			new TransactionName(name),
 			new TransactionOperation(operation),
 			new CategoryID(category),
 			new SubCategoryID(subCategory),
 			new TransactionDate(new Date(date)),
-			new TransactionAmount(amount),
 			updatedAt
 				? new DateValueObject(new Date(updatedAt))
 				: DateValueObject.createNowDate(),
 			item ? new ItemID(item) : undefined,
-			toAccount ? new AccountID(toAccount) : undefined,
 			brand || store
 				? new ItemProductInfo({
 						brand: brand ? new ItemBrand(brand) : undefined,
@@ -261,22 +277,21 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 				  })
 				: undefined
 		);
-		return transaction;
 	}
 
 	static emptyPrimitives(): TransactionPrimitives {
 		return {
 			id: "",
 			name: "",
-			account: "",
-			toAccount: "",
+			category: "",
+			subCategory: "",
+			fromSplits: [],
+			toSplits: [],
 			operation: "expense",
 			date: new Date(),
 			amount: 0,
 			brand: "",
 			store: "",
-			category: "",
-			subCategory: "",
 			updatedAt: new Date().toISOString(),
 		};
 	}
@@ -286,13 +301,15 @@ export type TransactionPrimitives = {
 	id: string;
 	item?: string;
 	name: string;
-	account: string;
 	category: string;
 	subCategory: string;
+	fromSplits?: PaymentSplitPrimitives[];
+	toSplits?: PaymentSplitPrimitives[];
+	account?: string;
 	toAccount?: string;
 	operation: OperationType;
 	date: Date;
-	amount: number;
+	amount?: number;
 	brand?: string;
 	store?: string;
 	updatedAt: string;

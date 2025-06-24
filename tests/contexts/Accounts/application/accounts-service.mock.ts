@@ -51,13 +51,15 @@ export class AccountsServiceMock implements IAccountsService {
 	}
 
 	async adjustOnTransaction(transaction: Transaction): Promise<void> {
-		const account = await this.getByID(transaction.account);
-		account.adjustFromTransaction(transaction);
-		const toAccount = transaction.toAccount
-			? await this.getByID(transaction.toAccount)
-			: undefined;
-		if (toAccount) {
-			toAccount.adjustFromTransaction(transaction);
+		// Adjust all fromSplits
+		for (const split of transaction.fromSplits) {
+			const account = await this.getByID(split.accountId);
+			account.adjustFromTransaction(transaction);
+		}
+		// Adjust all toSplits
+		for (const split of transaction.toSplits) {
+			const account = await this.getByID(split.accountId);
+			account.adjustFromTransaction(transaction);
 		}
 	}
 }

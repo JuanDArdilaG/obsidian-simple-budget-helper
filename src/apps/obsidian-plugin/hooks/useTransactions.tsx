@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
-import { useLogger } from "./useLogger";
 import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
+import { ItemBrand, ItemStore } from "contexts/Items/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
-import { Transaction } from "contexts/Transactions/domain";
 import { GetAllUniqueItemBrandsUseCase } from "contexts/Transactions/application/get-all-unique-item-brands.usecase";
 import { GetAllUniqueItemStoresUseCase } from "contexts/Transactions/application/get-all-unique-item-stores.usecase";
-import { ItemBrand, ItemStore } from "contexts/Items/domain";
+import { Transaction } from "contexts/Transactions/domain";
+import { useEffect, useState } from "react";
+import { useLogger } from "./useLogger";
 
 export const useTransactions = ({
 	getAllTransactions,
@@ -87,6 +87,7 @@ export const useTransactions = ({
 				});
 		}
 	}, [updateFilteredTransactions]);
+
 	useEffect(() => {
 		if (updateBrands) {
 			setUpdateBrands(false);

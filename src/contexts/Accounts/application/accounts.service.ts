@@ -1,4 +1,3 @@
-import { Logger } from "contexts/Shared/infrastructure/logger";
 import {
 	Account,
 	AccountID,
@@ -7,9 +6,10 @@ import {
 	IAccountsRepository,
 	IAccountsService,
 } from "contexts/Accounts/domain";
-import { InvalidArgumentError } from "contexts/Shared/domain/errors";
-import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 import { Service } from "contexts/Shared/application/service.abstract";
+import { InvalidArgumentError } from "contexts/Shared/domain/errors";
+import { Logger } from "contexts/Shared/infrastructure/logger";
+import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 
 export class AccountsService
 	extends Service<AccountID, Account, AccountPrimitives>
@@ -40,32 +40,31 @@ export class AccountsService
 	}
 
 	async adjustOnTransaction(transaction: Transaction): Promise<void> {
-		const account = await this.getByID(transaction.account);
-		const toAccount = transaction.toAccount
-			? await this.getByID(transaction.toAccount)
-			: undefined;
-
-		this._logger.debug("adjusting account", {
-			account: account.toPrimitives(),
-			transaction: transaction.toPrimitives(),
-		});
-		account.adjustFromTransaction(transaction);
-		this._logger.debug("adjusting account adjusted", {
-			...account.toPrimitives(),
-		});
-
-		await this.update(account);
-
-		if (toAccount) {
-			this._logger.debug("adjusting toAccount", {
-				toAccount: toAccount.toPrimitives(),
+		// Adjust all fromSplits
+		for (const split of transaction.fromSplits) {
+			const account = await this.getByID(split.accountId);
+			this._logger.debug("adjusting account (fromSplit)", {
+				account: account.toPrimitives(),
 				transaction: transaction.toPrimitives(),
 			});
-			toAccount.adjustFromTransaction(transaction);
-			this._logger.debug("adjusting toAccount adjusted", {
-				...toAccount.toPrimitives(),
+			account.adjustFromTransaction(transaction);
+			this._logger.debug("adjusting account adjusted (fromSplit)", {
+				...account.toPrimitives(),
 			});
-			await this.update(toAccount);
+			await this.update(account);
+		}
+		// Adjust all toSplits
+		for (const split of transaction.toSplits) {
+			const account = await this.getByID(split.accountId);
+			this._logger.debug("adjusting account (toSplit)", {
+				account: account.toPrimitives(),
+				transaction: transaction.toPrimitives(),
+			});
+			account.adjustFromTransaction(transaction);
+			this._logger.debug("adjusting account adjusted (toSplit)", {
+				...account.toPrimitives(),
+			});
+			await this.update(account);
 		}
 	}
 }

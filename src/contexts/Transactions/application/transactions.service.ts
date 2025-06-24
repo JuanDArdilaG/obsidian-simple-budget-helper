@@ -24,6 +24,7 @@ import {
 	TransactionName,
 	TransactionOperation,
 } from "contexts/Transactions/domain";
+import { PaymentSplit } from "../domain/payment-split.valueobject";
 
 export class TransactionsService implements ITransactionsService {
 	readonly #logger = new Logger("TransactionsService");
@@ -91,15 +92,19 @@ export class TransactionsService implements ITransactionsService {
 				new NumberValueObject(-1)
 			);
 
+		const fromSplits = [
+			new PaymentSplit(accountID, amountDifference.abs()),
+		];
+
 		const transaction = Transaction.createWithoutItem(
-			accountID,
+			fromSplits,
+			[],
 			new TransactionName(`Adjustment for ${account.name}`),
 			new TransactionOperation(
 				amountDifference.isPositive() ? "income" : "expense"
 			),
 			category.id,
-			subCategory.id,
-			amountDifference.abs()
+			subCategory.id
 		);
 
 		await this.record(transaction);
@@ -107,46 +112,21 @@ export class TransactionsService implements ITransactionsService {
 
 	async update(transaction: Transaction): Promise<void> {
 		const prevTransaction = await this.getByID(transaction.id);
-		const account = await this._accountsService.getByID(
-			transaction.account
+		const allAccountIDs = [
+			...transaction.fromSplits.map((s) => s.accountId.value),
+			...transaction.toSplits.map((s) => s.accountId.value),
+			...prevTransaction.fromSplits.map((s) => s.accountId.value),
+			...prevTransaction.toSplits.map((s) => s.accountId.value),
+		];
+		const uniqueAccountIDs = Array.from(new Set(allAccountIDs)).map(
+			(id) => new AccountID(id)
 		);
-		if (prevTransaction.account.equalTo(transaction.account)) {
+
+		for (const accountID of uniqueAccountIDs) {
+			const account = await this._accountsService.getByID(accountID);
 			account.adjustOnTransactionUpdate(prevTransaction, transaction);
-		} else {
-			const prevAccount = await this._accountsService.getByID(
-				prevTransaction.account
-			);
-			prevAccount.adjustOnTransactionDeletion(prevTransaction);
-			account.adjustFromTransaction(transaction);
-
-			await this._accountsService.update(prevAccount);
+			await this._accountsService.update(account);
 		}
-
-		await this._accountsService.update(account);
-
-		const toAccount = transaction.toAccount
-			? await this._accountsService.getByID(transaction.toAccount)
-			: undefined;
-		if (toAccount && transaction.toAccount)
-			if (
-				prevTransaction.toAccount?.value === transaction.toAccount.value
-			) {
-				toAccount.adjustOnTransactionUpdate(
-					prevTransaction,
-					transaction
-				);
-			} else {
-				const prevToAccount = prevTransaction.toAccount
-					? await this._accountsService.getByID(
-							prevTransaction.toAccount
-					  )
-					: undefined;
-				prevToAccount?.adjustOnTransactionDeletion(transaction);
-				toAccount.adjustFromTransaction(transaction);
-
-				if (prevToAccount)
-					await this._accountsService.update(prevToAccount);
-			}
 
 		await this._transactionsRepository.persist(transaction);
 	}
@@ -160,18 +140,18 @@ export class TransactionsService implements ITransactionsService {
 	}
 
 	async #adjustAccountsOnDeletion(transaction: Transaction) {
-		const account = await this._accountsService.getByID(
-			transaction.account
+		const allAccountIDs = [
+			...transaction.fromSplits.map((s) => s.accountId.value),
+			...transaction.toSplits.map((s) => s.accountId.value),
+		];
+		const uniqueAccountIDs = Array.from(new Set(allAccountIDs)).map(
+			(id) => new AccountID(id)
 		);
-		account.adjustOnTransactionDeletion(transaction);
-		await this._accountsService.update(account);
 
-		const toAccount =
-			transaction.toAccount &&
-			(await this._accountsService.getByID(transaction.toAccount));
-		if (toAccount) {
-			toAccount.adjustOnTransactionDeletion(transaction);
-			await this._accountsService.update(toAccount);
+		for (const accountID of uniqueAccountIDs) {
+			const account = await this._accountsService.getByID(accountID);
+			account.adjustOnTransactionDeletion(transaction);
+			await this._accountsService.update(account);
 		}
 	}
 }

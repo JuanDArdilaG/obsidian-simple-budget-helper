@@ -1,18 +1,20 @@
+import { DateValueObject, PriceValueObject } from "@juandardilag/value-objects";
 import { describe, expect, it } from "vitest";
 import {
 	Account,
-	AccountType,
-	AccountID,
 	AccountBalance,
+	AccountID,
 	AccountName,
+	AccountType,
 } from "../../../../src/contexts/Accounts/domain";
 import { buildTestTransactions } from "../../Reports/domain/buildTestTransactions";
-import { DateValueObject, PriceValueObject } from "@juandardilag/value-objects";
 
 describe("adjustOnTransactionDeletion", () => {
 	it("account balance should be adjust on expense transaction", () => {
 		const account = buildTestAccount();
-		const transactions = buildTestTransactions([{ amount: 100 }]);
+		const transactions = buildTestTransactions([
+			{ account: account.id.value, amount: 100 },
+		]);
 
 		account.adjustOnTransactionDeletion(transactions[0]);
 
@@ -22,7 +24,7 @@ describe("adjustOnTransactionDeletion", () => {
 	it("account balance should be adjust on income transaction", () => {
 		const account = buildTestAccount();
 		const transactions = buildTestTransactions([
-			{ amount: 100, operation: "income" },
+			{ account: account.id.value, amount: 100, operation: "income" },
 		]);
 
 		account.adjustOnTransactionDeletion(transactions[0]);
@@ -32,8 +34,14 @@ describe("adjustOnTransactionDeletion", () => {
 
 	it("account balance should be adjust on transfer transaction - account", () => {
 		const account = buildTestAccount();
+		const toAccount = buildTestAccount();
 		const transactions = buildTestTransactions([
-			{ amount: 100, operation: "transfer", account: account.id.value },
+			{
+				account: account.id.value,
+				amount: 100,
+				operation: "transfer",
+				toAccount: toAccount.id.value,
+			},
 		]);
 
 		account.adjustOnTransactionDeletion(transactions[0]);
@@ -43,13 +51,19 @@ describe("adjustOnTransactionDeletion", () => {
 
 	it("account balance should be adjust on transfer transaction - toAccount", () => {
 		const account = buildTestAccount();
+		const toAccount = buildTestAccount();
 		const transactions = buildTestTransactions([
-			{ amount: 100, operation: "transfer", toAccount: account.id.value },
+			{
+				account: account.id.value,
+				amount: 100,
+				operation: "transfer",
+				toAccount: toAccount.id.value,
+			},
 		]);
 
-		account.adjustOnTransactionDeletion(transactions[0]);
+		toAccount.adjustOnTransactionDeletion(transactions[0]);
 
-		expect(account.balance.value.value).toBe(-100);
+		expect(toAccount.balance.value.value).toBe(-100);
 	});
 });
 

@@ -4,10 +4,10 @@ import {
 	ItemPrice,
 	ItemRecurrenceInfo,
 } from "contexts/Items/domain";
-import { describe, expect, it } from "vitest";
-import { buildTestItems } from "./buildTestItems";
 import { ItemOperation } from "contexts/Shared/domain";
+import { describe, expect, it } from "vitest";
 import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
+import { buildTestItems } from "./buildTestItems";
 
 describe("updateState", () => {
 	it("should updates state", () => {
@@ -45,7 +45,9 @@ describe("getRealPriceForAccount", () => {
 		const result = item.recurrence.recurrences[0].getRealPriceForAccount(
 			ItemOperation.expense(account.id),
 			account,
-			item.price,
+			new ItemPrice(
+				-item.fromSplits.reduce((sum, s) => sum + s.amount.value, 0)
+			),
 			item.operation.account,
 			item.operation.toAccount
 		);

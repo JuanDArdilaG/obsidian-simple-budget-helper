@@ -1,7 +1,18 @@
+import { DateValueObject } from "@juandardilag/value-objects";
+import { AccountID } from "contexts/Accounts/domain";
+import { CategoryID } from "contexts/Categories/domain";
+import {
+	ERecurrenceState,
+	Item,
+	ItemDate,
+	ItemName,
+} from "contexts/Items/domain";
+import { ItemOperation } from "contexts/Shared/domain/Item/item-operation.valueobject";
+import { SubCategoryID } from "contexts/Subcategories/domain";
+import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { describe, expect, it } from "vitest";
 import { buildTestItems } from "./buildTestItems";
-import { ERecurrenceState, ItemDate } from "contexts/Items/domain";
-import { DateValueObject } from "@juandardilag/value-objects";
 
 describe("remainingDays", () => {
 	it("should calculate remaining future 7 days correctly", () => {
@@ -150,5 +161,128 @@ describe("createItemsUntilDate", () => {
 		expect(recurrences[0].recurrence.date.value).toEqual(
 			new Date(2024, 0, 2)
 		);
+	});
+});
+
+describe("transfer operation validation", () => {
+	it("should throw error when creating transfer operation without toSplits", () => {
+		const fromAccount = AccountID.generate();
+		const toAccount = AccountID.generate();
+		const fromSplits = [
+			new PaymentSplit(fromAccount, new TransactionAmount(100)),
+		];
+		const toSplits: PaymentSplit[] = []; // Empty toSplits for transfer
+
+		expect(() => {
+			Item.oneTime(
+				DateValueObject.createNowDate(),
+				new ItemName("Transfer Test"),
+				fromSplits,
+				toSplits,
+				ItemOperation.transfer(fromAccount, toAccount),
+				CategoryID.generate(),
+				SubCategoryID.generate()
+			);
+		}).toThrow("Transfer operations must have a toSplits array");
+	});
+
+	it("should allow transfer operation with valid toSplits", () => {
+		const fromAccount = AccountID.generate();
+		const toAccount = AccountID.generate();
+		const fromSplits = [
+			new PaymentSplit(fromAccount, new TransactionAmount(100)),
+		];
+		const toSplits = [
+			new PaymentSplit(toAccount, new TransactionAmount(100)),
+		];
+
+		expect(() => {
+			Item.oneTime(
+				DateValueObject.createNowDate(),
+				new ItemName("Transfer Test"),
+				fromSplits,
+				toSplits,
+				ItemOperation.transfer(fromAccount, toAccount),
+				CategoryID.generate(),
+				SubCategoryID.generate()
+			);
+		}).not.toThrow();
+	});
+
+	it("should throw error when setting empty toSplits for transfer operation", () => {
+		const fromAccount = AccountID.generate();
+		const toAccount = AccountID.generate();
+		const fromSplits = [
+			new PaymentSplit(fromAccount, new TransactionAmount(100)),
+		];
+		const toSplits = [
+			new PaymentSplit(toAccount, new TransactionAmount(100)),
+		];
+
+		const item = Item.oneTime(
+			DateValueObject.createNowDate(),
+			new ItemName("Transfer Test"),
+			fromSplits,
+			toSplits,
+			ItemOperation.transfer(fromAccount, toAccount),
+			CategoryID.generate(),
+			SubCategoryID.generate()
+		);
+
+		expect(() => {
+			item.setToSplits([]);
+		}).toThrow("Transfer operations must have a toSplits array");
+	});
+
+	it("should throw error when updating operation to transfer without toSplits", () => {
+		const fromAccount = AccountID.generate();
+		const toAccount = AccountID.generate();
+		const fromSplits = [
+			new PaymentSplit(fromAccount, new TransactionAmount(100)),
+		];
+		const toSplits: PaymentSplit[] = []; // Empty toSplits
+
+		const item = Item.oneTime(
+			DateValueObject.createNowDate(),
+			new ItemName("Test Item"),
+			fromSplits,
+			toSplits,
+			ItemOperation.expense(fromAccount),
+			CategoryID.generate(),
+			SubCategoryID.generate()
+		);
+
+		expect(() => {
+			item.updateOperation(
+				ItemOperation.transfer(fromAccount, toAccount)
+			);
+		}).toThrow("Transfer operations must have a toSplits array");
+	});
+
+	it("should allow updating operation to transfer with valid toSplits", () => {
+		const fromAccount = AccountID.generate();
+		const toAccount = AccountID.generate();
+		const fromSplits = [
+			new PaymentSplit(fromAccount, new TransactionAmount(100)),
+		];
+		const toSplits = [
+			new PaymentSplit(toAccount, new TransactionAmount(100)),
+		];
+
+		const item = Item.oneTime(
+			DateValueObject.createNowDate(),
+			new ItemName("Test Item"),
+			fromSplits,
+			toSplits,
+			ItemOperation.expense(fromAccount),
+			CategoryID.generate(),
+			SubCategoryID.generate()
+		);
+
+		expect(() => {
+			item.updateOperation(
+				ItemOperation.transfer(fromAccount, toAccount)
+			);
+		}).not.toThrow();
 	});
 });

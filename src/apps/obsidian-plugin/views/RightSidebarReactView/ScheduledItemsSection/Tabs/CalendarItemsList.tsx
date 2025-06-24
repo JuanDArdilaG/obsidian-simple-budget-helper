@@ -1,20 +1,22 @@
-import { useLogger } from "apps/obsidian-plugin/hooks";
-import { Item, ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
-import { Forward } from "lucide-react";
-import { useState, useEffect, useMemo, useContext } from "react";
-import { AccountsContext, ItemsContext } from "../../Contexts";
-import { AccountsReport, ItemsReport } from "contexts/Reports/domain";
-import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
 import {
 	DateValueObject,
 	NumberValueObject,
+	PriceValueObject,
 } from "@juandardilag/value-objects";
-import { RecordItemPanel } from "apps/obsidian-plugin/panels/RecordItemPanel";
-import { EditItemRecurrencePanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemRecurrencePanel";
 import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
-import { ItemReportContext } from "../../Contexts/ItemReportContext";
+import { useLogger } from "apps/obsidian-plugin/hooks";
+import { EditItemRecurrencePanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemRecurrencePanel";
+import { RecordItemPanel } from "apps/obsidian-plugin/panels/RecordItemPanel";
 import { AccountBalance, AccountName } from "contexts/Accounts/domain";
+import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
 import { ItemWithAccumulatedBalance } from "contexts/Items/application/items-with-accumulated-balance.usecase";
+import { Item, ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
+import { AccountsReport } from "contexts/Reports/domain";
+import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
+import { Forward } from "lucide-react";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { AccountsContext, ItemsContext } from "../../Contexts";
+import { ItemReportContext } from "../../Contexts/ItemReportContext";
 
 export const CalendarItemsList = ({
 	items,
@@ -288,6 +290,22 @@ const CalendarItemsListItem = ({
 		remainingDaysColor = "var(--color-yellow)";
 	else remainingDaysColor = "var(--color-green)";
 
+	// Helper function for price:
+	const getItemSplitPrice = (item: Item): PriceValueObject => {
+		if (
+			item.operation.type.isTransfer() ||
+			item.operation.type.isExpense()
+		) {
+			return new PriceValueObject(
+				item.fromSplits.reduce((sum, s) => sum + s.amount.value, 0)
+			);
+		} else {
+			return new PriceValueObject(
+				item.toSplits.reduce((sum, s) => sum + s.amount.value, 0)
+			);
+		}
+	};
+
 	return (
 		<div>
 			<li
@@ -331,8 +349,12 @@ const CalendarItemsListItem = ({
 						<PriceLabel
 							price={
 								item.operation.type.isTransfer()
-									? (recurrence.price ?? item.price).negate()
-									: recurrence.price ?? item.price
+									? (
+											recurrence.price ??
+											getItemSplitPrice(item)
+									  ).negate()
+									: recurrence.price ??
+									  getItemSplitPrice(item)
 							}
 							operation={item.operation.type}
 						/>

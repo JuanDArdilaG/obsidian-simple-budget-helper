@@ -1,12 +1,12 @@
-import { Transaction } from "contexts/Transactions/domain";
-import { TransactionsReport } from "../domain/transactions-report.entity";
 import { PriceValueObject } from "@juandardilag/value-objects";
 import { Category, ICategoriesService } from "contexts/Categories/domain";
+import { QueryUseCase } from "contexts/Shared/domain";
 import {
 	ISubCategoriesService,
 	SubCategory,
 } from "contexts/Subcategories/domain";
-import { QueryUseCase } from "contexts/Shared/domain";
+import { Transaction } from "contexts/Transactions/domain";
+import { TransactionsReport } from "../domain/transactions-report.entity";
 
 export type GroupBySubcategoryWithBalance = {
 	[subcategoryID: string]: {
@@ -60,15 +60,27 @@ export class GroupByCategoryWithAccumulatedBalanceUseCase
 				transaction.subCategory.value
 			].transactions.push(transaction);
 
-			result[transaction.category.value].balance = result[
-				transaction.category.value
-			].balance.plus(transaction.realAmount);
+			if (transaction.operation.isExpense()) {
+				result[transaction.category.value].balance = result[
+					transaction.category.value
+				].balance.plus(transaction.fromAmount.negate());
 
-			result[transaction.category.value].subCategories[
-				transaction.subCategory.value
-			].balance = result[transaction.category.value].subCategories[
-				transaction.subCategory.value
-			].balance.plus(transaction.realAmount);
+				result[transaction.category.value].subCategories[
+					transaction.subCategory.value
+				].balance = result[transaction.category.value].subCategories[
+					transaction.subCategory.value
+				].balance.plus(transaction.fromAmount.negate());
+			} else {
+				result[transaction.category.value].balance = result[
+					transaction.category.value
+				].balance.plus(transaction.fromAmount);
+
+				result[transaction.category.value].subCategories[
+					transaction.subCategory.value
+				].balance = result[transaction.category.value].subCategories[
+					transaction.subCategory.value
+				].balance.plus(transaction.fromAmount);
+			}
 		}
 
 		return result;

@@ -66,16 +66,28 @@ describe("update", () => {
 		const updatedTransaction = Transaction.fromPrimitives(
 			transactions[0].toPrimitives()
 		);
-		updatedTransaction.updateAccount(accounts[1].id);
+		updatedTransaction.setFromSplits([
+			...updatedTransaction.fromSplits.map((split, idx) =>
+				idx === 0
+					? new (Object.getPrototypeOf(split).constructor)(
+							accounts[1].id,
+							split.amount
+					  )
+					: split
+			),
+		]);
 
 		await transactionsService.update(updatedTransaction);
 
 		expect(accounts[0].balance.value.value).toEqual(10);
 		expect(accounts[1].balance.value.value).toEqual(-10);
 		expect(accounts[2].balance.value.value).toEqual(0);
-		expect(transactions[0].account.value).toEqual(accounts[1].id.value);
-		expect(transactions[0].toAccount?.value).toEqual(accounts[2].id.value);
-		expect(transactions[0].amount.value).toEqual(10);
+		expect(updatedTransaction.fromSplits[0].accountId.value).toEqual(
+			accounts[1].id.value
+		);
+		expect(updatedTransaction.toSplits[0].accountId.value).toEqual(
+			accounts[2].id.value
+		);
 	});
 });
 

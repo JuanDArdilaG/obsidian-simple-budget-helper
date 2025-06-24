@@ -1,17 +1,18 @@
-import { ItemID } from "contexts/Items/domain/item-id.valueobject";
-import { Transaction } from "../domain/transaction.entity";
-import { EntityNotFoundError } from "contexts/Shared/domain/errors/not-found.error";
-import { TransactionDate } from "../domain/transaction-date.valueobject";
-import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
-import { TransactionAmount } from "../domain/transaction-amount.valueobject";
-import { CommandUseCase } from "../../Shared/domain/command-use-case.interface";
-import { Logger } from "../../Shared/infrastructure/logger";
-import { ITransactionsService } from "../domain";
-import { IItemsRepository, ERecurrenceState } from "contexts/Items/domain";
 import {
 	InvalidArgumentError,
 	NumberValueObject,
 } from "@juandardilag/value-objects";
+import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
+import { ERecurrenceState, IItemsRepository } from "contexts/Items/domain";
+import { ItemID } from "contexts/Items/domain/item-id.valueobject";
+import { EntityNotFoundError } from "contexts/Shared/domain/errors/not-found.error";
+import { CommandUseCase } from "../../Shared/domain/command-use-case.interface";
+import { Logger } from "../../Shared/infrastructure/logger";
+import { ITransactionsService } from "../domain";
+import { PaymentSplit } from "../domain/payment-split.valueobject";
+import { TransactionAmount } from "../domain/transaction-amount.valueobject";
+import { TransactionDate } from "../domain/transaction-date.valueobject";
+import { Transaction } from "../domain/transaction.entity";
 
 export type RecordItemRecurrenceUseCaseInput = {
 	itemID: ItemID;
@@ -63,9 +64,19 @@ export class RecordItemRecurrenceUseCase
 			item,
 		});
 
-		transaction.updateAmount(amount ?? item.price);
-		transaction.updateAccount(account ?? item.operation.account);
-		transaction.updateToAccount(toAccount ?? item.operation.toAccount);
+		// Update splits if amount/account/toAccount are provided
+		if (amount || account || toAccount) {
+			let fromSplits = transaction.fromSplits;
+			let toSplits = transaction.toSplits;
+			if (account && amount) {
+				fromSplits = [new PaymentSplit(account, amount)];
+			}
+			if (toAccount && amount) {
+				toSplits = [new PaymentSplit(toAccount, amount)];
+			}
+			transaction.setFromSplits(fromSplits);
+			transaction.setToSplits(toSplits);
+		}
 
 		item.recurrence.recurrences[n.value].updateState(
 			ERecurrenceState.COMPLETED

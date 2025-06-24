@@ -128,19 +128,87 @@ export function AccountingList({
 			.forEach((withBalanceTransaction) => {
 				const { transaction } = withBalanceTransaction;
 
-				// All the calculations from AccountingListItem go here
-				const account = getAccountByID(
-					transaction.operation.isTransfer() &&
-						transaction.toAccount &&
-						transaction.amount.isNegative()
-						? transaction.toAccount
-						: transaction.account
-				);
+				// For transfer transactions, we need to determine which account this entry represents
+				let accountName: string;
+				let realAmount: PriceValueObject | null;
+
+				if (transaction.operation.isTransfer()) {
+					// For transfers, determine if this is a "from" or "to" entry based on the balance change
+					const balanceChange =
+						withBalanceTransaction.balance.toNumber() -
+						withBalanceTransaction.prevBalance.toNumber();
+
+					// Find the account that matches this balance change
+					const fromAccount = transaction.fromSplits.find((split) => {
+						const accountAmount = transaction
+							.getRealAmountForAccount(split.accountId)
+							.toNumber();
+						return Math.abs(accountAmount - balanceChange) < 0.01; // Small tolerance for floating point
+					});
+
+					const toAccount = transaction.toSplits.find((split) => {
+						const accountAmount = transaction
+							.getRealAmountForAccount(split.accountId)
+							.toNumber();
+						return Math.abs(accountAmount - balanceChange) < 0.01; // Small tolerance for floating point
+					});
+
+					if (fromAccount) {
+						// This is a "from" entry (negative amount)
+						accountName =
+							getAccountByID(fromAccount.accountId)?.name.value ||
+							"";
+						realAmount = transaction.getRealAmountForAccount(
+							fromAccount.accountId
+						);
+					} else if (toAccount) {
+						// This is a "to" entry (positive amount)
+						accountName =
+							getAccountByID(toAccount.accountId)?.name.value ||
+							"";
+						realAmount = transaction.getRealAmountForAccount(
+							toAccount.accountId
+						);
+					} else {
+						// Fallback to original logic
+						const fromAccounts = transaction.fromSplits
+							.map(
+								(s) =>
+									getAccountByID(s.accountId)?.name.value ||
+									""
+							)
+							.join(", ");
+						const toAccounts = transaction.toSplits
+							.map(
+								(s) =>
+									getAccountByID(s.accountId)?.name.value ||
+									""
+							)
+							.join(", ");
+						accountName =
+							fromAccounts +
+							(toAccounts ? " -> " + toAccounts : "");
+						realAmount = transaction.fromAmount;
+					}
+				} else {
+					// For non-transfer transactions, use the original logic
+					const fromAccounts = transaction.fromSplits
+						.map(
+							(s) => getAccountByID(s.accountId)?.name.value || ""
+						)
+						.join(", ");
+					const toAccounts = transaction.toSplits
+						.map(
+							(s) => getAccountByID(s.accountId)?.name.value || ""
+						)
+						.join(", ");
+					realAmount = transaction.fromAmount;
+					accountName =
+						fromAccounts + (toAccounts ? " -> " + toAccounts : "");
+				}
+
 				const category = getCategoryByID(transaction.category);
 				const subCategory = getSubCategoryByID(transaction.subCategory);
-				const realAmount = account?.id
-					? transaction.getRealAmountForAccount(account.id)
-					: null;
 				const formattedTime = transaction.date.toLocaleTimeString(
 					"default",
 					{
@@ -149,7 +217,6 @@ export function AccountingList({
 					}
 				);
 				const transactionName = transaction.name.toString();
-				const accountName = account?.name.toString() ?? "";
 				const categoryName = category?.name.toString() ?? "";
 				const subCategoryName = subCategory?.name.value ?? "";
 
@@ -248,34 +315,57 @@ export function AccountingList({
 								})}
 							</ListSubheader>
 							{withBalanceTransactions.map(
-								(transactionWithBalance) => (
-									<ListItem
-										key={transactionWithBalance.transaction.id.toString()}
-										onAuxClick={() =>
-											handleAuxClick(
-												transactionWithBalance.transaction
-											)
-										}
-										style={{
-											padding: isMobile ? "2px" : "8px",
-											minHeight: "auto",
-										}}
-									>
-										<AccountingListItem
-											editingTransactionId={
-												editingTransactionId
+								(transactionWithBalance, index) => {
+									// Create unique key for transfer transactions
+									const isTransfer =
+										transactionWithBalance.transaction.operation.isTransfer();
+									let uniqueKey;
+
+									if (isTransfer) {
+										// For transfers, include account info to make keys unique
+										const accountName =
+											transactionWithBalance.display
+												.accountName;
+										const amount =
+											transactionWithBalance.display.realAmount?.toNumber() ||
+											0;
+										uniqueKey = `${transactionWithBalance.transaction.id.toString()}-${accountName}-${amount}-${index}`;
+									} else {
+										// For non-transfers, use the original key logic
+										uniqueKey = `${transactionWithBalance.transaction.id.toString()}-${transactionWithBalance.transaction.date.getTime()}-${index}`;
+									}
+
+									return (
+										<ListItem
+											key={uniqueKey}
+											onAuxClick={() =>
+												handleAuxClick(
+													transactionWithBalance.transaction
+												)
 											}
-											setEditingTransactionId={
-												setEditingTransactionId
-											}
-											transactionWithBalance={
-												transactionWithBalance
-											}
-											selection={selection}
-											setSelection={setSelection}
-										/>
-									</ListItem>
-								)
+											style={{
+												padding: isMobile
+													? "2px"
+													: "8px",
+												minHeight: "auto",
+											}}
+										>
+											<AccountingListItem
+												editingTransactionId={
+													editingTransactionId
+												}
+												setEditingTransactionId={
+													setEditingTransactionId
+												}
+												transactionWithBalance={
+													transactionWithBalance
+												}
+												selection={selection}
+												setSelection={setSelection}
+											/>
+										</ListItem>
+									);
+								}
 							)}
 						</List>
 					</ListItem>

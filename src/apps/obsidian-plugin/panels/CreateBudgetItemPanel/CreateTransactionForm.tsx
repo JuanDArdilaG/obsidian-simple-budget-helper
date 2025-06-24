@@ -1,4 +1,3 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
 import { Button, ButtonGroup } from "@mui/material";
 import { CreateCategoryModal } from "apps/obsidian-plugin/Category/CreateCategoryModal";
 import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
@@ -8,7 +7,6 @@ import {
 	useCategorySelect,
 	useSubCategorySelect,
 } from "apps/obsidian-plugin/components/Select";
-import { useAccountSelect } from "apps/obsidian-plugin/components/Select/useAccountSelect";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 import {
 	AccountsContext,
@@ -18,26 +16,20 @@ import { AccountID } from "contexts/Accounts/domain";
 import { OperationType } from "contexts/Shared/domain";
 import {
 	Transaction,
-	TransactionAmount,
 	TransactionID,
 	TransactionPrimitives,
 } from "contexts/Transactions/domain";
-import { evaluate } from "mathjs";
 import React, {
 	PropsWithChildren,
 	useContext,
 	useEffect,
 	useState,
 } from "react";
-import { Input } from "../../components/Input/Input";
 
 // Validation interface
 interface ValidationErrors {
 	name?: string;
-	amount?: string;
 	calculation?: string;
-	account?: string;
-	toAccount?: string;
 	category?: string;
 	subCategory?: string;
 	date?: string;
@@ -64,33 +56,6 @@ const useTransactionValidation = (
 		} else if (transaction.name.length > 100) {
 			newErrors.name =
 				"Transaction name must be less than 100 characters";
-		}
-
-		// Amount validation
-		if (transaction.amount === undefined || transaction.amount === null) {
-			newErrors.amount = "Amount is required";
-		} else if (typeof transaction.amount !== "number") {
-			newErrors.amount = "Amount must be a number";
-		} else if (transaction.amount <= 0) {
-			newErrors.amount = "Amount must be greater than 0";
-		} else if (transaction.amount > 999999999) {
-			newErrors.amount = "Amount is too large";
-		}
-
-		// Account validation
-		if (!transaction.account || transaction.account.trim() === "") {
-			newErrors.account = "Account is required";
-		}
-
-		// To Account validation (only for transfers)
-		if (transaction.operation === "transfer") {
-			if (!transaction.toAccount || transaction.toAccount.trim() === "") {
-				newErrors.toAccount =
-					"Destination account is required for transfers";
-			} else if (transaction.toAccount === transaction.account) {
-				newErrors.toAccount =
-					"Destination account must be different from source account";
-			}
 		}
 
 		// Category validation
@@ -185,8 +150,6 @@ export const CreateTransactionForm = ({
 	const { logger } = useLogger("CreateTransactionForm");
 
 	const {
-		brands,
-		stores,
 		updateBrands,
 		updateStores,
 		updateTransactions,
@@ -195,22 +158,27 @@ export const CreateTransactionForm = ({
 	const { getAccountByID, updateAccounts } = useContext(AccountsContext);
 
 	const [locks, setLocks] = useState<{
-		[K in keyof Omit<
-			Required<TransactionPrimitives>,
-			"id" | "item"
-		>]: boolean;
+		fromSplits: boolean;
+		toSplits: boolean;
+		category: boolean;
+		subCategory: boolean;
+		date: boolean;
+		operation: boolean;
+		brand: boolean;
+		store: boolean;
+		updatedAt: boolean;
+		name: boolean;
 	}>({
-		account: false,
-		toAccount: false,
+		fromSplits: false,
+		toSplits: false,
 		category: false,
 		subCategory: false,
-		amount: false,
-		name: false,
 		date: false,
 		operation: false,
 		brand: false,
 		store: false,
 		updatedAt: false,
+		name: false,
 	});
 
 	const updateLock = (key: keyof TransactionPrimitives, value: boolean) => {
@@ -224,9 +192,6 @@ export const CreateTransactionForm = ({
 	);
 	const [selectedTransaction, setSelectedTransaction] =
 		useState<TransactionPrimitives>(Transaction.emptyPrimitives());
-
-	const [amountInput, setAmountInput] = useState<string>("0");
-	const [calculationError, setCalculationError] = useState<string>();
 
 	const { DateInput: DateInputBase, date } = useDateInput({
 		id: "date",
@@ -245,21 +210,6 @@ export const CreateTransactionForm = ({
 		error: getFieldError("date"),
 	});
 
-	const { AccountSelect, account } = useAccountSelect({
-		label: "From",
-		initialValueID: transaction.account,
-		lock: locks.account,
-		setLock: (lock) => updateLock("account", lock),
-		error: getFieldError("account"),
-	});
-	const { AccountSelect: ToAccountSelect, account: toAccount } =
-		useAccountSelect({
-			label: "To",
-			initialValueID: transaction.toAccount,
-			lock: locks.toAccount,
-			setLock: (lock) => updateLock("toAccount", lock),
-			error: getFieldError("toAccount"),
-		});
 	const { CategorySelect, category } = useCategorySelect({
 		initialValueID: transaction.category,
 		lock: locks.category,
@@ -275,7 +225,7 @@ export const CreateTransactionForm = ({
 	});
 
 	const getLockedOrSelectedValue = <T,>(
-		key: keyof Omit<TransactionPrimitives, "id" | "item">
+		key: keyof typeof locks
 	): T | undefined => {
 		if (locks[key]) return transaction[key] as T;
 		return (selectedTransaction?.[key] as T) ?? undefined;
@@ -283,12 +233,6 @@ export const CreateTransactionForm = ({
 
 	const [openCreateCategoryModal, setOpenCreateCategoryModal] =
 		useState(false);
-
-	useEffect(() => {
-		setAmountInput(
-			new PriceValueObject(transaction.amount ?? 0).toString()
-		);
-	}, [transaction.amount]);
 
 	useEffect(() => {
 		if (selectedTransaction) {
@@ -300,13 +244,10 @@ export const CreateTransactionForm = ({
 			const toUpdate: Partial<TransactionPrimitives> = {
 				name: getLockedOrSelectedValue("name"),
 				operation: getLockedOrSelectedValue("operation"),
-				amount: getLockedOrSelectedValue("amount"),
 				category: getLockedOrSelectedValue("category"),
 				subCategory: getLockedOrSelectedValue("subCategory"),
 				brand: getLockedOrSelectedValue("brand"),
 				store: getLockedOrSelectedValue("store"),
-				account: getLockedOrSelectedValue("account"),
-				toAccount: getLockedOrSelectedValue("toAccount"),
 			};
 
 			logger.debug("item to update on creation", {
@@ -326,8 +267,6 @@ export const CreateTransactionForm = ({
 		if (newValues.name !== undefined) newTransaction.name = newValues.name;
 		if (newValues.operation !== undefined)
 			newTransaction.operation = newValues.operation;
-		if (newValues.amount !== undefined)
-			newTransaction.amount = newValues.amount;
 		if (newValues.category !== undefined)
 			newTransaction.category = newValues.category;
 		if (newValues.subCategory !== undefined)
@@ -336,35 +275,12 @@ export const CreateTransactionForm = ({
 			newTransaction.brand = newValues.brand;
 		if (newValues.store !== undefined)
 			newTransaction.store = newValues.store;
-		if (newValues.toAccount) newTransaction.toAccount = newValues.toAccount;
-		if (newValues.account !== undefined)
-			newTransaction.account = newValues.account;
 
 		logger.debug("item to create updated", {
 			newTransaction,
 		});
 
 		setTransaction(newTransaction);
-	};
-
-	const handleAmountBlur = () => {
-		try {
-			const amount = amountInput.replaceAll(",", "").replace("$", "");
-			console.log("amount", amount);
-			const evaluated = evaluate(amount);
-			if (
-				typeof evaluated === "number" &&
-				isFinite(evaluated) &&
-				evaluated > 0
-			) {
-				update({ amount: evaluated });
-				setCalculationError(undefined);
-			} else {
-				setCalculationError("Invalid result");
-			}
-		} catch {
-			setCalculationError("Invalid expression");
-		}
 	};
 
 	const handleSubmit = (withClose: boolean) => async () => {
@@ -382,8 +298,6 @@ export const CreateTransactionForm = ({
 				id: TransactionID.generate().value,
 				category: category?.id.value ?? "",
 				subCategory: subCategory?.id.value ?? "",
-				account: account?.id.value ?? "",
-				toAccount: toAccount?.id.value,
 				date,
 			});
 
@@ -400,15 +314,12 @@ export const CreateTransactionForm = ({
 			setSelectedTransaction(Transaction.emptyPrimitives());
 			setTransaction({
 				id: "",
-				account: locks.account ? transaction.account : "",
 				name: locks.name ? transaction.name : "",
-				amount: locks.amount ? transaction.amount : 0,
 				category: locks.category ? transaction.category : "",
 				subCategory: locks.subCategory ? transaction.subCategory : "",
 				brand: locks.brand ? transaction.brand : "",
 				store: locks.store ? transaction.store : "",
 				operation: locks.operation ? transaction.operation : "expense",
-				toAccount: locks.toAccount ? transaction.toAccount : "",
 				date,
 				updatedAt: new Date().toISOString(),
 			});
@@ -432,27 +343,29 @@ export const CreateTransactionForm = ({
 				item={selectedTransaction}
 				items={items.map((item) => item.toPrimitives())}
 				getLabel={(item) => {
-					if (!item.id) return "";
-					const label = `${item.name} - ${
-						item.account
-							? getAccountByID(new AccountID(item.account))?.name
-									.value + " - "
-							: ""
-					}${
-						item.operation === "transfer" && item.toAccount
-							? ` -> ${
-									getAccountByID(
-										new AccountID(item.toAccount)
-									)?.name.value
-							  } - `
-							: ""
-					}${
-						!item.amount
-							? ""
-							: "  " +
-							  new TransactionAmount(item.amount).toString()
-					}`;
-					return label;
+					const fromAccounts = (item.fromSplits || [])
+						.map(
+							(s) =>
+								getAccountByID(new AccountID(s.accountId))?.name
+									.value || ""
+						)
+						.join(", ");
+					const toAccounts = (item.toSplits || [])
+						.map(
+							(s) =>
+								getAccountByID(new AccountID(s.accountId))?.name
+									.value || ""
+						)
+						.join(", ");
+					const totalFrom = (item.fromSplits || []).reduce(
+						(sum, s) => sum + (s.amount || 0),
+						0
+					);
+					const totalTo = (item.toSplits || []).reduce(
+						(sum, s) => sum + (s.amount || 0),
+						0
+					);
+					return `${item.name} - From: ${fromAccounts} ($${totalFrom}) To: ${toAccounts} ($${totalTo})`;
 				}}
 				getKey={(item) => item.name}
 				setSelectedItem={(item) =>
@@ -474,14 +387,6 @@ export const CreateTransactionForm = ({
 				}}
 			>
 				{DateInput}
-				<Input<string>
-					id="amount"
-					label="Amount"
-					value={amountInput}
-					onChange={setAmountInput}
-					onBlur={handleAmountBlur}
-					error={calculationError || getFieldError("amount")}
-				/>
 			</div>
 			<div
 				style={{
@@ -518,43 +423,6 @@ export const CreateTransactionForm = ({
 				setIsLocked={(value) => updateLock("operation", value)}
 				error={getFieldError("operation")}
 			/>
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					gap: "10px",
-				}}
-			>
-				{AccountSelect}
-				{transaction.operation === "transfer" && ToAccountSelect}
-			</div>
-			{transaction.operation === "expense" && (
-				<div
-					style={{ display: "flex", justifyContent: "space-between" }}
-				>
-					<SelectWithCreation
-						id="brand"
-						label="Brand"
-						item={transaction.brand ?? ""}
-						items={brands.map((brand) => brand.value)}
-						onChange={(brand) => update({ brand })}
-						isLocked={locks.brand}
-						setIsLocked={(value) => updateLock("brand", value)}
-						error={getFieldError("brand")}
-					/>
-					<SelectWithCreation
-						id="store"
-						label="Store"
-						style={{ flexGrow: 1 }}
-						item={transaction.store ?? ""}
-						items={stores.map((store) => store.value)}
-						onChange={(store) => update({ store })}
-						isLocked={locks.store}
-						setIsLocked={(value) => updateLock("store", value)}
-						error={getFieldError("store")}
-					/>
-				</div>
-			)}
 			{children}
 			<ButtonGroup
 				variant="contained"

@@ -1,15 +1,19 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
 import {
-	ItemID,
-	ItemRecurrenceInfo,
 	Item,
+	ItemID,
+	ItemPrice,
 	ItemPrimitives,
+	ItemRecurrenceInfo,
 } from "contexts/Items/domain";
 import { IItemsService } from "contexts/Items/domain/items-service.interface";
 import { Criteria } from "contexts/Shared/domain";
 
 export class ItemsServiceMock implements IItemsService {
 	constructor(public items: Item[]) {}
+	getPricePerMonth(itemID: ItemID): Promise<ItemPrice> {
+		throw new Error("Method not implemented.");
+	}
 
 	modifyRecurrence(
 		id: ItemID,

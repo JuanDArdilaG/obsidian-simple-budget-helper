@@ -1,3 +1,5 @@
+import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
+import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 import { ReportBalance } from "./report-balance.valueobject";
 
@@ -60,8 +62,24 @@ export class TransactionsReport {
 		return new TransactionsReport(
 			this._transactions.toSorted((a, b) =>
 				direction === "asc"
-					? a.amount.compareTo(b.amount)
-					: b.amount.compareTo(a.amount)
+					? PaymentSplit.totalAmount(
+							a.fromSplits.length > 0 ? a.fromSplits : a.toSplits
+					  ).compareTo(
+							PaymentSplit.totalAmount(
+								b.fromSplits.length > 0
+									? b.fromSplits
+									: b.toSplits
+							)
+					  )
+					: PaymentSplit.totalAmount(
+							b.fromSplits.length > 0 ? b.fromSplits : b.toSplits
+					  ).compareTo(
+							PaymentSplit.totalAmount(
+								a.fromSplits.length > 0
+									? a.fromSplits
+									: a.toSplits
+							)
+					  )
 			)
 		);
 	}
@@ -90,42 +108,68 @@ export class TransactionsReport {
 		return sortedReport.transactions
 			.map((transaction) => {
 				const transactions: TransactionWithAccumulatedBalance[] = [];
-				if (!accumulated[transaction.account.value])
-					accumulated[transaction.account.value] =
-						ReportBalance.zero();
-				const prevBalance = accumulated[transaction.account.value];
-				accumulated[transaction.account.value] = accumulated[
-					transaction.account.value
-				].plus(
-					transaction.getRealAmountForAccount(transaction.account)
-				);
-				transactions.push({
-					transaction,
-					balance: accumulated[transaction.account.value],
-					prevBalance,
-				});
-				if (
-					transaction.operation.isTransfer() &&
-					transaction.toAccount
-				) {
-					if (!accumulated[transaction.toAccount.value])
-						accumulated[transaction.toAccount.value] =
-							ReportBalance.zero();
-					const prevBalance =
-						accumulated[transaction.toAccount.value];
-					accumulated[transaction.toAccount.value] = accumulated[
-						transaction.toAccount.value
-					].plus(
-						transaction.getRealAmountForAccount(
-							transaction.toAccount
-						)
-					);
-					transactions.push({
-						transaction: transaction.copyWithNegativeAmount(),
-						balance: accumulated[transaction.toAccount.value],
-						prevBalance,
-					});
+
+				// For transfer transactions, create separate entries for from and to accounts
+				if (transaction.operation.isTransfer()) {
+					// Handle from accounts (negative amounts)
+					for (const fromSplit of transaction.fromSplits) {
+						const accountID = fromSplit.accountId.value;
+						if (!accumulated[accountID])
+							accumulated[accountID] = ReportBalance.zero();
+						const prevBalance = accumulated[accountID];
+						accumulated[accountID] = accumulated[accountID].plus(
+							transaction.getRealAmountForAccount(
+								fromSplit.accountId
+							)
+						);
+						transactions.push({
+							transaction,
+							balance: accumulated[accountID],
+							prevBalance,
+						});
+					}
+
+					// Handle to accounts (positive amounts)
+					for (const toSplit of transaction.toSplits) {
+						const accountID = toSplit.accountId.value;
+						if (!accumulated[accountID])
+							accumulated[accountID] = ReportBalance.zero();
+						const prevBalance = accumulated[accountID];
+						accumulated[accountID] = accumulated[accountID].plus(
+							transaction.getRealAmountForAccount(
+								toSplit.accountId
+							)
+						);
+						transactions.push({
+							transaction,
+							balance: accumulated[accountID],
+							prevBalance,
+						});
+					}
+				} else {
+					// For non-transfer transactions, use the original logic
+					const allAccountIDs = [
+						...transaction.fromSplits.map((s) => s.accountId.value),
+						...transaction.toSplits.map((s) => s.accountId.value),
+					];
+					const uniqueAccountIDs = Array.from(new Set(allAccountIDs));
+					for (const accountID of uniqueAccountIDs) {
+						if (!accumulated[accountID])
+							accumulated[accountID] = ReportBalance.zero();
+						const prevBalance = accumulated[accountID];
+						accumulated[accountID] = accumulated[accountID].plus(
+							transaction.getRealAmountForAccount(
+								new AccountID(accountID)
+							)
+						);
+						transactions.push({
+							transaction,
+							balance: accumulated[accountID],
+							prevBalance,
+						});
+					}
 				}
+
 				return transactions;
 			})
 			.flat()
