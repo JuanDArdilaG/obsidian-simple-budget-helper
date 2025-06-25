@@ -1,9 +1,14 @@
-import { RecordValueObject } from "@juandardilag/value-objects";
 import { ItemBrand } from "./item-brand.valueobject";
 import { ItemStore } from "./item-store.valueobject";
 
-export class ItemProductInfo extends RecordValueObject {
-	constructor(info: { brand?: ItemBrand; store?: ItemStore }) {
-		super(info);
+export class ItemProductInfo {
+	constructor(readonly info: { brand?: ItemBrand; store?: ItemStore }) {}
+
+	get brand(): ItemBrand | undefined {
+		return this.info.brand;
+	}
+
+	get store(): ItemStore | undefined {
+		return this.info.store;
 	}
 }

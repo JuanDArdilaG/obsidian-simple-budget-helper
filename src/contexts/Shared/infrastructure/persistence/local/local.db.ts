@@ -82,7 +82,7 @@ export class LocalDB extends DB {
 		return globalAutoSyncInterval;
 	}
 
-	// Start periodic backup creation every 5 minutes
+	// Start periodic backup creation every 10 minutes
 	public startPeriodicBackups(): number {
 		// Clear existing global interval if any
 		if (globalPeriodicBackupInterval) {
@@ -97,7 +97,7 @@ export class LocalDB extends DB {
 			} catch (error) {
 				this.logger.error(error);
 			}
-		}, 300000); // 5 minutes
+		}, 600000); // 10 minutes
 
 		this.logger.debug("Periodic backup interval started");
 		return globalPeriodicBackupInterval;

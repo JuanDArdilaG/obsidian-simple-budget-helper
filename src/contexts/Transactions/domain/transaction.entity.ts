@@ -183,6 +183,14 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		this.updateTimestamp();
 	}
 
+	get store(): ItemStore | undefined {
+		return this._productInfo?.info.store;
+	}
+
+	get brand(): ItemBrand | undefined {
+		return this._productInfo?.info.brand;
+	}
+
 	getRealAmountForAccount(accountID: AccountID): TransactionAmount {
 		const fromSplits = this._fromSplits.filter((split) =>
 			split.accountId.equalTo(accountID)
@@ -211,8 +219,8 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			toSplits: this._toSplits.map((s) => s.toPrimitives()),
 			operation: this._operation.value,
 			date: this._date,
-			brand: this._productInfo?.value.brand?.value,
-			store: this._productInfo?.value.store?.value,
+			brand: this._productInfo?.info.brand?.value,
+			store: this._productInfo?.info.store?.value,
 			updatedAt: this._updatedAt.toISOString(),
 		};
 	}
