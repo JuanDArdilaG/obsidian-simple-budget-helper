@@ -298,7 +298,7 @@ export function AccountingList({
 
 			return (
 				<div style={style} data-date-group={index}>
-					<ListItem>
+					<div>
 						<List style={{ width: "100%" }}>
 							<ListSubheader
 								style={{
@@ -368,7 +368,7 @@ export function AccountingList({
 								}
 							)}
 						</List>
-					</ListItem>
+					</div>
 				</div>
 			);
 		},

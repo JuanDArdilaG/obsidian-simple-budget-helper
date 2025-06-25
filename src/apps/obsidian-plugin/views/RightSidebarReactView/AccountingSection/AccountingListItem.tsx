@@ -7,7 +7,6 @@ import { DisplayableTransactionWithAccumulatedBalance } from "./AccountingList";
 import {
 	Box,
 	IconButton,
-	ListItem,
 	Modal,
 	Typography,
 	useMediaQuery,
@@ -117,15 +116,15 @@ export const AccountingListItem = ({
 
 	return (
 		<>
-			<ListItem
-				disablePadding
+			<div
 				onClick={handleSelectionToggle}
-				sx={{
+				style={{
 					backgroundColor: isSelected
 						? "var(--background-modifier-hover)"
 						: "transparent",
 					cursor: "pointer",
 					borderBottom: "1px solid var(--background-modifier-border)",
+					width: "100%",
 				}}
 			>
 				<div
@@ -359,7 +358,7 @@ export const AccountingListItem = ({
 						</div>
 					)}
 				</div>
-			</ListItem>
+			</div>
 			<Modal
 				open={isEditing}
 				onClose={handleCloseEdit}

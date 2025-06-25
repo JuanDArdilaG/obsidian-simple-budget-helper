@@ -345,8 +345,8 @@ export class Item extends Entity<ItemID, ItemPrimitives> {
 			operation: this._operation.toPrimitives(),
 			category: this._category.value,
 			subCategory: this._subCategory.value,
-			brand: this._info?.value.brand?.value,
-			store: this._info?.value.store?.value,
+			brand: this._info?.brand?.value,
+			store: this._info?.store?.value,
 			recurrence: this._recurrence?.toPrimitives(),
 			updatedAt: this._updatedAt.toISOString(),
 		};

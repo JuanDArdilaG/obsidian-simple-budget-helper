@@ -35,8 +35,8 @@ export const EditItemRecurrencePanel = ({
 	const [name, setName] = useState(item.name.value);
 	const [type, setType] = useState(item.operation.type.value);
 
-	const [brand, setBrand] = useState(item.info?.value.brand?.value);
-	const [store, setStore] = useState(item.info?.value.store?.value);
+	const [brand, setBrand] = useState(item.info?.brand?.value);
+	const [store, setStore] = useState(item.info?.store?.value);
 	const [frequency, setFrequency] = useState(
 		item.recurrence?.frequency?.value
 	);

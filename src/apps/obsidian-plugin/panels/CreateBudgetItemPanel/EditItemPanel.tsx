@@ -68,8 +68,8 @@ export const EditItemPanel = ({
 	const [amount, setAmount] = useState(item.fromAmount.value);
 	const [type, setType] = useState(item.operation.type.value);
 
-	const [brand, setBrand] = useState(item.info?.value.brand?.value);
-	const [store, setStore] = useState(item.info?.value.store?.value);
+	const [brand, setBrand] = useState(item.info?.brand?.value);
+	const [store, setStore] = useState(item.info?.store?.value);
 
 	const [date, setDate] = useState(item.recurrence.startDate.value);
 
