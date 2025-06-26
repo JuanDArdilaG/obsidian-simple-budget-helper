@@ -1,9 +1,9 @@
+import { ScheduledItem } from "contexts/Items/domain";
 import { QueryUseCase } from "contexts/Shared/domain";
-import { Item } from "contexts/Items/domain";
 import { ItemsService } from "./items.service";
 
 export type GetAllItemsUseCaseOutput = {
-	items: Item[];
+	items: ScheduledItem[];
 };
 
 export class GetAllItemsUseCase

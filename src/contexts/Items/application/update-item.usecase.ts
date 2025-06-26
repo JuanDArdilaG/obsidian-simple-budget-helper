@@ -1,15 +1,21 @@
-import { CommandUseCase } from "contexts/Shared/domain";
-import { Item } from "contexts/Items/domain";
-import { ItemsService } from "./items.service";
+import { Logger } from "../../Shared/infrastructure/logger";
+import { ScheduledItem } from "../domain";
+import { IScheduledItemsRepository } from "../domain/item-repository.interface";
 
-export type UpdateItemUseCaseInput = Item;
+const logger = new Logger("UpdateItemUseCase");
 
-export class UpdateItemUseCase
-	implements CommandUseCase<UpdateItemUseCaseInput>
-{
-	constructor(private readonly _itemsService: ItemsService) {}
+export type UpdateItemUseCaseInput = ScheduledItem;
 
-	async execute(item: Item): Promise<void> {
-		await this._itemsService.update(item);
+export class UpdateItemUseCase {
+	constructor(
+		private readonly _scheduledItemsRepository: IScheduledItemsRepository
+	) {}
+
+	async execute(item: UpdateItemUseCaseInput): Promise<void> {
+		logger.debug("item to update", {
+			item: item.toPrimitives(),
+		});
+
+		await this._scheduledItemsRepository.persist(item);
 	}
 }

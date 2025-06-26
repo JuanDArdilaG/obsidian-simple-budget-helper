@@ -1,13 +1,13 @@
-import { RightSidebarReactTab } from "../../RightSidebarReactTab";
-import { useContext, useEffect, useState } from "react";
-import { BudgetItemsListContextMenu } from "../BudgetItemsListContextMenu";
-import { Item } from "contexts/Items/domain";
 import { ItemsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import { ScheduledItem } from "contexts/Items/domain";
+import { useContext, useEffect, useState } from "react";
+import { RightSidebarReactTab } from "../../RightSidebarReactTab";
+import { BudgetItemsListContextMenu } from "../BudgetItemsListContextMenu";
 import { AllItemsList } from "./AllItemsList";
 
 export const AllItemsTab = () => {
 	const { scheduledItems, updateItems } = useContext(ItemsContext);
-	const [selectedItem, setSelectedItem] = useState<Item>();
+	const [selectedItem, setSelectedItem] = useState<ScheduledItem>();
 	const [action, setAction] = useState<"edit" | "record">();
 
 	useEffect(() => {

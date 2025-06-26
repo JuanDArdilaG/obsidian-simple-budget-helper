@@ -15,10 +15,10 @@ import {
 } from "apps/obsidian-plugin/components/Select";
 import { ItemsContext, TransactionsContext } from "apps/obsidian-plugin/views";
 import {
-	Item,
 	ItemName,
 	ItemRecurrence,
 	ItemRecurrenceFrequency,
+	ScheduledItem,
 } from "contexts/Items/domain";
 import { OperationType } from "contexts/Shared/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
@@ -30,7 +30,7 @@ export const EditItemPanel = ({
 	item,
 	onClose,
 }: {
-	item: Item;
+	item: ScheduledItem;
 	onClose: () => void;
 }) => {
 	const {

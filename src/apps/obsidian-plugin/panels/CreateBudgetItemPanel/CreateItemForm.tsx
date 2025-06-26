@@ -15,7 +15,12 @@ import {
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { AccountID } from "contexts/Accounts/domain";
-import { Item, ItemID, ItemPrice, ItemPrimitives } from "contexts/Items/domain";
+import {
+	ItemID,
+	ItemPrice,
+	ScheduledItem,
+	ScheduledItemPrimitives,
+} from "contexts/Items/domain";
 import { OperationType } from "contexts/Shared/domain";
 import { TransactionDate } from "contexts/Transactions/domain";
 import { PropsWithChildren, useContext, useEffect, useState } from "react";
@@ -29,8 +34,8 @@ export const CreateItemForm = ({
 	showErrors,
 	onAttemptSubmit,
 }: PropsWithChildren<{
-	items: Item[];
-	onSubmit: (item: Item, date?: TransactionDate) => Promise<void>;
+	items: ScheduledItem[];
+	onSubmit: (item: ScheduledItem, date?: TransactionDate) => Promise<void>;
 	close: () => void;
 	isValid?: boolean;
 	showErrors: boolean;
@@ -42,7 +47,7 @@ export const CreateItemForm = ({
 	const { brands, stores } = useContext(TransactionsContext);
 
 	const [locks, setLocks] = useState<{
-		[K in keyof Omit<Required<ItemPrimitives>, "id">]: boolean;
+		[K in keyof Omit<Required<ScheduledItemPrimitives>, "id">]: boolean;
 	}>({
 		name: false,
 		price: false,
@@ -56,12 +61,12 @@ export const CreateItemForm = ({
 		fromSplits: false,
 		toSplits: false,
 	});
-	const [item, setItem] = useState<ItemPrimitives>({
-		...Item.emptyPrimitives(),
+	const [item, setItem] = useState<ScheduledItemPrimitives>({
+		...ScheduledItem.emptyPrimitives(),
 		fromSplits: [{ accountId: "", amount: 0 }],
 		toSplits: [],
 	});
-	const [selectedItem, setSelectedItem] = useState<ItemPrimitives>();
+	const [selectedItem, setSelectedItem] = useState<ScheduledItemPrimitives>();
 
 	const [errors, setErrors] = useState<{
 		name: string | undefined;
@@ -99,7 +104,7 @@ export const CreateItemForm = ({
 	});
 
 	const getLockedOrSelectedValue = <T,>(
-		key: keyof Omit<ItemPrimitives, "id">
+		key: keyof Omit<ScheduledItemPrimitives, "id">
 	): T | undefined => {
 		if (locks[key]) return item[key] as T;
 		return (selectedItem?.[key] as T) ?? undefined;
@@ -132,7 +137,7 @@ export const CreateItemForm = ({
 	useEffect(() => {
 		if (selectedItem) {
 			logger.debug("selected item on creation", { selectedItem, locks });
-			const toUpdate: Partial<ItemPrimitives> = {
+			const toUpdate: Partial<ScheduledItemPrimitives> = {
 				operation: getLockedOrSelectedValue("operation"),
 				name: getLockedOrSelectedValue("name"),
 				fromSplits: getLockedOrSelectedValue("fromSplits"),
@@ -150,14 +155,14 @@ export const CreateItemForm = ({
 		}
 	}, [selectedItem]);
 
-	const updateLock = (key: keyof ItemPrimitives, value: boolean) => {
+	const updateLock = (key: keyof ScheduledItemPrimitives, value: boolean) => {
 		setLocks({
 			...locks,
 			[key]: value,
 		});
 	};
 
-	const update = (newValues: Partial<ItemPrimitives>) => {
+	const update = (newValues: Partial<ScheduledItemPrimitives>) => {
 		const newItem = { ...item };
 		logger.debug("updating item to create", {
 			prevValues: newItem,
@@ -190,7 +195,7 @@ export const CreateItemForm = ({
 
 	const handleSubmit = (withClose: boolean) => async () => {
 		if (!item) return;
-		const itemToPersist = Item.fromPrimitives({
+		const itemToPersist = ScheduledItem.fromPrimitives({
 			...item,
 			id: ItemID.generate().value,
 			category: category?.id.value ?? "",
@@ -203,7 +208,7 @@ export const CreateItemForm = ({
 		if (withClose) return close();
 		setSelectedItem(undefined);
 		setItem({
-			...Item.emptyPrimitives(),
+			...ScheduledItem.emptyPrimitives(),
 			fromSplits: [{ accountId: "", amount: 0 }],
 			toSplits: [],
 		});
@@ -221,7 +226,7 @@ export const CreateItemForm = ({
 			<Typography variant="h3" component="h3" gutterBottom>
 				Create Item
 			</Typography>
-			<SelectWithCreation<ItemPrimitives>
+			<SelectWithCreation<ScheduledItemPrimitives>
 				id="name"
 				label="Name"
 				item={item}

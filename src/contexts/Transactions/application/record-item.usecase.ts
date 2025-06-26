@@ -1,5 +1,5 @@
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
-import { IItemsRepository } from "contexts/Items/domain";
+import { IScheduledItemsRepository } from "contexts/Items/domain";
 import { ItemID } from "contexts/Items/domain/item-id.valueobject";
 import { EntityNotFoundError } from "contexts/Shared/domain/errors/not-found.error";
 import { CommandUseCase } from "../../Shared/domain/command-use-case.interface";
@@ -25,7 +25,7 @@ export class RecordItemUseCase
 	readonly #logger = new Logger("RecordItemUseCase");
 	constructor(
 		private readonly _transactionsService: ITransactionsService,
-		private readonly _itemsRepository: IItemsRepository
+		private readonly _scheduledItemsRepository: IScheduledItemsRepository
 	) {}
 
 	async execute({
@@ -42,8 +42,8 @@ export class RecordItemUseCase
 			account,
 			toAccount,
 		});
-		const item = await this._itemsRepository.findById(itemID);
-		if (!item) throw new EntityNotFoundError("Item", itemID);
+		const item = await this._scheduledItemsRepository.findById(itemID);
+		if (!item) throw new EntityNotFoundError("ScheduledItem", itemID);
 
 		// if (item.recurrence) {
 		// 	const prev = item.date.copy();
@@ -56,7 +56,7 @@ export class RecordItemUseCase
 		// 	});
 		// }
 
-		const transaction = Transaction.fromItem(
+		const transaction = Transaction.fromScheduledItem(
 			item,
 			date ?? TransactionDate.createNowDate()
 		);
@@ -82,7 +82,7 @@ export class RecordItemUseCase
 
 		this.#logger.debug("transaction after update", { transaction });
 
-		await this._itemsRepository.persist(item);
+		await this._scheduledItemsRepository.persist(item);
 		await this._transactionsService.record(transaction);
 	}
 }

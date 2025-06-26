@@ -19,10 +19,21 @@ import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 import {
 	AccountsContext,
 	CategoriesContext,
+	ItemsContext,
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { Category } from "contexts/Categories/domain";
 import { CategoryName } from "contexts/Categories/domain/category-name.valueobject";
+import {
+	Item,
+	ItemType,
+	ProductItem,
+	ServiceItem,
+} from "contexts/Items/domain";
+import { Brand as BrandEntity } from "contexts/Items/domain/brand.entity";
+import { ItemName } from "contexts/Items/domain/item-name.valueobject";
+import { Provider as ProviderEntity } from "contexts/Items/domain/provider.entity";
+import { Store as StoreEntity } from "contexts/Items/domain/store.entity";
 import { OperationType } from "contexts/Shared/domain";
 import { SubCategory } from "contexts/Subcategories/domain";
 import { SubCategoryName } from "contexts/Subcategories/domain/subcategory-name.valueobject";
@@ -46,8 +57,10 @@ interface TransactionItem {
 	amount: number;
 	category: string;
 	subCategory: string;
+	itemType: ItemType;
 	brand: string;
-	store: string;
+	provider: string;
+	itemId?: string; // ID of the associated item if it exists
 }
 
 // Validation interface
@@ -118,10 +131,10 @@ const useMultiTransactionValidation = (
 					}: Brand name must be less than 50 characters`;
 					break;
 				}
-				if (item.store && item.store.length > 50) {
+				if (item.provider && item.provider.length > 50) {
 					newErrors.items = `Transaction ${
 						i + 1
-					}: Store name must be less than 50 characters`;
+					}: Provider name must be less than 50 characters`;
 					break;
 				}
 			}
@@ -199,7 +212,7 @@ export const CreateTransactionForm = ({
 	children,
 	onCreate,
 }: PropsWithChildren<{
-	items: Transaction[];
+	items: Item[];
 	close: () => void;
 	onCreate: () => void;
 }>) => {
@@ -219,6 +232,49 @@ export const CreateTransactionForm = ({
 		updateCategories,
 		updateSubCategories,
 	} = useContext(CategoriesContext);
+	const {
+		useCases: {
+			createRegularItem,
+			updateRegularItem,
+			createBrand,
+			createStore,
+			createProvider,
+			getAllBrands,
+			getAllStores,
+			getAllProviders,
+		},
+	} = useContext(ItemsContext);
+
+	// State for brands, stores, and providers
+	const [brands, setBrands] = useState<BrandEntity[]>([]);
+	const [stores, setStores] = useState<StoreEntity[]>([]);
+	const [providers, setProviders] = useState<ProviderEntity[]>([]);
+
+	// Load brands, stores, and providers
+	useEffect(() => {
+		const loadData = async () => {
+			try {
+				const [brandsResult, storesResult, providersResult] =
+					await Promise.all([
+						getAllBrands.execute(),
+						getAllStores.execute(),
+						getAllProviders.execute(),
+					]);
+				setBrands(brandsResult.brands);
+				setStores(storesResult.stores);
+				setProviders(providersResult.providers);
+			} catch (error) {
+				logger.error(
+					error instanceof Error
+						? error
+						: new Error(
+								"Error loading brands, stores, and providers"
+						  )
+				);
+			}
+		};
+		loadData();
+	}, [getAllBrands, getAllStores, getAllProviders, logger]);
 
 	// Shared properties for all transactions
 	const [sharedProperties, setSharedProperties] = useState({
@@ -238,8 +294,9 @@ export const CreateTransactionForm = ({
 				amount: 0,
 				category: "",
 				subCategory: "",
+				itemType: ItemType.PRODUCT,
 				brand: "",
-				store: "",
+				provider: "",
 			},
 		]
 	);
@@ -299,47 +356,34 @@ export const CreateTransactionForm = ({
 			}))
 			.sort((a, b) => a.name.localeCompare(b.name));
 
+	// Helper functions to get category/subcategory id from name
+	const getCategoryIdByName = (name: string) =>
+		categories.find((c) => c.name.value === name)?.id;
+	const getSubCategoryIdByName = (name: string) =>
+		subCategories.find((s) => s.name.value === name)?.id;
+
 	// 2. Name SelectWithCreation: populate item fields on select
-	const handleNameSelect = (itemId: string, name: string) => {
-		const match = items.find(
-			(t) => (typeof t.name === "object" ? t.name.value : t.name) === name
-		);
+	const handleNameSelect = (itemId: string, displayName: string) => {
+		// Find matching item by name
+		const match = items.find((item) => {
+			return item.name.value === displayName;
+		});
+
 		if (match) {
 			updateTransactionItem(itemId, {
-				name:
-					typeof match.name === "object"
-						? match.name.value
-						: match.name,
-				amount:
-					match.fromAmount &&
-					typeof match.fromAmount.value === "number"
-						? match.fromAmount.value
-						: 0,
+				name: match.name.value,
 				category:
-					categories.find(
-						(c) =>
-							c.id.value ===
-							(match.category &&
-							typeof match.category === "object"
-								? match.category.value
-								: match.category)
-					)?.name.value || "",
+					categories.find((c) => c.id.value === match.category.value)
+						?.name.value || "",
 				subCategory:
 					subCategories.find(
-						(s) =>
-							s.id.value ===
-							(match.subCategory &&
-							typeof match.subCategory === "object"
-								? match.subCategory.value
-								: match.subCategory)
+						(s) => s.id.value === match.subCategory.value
 					)?.name.value || "",
-				brand:
-					match.brand && typeof match.brand === "object"
-						? match.brand.value
-						: match.brand || "",
+				itemType: match.type,
+				itemId: match.id.value,
 			});
 		} else {
-			updateTransactionItem(itemId, { name });
+			updateTransactionItem(itemId, { name: displayName });
 		}
 	};
 
@@ -349,16 +393,11 @@ export const CreateTransactionForm = ({
 	// 4. Store options: unique, non-empty, plain strings
 	const storeOptions = Array.from(
 		new Set(
-			[
-				...items.map((t) =>
-					t.store && typeof t.store === "object"
-						? t.store.value
-						: t.store
-				),
-				...transactionItems.map((t) => t.store),
-			].filter(
-				(t): t is string => typeof t === "string" && t.trim() !== ""
-			)
+			stores
+				.map((store) => store.name.value)
+				.filter(
+					(t): t is string => typeof t === "string" && t.trim() !== ""
+				)
 		)
 	);
 
@@ -366,11 +405,7 @@ export const CreateTransactionForm = ({
 	const brandOptions = Array.from(
 		new Set(
 			[
-				...items.map((t) =>
-					t.brand && typeof t.brand === "object"
-						? t.brand.value
-						: t.brand
-				),
+				...brands.map((brand) => brand.name.value),
 				...transactionItems.map((t) => t.brand),
 			].filter(
 				(t): t is string => typeof t === "string" && t.trim() !== ""
@@ -378,16 +413,61 @@ export const CreateTransactionForm = ({
 		)
 	);
 
-	// For name options
-	const nameOptions = Array.from(
+	// Compute unique provider options
+	const providerOptions = Array.from(
 		new Set(
-			items
-				.map((t) =>
-					typeof t.name === "object" ? t.name.value : t.name
-				)
-				.filter(Boolean)
+			[
+				...providers.map((provider) => provider.name.value),
+				...transactionItems.map((t) => t.provider),
+			].filter(
+				(t): t is string => typeof t === "string" && t.trim() !== ""
+			)
 		)
 	);
+
+	// For name options - create display names that include brand and store info
+	const nameOptions = Array.from(
+		new Set(
+			items.map((item) => {
+				return item.name.value;
+			})
+		)
+	);
+
+	// Get brand options for a specific item by name
+	const getBrandOptionsForItem = (itemName?: string) => {
+		logger.debug("getBrandOptionsForItem called", { itemName });
+		const item = items.find((i) => i.name.value === itemName);
+		logger.debug("getBrandOptionsForItem found item", { item });
+		if (!item || !(item instanceof ProductItem)) {
+			logger.debug("getBrandOptionsForItem fallback to all brands", {
+				brandOptions,
+			});
+			return brandOptions;
+		}
+		const brandsList = item.brands
+			.map((brandId) => brands.find((b) => b.id.value === brandId.value))
+			.filter((brand): brand is BrandEntity => !!brand)
+			.map((brand) => brand.name.value)
+			.filter((name) => !!name && name.trim() !== "");
+		logger.debug("getBrandOptionsForItem returning brands", { brandsList });
+		return brandsList;
+	};
+
+	const getProviderOptionsForItem = (itemName?: string) => {
+		const item = items.find((i) => i.name.value === itemName);
+		if (!item || !(item instanceof ServiceItem)) {
+			return providerOptions;
+		}
+		const providersList = item.providers
+			.map((providerId) =>
+				providers.find((p) => p.id.value === providerId.value)
+			)
+			.filter((provider): provider is ProviderEntity => !!provider)
+			.map((provider) => provider.name.value)
+			.filter((name) => !!name && name.trim() !== "");
+		return providersList;
+	};
 
 	// Add new transaction item
 	const addTransactionItem = () => {
@@ -397,8 +477,9 @@ export const CreateTransactionForm = ({
 			amount: 0,
 			category: "",
 			subCategory: "",
+			itemType: ItemType.PRODUCT,
 			brand: "",
-			store: "",
+			provider: "",
 		};
 		setTransactionItems([...transactionItems, newItem]);
 	};
@@ -442,7 +523,6 @@ export const CreateTransactionForm = ({
 						category: selectedTransaction.category,
 						subCategory: selectedTransaction.subCategory,
 						brand: selectedTransaction.brand || "",
-						store: selectedTransaction.store || "",
 					},
 				});
 				updateTransactionItem(transactionItems[0].id, {
@@ -450,7 +530,6 @@ export const CreateTransactionForm = ({
 					category: selectedTransaction.category,
 					subCategory: selectedTransaction.subCategory,
 					brand: selectedTransaction.brand || "",
-					store: selectedTransaction.store || "",
 				});
 			}
 
@@ -562,6 +641,201 @@ export const CreateTransactionForm = ({
 
 			// Create individual transactions for each item
 			for (const item of transactionItems) {
+				// Handle item creation/update
+				let itemId = item.itemId;
+
+				if (!itemId) {
+					// Create new item
+					const categoryId = getCategoryIdByName(item.category);
+					const subCategoryId = getSubCategoryIdByName(
+						item.subCategory
+					);
+
+					if (categoryId && subCategoryId) {
+						let newItem;
+
+						if (item.itemType === ItemType.PRODUCT) {
+							// Handle brand and store creation for products
+							const brandEntities: BrandEntity[] = [];
+							const storeEntities: StoreEntity[] = [];
+
+							if (item.brand) {
+								// Check if brand exists, if not create it
+								const existingBrand = brands.find(
+									(b) => b.name.value === item.brand
+								);
+								if (!existingBrand) {
+									const brandEntity = BrandEntity.create(
+										new ItemName(item.brand)
+									);
+									await createBrand.execute(brandEntity);
+									brandEntities.push(brandEntity);
+								} else {
+									brandEntities.push(existingBrand);
+								}
+							}
+
+							if (sharedProperties.store) {
+								// Check if store exists, if not create it
+								const existingStore = stores.find(
+									(s) =>
+										s.name.value === sharedProperties.store
+								);
+								if (!existingStore) {
+									const storeEntity = StoreEntity.create(
+										new ItemName(sharedProperties.store)
+									);
+									await createStore.execute(storeEntity);
+									storeEntities.push(storeEntity);
+								} else {
+									storeEntities.push(existingStore);
+								}
+							}
+
+							// Create the item with arrays
+							newItem = ProductItem.create(
+								new ItemName(item.name),
+								categoryId,
+								subCategoryId,
+								brandEntities.map((b) => b.id),
+								storeEntities.map((s) => s.id)
+							);
+						} else {
+							// Handle provider creation for services
+							const providerEntities: ProviderEntity[] = [];
+
+							if (item.provider) {
+								// Check if provider exists, if not create it
+								const existingProvider = providers.find(
+									(p) => p.name.value === item.provider
+								);
+								if (!existingProvider) {
+									const providerEntity =
+										ProviderEntity.create(
+											new ItemName(item.provider)
+										);
+									await createProvider.execute(
+										providerEntity
+									);
+									providerEntities.push(providerEntity);
+								} else {
+									providerEntities.push(existingProvider);
+								}
+							}
+
+							// Create the item with array
+							newItem = ServiceItem.create(
+								new ItemName(item.name),
+								categoryId,
+								subCategoryId,
+								providerEntities.map((p) => p.id)
+							);
+						}
+
+						await createRegularItem.execute(newItem);
+						itemId = newItem.id.value;
+					}
+				} else {
+					// Update existing item if information changed
+					const existingItem = items.find(
+						(i) => i.id.value === itemId
+					);
+					if (existingItem) {
+						let needsUpdate = false;
+						const updatedItem = existingItem.copy();
+
+						if (existingItem.name.value !== item.name) {
+							updatedItem.updateName(new ItemName(item.name));
+							needsUpdate = true;
+						}
+
+						const categoryId = getCategoryIdByName(item.category);
+						if (
+							categoryId &&
+							!existingItem.category.equalTo(categoryId)
+						) {
+							updatedItem.updateCategory(categoryId);
+							needsUpdate = true;
+						}
+
+						const subCategoryId = getSubCategoryIdByName(
+							item.subCategory
+						);
+						if (
+							subCategoryId &&
+							!existingItem.subCategory.equalTo(subCategoryId)
+						) {
+							updatedItem.updateSubCategory(subCategoryId);
+							needsUpdate = true;
+						}
+
+						// Handle brand/store/provider updates
+						if (
+							item.itemType === ItemType.PRODUCT &&
+							existingItem instanceof ProductItem
+						) {
+							if (item.brand) {
+								const existingBrand = brands.find(
+									(b) => b.name.value === item.brand
+								);
+								if (existingBrand) {
+									const brandId = existingBrand.id;
+									if (
+										!existingItem.brands.some(
+											(b) => b.value === brandId.value
+										)
+									) {
+										existingItem.addBrand(brandId);
+										needsUpdate = true;
+									}
+								}
+							}
+
+							if (sharedProperties.store) {
+								const existingStore = stores.find(
+									(s) =>
+										s.name.value === sharedProperties.store
+								);
+								if (existingStore) {
+									const storeId = existingStore.id;
+									if (
+										!existingItem.stores.some(
+											(s) => s.value === storeId.value
+										)
+									) {
+										existingItem.addStore(storeId);
+										needsUpdate = true;
+									}
+								}
+							}
+						} else if (
+							item.itemType === ItemType.SERVICE &&
+							existingItem instanceof ServiceItem
+						) {
+							if (item.provider) {
+								const existingProvider = providers.find(
+									(p) => p.name.value === item.provider
+								);
+								if (existingProvider) {
+									const providerId = existingProvider.id;
+									if (
+										!existingItem.providers.some(
+											(p) => p.value === providerId.value
+										)
+									) {
+										existingItem.addProvider(providerId);
+										needsUpdate = true;
+									}
+								}
+							}
+						}
+
+						if (needsUpdate) {
+							await updateRegularItem.execute(updatedItem);
+						}
+					}
+				}
+
 				// Create proportional splits for this transaction based on its amount
 				const itemFromSplits = sharedProperties.fromSplits.map(
 					(split) => ({
@@ -577,6 +851,7 @@ export const CreateTransactionForm = ({
 
 				const transactionPrimitives: TransactionPrimitives = {
 					id: TransactionID.generate().value,
+					item: itemId,
 					name: item.name,
 					category:
 						categories.find((c) => c.name.value === item.category)
@@ -618,8 +893,9 @@ export const CreateTransactionForm = ({
 					amount: 0,
 					category: "",
 					subCategory: "",
+					itemType: ItemType.PRODUCT,
 					brand: "",
-					store: "",
+					provider: "",
 				},
 			]);
 			setSharedProperties({
@@ -719,34 +995,45 @@ export const CreateTransactionForm = ({
 									})
 								}
 							/>
+							<Select
+								id={`itemType-${item.id}`}
+								label="Item Type"
+								value={item.itemType}
+								values={[ItemType.PRODUCT, ItemType.SERVICE]}
+								onChange={(itemType) => {
+									updateTransactionItem(item.id, {
+										itemType: itemType as ItemType,
+										// Clear brand/store/provider when switching types
+										brand:
+											itemType === ItemType.PRODUCT
+												? item.brand
+												: "",
+										provider:
+											itemType === ItemType.SERVICE
+												? item.provider
+												: "",
+									});
+								}}
+								isLocked={false}
+								setIsLocked={() => {}}
+							/>
 							<SelectWithCreation
 								id={`category-${item.id}`}
 								label="Category"
-								item={
-									categoryOptions.find(
-										(opt) => opt.name === item.category
-									) || { id: "", name: "" }
-								}
-								items={categoryOptions}
-								getKey={(opt) => opt.id}
-								getLabel={(opt) => opt.name}
+								item={item.category || ""}
+								items={categoryOptions.map((opt) => opt.name)}
 								onChange={(categoryName) => {
 									logger.debug("category onChange called", {
 										categoryName,
 									});
-									// Only update if it's a valid category name, not an ID
 									if (
 										categoryName &&
 										categoryOptions.some(
 											(opt) => opt.name === categoryName
 										)
 									) {
-										const cat = categoryOptions.find(
-											(opt) => opt.name === categoryName
-										);
-										logger.debug("found category", { cat });
 										updateTransactionItem(item.id, {
-											category: cat ? cat.name : "",
+											category: categoryName,
 										});
 									}
 								}}
@@ -756,30 +1043,15 @@ export const CreateTransactionForm = ({
 							<SelectWithCreation
 								id={`subcategory-${item.id}`}
 								label="Subcategory"
-								item={
-									item.subCategory
-										? subCategoryOptions(
-												item.category
-										  ).find(
-												(opt) =>
-													opt.name ===
-													item.subCategory
-										  ) || ""
-										: ""
-								}
-								items={subCategoryOptions(item.category)}
-								getKey={(opt) =>
-									typeof opt === "string" ? "" : opt.id
-								}
-								getLabel={(opt) =>
-									typeof opt === "string" ? "" : opt.name
-								}
+								item={item.subCategory || ""}
+								items={subCategoryOptions(item.category).map(
+									(opt) => opt.name
+								)}
 								onChange={(subCategoryName) => {
 									logger.debug(
 										"subcategory onChange called",
 										{ subCategoryName }
 									);
-									// Only update if it's a valid subcategory name, not an ID
 									if (
 										subCategoryName &&
 										subCategoryOptions(item.category).some(
@@ -787,34 +1059,62 @@ export const CreateTransactionForm = ({
 												opt.name === subCategoryName
 										)
 									) {
-										const sub = subCategoryOptions(
-											item.category
-										).find(
-											(opt) =>
-												opt.name === subCategoryName
-										);
-										logger.debug("found subcategory", {
-											sub,
-										});
 										updateTransactionItem(item.id, {
-											subCategory: sub ? sub.name : "",
+											subCategory: subCategoryName,
 										});
 									}
 								}}
 								isLocked={false}
 								setIsLocked={() => {}}
 							/>
-							<SelectWithCreation
-								id={`brand-${item.id}`}
-								label="Brand (optional)"
-								item={item.brand || ""}
-								items={brandOptions}
-								onChange={(brand) =>
-									updateTransactionItem(item.id, { brand })
-								}
-								isLocked={false}
-								setIsLocked={() => {}}
-							/>
+
+							{/* Conditional fields based on item type */}
+							{item.itemType === ItemType.PRODUCT && (
+								<>
+									<SelectWithCreation
+										id={`brand-${item.id}`}
+										label="Brand (optional)"
+										item={item.brand || ""}
+										items={(() => {
+											const opts = getBrandOptionsForItem(
+												item.name
+											);
+											logger.debug(
+												"Brand SelectWithCreation items",
+												{ opts, item }
+											);
+											return opts;
+										})()}
+										onChange={(brand) => {
+											logger.debug(
+												"Brand SelectWithCreation onChange",
+												{ brand }
+											);
+											updateTransactionItem(item.id, {
+												brand,
+											});
+										}}
+										isLocked={false}
+										setIsLocked={() => {}}
+									/>
+								</>
+							)}
+
+							{item.itemType === ItemType.SERVICE && (
+								<SelectWithCreation
+									id={`provider-${item.id}`}
+									label="Provider (optional)"
+									item={item.provider || ""}
+									items={getProviderOptionsForItem(item.name)}
+									onChange={(provider) =>
+										updateTransactionItem(item.id, {
+											provider,
+										})
+									}
+									isLocked={false}
+									setIsLocked={() => {}}
+								/>
+							)}
 						</Box>
 					</Box>
 				))}

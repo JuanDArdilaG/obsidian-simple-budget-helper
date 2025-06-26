@@ -1,5 +1,6 @@
 import Dexie from "dexie";
 import { exportDB, importInto } from "dexie-export-import";
+import { Base64 } from "js-base64";
 import { App, normalizePath } from "obsidian";
 import { Logger } from "../../logger";
 
@@ -53,10 +54,12 @@ export class BackupManager {
 			// Export database to blob
 			const blob = await exportDB(db);
 
-			// Convert blob to base64 string using Buffer for proper binary handling
+			// Convert blob to base64 string using browser-compatible method
 			const arrayBuffer = await blob.arrayBuffer();
 			const uint8Array = new Uint8Array(arrayBuffer);
-			const base64Data = Buffer.from(uint8Array).toString("base64");
+
+			// Use js-base64's built-in Uint8Array support
+			const base64Data = Base64.fromUint8Array(uint8Array);
 
 			// Create backup metadata
 			const backupData = {
@@ -121,8 +124,8 @@ export class BackupManager {
 				const uint8Array = new Uint8Array(backupData.data);
 				blob = new Blob([uint8Array]);
 			} else if (typeof backupData.data === "string") {
-				// New format: base64 string using Buffer for proper binary handling
-				const uint8Array = Buffer.from(backupData.data, "base64");
+				// New format: base64 string using browser-compatible method
+				const uint8Array = Base64.toUint8Array(backupData.data);
 				blob = new Blob([uint8Array]);
 			} else {
 				throw new Error("Unsupported backup data format");

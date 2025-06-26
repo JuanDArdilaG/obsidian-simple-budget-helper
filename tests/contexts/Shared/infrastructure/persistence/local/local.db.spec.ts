@@ -38,7 +38,7 @@ describe("LocalDB Migration Integration", () => {
 
 			// Verify that migration was performed
 			expect(migratedData).toEqual({
-				version: "1.1.0",
+				version: "1.2.2",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					transactions: [
@@ -60,8 +60,11 @@ describe("LocalDB Migration Integration", () => {
 						},
 					],
 					accounts: [],
+					brands: [],
 					categories: [],
 					items: [],
+					providers: [],
+					stores: [],
 					subcategories: [],
 				},
 			});
@@ -69,7 +72,7 @@ describe("LocalDB Migration Integration", () => {
 
 		it("should not migrate data when version is current", async () => {
 			const currentData = {
-				version: "1.1.0", // Current version
+				version: "1.2.2", // Current version
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					transactions: [
@@ -91,8 +94,11 @@ describe("LocalDB Migration Integration", () => {
 						},
 					],
 					accounts: [],
+					brands: [],
 					categories: [],
 					items: [],
+					providers: [],
+					stores: [],
 					subcategories: [],
 				},
 			};
@@ -107,9 +113,9 @@ describe("LocalDB Migration Integration", () => {
 			const currentVersion = dataVersioning.getCurrentVersion();
 
 			// Test that different versions trigger migration
-			expect(currentVersion).toBe("1.1.0");
+			expect(currentVersion).toBe("1.2.2");
 			expect("1.0.0" !== currentVersion).toBe(true);
-			expect("1.1.0" === currentVersion).toBe(true);
+			expect("1.2.2" === currentVersion).toBe(true);
 		});
 	});
 });

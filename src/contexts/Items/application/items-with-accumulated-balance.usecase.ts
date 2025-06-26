@@ -9,7 +9,7 @@ import {
 } from "contexts/Accounts/domain";
 import { QueryUseCase } from "contexts/Shared/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
-import { ERecurrenceState, Item, ItemRecurrenceInfo } from "../domain";
+import { ERecurrenceState, ItemRecurrenceInfo, ScheduledItem } from "../domain";
 import {
 	GetItemsUntilDateUseCase,
 	GetItemsUntilDateUseCaseOutput,
@@ -23,7 +23,7 @@ export type ItemWithAccounts = {
 };
 
 export type ItemWithAccumulatedBalance = {
-	item: Item;
+	item: ScheduledItem;
 	n: NumberValueObject;
 	recurrence: ItemRecurrenceInfo;
 	accountPrevBalance: AccountBalance;

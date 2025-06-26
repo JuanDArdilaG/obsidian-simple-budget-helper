@@ -1,7 +1,7 @@
-import { useContext, useEffect, useState } from "react";
-import { TransactionsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
-import { Transaction } from "contexts/Transactions/domain";
+import { ItemsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import { Item } from "contexts/Items/domain";
+import { useContext, useEffect, useState } from "react";
 import { CreateTransactionForm } from "./CreateTransactionForm";
 
 export const CreateTransactionPanel = ({
@@ -13,26 +13,21 @@ export const CreateTransactionPanel = ({
 }) => {
 	const { logger } = useLogger("CreateItemPanel");
 	const {
-		useCases: { getAllUniqueTransactionsByNameUseCase },
-	} = useContext(TransactionsContext);
+		useCases: { getAllRegularItems },
+	} = useContext(ItemsContext);
 
-	const [transactions, setTransactions] = useState<Transaction[]>([]);
+	const [items, setItems] = useState<Item[]>([]);
 	useEffect(() => {
-		getAllUniqueTransactionsByNameUseCase
-			.execute()
-			.then(({ transactions }) => setTransactions(transactions));
-	}, [getAllUniqueTransactionsByNameUseCase]);
+		getAllRegularItems.execute().then(({ items }) => setItems(items));
+	}, [getAllRegularItems]);
 
 	useEffect(() => {
-		logger
-			.title("unique items for creation")
-			.obj({ items: transactions })
-			.log();
-	}, [transactions]);
+		logger.title("items for creation").obj({ items }).log();
+	}, [items]);
 
 	return (
 		<CreateTransactionForm
-			items={transactions}
+			items={items}
 			close={close}
 			onCreate={onCreate}
 		/>

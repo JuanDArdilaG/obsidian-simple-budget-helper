@@ -1,15 +1,21 @@
-import { Item, ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
+import { ConfirmationModal } from "apps/obsidian-plugin/components/ConfirmationModal";
 import { ContextMenu } from "apps/obsidian-plugin/components/ContextMenu";
+import {
+	ItemID,
+	ItemRecurrenceInfo,
+	ScheduledItem,
+} from "contexts/Items/domain";
 import { Pencil } from "lucide-react";
 import { useContext, useMemo } from "react";
 import { AppContext, ItemsContext } from "..";
-import { ConfirmationModal } from "apps/obsidian-plugin/components/ConfirmationModal";
 
 export const BudgetItemsListContextMenu = ({
 	recurrent,
 	setAction,
 }: {
-	recurrent: { recurrence: ItemRecurrenceInfo; itemID: ItemID } | Item;
+	recurrent:
+		| { recurrence: ItemRecurrenceInfo; itemID: ItemID }
+		| ScheduledItem;
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
@@ -22,7 +28,10 @@ export const BudgetItemsListContextMenu = ({
 	} = useContext(ItemsContext);
 
 	const id = useMemo(
-		() => (recurrent instanceof Item ? recurrent.id : recurrent.itemID),
+		() =>
+			recurrent instanceof ScheduledItem
+				? recurrent.id
+				: recurrent.itemID,
 		[recurrent]
 	);
 

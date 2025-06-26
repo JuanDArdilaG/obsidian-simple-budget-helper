@@ -9,7 +9,7 @@ import {
 } from "apps/obsidian-plugin/components/Select";
 import { ItemsContext, TransactionsContext } from "apps/obsidian-plugin/views";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts/AccountsContext";
-import { Item, ItemRecurrenceInfo } from "contexts/Items/domain";
+import { ItemRecurrenceInfo, ScheduledItem } from "contexts/Items/domain";
 import { OperationType } from "contexts/Shared/domain";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { useContext, useState } from "react";
@@ -19,7 +19,7 @@ export const EditItemRecurrencePanel = ({
 	recurrence: { recurrence, n },
 	onClose,
 }: {
-	item: Item;
+	item: ScheduledItem;
 	recurrence: {
 		recurrence: ItemRecurrenceInfo;
 		n: NumberValueObject;

@@ -1,26 +1,26 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
 import { IAccountsService } from "contexts/Accounts/domain";
 import {
-	IItemsRepository,
-	Item,
+	IScheduledItemsRepository,
 	ItemID,
 	ItemPrice,
-	ItemPrimitives,
 	ItemRecurrenceInfo,
+	ScheduledItem,
+	ScheduledItemPrimitives,
 } from "contexts/Items/domain";
 import { Service } from "contexts/Shared/application/service.abstract";
 import { InvalidArgumentError } from "contexts/Shared/domain";
 import { IItemsService } from "../domain/items-service.interface";
 
 export class ItemsService
-	extends Service<ItemID, Item, ItemPrimitives>
+	extends Service<ItemID, ScheduledItem, ScheduledItemPrimitives>
 	implements IItemsService
 {
 	constructor(
-		private readonly _itemsRepository: IItemsRepository,
+		private readonly _scheduledItemsRepository: IScheduledItemsRepository,
 		private readonly _accountsService: IAccountsService
 	) {
-		super("Item", _itemsRepository);
+		super("ScheduledItem", _scheduledItemsRepository);
 	}
 
 	async modifyRecurrence(
@@ -36,7 +36,7 @@ export class ItemsService
 				"item doesn't have recurrence"
 			);
 		item.recurrence.recurrences[n.value] = newRecurrence;
-		await this._itemsRepository.persist(item);
+		await this._scheduledItemsRepository.persist(item);
 	}
 
 	/**

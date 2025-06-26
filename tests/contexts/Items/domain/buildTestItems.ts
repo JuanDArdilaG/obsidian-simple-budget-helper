@@ -3,13 +3,13 @@ import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import {
 	ERecurrenceState,
-	Item,
 	ItemDate,
 	ItemName,
 	ItemPrice,
 	ItemRecurrenceFrequency,
 	ItemRecurrenceInfo,
 	ItemRecurrenceInfoPrimitives,
+	ScheduledItem,
 } from "contexts/Items/domain";
 import { ItemOperation } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
@@ -36,13 +36,15 @@ function makeSplits(account?: AccountID, amount: number = 100): PaymentSplit[] {
 		: [];
 }
 
-export const buildTestItems = (config: ItemConfig[] | number): Item[] => {
-	let items: Item[] = [];
+export const buildTestItems = (
+	config: ItemConfig[] | number
+): ScheduledItem[] => {
+	let items: ScheduledItem[] = [];
 	if (typeof config === "number") {
 		for (let i = 0; i < config; i++) {
 			const fromSplits = makeSplits(AccountID.generate(), 100);
 			const toSplits: PaymentSplit[] = [];
-			const item = Item.oneTime(
+			const item = ScheduledItem.oneTime(
 				DateValueObject.createNowDate(),
 				new ItemName("test"),
 				fromSplits,
@@ -82,7 +84,7 @@ export const buildTestItems = (config: ItemConfig[] | number): Item[] => {
 				const fromSplits = makeSplits(fromAccount, absPrice);
 				const toSplits = makeSplits(toAccountForSplits, absPrice);
 
-				let item = Item.oneTime(
+				let item = ScheduledItem.oneTime(
 					startDate,
 					new ItemName("test"),
 					fromSplits,
@@ -92,7 +94,7 @@ export const buildTestItems = (config: ItemConfig[] | number): Item[] => {
 					SubCategoryID.generate()
 				);
 				if (recurrence?.frequency) {
-					item = Item.infinite(
+					item = ScheduledItem.infinite(
 						startDate,
 						new ItemName("test"),
 						fromSplits,
@@ -103,7 +105,7 @@ export const buildTestItems = (config: ItemConfig[] | number): Item[] => {
 						new ItemRecurrenceFrequency(recurrence.frequency)
 					);
 					if (recurrence.untilDate) {
-						item = Item.untilDate(
+						item = ScheduledItem.untilDate(
 							new ItemName("test"),
 							fromSplits,
 							toSplits,

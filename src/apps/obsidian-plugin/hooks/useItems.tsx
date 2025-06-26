@@ -1,7 +1,7 @@
-import { Item } from "contexts/Items/domain";
-import { useState, useEffect } from "react";
-import { useLogger } from "./useLogger";
 import { GetAllItemsUseCase } from "contexts/Items/application/get-all-items.usecase";
+import { ScheduledItem } from "contexts/Items/domain";
+import { useEffect, useState } from "react";
+import { useLogger } from "./useLogger";
 
 export const useItems = ({
 	getAllItems,
@@ -10,7 +10,7 @@ export const useItems = ({
 }) => {
 	const { logger } = useLogger("useItems");
 
-	const [items, setItems] = useState<Item[]>([]);
+	const [items, setItems] = useState<ScheduledItem[]>([]);
 	const [updateItems, setUpdateItems] = useState(true);
 
 	useEffect(() => {

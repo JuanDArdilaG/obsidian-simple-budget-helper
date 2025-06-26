@@ -3,7 +3,7 @@ import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
 import { useLogger } from "apps/obsidian-plugin/hooks";
 import { EditItemPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemPanel";
 import { AccountID, AccountType } from "contexts/Accounts/domain";
-import { ERecurrenceState, Item } from "contexts/Items/domain";
+import { ERecurrenceState, ScheduledItem } from "contexts/Items/domain";
 import { ReportBalance } from "contexts/Reports/domain";
 import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
@@ -33,9 +33,11 @@ export const AllItemsList = ({
 	setAction,
 	updateItems,
 }: {
-	items: Item[];
-	selectedItem?: Item;
-	setSelectedItem: React.Dispatch<React.SetStateAction<Item | undefined>>;
+	items: ScheduledItem[];
+	selectedItem?: ScheduledItem;
+	setSelectedItem: React.Dispatch<
+		React.SetStateAction<ScheduledItem | undefined>
+	>;
 	action?: "edit" | "record";
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
@@ -77,7 +79,7 @@ export const AllItemsList = ({
 	// );
 
 	const [showPanel, setShowPanel] = useState<{
-		item: Item;
+		item: ScheduledItem;
 		action?: "edit" | "record";
 	}>();
 
@@ -172,8 +174,8 @@ export const AllItemsList = ({
 		expense: number;
 		balance: number;
 		accumulated: number;
-		incomeItems: Item[];
-		expenseItems: Item[];
+		incomeItems: ScheduledItem[];
+		expenseItems: ScheduledItem[];
 		incomeTransactions: Transaction[];
 		expenseTransactions: Transaction[];
 	}
@@ -204,17 +206,19 @@ export const AllItemsList = ({
 		const infiniteItems = displayedItemsReport.getInfiniteRecurrentItems();
 
 		// Filter expense items that are infinite recurrent
-		const infiniteExpenseItems = expenseItems.filter((item: Item) =>
-			infiniteItems.some((infiniteItem: Item) =>
-				infiniteItem.id.equalTo(item.id)
-			)
+		const infiniteExpenseItems = expenseItems.filter(
+			(item: ScheduledItem) =>
+				infiniteItems.some((infiniteItem: ScheduledItem) =>
+					infiniteItem.id.equalTo(item.id)
+				)
 		);
 
 		// Filter transfer items that are infinite recurrent and Asset to Liability
 		const infiniteAssetToLiabilityTransfers = transferItems.filter(
-			(item: Item) => {
-				const isInfinite = infiniteItems.some((infiniteItem: Item) =>
-					infiniteItem.id.equalTo(item.id)
+			(item: ScheduledItem) => {
+				const isInfinite = infiniteItems.some(
+					(infiniteItem: ScheduledItem) =>
+						infiniteItem.id.equalTo(item.id)
 				);
 				if (!isInfinite) return false;
 
@@ -242,16 +246,16 @@ export const AllItemsList = ({
 		const finiteItems = displayedItemsReport.getFiniteRecurrentItems();
 
 		// Filter expense items that are finite recurrent
-		const finiteExpenseItems = expenseItems.filter((item: Item) =>
-			finiteItems.some((finiteItem: Item) =>
+		const finiteExpenseItems = expenseItems.filter((item: ScheduledItem) =>
+			finiteItems.some((finiteItem: ScheduledItem) =>
 				finiteItem.id.equalTo(item.id)
 			)
 		);
 
 		// Filter transfer items that are finite recurrent and Asset to Liability
 		const finiteAssetToLiabilityTransfers = transferItems.filter(
-			(item: Item) => {
-				const isFinite = finiteItems.some((finiteItem: Item) =>
+			(item: ScheduledItem) => {
+				const isFinite = finiteItems.some((finiteItem: ScheduledItem) =>
 					finiteItem.id.equalTo(item.id)
 				);
 				if (!isFinite) return false;
@@ -277,11 +281,13 @@ export const AllItemsList = ({
 		const transferItems = displayedItemsReport.getTransferItems();
 
 		// Filter transfer items that are Liability to Asset
-		const liabilityToAssetTransfers = transferItems.filter((item: Item) => {
-			const account = getAccountByID(item.operation.account);
-			const toAccount = getAccountByID(item.operation.toAccount!);
-			return account?.type.isLiability() && toAccount?.type.isAsset();
-		});
+		const liabilityToAssetTransfers = transferItems.filter(
+			(item: ScheduledItem) => {
+				const account = getAccountByID(item.operation.account);
+				const toAccount = getAccountByID(item.operation.toAccount!);
+				return account?.type.isLiability() && toAccount?.type.isAsset();
+			}
+		);
 
 		return [...incomeItems, ...liabilityToAssetTransfers].sort((a, b) =>
 			a
@@ -297,11 +303,13 @@ export const AllItemsList = ({
 		const transferItems = displayedItemsReport.getTransferItems();
 
 		// Filter transfer items that are Asset to Liability
-		const assetToLiabilityTransfers = transferItems.filter((item: Item) => {
-			const account = getAccountByID(item.operation.account);
-			const toAccount = getAccountByID(item.operation.toAccount!);
-			return account?.type.isAsset() && toAccount?.type.isLiability();
-		});
+		const assetToLiabilityTransfers = transferItems.filter(
+			(item: ScheduledItem) => {
+				const account = getAccountByID(item.operation.account);
+				const toAccount = getAccountByID(item.operation.toAccount!);
+				return account?.type.isAsset() && toAccount?.type.isLiability();
+			}
+		);
 
 		return [...expenseItems, ...assetToLiabilityTransfers].sort((a, b) =>
 			a
@@ -343,7 +351,10 @@ export const AllItemsList = ({
 			});
 		}
 
-		const processItems = (items: Item[], type: "income" | "expense") => {
+		const processItems = (
+			items: ScheduledItem[],
+			type: "income" | "expense"
+		) => {
 			for (const item of items) {
 				for (const recurrence of item.recurrence.recurrences) {
 					if (recurrence.state !== ERecurrenceState.DELETED) {

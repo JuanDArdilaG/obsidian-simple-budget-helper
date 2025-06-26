@@ -1,3 +1,4 @@
+import { UUIDValueObject } from "@juandardilag/value-objects";
 import { Logger } from "../../logger";
 
 export interface DataVersion {
@@ -34,7 +35,7 @@ interface ItemData {
 
 export class DataVersioning {
 	private logger: Logger = new Logger("DataVersioning");
-	private currentVersion = "1.1.0";
+	private currentVersion = "1.2.2";
 	private versions: DataVersion[] = [
 		{
 			version: "1.0.0",
@@ -45,6 +46,21 @@ export class DataVersioning {
 			version: "1.1.0",
 			compatibleVersions: ["1.0.0", "1.1.0"],
 			migrationScript: this.migrateToPaymentSplits.bind(this),
+		},
+		{
+			version: "1.2.0",
+			compatibleVersions: ["1.0.0", "1.1.0", "1.2.0"],
+			migrationScript: this.migrateToNewItemStructure.bind(this),
+		},
+		{
+			version: "1.2.1",
+			compatibleVersions: ["1.0.0", "1.1.0", "1.2.0", "1.2.1"],
+			migrationScript: this.migrateToManyToManyRelationships.bind(this),
+		},
+		{
+			version: "1.2.2",
+			compatibleVersions: ["1.0.0", "1.1.0", "1.2.0", "1.2.1", "1.2.2"],
+			migrationScript: this.migrateToArrayBasedRelationships.bind(this),
 		},
 		// Add future versions here with migration scripts
 	];
@@ -280,6 +296,276 @@ export class DataVersioning {
 		}
 
 		return migratedItem;
+	}
+
+	/**
+	 * Migration script to convert from old Item structure to new Item/ScheduledItem structure
+	 * This migrates data from version 1.1.0 to 1.2.0
+	 */
+	private async migrateToNewItemStructure(data: unknown): Promise<unknown> {
+		this.logger.debug("Starting migration to new item structure");
+
+		if (!data || typeof data !== "object") {
+			throw new Error(
+				"Invalid data format for new item structure migration"
+			);
+		}
+
+		const dataObj = data as MigrationData;
+
+		// Ensure we have the data structure
+		if (
+			!dataObj.data ||
+			typeof dataObj.data !== "object" ||
+			dataObj.data === null
+		) {
+			throw new Error(
+				"Invalid data format for new item structure migration"
+			);
+		}
+
+		const migratedData = { ...dataObj };
+		const dataContent = migratedData.data as Record<string, unknown>;
+
+		// Initialize new tables
+		dataContent.items = [];
+		dataContent.brands = [];
+		dataContent.stores = [];
+		dataContent.providers = [];
+
+		// Migrate old items to scheduled items and extract brands/stores
+		if (
+			dataContent.scheduledItems &&
+			Array.isArray(dataContent.scheduledItems)
+		) {
+			this.logger.debug(
+				`Migrating ${dataContent.scheduledItems.length} scheduled items`
+			);
+
+			const brandsMap = new Map<
+				string,
+				{ id: string; name: string; itemId: string; updatedAt: string }
+			>();
+			const storesMap = new Map<
+				string,
+				{ id: string; name: string; itemId: string; updatedAt: string }
+			>();
+
+			// Process each scheduled item to extract unique brands and stores
+			dataContent.scheduledItems.forEach(
+				(item: {
+					id: string;
+					brand?: string;
+					store?: string;
+					updatedAt?: string;
+				}) => {
+					// Extract brand if it exists
+					if (item.brand && item.brand.trim() !== "") {
+						if (!brandsMap.has(item.brand)) {
+							const brandId = this.generateId();
+							brandsMap.set(item.brand, {
+								id: brandId,
+								name: item.brand,
+								itemId: item.id,
+								updatedAt:
+									item.updatedAt || new Date().toISOString(),
+							});
+						}
+					}
+
+					// Extract store if it exists
+					if (item.store && item.store.trim() !== "") {
+						if (!storesMap.has(item.store)) {
+							const storeId = this.generateId();
+							storesMap.set(item.store, {
+								id: storeId,
+								name: item.store,
+								itemId: item.id,
+								updatedAt:
+									item.updatedAt || new Date().toISOString(),
+							});
+						}
+					}
+				}
+			);
+
+			// Add extracted brands to the brands table
+			if (brandsMap.size > 0) {
+				this.logger.debug(`Extracted ${brandsMap.size} unique brands`);
+				dataContent.brands = Array.from(brandsMap.values());
+			}
+
+			// Add extracted stores to the stores table
+			if (storesMap.size > 0) {
+				this.logger.debug(`Extracted ${storesMap.size} unique stores`);
+				dataContent.stores = Array.from(storesMap.values());
+			}
+
+			// The scheduled items are already in the correct format, no transformation needed
+		}
+
+		this.logger.debug("New item structure migration completed");
+		return migratedData;
+	}
+
+	/**
+	 * Migration script to convert from one-to-many to many-to-many relationships
+	 * This migrates data from version 1.2.0 to 1.2.1
+	 */
+	private async migrateToManyToManyRelationships(
+		data: unknown
+	): Promise<unknown> {
+		this.logger.debug("Starting migration to many-to-many relationships");
+
+		if (!data || typeof data !== "object") {
+			throw new Error(
+				"Invalid data format for many-to-many relationships migration"
+			);
+		}
+
+		const dataObj = data as MigrationData;
+
+		// Ensure we have the data structure
+		if (
+			!dataObj.data ||
+			typeof dataObj.data !== "object" ||
+			dataObj.data === null
+		) {
+			throw new Error(
+				"Invalid data format for many-to-many relationships migration"
+			);
+		}
+
+		const migratedData = { ...dataObj };
+		const dataContent = migratedData.data as Record<string, unknown>;
+
+		// Migrate brands to remove itemId field
+		if (dataContent.brands && Array.isArray(dataContent.brands)) {
+			this.logger.debug(`Migrating ${dataContent.brands.length} brands`);
+
+			dataContent.brands = dataContent.brands.map(
+				(brand: Record<string, unknown>) => {
+					const brandCopy = { ...brand };
+					delete brandCopy.itemId;
+					return brandCopy;
+				}
+			);
+		}
+
+		// Migrate stores to remove itemId field
+		if (dataContent.stores && Array.isArray(dataContent.stores)) {
+			this.logger.debug(`Migrating ${dataContent.stores.length} stores`);
+
+			dataContent.stores = dataContent.stores.map(
+				(store: Record<string, unknown>) => {
+					const storeCopy = { ...store };
+					delete storeCopy.itemId;
+					return storeCopy;
+				}
+			);
+		}
+
+		// Migrate providers to remove itemId field (if they exist)
+		if (dataContent.providers && Array.isArray(dataContent.providers)) {
+			this.logger.debug(
+				`Migrating ${dataContent.providers.length} providers`
+			);
+
+			dataContent.providers = dataContent.providers.map(
+				(provider: Record<string, unknown>) => {
+					const providerCopy = { ...provider };
+					delete providerCopy.itemId;
+					return providerCopy;
+				}
+			);
+		}
+
+		this.logger.debug("Many-to-many relationships migration completed");
+		return migratedData;
+	}
+
+	/**
+	 * Migration script to convert from single brand/store/provider values to arrays
+	 * This migrates data from version 1.2.1 to 1.2.2
+	 */
+	private async migrateToArrayBasedRelationships(
+		data: unknown
+	): Promise<unknown> {
+		this.logger.debug("Starting migration to array-based relationships");
+
+		if (!data || typeof data !== "object") {
+			throw new Error(
+				"Invalid data format for array-based relationships migration"
+			);
+		}
+
+		const dataObj = data as MigrationData;
+
+		// Ensure we have the data structure
+		if (
+			!dataObj.data ||
+			typeof dataObj.data !== "object" ||
+			dataObj.data === null
+		) {
+			throw new Error(
+				"Invalid data format for array-based relationships migration"
+			);
+		}
+
+		const migratedData = { ...dataObj };
+		const dataContent = migratedData.data as Record<string, unknown>;
+
+		// Migrate items to use arrays for brands, stores, and providers
+		if (dataContent.items && Array.isArray(dataContent.items)) {
+			this.logger.debug(
+				`Migrating ${dataContent.items.length} items to array-based relationships`
+			);
+
+			dataContent.items = dataContent.items.map(
+				(item: Record<string, unknown>) => {
+					const itemCopy = { ...item };
+
+					// Convert single brand to array
+					if (itemCopy.brand && typeof itemCopy.brand === "string") {
+						itemCopy.brands = [itemCopy.brand];
+						delete itemCopy.brand;
+					} else if (!itemCopy.brands) {
+						itemCopy.brands = [];
+					}
+
+					// Convert single store to array
+					if (itemCopy.store && typeof itemCopy.store === "string") {
+						itemCopy.stores = [itemCopy.store];
+						delete itemCopy.store;
+					} else if (!itemCopy.stores) {
+						itemCopy.stores = [];
+					}
+
+					// Convert single provider to array
+					if (
+						itemCopy.provider &&
+						typeof itemCopy.provider === "string"
+					) {
+						itemCopy.providers = [itemCopy.provider];
+						delete itemCopy.provider;
+					} else if (!itemCopy.providers) {
+						itemCopy.providers = [];
+					}
+
+					return itemCopy;
+				}
+			);
+		}
+
+		this.logger.debug("Array-based relationships migration completed");
+		return migratedData;
+	}
+
+	/**
+	 * Generate a unique ID for new entities
+	 */
+	private generateId(): string {
+		return UUIDValueObject.random().value;
 	}
 
 	private findMigrationPath(

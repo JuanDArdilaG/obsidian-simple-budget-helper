@@ -1,16 +1,16 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
 import {
-	Item,
 	ItemID,
 	ItemPrice,
-	ItemPrimitives,
 	ItemRecurrenceInfo,
+	ScheduledItem,
+	ScheduledItemPrimitives,
 } from "contexts/Items/domain";
 import { IItemsService } from "contexts/Items/domain/items-service.interface";
 import { Criteria } from "contexts/Shared/domain";
 
 export class ItemsServiceMock implements IItemsService {
-	constructor(public items: Item[]) {}
+	constructor(public items: ScheduledItem[]) {}
 	getPricePerMonth(itemID: ItemID): Promise<ItemPrice> {
 		throw new Error("Method not implemented.");
 	}
@@ -25,21 +25,23 @@ export class ItemsServiceMock implements IItemsService {
 	exists(id: ItemID): Promise<boolean> {
 		throw new Error("Method not implemented.");
 	}
-	create(item: Item): Promise<void> {
+	create(item: ScheduledItem): Promise<void> {
 		throw new Error("Method not implemented.");
 	}
-	getByID(id: ItemID): Promise<Item> {
+	getByID(id: ItemID): Promise<ScheduledItem> {
 		const item = this.items.find((i) => i.id.equalTo(id));
 		if (!item) throw new Error("item not found on get");
 		return Promise.resolve(item);
 	}
-	getByCriteria(criteria: Criteria<ItemPrimitives>): Promise<Item[]> {
+	getByCriteria(
+		criteria: Criteria<ScheduledItemPrimitives>
+	): Promise<ScheduledItem[]> {
 		throw new Error("Method not implemented.");
 	}
-	getAll(): Promise<Item[]> {
+	getAll(): Promise<ScheduledItem[]> {
 		return Promise.resolve(this.items);
 	}
-	update(item: Item): Promise<void> {
+	update(item: ScheduledItem): Promise<void> {
 		throw new Error("Method not implemented.");
 	}
 	delete(id: ItemID): Promise<void> {

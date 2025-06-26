@@ -1,15 +1,15 @@
-import { QueryUseCase } from "contexts/Shared/domain/query-use-case.interface";
-import { Logger } from "contexts/Shared/infrastructure/logger";
 import {
 	DateValueObject,
 	NumberValueObject,
 } from "@juandardilag/value-objects";
-import { Item, ItemRecurrenceInfo } from "contexts/Items/domain";
+import { ItemRecurrenceInfo, ScheduledItem } from "contexts/Items/domain";
+import { QueryUseCase } from "contexts/Shared/domain/query-use-case.interface";
+import { Logger } from "contexts/Shared/infrastructure/logger";
 import { IItemsService } from "../domain/items-service.interface";
 
 export type GetItemsUntilDateUseCaseInput = DateValueObject;
 export type ItemRecurrenceModificationWithN = {
-	item: Item;
+	item: ScheduledItem;
 	recurrence: ItemRecurrenceInfo;
 	n: NumberValueObject;
 };
@@ -39,7 +39,7 @@ export class GetItemsUntilDateUseCase
 		const res: {
 			recurrence: ItemRecurrenceInfo;
 			n: NumberValueObject;
-			item: Item;
+			item: ScheduledItem;
 		}[][] = [];
 
 		for (const item of items) {

@@ -1,12 +1,12 @@
 import { Account, AccountID, IAccountsService } from "contexts/Accounts/domain";
-import { Item } from "contexts/Items/domain";
+import { ScheduledItem } from "contexts/Items/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { ReportBalance } from "../domain";
 import { ItemsReport } from "../domain/items-report.entity";
 import { IReportsService } from "../domain/reports-service.interface";
 
 type ItemsWithAccounts = {
-	item: Item;
+	item: ScheduledItem;
 	account: Account;
 	toAccount?: Account;
 };

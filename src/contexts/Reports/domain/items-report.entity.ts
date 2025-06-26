@@ -2,7 +2,7 @@ import { NumberValueObject } from "@juandardilag/value-objects";
 import { AccountID, AccountType } from "contexts/Accounts/domain";
 import { GetAllCategoriesWithSubCategoriesUseCaseOutput } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 import { Category } from "contexts/Categories/domain";
-import { Item } from "contexts/Items/domain";
+import { ScheduledItem } from "contexts/Items/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { SubCategory } from "contexts/Subcategories/domain";
 import { ReportBalance } from "./report-balance.valueobject";
@@ -20,7 +20,7 @@ export type ItemsWithCategoryAndSubCategory = {
 			percentageInverseOperation: NumberValueObject;
 		};
 		items: {
-			item: Item;
+			item: ScheduledItem;
 			percentageOperation: NumberValueObject;
 			percentageInverseOperation: NumberValueObject;
 		}[];
@@ -32,7 +32,7 @@ export class ItemsReport {
 	private static defaultAccountTypeLookup = () => {
 		return new AccountType("asset");
 	};
-	constructor(readonly items: Item[]) {}
+	constructor(readonly items: ScheduledItem[]) {}
 
 	onlyExpenses(): ItemsReport {
 		return new ItemsReport(
@@ -65,28 +65,28 @@ export class ItemsReport {
 	/**
 	 * Returns all items that are expenses (excluding transfers)
 	 */
-	getExpenseItems(): Item[] {
+	getExpenseItems(): ScheduledItem[] {
 		return this.items.filter((item) => item.operation.type.isExpense());
 	}
 
 	/**
 	 * Returns all items that are incomes (excluding transfers)
 	 */
-	getIncomeItems(): Item[] {
+	getIncomeItems(): ScheduledItem[] {
 		return this.items.filter((item) => item.operation.type.isIncome());
 	}
 
 	/**
 	 * Returns all transfer items
 	 */
-	getTransferItems(): Item[] {
+	getTransferItems(): ScheduledItem[] {
 		return this.items.filter((item) => item.operation.type.isTransfer());
 	}
 
 	/**
 	 * Returns infinite recurrent items
 	 */
-	getInfiniteRecurrentItems(): Item[] {
+	getInfiniteRecurrentItems(): ScheduledItem[] {
 		return this.items.filter(
 			(item) => item.recurrence?.totalRecurrences === -1
 		);
@@ -95,7 +95,7 @@ export class ItemsReport {
 	/**
 	 * Returns finite recurrent items
 	 */
-	getFiniteRecurrentItems(): Item[] {
+	getFiniteRecurrentItems(): ScheduledItem[] {
 		return this.items.filter(
 			(item) => item.recurrence?.totalRecurrences !== -1
 		);

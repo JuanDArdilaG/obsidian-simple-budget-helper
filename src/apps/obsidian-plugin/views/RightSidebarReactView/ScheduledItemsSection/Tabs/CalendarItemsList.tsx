@@ -10,10 +10,13 @@ import { RecordItemPanel } from "apps/obsidian-plugin/panels/RecordItemPanel";
 import { AccountBalance, AccountName } from "contexts/Accounts/domain";
 import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
 import { ItemWithAccumulatedBalance } from "contexts/Items/application/items-with-accumulated-balance.usecase";
-import { Item, ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
+import {
+	ItemID,
+	ItemRecurrenceInfo,
+	ScheduledItem,
+} from "contexts/Items/domain";
 import { AccountsReport } from "contexts/Reports/domain";
 import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
-import { Forward } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { AccountsContext, ItemsContext } from "../../Contexts";
 import { ItemReportContext } from "../../Contexts/ItemReportContext";
@@ -203,11 +206,10 @@ export const CalendarItemsList = ({
 										n={n}
 										recurrence={recurrence}
 										accountName={
-											(recurrence.toAccount &&
-												getAccountByID(
-													recurrence.toAccount
-												)?.name) ??
-											AccountName.empty()
+											getAccountByID(
+												recurrence.toAccount ??
+													item.operation.toAccount!
+											)?.name ?? AccountName.empty()
 										}
 										accountBalance={toAccountBalance}
 										accountPrevBalance={
@@ -224,6 +226,46 @@ export const CalendarItemsList = ({
 					)
 				)}
 			</ul>
+			{showPanel && (
+				<>
+					{showPanel.action === "edit" &&
+						(() => {
+							const foundItem = items.find(
+								(i) =>
+									i.item.id.value ===
+									showPanel.item.itemID.value
+							);
+							return foundItem ? (
+								<EditItemRecurrencePanel
+									item={foundItem.item}
+									recurrence={{
+										recurrence: showPanel.item.recurrence,
+										n: new NumberValueObject(1),
+									}}
+									onClose={() => setShowPanel(undefined)}
+								/>
+							) : null;
+						})()}
+					{showPanel.action === "record" &&
+						(() => {
+							const foundItem = items.find(
+								(i) =>
+									i.item.id.value ===
+									showPanel.item.itemID.value
+							);
+							return foundItem ? (
+								<RecordItemPanel
+									item={foundItem.item}
+									recurrence={{
+										recurrence: showPanel.item.recurrence,
+										n: new NumberValueObject(1),
+									}}
+									onClose={() => setShowPanel(undefined)}
+								/>
+							) : null;
+						})()}
+				</>
+			)}
 		</div>
 	);
 };
@@ -241,7 +283,7 @@ const CalendarItemsListItem = ({
 	setAction,
 	updateItems,
 }: {
-	item: Item;
+	item: ScheduledItem;
 	n: NumberValueObject;
 	recurrence: ItemRecurrenceInfo;
 	accountName: AccountName;
@@ -282,141 +324,54 @@ const CalendarItemsListItem = ({
 	>;
 	updateItems: () => void;
 }) => {
-	const logger = useLogger("CalendarItemsListItem");
-	const remainingDays = recurrence.date.getRemainingDays();
-	let remainingDaysColor = "";
-	if (remainingDays < -3) remainingDaysColor = "var(--color-red)";
-	else if (Math.abs(remainingDays) <= 3)
-		remainingDaysColor = "var(--color-yellow)";
-	else remainingDaysColor = "var(--color-green)";
-
-	// Helper function for price:
-	const getItemSplitPrice = (item: Item): PriceValueObject => {
-		if (
-			item.operation.type.isTransfer() ||
-			item.operation.type.isExpense()
-		) {
-			return new PriceValueObject(
-				item.fromSplits.reduce((sum, s) => sum + s.amount.value, 0)
-			);
-		} else {
-			return new PriceValueObject(
-				item.toSplits.reduce((sum, s) => sum + s.amount.value, 0)
-			);
-		}
+	const getItemSplitPrice = (item: ScheduledItem): PriceValueObject => {
+		const accountId = recurrence.account ?? item.operation.account;
+		const split = item.fromSplits.find(
+			(split) => split.accountId.value === accountId.value
+		);
+		return split
+			? new PriceValueObject(split.amount.value)
+			: PriceValueObject.zero();
 	};
 
+	const price = getItemSplitPrice(item);
+
 	return (
-		<div>
-			<li
-				onClick={() => {
-					setShowPanel(undefined);
-				}}
-				onContextMenu={(e) => {
-					e.preventDefault();
-					setShowPanel(undefined);
-					logger.debug("recurrence selected", { recurrence });
-					setSelectedItem({ recurrence, itemID: item.id });
-				}}
-				onKeyDown={() => {}}
-			>
-				<div className="two-columns-list">
-					<span>
-						{item.name.value}{" "}
-						<span className="light-text">
-							{item.recurrence?.frequency?.value}
-						</span>
-						<br />
-						<span
-							style={{
-								fontSize: "0.9em",
-								marginLeft: "15px",
-							}}
-						>
-							{recurrence.date.toPrettyFormatDate()}
-							<br />
-							<span
-								style={{
-									color: remainingDaysColor,
-									marginLeft: "15px",
-								}}
-							>
-								{recurrence.date.remainingDaysStr}
-							</span>
-						</span>
-					</span>
-					<span style={{ textAlign: "right" }}>
-						<PriceLabel
-							price={
-								item.operation.type.isTransfer()
-									? (
-											recurrence.price ??
-											getItemSplitPrice(item)
-									  ).negate()
-									: recurrence.price ??
-									  getItemSplitPrice(item)
-							}
-							operation={item.operation.type}
-						/>
-						<span
-							style={{
-								marginLeft: "8px",
-								paddingTop: "20px",
-							}}
-						>
-							<Forward
-								style={{
-									cursor: "pointer",
-									color: "var(--color-green)",
-								}}
-								size={19}
-								onClick={() => {
-									setAction("record");
-									setSelectedItem({
-										recurrence,
-										itemID: item.id,
-									});
-								}}
-							/>
-						</span>
-						<br />
-						<div
-							style={{ textAlign: "right" }}
-							className="light-text"
-						>
-							<div>{accountName.toString()}</div>
-							<div>
-								{accountPrevBalance.value.toString()} {"->"}{" "}
-								{accountBalance.value.toString()}
-							</div>
-						</div>
-					</span>
+		<li
+			style={{
+				display: "flex",
+				justifyContent: "space-between",
+				alignItems: "center",
+				padding: "8px",
+				borderBottom: "1px solid #eee",
+				cursor: "pointer",
+			}}
+			onClick={() => {
+				setSelectedItem({ recurrence, itemID: item.id });
+				setAction("record");
+			}}
+			onContextMenu={(e) => {
+				e.preventDefault();
+				setSelectedItem({ recurrence, itemID: item.id });
+				setAction("edit");
+			}}
+		>
+			<div style={{ flex: 1 }}>
+				<div style={{ fontWeight: "bold" }}>
+					{item.name.toString()} ({n.toString()})
 				</div>
-			</li>
-			{recurrence === showPanel?.item.recurrence &&
-				showPanel.action === "record" && (
-					<RecordItemPanel
-						item={item}
-						recurrence={{ recurrence, n }}
-						onClose={() => {
-							updateItems();
-							setShowPanel(undefined);
-							setAction(undefined);
-						}}
-					/>
-				)}
-			{recurrence === showPanel?.item.recurrence &&
-				showPanel.action === "edit" && (
-					<EditItemRecurrencePanel
-						item={item}
-						recurrence={{ recurrence, n }}
-						onClose={() => {
-							setShowPanel(undefined);
-							setAction(undefined);
-							updateItems();
-						}}
-					/>
-				)}
-		</div>
+				<div style={{ fontSize: "0.9em", color: "#666" }}>
+					{accountName.toString()} - {recurrence.date.toString()}
+				</div>
+			</div>
+			<div style={{ textAlign: "right" }}>
+				<div>
+					<PriceLabel price={price} operation={item.operation.type} />
+				</div>
+				<div style={{ fontSize: "0.8em", color: "#666" }}>
+					{accountBalance.toString()}
+				</div>
+			</div>
+		</li>
 	);
 };

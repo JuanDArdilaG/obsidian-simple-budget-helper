@@ -3,9 +3,9 @@ import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import {
 	ERecurrenceState,
-	Item,
 	ItemDate,
 	ItemName,
+	ScheduledItem,
 } from "contexts/Items/domain";
 import { ItemOperation } from "contexts/Shared/domain/Item/item-operation.valueobject";
 import { SubCategoryID } from "contexts/Subcategories/domain";
@@ -174,7 +174,7 @@ describe("transfer operation validation", () => {
 		const toSplits: PaymentSplit[] = []; // Empty toSplits for transfer
 
 		expect(() => {
-			Item.oneTime(
+			ScheduledItem.oneTime(
 				DateValueObject.createNowDate(),
 				new ItemName("Transfer Test"),
 				fromSplits,
@@ -197,7 +197,7 @@ describe("transfer operation validation", () => {
 		];
 
 		expect(() => {
-			Item.oneTime(
+			ScheduledItem.oneTime(
 				DateValueObject.createNowDate(),
 				new ItemName("Transfer Test"),
 				fromSplits,
@@ -219,7 +219,7 @@ describe("transfer operation validation", () => {
 			new PaymentSplit(toAccount, new TransactionAmount(100)),
 		];
 
-		const item = Item.oneTime(
+		const item = ScheduledItem.oneTime(
 			DateValueObject.createNowDate(),
 			new ItemName("Transfer Test"),
 			fromSplits,
@@ -242,7 +242,7 @@ describe("transfer operation validation", () => {
 		];
 		const toSplits: PaymentSplit[] = []; // Empty toSplits
 
-		const item = Item.oneTime(
+		const item = ScheduledItem.oneTime(
 			DateValueObject.createNowDate(),
 			new ItemName("Test Item"),
 			fromSplits,
@@ -269,7 +269,7 @@ describe("transfer operation validation", () => {
 			new PaymentSplit(toAccount, new TransactionAmount(100)),
 		];
 
-		const item = Item.oneTime(
+		const item = ScheduledItem.oneTime(
 			DateValueObject.createNowDate(),
 			new ItemName("Test Item"),
 			fromSplits,

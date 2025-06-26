@@ -1,16 +1,16 @@
-import { RepositoryMock } from "../../Shared/domain/repository.mock";
 import {
-	IItemsRepository,
+	IScheduledItemsRepository,
 	ItemBrand,
 	ItemID,
-	ItemPrimitives,
 	ItemStore,
-	Item,
+	ScheduledItem,
+	ScheduledItemPrimitives,
 } from "contexts/Items/domain";
+import { RepositoryMock } from "../../Shared/domain/repository.mock";
 
 export class ItemsRepositoryMock
-	extends RepositoryMock<ItemID, Item, ItemPrimitives>
-	implements IItemsRepository
+	extends RepositoryMock<ItemID, ScheduledItem, ScheduledItemPrimitives>
+	implements IScheduledItemsRepository
 {
 	findAllUniqueItemBrands(): Promise<ItemBrand[]> {
 		throw new Error("Method not implemented.");

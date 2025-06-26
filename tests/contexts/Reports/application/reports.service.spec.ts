@@ -1,7 +1,7 @@
 import { DateValueObject } from "@juandardilag/value-objects";
 import { Account, AccountName, AccountType } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
-import { Item, ItemName } from "contexts/Items/domain";
+import { ItemName, ScheduledItem } from "contexts/Items/domain";
 import { ItemRecurrenceFrequency } from "contexts/Items/domain/item-recurrence-frequency.valueobject";
 import { ReportsService } from "contexts/Reports/application/reports.service";
 import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
@@ -45,7 +45,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 
 	describe("Income transactions", () => {
 		it("should calculate total for income transactions correctly", async () => {
-			const incomeItem1 = Item.oneTime(
+			const incomeItem1 = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Salary"),
 				[split(assetAccount, 5000)],
@@ -54,7 +54,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				categoryId,
 				subCategoryId
 			);
-			const incomeItem2 = Item.oneTime(
+			const incomeItem2 = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Bonus"),
 				[split(assetAccount, 1000)],
@@ -71,7 +71,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 			expect(result.value).toBe(6000);
 		});
 		it("should calculate total for recurring income correctly", async () => {
-			const recurringIncome = Item.infinite(
+			const recurringIncome = ScheduledItem.infinite(
 				startDate,
 				new ItemName("Monthly Salary"),
 				[split(assetAccount, 3000)],
@@ -95,7 +95,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 
 	describe("Expense transactions", () => {
 		it("should calculate total for expense transactions correctly", async () => {
-			const expenseItem1 = Item.oneTime(
+			const expenseItem1 = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Groceries"),
 				[split(assetAccount, 200)],
@@ -104,7 +104,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				categoryId,
 				subCategoryId
 			);
-			const expenseItem2 = Item.oneTime(
+			const expenseItem2 = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Gas"),
 				[split(assetAccount, 50)],
@@ -122,7 +122,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 		});
 
 		it("should calculate total for recurring expenses correctly", async () => {
-			const recurringExpense = Item.infinite(
+			const recurringExpense = ScheduledItem.infinite(
 				startDate,
 				new ItemName("Rent"),
 				[split(assetAccount, 1200)],
@@ -143,7 +143,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 
 	describe("Transfer transactions", () => {
 		it("should calculate total for asset to liability transfers correctly", async () => {
-			const transferItem = Item.oneTime(
+			const transferItem = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Credit Card Payment"),
 				[split(assetAccount, 500)],
@@ -165,7 +165,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 			expect(incomesResult.value).toBe(0);
 		});
 		it("should calculate total for liability to asset transfers correctly", async () => {
-			const transferItem = Item.oneTime(
+			const transferItem = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Credit Card Withdrawal"),
 				[split(liabilityAccount, 300)],
@@ -199,7 +199,8 @@ describe("ReportsService.getTotalPerMonth", () => {
 			const reportsServiceWithSavings = new ReportsService(
 				mockAccountsService
 			);
-			const transferItem = Item.oneTime(
+
+			const transferItem = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Transfer to Savings"),
 				[split(assetAccount, 1000)],
@@ -222,46 +223,11 @@ describe("ReportsService.getTotalPerMonth", () => {
 				);
 			expect(incomesResult.value).toBe(0);
 		});
-		it("should calculate total for liability to liability transfers correctly", async () => {
-			const loanAccount = Account.create(
-				AccountType.liability(),
-				new AccountName("Loan")
-			);
-			const mockAccountsService = new AccountsServiceMock([
-				assetAccount,
-				liabilityAccount,
-				loanAccount,
-			]);
-			const reportsServiceWithLoan = new ReportsService(
-				mockAccountsService
-			);
-			const transferItem = Item.oneTime(
-				startDate,
-				new ItemName("Debt Consolidation"),
-				[split(liabilityAccount, 2000)],
-				[split(loanAccount, 2000)],
-				ItemOperation.transfer(liabilityAccount.id, loanAccount.id),
-				categoryId,
-				subCategoryId
-			);
-			const report = new ItemsReport([transferItem]);
-			const expensesResult =
-				await reportsServiceWithLoan.getTotalPerMonth(
-					report,
-					"expenses"
-				);
-			expect(expensesResult.value).toBe(0);
-			const incomesResult = await reportsServiceWithLoan.getTotalPerMonth(
-				report,
-				"incomes"
-			);
-			expect(incomesResult.value).toBe(0);
-		});
 	});
 
 	describe("Mixed transactions", () => {
 		it("should calculate total for mixed income and expense transactions", async () => {
-			const incomeItem = Item.oneTime(
+			const incomeItem = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Salary"),
 				[split(assetAccount, 4000)],
@@ -270,7 +236,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				categoryId,
 				subCategoryId
 			);
-			const expenseItem = Item.oneTime(
+			const expenseItem = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Rent"),
 				[split(assetAccount, 1500)],
@@ -298,7 +264,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 		});
 
 		it("should calculate total for complex scenario with all transaction types", async () => {
-			const incomeItem = Item.oneTime(
+			const incomeItem = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Salary"),
 				[split(assetAccount, 5000)],
@@ -307,7 +273,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				categoryId,
 				subCategoryId
 			);
-			const expenseItem = Item.oneTime(
+			const expenseItem = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Groceries"),
 				[split(assetAccount, 300)],
@@ -316,7 +282,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				categoryId,
 				subCategoryId
 			);
-			const assetToLiabilityTransfer = Item.oneTime(
+			const assetToLiabilityTransfer = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Credit Card Payment"),
 				[split(assetAccount, 500)],
@@ -325,7 +291,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				categoryId,
 				subCategoryId
 			);
-			const liabilityToAssetTransfer = Item.oneTime(
+			const liabilityToAssetTransfer = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Credit Card Withdrawal"),
 				[split(liabilityAccount, 200)],
@@ -358,7 +324,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 		});
 
 		it("should handle recurring and one-time transactions correctly", async () => {
-			const recurringIncome = Item.infinite(
+			const recurringIncome = ScheduledItem.infinite(
 				startDate,
 				new ItemName("Monthly Salary"),
 				[split(assetAccount, 4000)],
@@ -369,7 +335,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemRecurrenceFrequency("1mo")
 			);
 
-			const oneTimeExpense = Item.oneTime(
+			const oneTimeExpense = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Car Repair"),
 				[split(assetAccount, 800)],
@@ -379,7 +345,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				subCategoryId
 			);
 
-			const recurringExpense = Item.infinite(
+			const recurringExpense = ScheduledItem.infinite(
 				startDate,
 				new ItemName("Monthly Rent"),
 				[split(assetAccount, 1200)],
@@ -421,7 +387,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 
 	describe("Edge cases", () => {
 		it("should handle zero amount transactions", async () => {
-			const zeroIncome = Item.oneTime(
+			const zeroIncome = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Zero Income"),
 				[split(assetAccount, 0)],
@@ -431,7 +397,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				subCategoryId
 			);
 
-			const zeroExpense = Item.oneTime(
+			const zeroExpense = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Zero Expense"),
 				[split(assetAccount, 0)],
@@ -486,7 +452,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 
 		it("should handle different recurrence frequencies correctly", async () => {
 			// Weekly income
-			const weeklyIncome = Item.infinite(
+			const weeklyIncome = ScheduledItem.infinite(
 				startDate,
 				new ItemName("Weekly Allowance"),
 				[split(assetAccount, 100)],
@@ -498,7 +464,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 			);
 
 			// Yearly expense
-			const yearlyExpense = Item.infinite(
+			const yearlyExpense = ScheduledItem.infinite(
 				startDate,
 				new ItemName("Yearly Insurance"),
 				[split(assetAccount, 1200)],
@@ -558,7 +524,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 			);
 
 			// Asset to Asset transfer (should not be counted)
-			const checkingToSavings = Item.oneTime(
+			const checkingToSavings = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Transfer to Savings"),
 				[split(checkingAccount, 500)],
@@ -569,7 +535,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 			);
 
 			// Asset to Liability transfer (should be counted as expense)
-			const checkingToCreditCard = Item.oneTime(
+			const checkingToCreditCard = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Credit Card Payment"),
 				[split(checkingAccount, 300)],
@@ -580,7 +546,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 			);
 
 			// Liability to Asset transfer (should be counted as income)
-			const creditCardToChecking = Item.oneTime(
+			const creditCardToChecking = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Credit Card Withdrawal"),
 				[split(creditCard, 200)],
@@ -591,7 +557,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 			);
 
 			// Liability to Liability transfer (should not be counted)
-			const creditCardToLoan = Item.oneTime(
+			const creditCardToLoan = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Debt Consolidation"),
 				[split(creditCard, 1000)],
@@ -632,7 +598,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 
 		it("should handle mixed recurring and one-time transfers", async () => {
 			// Monthly recurring transfer from asset to liability (payment)
-			const monthlyPayment = Item.infinite(
+			const monthlyPayment = ScheduledItem.infinite(
 				startDate,
 				new ItemName("Monthly Credit Card Payment"),
 				[split(assetAccount, 500)],
@@ -644,7 +610,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 			);
 
 			// One-time transfer from liability to asset (withdrawal)
-			const oneTimeWithdrawal = Item.oneTime(
+			const oneTimeWithdrawal = ScheduledItem.oneTime(
 				startDate,
 				new ItemName("Credit Card Withdrawal"),
 				[split(liabilityAccount, 1000)],

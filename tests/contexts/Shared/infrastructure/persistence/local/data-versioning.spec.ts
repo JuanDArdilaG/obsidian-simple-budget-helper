@@ -9,8 +9,8 @@ describe("DataVersioning", () => {
 	});
 
 	describe("Version Management", () => {
-		it("should return current version as 1.1.0", () => {
-			expect(dataVersioning.getCurrentVersion()).toBe("1.1.0");
+		it("should return current version as 1.2.2", () => {
+			expect(dataVersioning.getCurrentVersion()).toBe("1.2.2");
 		});
 
 		it("should be compatible with version 1.0.0", () => {
@@ -51,9 +51,13 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(oldData);
 
 			expect(migratedData).toEqual({
-				version: "1.1.0",
+				version: "1.2.2",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
+					brands: [],
+					items: [],
+					providers: [],
+					stores: [],
 					transactions: [
 						{
 							id: "transaction-1",
@@ -101,9 +105,13 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(oldData);
 
 			expect(migratedData).toEqual({
-				version: "1.1.0",
+				version: "1.2.2",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
+					brands: [],
+					items: [],
+					providers: [],
+					stores: [],
 					transactions: [
 						{
 							id: "transaction-1",
@@ -154,26 +162,13 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(oldData);
 
 			expect(migratedData).toEqual({
-				version: "1.1.0",
+				version: "1.2.2",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
-					items: [
-						{
-							id: "item-1",
-							name: "Test Item",
-							category: "category-1",
-							subCategory: "subcategory-1",
-							fromSplits: [
-								{
-									accountId: "account-1",
-									amount: 50,
-								},
-							],
-							toSplits: [],
-							operation: "expense",
-							updatedAt: "2024-01-01T00:00:00.000Z",
-						},
-					],
+					brands: [],
+					items: [],
+					providers: [],
+					stores: [],
 				},
 			});
 		});
@@ -207,9 +202,13 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(newData);
 
 			expect(migratedData).toEqual({
-				version: "1.1.0",
+				version: "1.2.2",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
+					brands: [],
+					items: [],
+					providers: [],
+					stores: [],
 					transactions: [
 						{
 							id: "transaction-1",
@@ -240,7 +239,7 @@ describe("DataVersioning", () => {
 					transactions: [
 						{
 							id: "transaction-1",
-							name: "Old Format",
+							name: "Old Format Transaction",
 							category: "category-1",
 							subCategory: "subcategory-1",
 							account: "account-1",
@@ -251,7 +250,7 @@ describe("DataVersioning", () => {
 						},
 						{
 							id: "transaction-2",
-							name: "New Format",
+							name: "New Format Transaction",
 							category: "category-1",
 							subCategory: "subcategory-1",
 							fromSplits: [
@@ -272,13 +271,17 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(mixedData);
 
 			expect(migratedData).toEqual({
-				version: "1.1.0",
+				version: "1.2.2",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
+					brands: [],
+					items: [],
+					providers: [],
+					stores: [],
 					transactions: [
 						{
 							id: "transaction-1",
-							name: "Old Format",
+							name: "Old Format Transaction",
 							category: "category-1",
 							subCategory: "subcategory-1",
 							fromSplits: [
@@ -294,7 +297,7 @@ describe("DataVersioning", () => {
 						},
 						{
 							id: "transaction-2",
-							name: "New Format",
+							name: "New Format Transaction",
 							category: "category-1",
 							subCategory: "subcategory-1",
 							fromSplits: [
@@ -323,32 +326,61 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(emptyData);
 
 			expect(migratedData).toEqual({
-				version: "1.1.0",
+				version: "1.2.2",
 				timestamp: "2024-01-01T00:00:00.000Z",
-				data: {},
+				data: {
+					brands: [],
+					items: [],
+					providers: [],
+					stores: [],
+				},
 			});
 		});
 
 		it("should handle data without transactions or items", async () => {
-			const dataWithoutCollections = {
+			const dataWithoutItems = {
 				version: "1.0.0",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
-					accounts: [{ id: "account-1", name: "Test Account" }],
-					categories: [{ id: "category-1", name: "Test Category" }],
+					accounts: [
+						{
+							id: "account-1",
+							name: "Test Account",
+						},
+					],
+					categories: [
+						{
+							id: "category-1",
+							name: "Test Category",
+						},
+					],
 				},
 			};
 
 			const migratedData = await dataVersioning.migrateData(
-				dataWithoutCollections
+				dataWithoutItems
 			);
 
 			expect(migratedData).toEqual({
-				version: "1.1.0",
+				version: "1.2.2",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
-					accounts: [{ id: "account-1", name: "Test Account" }],
-					categories: [{ id: "category-1", name: "Test Category" }],
+					accounts: [
+						{
+							id: "account-1",
+							name: "Test Account",
+						},
+					],
+					brands: [],
+					categories: [
+						{
+							id: "category-1",
+							name: "Test Category",
+						},
+					],
+					items: [],
+					providers: [],
+					stores: [],
 				},
 			});
 		});
@@ -368,10 +400,9 @@ describe("DataVersioning", () => {
 							amount: 100,
 							operation: "expense",
 							date: new Date("2024-01-01"),
-							updatedAt: "2024-01-01T00:00:00.000Z",
-							item: "item-1",
 							brand: "Test Brand",
 							store: "Test Store",
+							updatedAt: "2024-01-01T00:00:00.000Z",
 						},
 					],
 				},
@@ -380,9 +411,13 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(oldData);
 
 			expect(migratedData).toEqual({
-				version: "1.1.0",
+				version: "1.2.2",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
+					brands: [],
+					items: [],
+					providers: [],
+					stores: [],
 					transactions: [
 						{
 							id: "transaction-1",
@@ -398,10 +433,9 @@ describe("DataVersioning", () => {
 							toSplits: [],
 							operation: "expense",
 							date: new Date("2024-01-01"),
-							updatedAt: "2024-01-01T00:00:00.000Z",
-							item: "item-1",
 							brand: "Test Brand",
 							store: "Test Store",
+							updatedAt: "2024-01-01T00:00:00.000Z",
 						},
 					],
 				},
@@ -421,8 +455,7 @@ describe("DataVersioning", () => {
 		it("should throw error for invalid data structure in migration", async () => {
 			const invalidData = {
 				version: "1.0.0",
-				timestamp: "2024-01-01T00:00:00.000Z",
-				data: null,
+				// Missing timestamp and data
 			};
 
 			await expect(

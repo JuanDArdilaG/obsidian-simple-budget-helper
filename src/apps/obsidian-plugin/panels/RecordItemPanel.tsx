@@ -5,7 +5,7 @@ import {
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
-import { Item, ItemRecurrenceInfo } from "contexts/Items/domain";
+import { ItemRecurrenceInfo, ScheduledItem } from "contexts/Items/domain";
 import {
 	TransactionAmount,
 	TransactionDate,
@@ -21,7 +21,7 @@ export const RecordItemPanel = ({
 	recurrence: { recurrence, n },
 	onClose,
 }: {
-	item: Item;
+	item: ScheduledItem;
 	recurrence: {
 		recurrence: ItemRecurrenceInfo;
 		n: NumberValueObject;

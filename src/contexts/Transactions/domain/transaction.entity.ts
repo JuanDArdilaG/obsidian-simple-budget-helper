@@ -4,6 +4,7 @@ import { CategoryID } from "contexts/Categories/domain";
 import { ItemBrand, ItemProductInfo, ItemStore } from "contexts/Items/domain";
 import { ItemID } from "contexts/Items/domain/item-id.valueobject";
 import { Item } from "contexts/Items/domain/item.entity";
+import { ScheduledItem } from "contexts/Items/domain/scheduled-item.entity";
 import { OperationType } from "contexts/Shared/domain";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { InvalidArgumentError } from "contexts/Shared/domain/errors/invalid-argument.error";
@@ -49,19 +50,44 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		}
 	}
 
-	static fromItem(item: Item, date: TransactionDate): Transaction {
+	static fromScheduledItem(
+		scheduledItem: ScheduledItem,
+		date: TransactionDate
+	): Transaction {
 		return new Transaction(
 			TransactionID.generate(),
-			item.fromSplits,
-			item.toSplits,
+			scheduledItem.fromSplits,
+			scheduledItem.toSplits,
+			scheduledItem.name,
+			scheduledItem.operation.type,
+			scheduledItem.category,
+			scheduledItem.subCategory,
+			date,
+			DateValueObject.createNowDate(),
+			scheduledItem.id,
+			scheduledItem.info
+		);
+	}
+
+	static fromItem(
+		item: Item,
+		fromSplits: PaymentSplit[],
+		toSplits: PaymentSplit[],
+		operation: TransactionOperation,
+		date: TransactionDate
+	): Transaction {
+		return new Transaction(
+			TransactionID.generate(),
+			fromSplits,
+			toSplits,
 			item.name,
-			item.operation.type,
+			operation,
 			item.category,
 			item.subCategory,
 			date,
 			DateValueObject.createNowDate(),
 			item.id,
-			item.info
+			undefined // Items don't have product info in the new structure
 		);
 	}
 

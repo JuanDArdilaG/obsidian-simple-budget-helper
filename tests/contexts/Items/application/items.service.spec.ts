@@ -9,11 +9,11 @@ import {
 import { CategoryID } from "contexts/Categories/domain";
 import { ItemsService } from "contexts/Items/application/items.service";
 import {
-	IItemsRepository,
-	Item,
+	IScheduledItemsRepository,
 	ItemID,
 	ItemName,
 	ItemRecurrenceFrequency,
+	ScheduledItem,
 } from "contexts/Items/domain";
 import { ItemOperation } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
@@ -23,7 +23,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("ItemsService", () => {
 	let itemsService: ItemsService;
-	let mockItemsRepository: IItemsRepository;
+	let mockItemsRepository: IScheduledItemsRepository;
 	let mockAccountsService: IAccountsService;
 
 	beforeEach(() => {
@@ -34,7 +34,7 @@ describe("ItemsService", () => {
 			persist: vi.fn(),
 			deleteById: vi.fn(),
 			exists: vi.fn(),
-		} as unknown as IItemsRepository;
+		} as unknown as IScheduledItemsRepository;
 
 		mockAccountsService = {
 			getByID: vi.fn(),
@@ -66,7 +66,7 @@ describe("ItemsService", () => {
 			];
 			const toSplits: PaymentSplit[] = [];
 
-			const item = Item.oneTime(
+			const item = ScheduledItem.oneTime(
 				DateValueObject.createNowDate(),
 				new ItemName("Income Item"),
 				fromSplits,
@@ -76,7 +76,7 @@ describe("ItemsService", () => {
 				SubCategoryID.generate()
 			);
 
-			(mockItemsRepository.findById as any).mockResolvedValue(item);
+			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
 
 			const result = await itemsService.getPricePerMonth(itemID);
 
@@ -91,7 +91,7 @@ describe("ItemsService", () => {
 			];
 			const toSplits: PaymentSplit[] = [];
 
-			const item = Item.oneTime(
+			const item = ScheduledItem.oneTime(
 				DateValueObject.createNowDate(),
 				new ItemName("Expense Item"),
 				fromSplits,
@@ -101,7 +101,7 @@ describe("ItemsService", () => {
 				SubCategoryID.generate()
 			);
 
-			(mockItemsRepository.findById as any).mockResolvedValue(item);
+			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
 
 			const result = await itemsService.getPricePerMonth(itemID);
 
@@ -119,7 +119,7 @@ describe("ItemsService", () => {
 				new PaymentSplit(toAccountID, new TransactionAmount(100)),
 			];
 
-			const item = Item.oneTime(
+			const item = ScheduledItem.oneTime(
 				DateValueObject.createNowDate(),
 				new ItemName("Transfer Item"),
 				fromSplits,
@@ -138,8 +138,8 @@ describe("ItemsService", () => {
 				new AccountName("Liability Account")
 			);
 
-			(mockItemsRepository.findById as any).mockResolvedValue(item);
-			(mockAccountsService.getByID as any)
+			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
+			vi.mocked(mockAccountsService.getByID)
 				.mockResolvedValueOnce(fromAccount)
 				.mockResolvedValueOnce(toAccount);
 
@@ -159,7 +159,7 @@ describe("ItemsService", () => {
 				new PaymentSplit(toAccountID, new TransactionAmount(100)),
 			];
 
-			const item = Item.oneTime(
+			const item = ScheduledItem.oneTime(
 				DateValueObject.createNowDate(),
 				new ItemName("Transfer Item"),
 				fromSplits,
@@ -178,8 +178,8 @@ describe("ItemsService", () => {
 				new AccountName("Asset Account")
 			);
 
-			(mockItemsRepository.findById as any).mockResolvedValue(item);
-			(mockAccountsService.getByID as any)
+			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
+			vi.mocked(mockAccountsService.getByID)
 				.mockResolvedValueOnce(fromAccount)
 				.mockResolvedValueOnce(toAccount);
 
@@ -199,7 +199,7 @@ describe("ItemsService", () => {
 				new PaymentSplit(toAccountID, new TransactionAmount(100)),
 			];
 
-			const item = Item.oneTime(
+			const item = ScheduledItem.oneTime(
 				DateValueObject.createNowDate(),
 				new ItemName("Transfer Item"),
 				fromSplits,
@@ -218,8 +218,8 @@ describe("ItemsService", () => {
 				new AccountName("Asset Account 2")
 			);
 
-			(mockItemsRepository.findById as any).mockResolvedValue(item);
-			(mockAccountsService.getByID as any)
+			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
+			vi.mocked(mockAccountsService.getByID)
 				.mockResolvedValueOnce(fromAccount)
 				.mockResolvedValueOnce(toAccount);
 
@@ -239,7 +239,7 @@ describe("ItemsService", () => {
 				new PaymentSplit(toAccountID, new TransactionAmount(100)),
 			];
 
-			const item = Item.oneTime(
+			const item = ScheduledItem.oneTime(
 				DateValueObject.createNowDate(),
 				new ItemName("Transfer Item"),
 				fromSplits,
@@ -258,8 +258,8 @@ describe("ItemsService", () => {
 				new AccountName("Liability Account 2")
 			);
 
-			(mockItemsRepository.findById as any).mockResolvedValue(item);
-			(mockAccountsService.getByID as any)
+			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
+			vi.mocked(mockAccountsService.getByID)
 				.mockResolvedValueOnce(fromAccount)
 				.mockResolvedValueOnce(toAccount);
 
@@ -276,7 +276,7 @@ describe("ItemsService", () => {
 			];
 			const toSplits: PaymentSplit[] = [];
 
-			const item = Item.infinite(
+			const item = ScheduledItem.infinite(
 				DateValueObject.createNowDate(),
 				new ItemName("Recurring Income Item"),
 				fromSplits,
@@ -287,7 +287,7 @@ describe("ItemsService", () => {
 				new ItemRecurrenceFrequency("1w")
 			);
 
-			(mockItemsRepository.findById as any).mockResolvedValue(item);
+			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
 
 			const result = await itemsService.getPricePerMonth(itemID);
 
