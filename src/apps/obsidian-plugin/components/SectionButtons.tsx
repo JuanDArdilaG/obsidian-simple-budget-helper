@@ -23,6 +23,20 @@ export const SectionButtons = ({
 	selected: MainSidebarSections;
 	setSelected: (selected: MainSidebarSections) => void;
 }) => {
+	// Debug logging for mobile issues
+	console.log("SectionButtons render:", {
+		selected,
+		isMobile:
+			/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+				navigator.userAgent
+			),
+	});
+
+	const handleSectionClick = (section: MainSidebarSections) => {
+		console.log("Section button clicked:", section);
+		setSelected(section);
+	};
+
 	return (
 		<div className="section-buttons">
 			<SectionButton
@@ -35,7 +49,7 @@ export const SectionButtons = ({
 					/>
 				}
 				selected={selected}
-				onClick={() => setSelected("accounting")}
+				onClick={() => handleSectionClick("accounting")}
 			/>
 			<SectionButton
 				type="items"
@@ -44,7 +58,7 @@ export const SectionButtons = ({
 					<Package size={16} style={{ color: "var(--color-cyan)" }} />
 				}
 				selected={selected}
-				onClick={() => setSelected("items")}
+				onClick={() => handleSectionClick("items")}
 			/>
 			<SectionButton
 				type="scheduledItems"
@@ -56,7 +70,7 @@ export const SectionButtons = ({
 					/>
 				}
 				selected={selected}
-				onClick={() => setSelected("scheduledItems")}
+				onClick={() => handleSectionClick("scheduledItems")}
 			/>
 			<SectionButton
 				type="accounts"
@@ -68,7 +82,7 @@ export const SectionButtons = ({
 					/>
 				}
 				selected={selected}
-				onClick={() => setSelected("accounts")}
+				onClick={() => handleSectionClick("accounts")}
 			/>
 			<SectionButton
 				type="categories"
@@ -80,7 +94,7 @@ export const SectionButtons = ({
 					/>
 				}
 				selected={selected}
-				onClick={() => setSelected("categories")}
+				onClick={() => handleSectionClick("categories")}
 			/>
 			<SectionButton
 				type="localPersistence"
@@ -92,7 +106,7 @@ export const SectionButtons = ({
 					/>
 				}
 				selected={selected}
-				onClick={() => setSelected("localPersistence")}
+				onClick={() => handleSectionClick("localPersistence")}
 			/>
 		</div>
 	);

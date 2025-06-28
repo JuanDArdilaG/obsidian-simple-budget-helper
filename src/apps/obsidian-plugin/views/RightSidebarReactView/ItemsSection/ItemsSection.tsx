@@ -27,10 +27,14 @@ export const ItemsSection = ({
 	const loadItems = async () => {
 		try {
 			setIsLoading(true);
+			console.log("Loading items...");
 			const result = await useCases.getAllRegularItems.execute();
+			console.log("Items loaded:", result.items.length, "items");
 			setItems(result.items);
 		} catch (error) {
 			console.error("Error loading items", error);
+			// Set empty array to prevent infinite loading state
+			setItems([]);
 		} finally {
 			setIsLoading(false);
 		}

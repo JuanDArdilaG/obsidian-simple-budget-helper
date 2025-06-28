@@ -23,6 +23,18 @@ export const RightSidebarReactView = ({
 }) => {
 	const [sectionSelection, setSectionSelection] =
 		useState<MainSidebarSections>(plugin.settings.lastTab.main);
+
+	// Debug logging for mobile issues
+	console.log("RightSidebarReactView render:", {
+		sectionSelection,
+		lastTab: plugin.settings.lastTab.main,
+		userAgent: navigator.userAgent,
+		isMobile:
+			/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+				navigator.userAgent
+			),
+	});
+
 	useEffect(() => {
 		if (plugin.settings.lastTab.main !== sectionSelection) {
 			plugin.settings.lastTab.main = sectionSelection;

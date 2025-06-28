@@ -322,6 +322,17 @@ export const ItemsList = ({
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [editingItem, setEditingItem] = useState<Item | null>(null);
 
+	// Debug logging
+	console.log("ItemsList render:", {
+		itemsCount: items.length,
+		items: items.map((item) => ({
+			id: item.id.value,
+			name: item.name.value,
+		})),
+		selectedItemsCount: selectedItems.length,
+		transactionsCount: transactions.length,
+	});
+
 	const handleItemSelect = (item: Item) => {
 		const isSelected = selectedItems.some(
 			(selected) => selected.id.value === item.id.value

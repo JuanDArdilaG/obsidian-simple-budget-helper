@@ -36,6 +36,8 @@ ul {
 	justify-content: center;
 	flex-wrap: wrap;
 	margin: 0 0 10px 0;
+	gap: 8px;
+	padding: 8px;
 }
 
 .active-section-button {
@@ -632,5 +634,33 @@ input {
 
 	.search-results-count {
 		background: var(--color-background-primary);
+	}
+}
+
+/* Mobile responsive styles for section buttons */
+@media (max-width: 768px) {
+	.section-buttons {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 4px;
+		padding: 4px;
+	}
+
+	.section-buttons button {
+		min-height: 44px; /* Better touch target for mobile */
+		font-size: 14px;
+		padding: 8px 12px;
+	}
+}
+
+@media (max-width: 480px) {
+	.section-buttons {
+		padding: 2px;
+	}
+
+	.section-buttons button {
+		min-height: 48px; /* Even better touch target for small screens */
+		font-size: 16px;
+		padding: 10px 16px;
 	}
 }

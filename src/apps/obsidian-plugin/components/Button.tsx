@@ -13,6 +13,11 @@ export const Button = ({
 	disabled?: boolean;
 	style?: React.CSSProperties;
 }) => {
+	const isMobile =
+		/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+			navigator.userAgent
+		);
+
 	return (
 		<MuiButton
 			disabled={disabled}
@@ -21,8 +26,12 @@ export const Button = ({
 			onClick={onClick}
 			style={{
 				color: "var(--text-normal)",
-				padding: 20,
+				padding: isMobile ? "12px 16px" : "20px",
+				minHeight: isMobile ? "44px" : "auto",
+				fontSize: isMobile ? "14px" : "inherit",
 				backgroundColor: "var(--interactive-normal)",
+				borderRadius: "8px",
+				textTransform: "none",
 				...style,
 			}}
 		>
