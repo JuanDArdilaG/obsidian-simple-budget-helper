@@ -814,16 +814,18 @@ export const CreateTransactionForm = ({
 							item.itemType === ItemType.PRODUCT &&
 							existingItem instanceof ProductItem
 						) {
+							const updatedProductItem =
+								updatedItem as ProductItem;
 							if (item.brand) {
 								const brandEntity = brandMap.get(item.brand);
 								if (brandEntity) {
 									const brandId = brandEntity.id;
 									if (
-										!existingItem.brands.some(
+										!updatedProductItem.brands.some(
 											(b) => b.value === brandId.value
 										)
 									) {
-										existingItem.addBrand(brandId);
+										updatedProductItem.addBrand(brandId);
 										needsUpdate = true;
 									}
 								}
@@ -836,11 +838,11 @@ export const CreateTransactionForm = ({
 								if (storeEntity) {
 									const storeId = storeEntity.id;
 									if (
-										!existingItem.stores.some(
+										!updatedProductItem.stores.some(
 											(s) => s.value === storeId.value
 										)
 									) {
-										existingItem.addStore(storeId);
+										updatedProductItem.addStore(storeId);
 										needsUpdate = true;
 									}
 								}
@@ -849,6 +851,8 @@ export const CreateTransactionForm = ({
 							item.itemType === ItemType.SERVICE &&
 							existingItem instanceof ServiceItem
 						) {
+							const updatedServiceItem =
+								updatedItem as ServiceItem;
 							if (item.provider) {
 								const providerEntity = providerMap.get(
 									item.provider
@@ -856,11 +860,13 @@ export const CreateTransactionForm = ({
 								if (providerEntity) {
 									const providerId = providerEntity.id;
 									if (
-										!existingItem.providers.some(
+										!updatedServiceItem.providers.some(
 											(p) => p.value === providerId.value
 										)
 									) {
-										existingItem.addProvider(providerId);
+										updatedServiceItem.addProvider(
+											providerId
+										);
 										needsUpdate = true;
 									}
 								}
