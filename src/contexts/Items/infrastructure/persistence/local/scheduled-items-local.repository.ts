@@ -1,3 +1,4 @@
+import { CategoryID } from "contexts/Categories/domain";
 import { ItemID } from "contexts/Items/domain/item-id.valueobject";
 import { IScheduledItemsRepository } from "contexts/Items/domain/item-repository.interface";
 import {
@@ -7,6 +8,7 @@ import {
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
 import { LocalRepository } from "contexts/Shared/infrastructure/persistence/local/local.repository";
+import { SubCategoryID } from "contexts/Subcategories/domain";
 
 export class ScheduledItemsLocalRepository
 	extends LocalRepository<ItemID, ScheduledItem, ScheduledItemPrimitives>
@@ -22,5 +24,15 @@ export class ScheduledItemsLocalRepository
 
 	protected mapToPrimitives(entity: ScheduledItem): ScheduledItemPrimitives {
 		return entity.toPrimitives();
+	}
+
+	async findByCategory(category: CategoryID): Promise<ScheduledItem[]> {
+		return this.where("category", category.value);
+	}
+
+	async findBySubCategory(
+		subCategory: SubCategoryID
+	): Promise<ScheduledItem[]> {
+		return this.where("subCategory", subCategory.value);
 	}
 }

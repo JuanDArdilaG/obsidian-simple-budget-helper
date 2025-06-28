@@ -9,8 +9,8 @@ describe("DataVersioning", () => {
 	});
 
 	describe("Version Management", () => {
-		it("should return current version as 1.2.3", () => {
-			expect(dataVersioning.getCurrentVersion()).toBe("1.2.3");
+		it("should return current version as 1.2.4", () => {
+			expect(dataVersioning.getCurrentVersion()).toBe("1.2.4");
 		});
 
 		it("should be compatible with version 1.0.0", () => {
@@ -25,8 +25,8 @@ describe("DataVersioning", () => {
 			expect(dataVersioning.isCompatible("1.2.2")).toBe(true);
 		});
 
-		it("should be compatible with version 1.2.3", () => {
-			expect(dataVersioning.isCompatible("1.2.3")).toBe(true);
+		it("should be compatible with version 1.2.4", () => {
+			expect(dataVersioning.isCompatible("1.2.4")).toBe(true);
 		});
 
 		it("should not be compatible with unknown version", () => {
@@ -59,7 +59,7 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(oldData);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [],
@@ -113,7 +113,7 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(oldData);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [],
@@ -170,7 +170,7 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(oldData);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [],
@@ -210,7 +210,7 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(newData);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [],
@@ -279,7 +279,7 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(mixedData);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [],
@@ -334,7 +334,7 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(emptyData);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [],
@@ -370,7 +370,7 @@ describe("DataVersioning", () => {
 			);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					accounts: [
@@ -419,7 +419,7 @@ describe("DataVersioning", () => {
 			const migratedData = await dataVersioning.migrateData(oldData);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [],
@@ -451,7 +451,7 @@ describe("DataVersioning", () => {
 		});
 	});
 
-	describe("Brand and Provider Consolidation Migration (1.2.3)", () => {
+	describe("Brand and Provider Consolidation Migration (1.2.4)", () => {
 		it("should consolidate duplicate brands and update references", async () => {
 			const dataWithDuplicateBrands = {
 				version: "1.2.2",
@@ -498,7 +498,7 @@ describe("DataVersioning", () => {
 			);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [
@@ -587,7 +587,7 @@ describe("DataVersioning", () => {
 			);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					providers: [
@@ -680,7 +680,7 @@ describe("DataVersioning", () => {
 			);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [
@@ -748,7 +748,7 @@ describe("DataVersioning", () => {
 			);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [
@@ -803,7 +803,7 @@ describe("DataVersioning", () => {
 			);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					providers: [
@@ -883,7 +883,7 @@ describe("DataVersioning", () => {
 			);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [
@@ -944,7 +944,7 @@ describe("DataVersioning", () => {
 			);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [],
@@ -975,7 +975,7 @@ describe("DataVersioning", () => {
 			);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					items: [{ id: "item1", name: "Test Item" }],
@@ -1020,7 +1020,7 @@ describe("DataVersioning", () => {
 			);
 
 			expect(migratedData).toEqual({
-				version: "1.2.3",
+				version: "1.2.4",
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					brands: [

@@ -28,8 +28,8 @@ export class GroupByCategoryWithAccumulatedBalanceUseCase
 	implements QueryUseCase<TransactionsReport, GroupByCategoryWithBalance>
 {
 	constructor(
-		private readonly _categoriesService: ICategoriesService,
-		private readonly _subcategoriesService: ISubCategoriesService
+		private readonly categoriesService: ICategoriesService,
+		private readonly subcategoriesService: ISubCategoriesService
 	) {}
 
 	async execute(
@@ -39,7 +39,7 @@ export class GroupByCategoryWithAccumulatedBalanceUseCase
 
 		for (const transaction of report.transactions) {
 			result[transaction.category.value] ??= {
-				category: await this._categoriesService.getByID(
+				category: await this.categoriesService.getByID(
 					transaction.category
 				),
 				balance: PriceValueObject.zero(),
@@ -49,7 +49,7 @@ export class GroupByCategoryWithAccumulatedBalanceUseCase
 			result[transaction.category.value].subCategories[
 				transaction.subCategory.value
 			] ??= {
-				subcategory: await this._subcategoriesService.getByID(
+				subcategory: await this.subcategoriesService.getByID(
 					transaction.subCategory
 				),
 				balance: PriceValueObject.zero(),

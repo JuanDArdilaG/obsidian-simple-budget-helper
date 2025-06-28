@@ -1,4 +1,4 @@
-import { IconButton } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
 import { LucideMinus, LucidePlus, RefreshCcw } from "lucide-react";
 
 export const ActionButtons = ({
@@ -12,8 +12,8 @@ export const ActionButtons = ({
 }) => {
 	return (
 		(handleCreate || handleRefresh) && (
-			<div
-				style={{
+			<Box
+				sx={{
 					display: "flex",
 					justifyContent: "end",
 					marginBottom: "10px",
@@ -22,9 +22,13 @@ export const ActionButtons = ({
 			>
 				{handleRefresh && (
 					<IconButton
-						style={{
-							backgroundColor: "rgba(var(--color-blue-rgb), 0.7)",
-							color: "var(--color-base-00)",
+						sx={{
+							backgroundColor: "var(--interactive-accent)",
+							color: "var(--text-on-accent)",
+							"&:hover": {
+								backgroundColor:
+									"var(--interactive-accent-hover)",
+							},
 						}}
 						aria-label="refresh"
 						onClick={async () => {
@@ -36,10 +40,12 @@ export const ActionButtons = ({
 				)}
 				{handleCreate && (
 					<IconButton
-						style={{
-							backgroundColor:
-								"rgba(var(--color-green-rgb), 0.7)",
-							color: "var(--color-base-00)",
+						sx={{
+							backgroundColor: "var(--text-success)",
+							color: "var(--text-on-accent)",
+							"&:hover": {
+								backgroundColor: "var(--text-success-hover)",
+							},
 						}}
 						aria-label="create"
 						onClick={async () => {
@@ -53,7 +59,7 @@ export const ActionButtons = ({
 						)}
 					</IconButton>
 				)}
-			</div>
+			</Box>
 		)
 	);
 };

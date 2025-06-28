@@ -1,5 +1,6 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
 import { IAccountsService } from "contexts/Accounts/domain";
+import { CategoryID } from "contexts/Categories/domain";
 import {
 	IScheduledItemsRepository,
 	ItemID,
@@ -10,6 +11,10 @@ import {
 } from "contexts/Items/domain";
 import { Service } from "contexts/Shared/application/service.abstract";
 import { InvalidArgumentError } from "contexts/Shared/domain";
+import {
+	ISubCategoriesService,
+	SubCategoryID,
+} from "contexts/Subcategories/domain";
 import { IItemsService } from "../domain/items-service.interface";
 
 export class ItemsService
@@ -18,9 +23,61 @@ export class ItemsService
 {
 	constructor(
 		private readonly _scheduledItemsRepository: IScheduledItemsRepository,
-		private readonly _accountsService: IAccountsService
+		private readonly _accountsService: IAccountsService,
+		private readonly subcategoriesService: ISubCategoriesService
 	) {
 		super("ScheduledItem", _scheduledItemsRepository);
+	}
+
+	async getByCategory(category: CategoryID): Promise<ScheduledItem[]> {
+		return this._scheduledItemsRepository.findByCategory(category);
+	}
+
+	async getBySubCategory(
+		subCategory: SubCategoryID
+	): Promise<ScheduledItem[]> {
+		return this._scheduledItemsRepository.findBySubCategory(subCategory);
+	}
+
+	async hasItemsByCategory(category: CategoryID): Promise<boolean> {
+		const items = await this.getByCategory(category);
+		return items.length > 0;
+	}
+
+	async hasItemsBySubCategory(subCategory: SubCategoryID): Promise<boolean> {
+		const items = await this.getBySubCategory(subCategory);
+		return items.length > 0;
+	}
+
+	async reassignItemsCategory(
+		oldCategory: CategoryID,
+		newCategory: CategoryID
+	): Promise<void> {
+		const items = await this.getByCategory(oldCategory);
+
+		for (const item of items) {
+			item.updateCategory(newCategory);
+			await this._scheduledItemsRepository.persist(item);
+		}
+	}
+
+	async reassignItemsSubCategory(
+		oldSubCategory: SubCategoryID,
+		newSubCategory: SubCategoryID
+	): Promise<void> {
+		const items = await this.getBySubCategory(oldSubCategory);
+
+		// Get the new subcategory to find its parent category
+		const newSubCategoryEntity = await this.subcategoriesService.getByID(
+			newSubCategory
+		);
+		const newCategory = newSubCategoryEntity.category;
+
+		for (const item of items) {
+			item.updateSubCategory(newSubCategory);
+			item.updateCategory(newCategory);
+			await this._scheduledItemsRepository.persist(item);
+		}
 	}
 
 	async modifyRecurrence(

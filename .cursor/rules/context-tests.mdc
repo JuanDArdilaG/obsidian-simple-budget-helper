@@ -1,0 +1,6 @@
+---
+description: 
+globs: src/contexts/**/*
+alwaysApply: false
+---
+Add/modify the necessary tests to check the changes on the functionality. Run the tests and verify that all is working correctly.

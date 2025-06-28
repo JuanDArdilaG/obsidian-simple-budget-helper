@@ -1,4 +1,7 @@
-import { Add as AddIcon, Category as CategoryIcon } from "@mui/icons-material";
+import {
+	Add as AddIcon,
+	SubdirectoryArrowRight as SubCategoryIcon,
+} from "@mui/icons-material";
 import {
 	Alert,
 	Box,
@@ -14,58 +17,72 @@ import {
 	Typography,
 } from "@mui/material";
 import { CategoriesContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { Category, CategoryName } from "contexts/Categories/domain";
+import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
 import { useCallback, useContext, useState } from "react";
+import { useCategorySelect } from "../components/Select/useCategorySelect";
 
-export const CreateCategoryPanel = ({ onCreate }: { onCreate: () => void }) => {
+export const CreateSubCategoryPanel = ({
+	onCreate,
+}: {
+	onCreate: () => void;
+}) => {
 	const {
-		useCases: { createCategory },
+		useCases: { createSubCategory },
 		updateCategoriesWithSubcategories,
-		updateCategories,
+		updateSubCategories,
 	} = useContext(CategoriesContext);
 
 	const [name, setName] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [isExpanded, setIsExpanded] = useState(false);
+	const { CategorySelect, category } = useCategorySelect({});
 
 	const handleSubmit = useCallback(async () => {
-		if (!name.trim()) return;
+		if (!name.trim() || !category) return;
 
 		setIsLoading(true);
 		setError(null);
 
 		try {
-			await createCategory.execute(
-				Category.create(new CategoryName(name))
+			await createSubCategory.execute(
+				SubCategory.create(category.id, new SubCategoryName(name))
 			);
-			updateCategories();
+			updateSubCategories();
 			updateCategoriesWithSubcategories();
 			onCreate();
 			setName("");
 			setIsExpanded(false);
 		} catch (err) {
 			setError(
-				err instanceof Error ? err.message : "Failed to create category"
+				err instanceof Error
+					? err.message
+					: "Failed to create subcategory"
 			);
 		} finally {
 			setIsLoading(false);
 		}
 	}, [
 		name,
-		createCategory,
-		updateCategories,
+		category,
+		createSubCategory,
+		updateSubCategories,
 		updateCategoriesWithSubcategories,
 		onCreate,
 	]);
 
 	const handleKeyPress = useCallback(
 		(event: React.KeyboardEvent) => {
-			if (event.key === "Enter" && name.trim() && !isLoading) {
+			if (
+				event.key === "Enter" &&
+				name.trim() &&
+				category &&
+				!isLoading
+			) {
 				handleSubmit();
 			}
 		},
-		[name, isLoading, handleSubmit]
+		[name, category, isLoading, handleSubmit]
 	);
 
 	const toggleExpanded = useCallback(() => {
@@ -75,7 +92,8 @@ export const CreateCategoryPanel = ({ onCreate }: { onCreate: () => void }) => {
 		}
 	}, [isExpanded]);
 
-	const isFormValid = name.trim().length > 0 && name.trim().length <= 50;
+	const isFormValid =
+		name.trim().length > 0 && name.trim().length <= 50 && category;
 
 	return (
 		<Card
@@ -107,7 +125,7 @@ export const CreateCategoryPanel = ({ onCreate }: { onCreate: () => void }) => {
 					onClick={toggleExpanded}
 				>
 					<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-						<CategoryIcon
+						<SubCategoryIcon
 							sx={{
 								color: "var(--interactive-accent)",
 								fontSize: 20,
@@ -121,7 +139,7 @@ export const CreateCategoryPanel = ({ onCreate }: { onCreate: () => void }) => {
 								fontSize: { xs: "1rem", sm: "1.125rem" },
 							}}
 						>
-							Create Category
+							Create SubCategory
 						</Typography>
 					</Box>
 					<Tooltip title={isExpanded ? "Collapse" : "Expand"}>
@@ -168,11 +186,39 @@ export const CreateCategoryPanel = ({ onCreate }: { onCreate: () => void }) => {
 							</Alert>
 						)}
 
+						{/* Category selection */}
+						<Box sx={{ mb: 2 }}>
+							<Typography
+								variant="body2"
+								sx={{
+									color: "var(--text-muted)",
+									mb: 1,
+									fontSize: "0.875rem",
+								}}
+							>
+								Parent Category *
+							</Typography>
+							{CategorySelect}
+							{!category && (
+								<Typography
+									variant="caption"
+									sx={{
+										color: "var(--text-error)",
+										fontSize: "0.75rem",
+										mt: 0.5,
+										display: "block",
+									}}
+								>
+									Please select a parent category
+								</Typography>
+							)}
+						</Box>
+
 						{/* Name input */}
 						<TextField
 							fullWidth
-							label="Category Name"
-							placeholder="Enter category name..."
+							label="SubCategory Name"
+							placeholder="Enter subcategory name..."
 							value={name}
 							onChange={(e) => {
 								setName(e.target.value);
@@ -281,7 +327,9 @@ export const CreateCategoryPanel = ({ onCreate }: { onCreate: () => void }) => {
 									transition: "all 0.2s ease-in-out",
 								}}
 							>
-								{isLoading ? "Creating..." : "Create Category"}
+								{isLoading
+									? "Creating..."
+									: "Create SubCategory"}
 							</Button>
 
 							<Button
@@ -326,8 +374,9 @@ export const CreateCategoryPanel = ({ onCreate }: { onCreate: () => void }) => {
 								lineHeight: 1.4,
 							}}
 						>
-							Categories help organize your content into logical
-							groups. You can create subcategories later.
+							{category
+								? `This will create a subcategory under "${category.name}"`
+								: "Subcategories help organize content within a parent category"}
 						</Typography>
 					</Box>
 				</Collapse>

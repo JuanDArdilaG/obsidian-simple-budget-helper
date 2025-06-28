@@ -35,7 +35,7 @@ interface ItemData {
 
 export class DataVersioning {
 	private logger: Logger = new Logger("DataVersioning");
-	private currentVersion = "1.2.3";
+	private currentVersion = "1.2.4";
 	private versions: DataVersion[] = [
 		{
 			version: "1.0.0",
@@ -74,6 +74,19 @@ export class DataVersioning {
 			],
 			migrationScript:
 				this.migrateToConsolidatedBrandsAndProviders.bind(this),
+		},
+		{
+			version: "1.2.4",
+			compatibleVersions: [
+				"1.0.0",
+				"1.1.0",
+				"1.2.0",
+				"1.2.1",
+				"1.2.2",
+				"1.2.3",
+				"1.2.4",
+			],
+			migrationScript: this.migrateToMergedItems.bind(this),
 		},
 		// Add future versions here with migration scripts
 	];
@@ -835,6 +848,246 @@ export class DataVersioning {
 		this.logger.debug(
 			"Brand and provider consolidation migration completed"
 		);
+		return migratedData;
+	}
+
+	/**
+	 * Migration script to merge items with the same name into a single item
+	 * This migrates data from version 1.2.3 to 1.2.4
+	 */
+	private async migrateToMergedItems(data: unknown): Promise<unknown> {
+		this.logger.debug("Starting migration to merge items with same name");
+
+		if (!data || typeof data !== "object") {
+			throw new Error("Invalid data format for item merging migration");
+		}
+
+		const dataObj = data as MigrationData;
+
+		// Ensure we have the data structure
+		if (
+			!dataObj.data ||
+			typeof dataObj.data !== "object" ||
+			dataObj.data === null
+		) {
+			throw new Error("Invalid data format for item merging migration");
+		}
+
+		const migratedData = { ...dataObj };
+		const dataContent = migratedData.data as Record<string, unknown>;
+
+		// Merge items with the same name
+		if (dataContent.items && Array.isArray(dataContent.items)) {
+			this.logger.debug(
+				`Processing ${dataContent.items.length} items for merging`
+			);
+
+			const itemNameMap = new Map<string, string[]>(); // name -> array of IDs
+			const itemIdMap = new Map<string, string>(); // old ID -> new ID to keep
+			const itemsToKeep: Record<string, unknown>[] = [];
+			const itemsToMerge: Record<string, unknown>[] = []; // items that will be merged into kept items
+
+			// Group items by name
+			dataContent.items.forEach((item: Record<string, unknown>) => {
+				const name = item.name as string;
+				const id = item.id as string;
+
+				if (!itemNameMap.has(name)) {
+					itemNameMap.set(name, []);
+				}
+				itemNameMap.get(name)!.push(id);
+			});
+
+			// For each group of items with the same name, keep the first one and map others to it
+			itemNameMap.forEach((ids, name) => {
+				if (ids.length > 1) {
+					this.logger.debug(
+						`Found ${ids.length} duplicate items with name: ${name}`
+					);
+
+					// Keep the first item, map others to it
+					const itemToKeep = ids[0];
+					const keptItem = (
+						dataContent.items as Record<string, unknown>[]
+					).find(
+						(i: Record<string, unknown>) => i.id === itemToKeep
+					)!;
+
+					itemsToKeep.push(keptItem);
+
+					// Collect items to merge for later processing
+					ids.slice(1).forEach((id) => {
+						const itemToMerge = (
+							dataContent.items as Record<string, unknown>[]
+						).find((i: Record<string, unknown>) => i.id === id)!;
+						itemsToMerge.push(itemToMerge);
+						itemIdMap.set(id, itemToKeep);
+					});
+				} else {
+					// No duplicates, keep as is
+					itemsToKeep.push(
+						(dataContent.items as Record<string, unknown>[]).find(
+							(i: Record<string, unknown>) => i.id === ids[0]
+						)!
+					);
+				}
+			});
+
+			// Merge stores, brands, and providers from deleted items into kept items
+			itemsToMerge.forEach((itemToMerge) => {
+				const keptItemId = itemIdMap.get(itemToMerge.id as string);
+				if (keptItemId) {
+					const keptItem = itemsToKeep.find(
+						(item) => item.id === keptItemId
+					);
+
+					if (keptItem) {
+						// Merge stores
+						if (
+							itemToMerge.stores &&
+							Array.isArray(itemToMerge.stores)
+						) {
+							if (!keptItem.stores) {
+								keptItem.stores = [];
+							}
+							if (Array.isArray(keptItem.stores)) {
+								// Add unique stores from the item being merged
+								(itemToMerge.stores as string[]).forEach(
+									(storeId) => {
+										if (
+											!(
+												keptItem.stores as string[]
+											).includes(storeId)
+										) {
+											(keptItem.stores as string[]).push(
+												storeId
+											);
+										}
+									}
+								);
+							}
+						}
+
+						// Merge brands
+						if (
+							itemToMerge.brands &&
+							Array.isArray(itemToMerge.brands)
+						) {
+							if (!keptItem.brands) {
+								keptItem.brands = [];
+							}
+							if (Array.isArray(keptItem.brands)) {
+								// Add unique brands from the item being merged
+								(itemToMerge.brands as string[]).forEach(
+									(brandId) => {
+										if (
+											!(
+												keptItem.brands as string[]
+											).includes(brandId)
+										) {
+											(keptItem.brands as string[]).push(
+												brandId
+											);
+										}
+									}
+								);
+							}
+						}
+
+						// Merge providers
+						if (
+							itemToMerge.providers &&
+							Array.isArray(itemToMerge.providers)
+						) {
+							if (!keptItem.providers) {
+								keptItem.providers = [];
+							}
+							if (Array.isArray(keptItem.providers)) {
+								// Add unique providers from the item being merged
+								(itemToMerge.providers as string[]).forEach(
+									(providerId) => {
+										if (
+											!(
+												keptItem.providers as string[]
+											).includes(providerId)
+										) {
+											(
+												keptItem.providers as string[]
+											).push(providerId);
+										}
+									}
+								);
+							}
+						}
+					}
+				}
+			});
+
+			// Update items array to only include the ones we're keeping
+			dataContent.items = itemsToKeep;
+
+			// Update transactions to use the consolidated item IDs
+			if (
+				dataContent.transactions &&
+				Array.isArray(dataContent.transactions)
+			) {
+				this.logger.debug(
+					`Updating ${dataContent.transactions.length} transactions with consolidated item IDs`
+				);
+
+				dataContent.transactions = dataContent.transactions.map(
+					(transaction: Record<string, unknown>) => {
+						const transactionCopy = { ...transaction };
+
+						if (
+							transactionCopy.itemID &&
+							typeof transactionCopy.itemID === "string"
+						) {
+							const newItemId = itemIdMap.get(
+								transactionCopy.itemID
+							);
+							if (newItemId) {
+								transactionCopy.itemID = newItemId;
+							}
+						}
+
+						return transactionCopy;
+					}
+				);
+			}
+
+			// Update scheduled items to use the consolidated item IDs
+			if (
+				dataContent.scheduledItems &&
+				Array.isArray(dataContent.scheduledItems)
+			) {
+				this.logger.debug(
+					`Updating ${dataContent.scheduledItems.length} scheduled items with consolidated item IDs`
+				);
+
+				dataContent.scheduledItems = dataContent.scheduledItems.map(
+					(scheduledItem: Record<string, unknown>) => {
+						const scheduledItemCopy = { ...scheduledItem };
+
+						if (
+							scheduledItemCopy.itemID &&
+							typeof scheduledItemCopy.itemID === "string"
+						) {
+							const newItemId = itemIdMap.get(
+								scheduledItemCopy.itemID
+							);
+							if (newItemId) {
+								scheduledItemCopy.itemID = newItemId;
+							}
+						}
+
+						return scheduledItemCopy;
+					}
+				);
+			}
+		}
+
+		this.logger.debug("Item merging migration completed");
 		return migratedData;
 	}
 

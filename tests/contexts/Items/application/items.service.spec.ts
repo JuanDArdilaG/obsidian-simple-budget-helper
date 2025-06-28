@@ -25,6 +25,19 @@ describe("ItemsService", () => {
 	let itemsService: ItemsService;
 	let mockItemsRepository: IScheduledItemsRepository;
 	let mockAccountsService: IAccountsService;
+	const mockSubcategoriesService = {
+		getByID: vi.fn(),
+		create: vi.fn(),
+		getByNameWithCreation: vi.fn(),
+		exists: vi.fn(),
+		getByCriteria: vi.fn(),
+		findAll: vi.fn(),
+		persist: vi.fn(),
+		deleteById: vi.fn(),
+		getAll: vi.fn(),
+		update: vi.fn(),
+		delete: vi.fn(),
+	};
 
 	beforeEach(() => {
 		mockItemsRepository = {
@@ -53,7 +66,8 @@ describe("ItemsService", () => {
 
 		itemsService = new ItemsService(
 			mockItemsRepository,
-			mockAccountsService
+			mockAccountsService,
+			mockSubcategoriesService
 		);
 	});
 
@@ -293,6 +307,118 @@ describe("ItemsService", () => {
 
 			// 1 week frequency means 4.35 times per month (30.4167 days / 7 days)
 			expect(result.value).toBeCloseTo(435, 0);
+		});
+	});
+
+	describe("ItemsService extra methods", () => {
+		it("hasItemsByCategory returns true if items exist", async () => {
+			const service = new ItemsService(
+				{
+					findByCategory: vi.fn().mockResolvedValue([{}]),
+				} as any,
+				{} as any,
+				mockSubcategoriesService as any
+			);
+			const result = await service.hasItemsByCategory({
+				value: "cat1",
+			} as any);
+			expect(result).toBe(true);
+		});
+
+		it("hasItemsByCategory returns false if no items exist", async () => {
+			const service = new ItemsService(
+				{
+					findByCategory: vi.fn().mockResolvedValue([]),
+				} as any,
+				{} as any,
+				mockSubcategoriesService as any
+			);
+			const result = await service.hasItemsByCategory({
+				value: "cat1",
+			} as any);
+			expect(result).toBe(false);
+		});
+
+		it("reassignItemsCategory updates all items", async () => {
+			const persist = vi.fn();
+			const item1 = { updateCategory: vi.fn(), id: 1 };
+			const item2 = { updateCategory: vi.fn(), id: 2 };
+			const service = new ItemsService(
+				{
+					findByCategory: vi.fn().mockResolvedValue([item1, item2]),
+					persist,
+				} as any,
+				{} as any,
+				mockSubcategoriesService as any
+			);
+			await service.reassignItemsCategory(
+				{ value: "old" } as any,
+				{ value: "new" } as any
+			);
+			expect(item1.updateCategory).toHaveBeenCalledWith({ value: "new" });
+			expect(item2.updateCategory).toHaveBeenCalledWith({ value: "new" });
+			expect(persist).toHaveBeenCalledTimes(2);
+		});
+
+		// Similar tests for subcategory
+		it("hasItemsBySubCategory returns true if items exist", async () => {
+			const service = new ItemsService(
+				{
+					findBySubCategory: vi.fn().mockResolvedValue([{}]),
+				} as any,
+				{} as any,
+				mockSubcategoriesService as any
+			);
+			const result = await service.hasItemsBySubCategory({
+				value: "subcat1",
+			} as any);
+			expect(result).toBe(true);
+		});
+
+		it("reassignItemsSubCategory updates all items", async () => {
+			const persist = vi.fn();
+			const item1 = {
+				updateSubCategory: vi.fn(),
+				updateCategory: vi.fn(),
+				id: 1,
+			};
+			const item2 = {
+				updateSubCategory: vi.fn(),
+				updateCategory: vi.fn(),
+				id: 2,
+			};
+			const mockSubcategoriesService = {
+				getByID: vi
+					.fn()
+					.mockResolvedValue({ category: { value: "cat-new" } }),
+			};
+			const service = new ItemsService(
+				{
+					findBySubCategory: vi
+						.fn()
+						.mockResolvedValue([item1, item2]),
+					persist,
+				} as any,
+				{} as any,
+				mockSubcategoriesService as any
+			);
+			await service.reassignItemsSubCategory(
+				{ value: "old" } as any,
+				{ value: "new" } as any
+			);
+			expect(item1.updateSubCategory).toHaveBeenCalledWith({
+				value: "new",
+			});
+			expect(item2.updateSubCategory).toHaveBeenCalledWith({
+				value: "new",
+			});
+			expect(item1.updateCategory).toHaveBeenCalledWith({
+				value: "cat-new",
+			});
+			expect(item2.updateCategory).toHaveBeenCalledWith({
+				value: "cat-new",
+			});
+			expect(persist).toHaveBeenCalledTimes(2);
 		});
 	});
 });

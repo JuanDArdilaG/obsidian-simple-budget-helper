@@ -1,4 +1,4 @@
-import { Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { ActionButtons } from "apps/obsidian-plugin/components/ActionButtons";
 
 export const RightSidebarReactTab = ({
@@ -19,26 +19,41 @@ export const RightSidebarReactTab = ({
 	total?: number;
 }) => {
 	return (
-		<div style={{ padding: "10px", height: "100%" }}>
-			<div
-				style={{
+		<Box
+			sx={{
+				padding: "10px",
+				height: "100%",
+				backgroundColor: "var(--background-primary)",
+			}}
+		>
+			<Box
+				sx={{
 					display: "flex",
 					justifyContent: "space-between",
 					alignItems: "center",
+					mb: 2,
 				}}
 			>
-				<Typography variant={subtitle ? "h3" : "h2"}>
+				<Typography
+					variant={subtitle ? "h3" : "h2"}
+					sx={{
+						color: "var(--text-normal)",
+						fontWeight: 600,
+					}}
+				>
 					{title}{" "}
 					{total !== undefined && (
-						<span
-							style={{
+						<Box
+							component="span"
+							sx={{
 								fontSize: "0.5em",
 								fontWeight: "normal",
 								paddingLeft: "5px",
+								color: "var(--text-muted)",
 							}}
 						>
 							Total: {total}
-						</span>
+						</Box>
 					)}
 				</Typography>
 				<ActionButtons
@@ -46,8 +61,8 @@ export const RightSidebarReactTab = ({
 					handleRefresh={handleRefresh}
 					isCreating={isCreating}
 				/>
-			</div>
+			</Box>
 			{children}
-		</div>
+		</Box>
 	);
 };

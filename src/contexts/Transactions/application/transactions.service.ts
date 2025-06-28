@@ -13,6 +13,7 @@ import { EntityNotFoundError } from "contexts/Shared/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import {
 	ISubCategoriesService,
+	SubCategoryID,
 	SubCategoryName,
 } from "contexts/Subcategories/domain";
 import {
@@ -31,8 +32,8 @@ export class TransactionsService implements ITransactionsService {
 	constructor(
 		private readonly _accountsService: IAccountsService,
 		private readonly _transactionsRepository: ITransactionsRepository,
-		private readonly _categoriesService: ICategoriesService,
-		private readonly _subcategoriesService: ISubCategoriesService
+		private readonly categoriesService: ICategoriesService,
+		private readonly subcategoriesService: ISubCategoriesService
 	) {}
 
 	async getAll(): Promise<Transaction[]> {
@@ -49,6 +50,55 @@ export class TransactionsService implements ITransactionsService {
 		return this._transactionsRepository.findByCriteria(
 			new TransactionCriteria().where("category", category.value)
 		);
+	}
+
+	async getBySubCategory(subCategory: SubCategoryID): Promise<Transaction[]> {
+		return this._transactionsRepository.findByCriteria(
+			new TransactionCriteria().where("subCategory", subCategory.value)
+		);
+	}
+
+	async hasTransactionsByCategory(category: CategoryID): Promise<boolean> {
+		const transactions = await this.getByCategory(category);
+		return transactions.length > 0;
+	}
+
+	async hasTransactionsBySubCategory(
+		subCategory: SubCategoryID
+	): Promise<boolean> {
+		const transactions = await this.getBySubCategory(subCategory);
+		return transactions.length > 0;
+	}
+
+	async reassignTransactionsCategory(
+		oldCategory: CategoryID,
+		newCategory: CategoryID
+	): Promise<void> {
+		const transactions = await this.getByCategory(oldCategory);
+
+		for (const transaction of transactions) {
+			transaction.updateCategory(newCategory);
+			await this._transactionsRepository.persist(transaction);
+		}
+	}
+
+	async reassignTransactionsSubCategory(
+		oldSubCategory: SubCategoryID,
+		newSubCategory: SubCategoryID
+	): Promise<void> {
+		const transactions = await this.getBySubCategory(oldSubCategory);
+
+		// Get the new subcategory to find its parent category
+		const newSubCategoryEntity = await this.subcategoriesService.getByID(
+			newSubCategory
+		);
+		const newCategory = newSubCategoryEntity.category;
+
+		for (const transaction of transactions) {
+			transaction.updateSubCategory(newSubCategory);
+			transaction.updateCategory(newCategory);
+			await this._transactionsRepository.persist(transaction);
+		}
 	}
 
 	async record(transaction: Transaction): Promise<void> {
@@ -78,11 +128,11 @@ export class TransactionsService implements ITransactionsService {
 			.log();
 		if (amountDifference.isZero()) return;
 
-		const category = await this._categoriesService.getByNameWithCreation(
+		const category = await this.categoriesService.getByNameWithCreation(
 			new CategoryName("Adjustment")
 		);
 		const subCategory =
-			await this._subcategoriesService.getByNameWithCreation(
+			await this.subcategoriesService.getByNameWithCreation(
 				category.id,
 				new SubCategoryName("Adjustment")
 			);
@@ -153,5 +203,63 @@ export class TransactionsService implements ITransactionsService {
 			account.adjustOnTransactionDeletion(transaction);
 			await this._accountsService.update(account);
 		}
+	}
+
+	async getTransactionSummariesByCategory(category: CategoryID): Promise<
+		Array<{
+			id: string;
+			name: string;
+			amount: number;
+			date: string;
+			operation: "income" | "expense" | "transfer";
+			account?: string;
+		}>
+	> {
+		const transactions = await this.getByCategory(category);
+		return transactions.map((transaction) => ({
+			id: transaction.id.value,
+			name: transaction.name.toString(),
+			amount: transaction.operation.isIncome()
+				? transaction.fromAmount.value
+				: -transaction.fromAmount.value,
+			date: transaction.date.value.toISOString().split("T")[0],
+			operation: transaction.operation.value as
+				| "income"
+				| "expense"
+				| "transfer",
+			account:
+				transaction.fromSplits[0]?.accountId.value ||
+				transaction.toSplits[0]?.accountId.value,
+		}));
+	}
+
+	async getTransactionSummariesBySubCategory(
+		subCategory: SubCategoryID
+	): Promise<
+		Array<{
+			id: string;
+			name: string;
+			amount: number;
+			date: string;
+			operation: "income" | "expense" | "transfer";
+			account?: string;
+		}>
+	> {
+		const transactions = await this.getBySubCategory(subCategory);
+		return transactions.map((transaction) => ({
+			id: transaction.id.value,
+			name: transaction.name.toString(),
+			amount: transaction.operation.isIncome()
+				? transaction.fromAmount.value
+				: -transaction.fromAmount.value,
+			date: transaction.date.value.toISOString().split("T")[0],
+			operation: transaction.operation.value as
+				| "income"
+				| "expense"
+				| "transfer",
+			account:
+				transaction.fromSplits[0]?.accountId.value ||
+				transaction.toSplits[0]?.accountId.value,
+		}));
 	}
 }

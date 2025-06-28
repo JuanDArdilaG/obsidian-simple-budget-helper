@@ -13,6 +13,7 @@ import { GetAllAccountsUseCase } from "contexts/Accounts/application/get-all-acc
 import { AccountsLocalRepository } from "contexts/Accounts/infrastructure/persistence/local/accounts-local.repository";
 import { CategoriesService } from "contexts/Categories/application/categories.service";
 import { CreateCategoryUseCase } from "contexts/Categories/application/create-category.usecase";
+import { DeleteCategoryUseCase } from "contexts/Categories/application/delete-category.usecase";
 import { GetAllCategoriesWithSubCategoriesUseCase } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 import { GetAllCategoriesUseCase } from "contexts/Categories/application/get-all-categories.usecase";
 import { CategoriesLocalRepository } from "contexts/Categories/infrastructure/persistence/local/categories-local.repository";
@@ -45,6 +46,7 @@ import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/a
 import { ReportsService } from "contexts/Reports/application/reports.service";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
 import { CreateSubCategoryUseCase } from "contexts/Subcategories/application/create-subcategory.usecase";
+import { DeleteSubCategoryUseCase } from "contexts/Subcategories/application/delete-subcategory.usecase";
 import { GetAllSubcategoriesUseCase } from "contexts/Subcategories/application/get-all-subcategories.usecase";
 import { SubCategoriesService } from "contexts/Subcategories/application/subcategories.service";
 import { SubcategoriesLocalRepository } from "contexts/Subcategories/infrastructure/persistence/local/subcategories-local.repository";
@@ -166,8 +168,10 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		_subCategoriesRepository: asClass(SubcategoriesLocalRepository)
 			.singleton()
 			.inject(() => ({ _db: localDB })),
-		_categoriesService: asClass(CategoriesService).singleton(),
-		_subcategoriesService: asClass(SubCategoriesService).singleton(),
+		categoriesService: asClass(CategoriesService).singleton(),
+		subcategoriesService: asClass(SubCategoriesService).singleton(),
+		transactionsService: asClass(TransactionsService).singleton(),
+		itemsService: asClass(ItemsService).singleton(),
 		createCategoryUseCase: asClass(CreateCategoryUseCase).singleton(),
 		createSubCategoryUseCase: asClass(CreateSubCategoryUseCase).singleton(),
 		getAllCategoriesWithSubCategoriesUseCase: asClass(
@@ -177,6 +181,8 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		getAllSubCategoriesUseCase: asClass(
 			GetAllSubcategoriesUseCase
 		).singleton(),
+		deleteCategoryUseCase: asClass(DeleteCategoryUseCase).singleton(),
+		deleteSubCategoryUseCase: asClass(DeleteSubCategoryUseCase).singleton(),
 	});
 
 	// Reports
