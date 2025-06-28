@@ -1,6 +1,5 @@
 import { AccountsService } from "contexts/Accounts/application/accounts.service";
 import { AccountID } from "contexts/Accounts/domain";
-import { InvalidArgumentError } from "contexts/Shared/domain/errors";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TransactionsRepositoryMock } from "../../Transactions/domain/transactions-repository.mock";
 import { AccountsRepositoryMock } from "../domain/accounts-repository.mock";
@@ -55,7 +54,7 @@ describe("AccountsService", () => {
 
 			// Act & Assert
 			await expect(accountsService.delete(accountId)).rejects.toThrow(
-				InvalidArgumentError
+				`Cannot delete account with ID ${accountId.value} because it has associated transactions. Please delete or update the accounts in all transactions first.`
 			);
 			expect(
 				transactionsRepository.hasTransactionsForAccount

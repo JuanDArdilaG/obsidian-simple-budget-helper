@@ -31,48 +31,57 @@ export class GetAllTransactionsUseCase
 		categoryFilter,
 		subCategoryFilter,
 	}: GetAllTransactionsUseCaseInput): Promise<GetAllTransactionsUseCaseOutput> {
-		const filterCriteria = new TransactionCriteria();
-		if (accountFilter) filterCriteria.where("account", accountFilter.value);
+		// Get all transactions first
+		const allTransactions =
+			await this._transactionsRepository.findByCriteria(
+				new TransactionCriteria()
+			);
 
-		if (categoryFilter)
-			filterCriteria.where("category", categoryFilter.value);
+		// Filter transactions based on the provided filters
+		let filteredTransactions = allTransactions;
 
-		if (subCategoryFilter)
-			filterCriteria.where("subCategory", subCategoryFilter.value);
-
-		const transactions = await this._transactionsRepository.findByCriteria(
-			filterCriteria
-		);
-
-		this.#logger.debug("account transactions", {
-			transactions: transactions.map((t) => t.toPrimitives()),
-		});
-
-		if (accountFilter) {
-			const filterCriteria = new TransactionCriteria();
-			if (accountFilter)
-				filterCriteria.where("toAccount", accountFilter.value);
-
-			if (categoryFilter)
-				filterCriteria.where("category", categoryFilter.value);
-
-			if (subCategoryFilter)
-				filterCriteria.where("subCategory", subCategoryFilter.value);
-
-			const transactionsToAccount =
-				await this._transactionsRepository.findByCriteria(
-					filterCriteria
-				);
-
-			this.#logger.debug("toAccount transactions", {
-				transactions: transactionsToAccount.map((t) =>
-					t.toPrimitives()
-				),
-			});
-
-			transactions.push(...transactionsToAccount);
+		// Filter by category
+		if (categoryFilter) {
+			filteredTransactions = filteredTransactions.filter((transaction) =>
+				transaction.category.equalTo(categoryFilter)
+			);
 		}
 
-		return transactions;
+		// Filter by subcategory
+		if (subCategoryFilter) {
+			filteredTransactions = filteredTransactions.filter((transaction) =>
+				transaction.subCategory.equalTo(subCategoryFilter)
+			);
+		}
+
+		// Filter by account - check if the account appears in either fromSplits or toSplits
+		if (accountFilter) {
+			filteredTransactions = filteredTransactions.filter(
+				(transaction) => {
+					const fromAccountIds = transaction.fromSplits.map(
+						(split) => split.accountId
+					);
+					const toAccountIds = transaction.toSplits.map(
+						(split) => split.accountId
+					);
+					const allAccountIds = [...fromAccountIds, ...toAccountIds];
+
+					return allAccountIds.some((accountId) =>
+						accountId.equalTo(accountFilter)
+					);
+				}
+			);
+		}
+
+		this.#logger.debug("filtered transactions", {
+			accountFilter: accountFilter?.value,
+			categoryFilter: categoryFilter?.value,
+			subCategoryFilter: subCategoryFilter?.value,
+			totalTransactions: allTransactions.length,
+			filteredTransactions: filteredTransactions.length,
+			transactions: filteredTransactions.map((t) => t.toPrimitives()),
+		});
+
+		return filteredTransactions;
 	}
 }
