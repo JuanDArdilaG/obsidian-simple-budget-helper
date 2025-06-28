@@ -1,3 +1,4 @@
+import { AccountID } from "contexts/Accounts/domain";
 import { ItemBrand, ItemStore } from "contexts/Items/domain";
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
@@ -43,6 +44,25 @@ export class TransactionsLocalRepository
 		});
 
 		return Array.from(uniqueStores).map((store) => new ItemStore(store));
+	}
+
+	async hasTransactionsForAccount(accountId: AccountID): Promise<boolean> {
+		const allRecords = await this.findAll();
+
+		return allRecords.some((transaction) => {
+			const primitives = transaction.toPrimitives();
+			// Check if the account is involved in any splits
+			return (
+				(primitives.fromSplits?.some(
+					(split) => split.accountId === accountId.value
+				) ??
+					false) ||
+				(primitives.toSplits?.some(
+					(split) => split.accountId === accountId.value
+				) ??
+					false)
+			);
+		});
 	}
 
 	protected mapToDomain(record: TransactionPrimitives): Transaction {

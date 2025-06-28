@@ -1,11 +1,12 @@
+import { AccountID } from "contexts/Accounts/domain";
+import { ItemBrand } from "contexts/Items/domain";
 import {
-	TransactionID,
-	Transaction,
-	TransactionPrimitives,
 	ITransactionsRepository,
+	Transaction,
+	TransactionID,
+	TransactionPrimitives,
 } from "contexts/Transactions/domain";
 import { RepositoryMock } from "../../../../tests/contexts/Shared/domain/repository.mock";
-import { ItemBrand } from "contexts/Items/domain";
 
 export class TransactionsRepositoryMock
 	extends RepositoryMock<TransactionID, Transaction, TransactionPrimitives>
@@ -17,5 +18,9 @@ export class TransactionsRepositoryMock
 
 	async findAllUniqueItemStores(): Promise<ItemBrand[]> {
 		return [];
+	}
+
+	async hasTransactionsForAccount(accountId: AccountID): Promise<boolean> {
+		return false; // Default mock behavior - no transactions
 	}
 }

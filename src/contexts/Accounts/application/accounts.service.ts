@@ -10,13 +10,17 @@ import { Service } from "contexts/Shared/application/service.abstract";
 import { InvalidArgumentError } from "contexts/Shared/domain/errors";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
+import { ITransactionsRepository } from "contexts/Transactions/domain/transactions-repository.interface";
 
 export class AccountsService
 	extends Service<AccountID, Account, AccountPrimitives>
 	implements IAccountsService
 {
 	private readonly _logger = new Logger("AccountsService");
-	constructor(private readonly _accountsRepository: IAccountsRepository) {
+	constructor(
+		private readonly _accountsRepository: IAccountsRepository,
+		private readonly _transactionsRepository: ITransactionsRepository
+	) {
 		super("Accounts", _accountsRepository);
 	}
 
@@ -31,6 +35,19 @@ export class AccountsService
 				`account with name ${account.name} already exists`
 			);
 		await this._accountsRepository.persist(account);
+	}
+
+	async delete(id: AccountID): Promise<void> {
+		// Check if the account has any transactions
+		const hasTransactions =
+			await this._transactionsRepository.hasTransactionsForAccount(id);
+		if (hasTransactions) {
+			throw new Error(
+				`Cannot delete account with ID ${id.value} because it has associated transactions. Please delete or update the accounts in all transactions first.`
+			);
+		}
+
+		await this._accountsRepository.deleteById(id);
 	}
 
 	async getAllNames(): Promise<AccountName[]> {

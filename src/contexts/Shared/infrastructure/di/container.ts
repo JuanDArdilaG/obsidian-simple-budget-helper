@@ -7,6 +7,7 @@ import {
 
 import { AccountsService } from "contexts/Accounts/application/accounts.service";
 import { CreateAccountUseCase } from "contexts/Accounts/application/create-account.usecase";
+import { DeleteAccountUseCase } from "contexts/Accounts/application/delete-account.usecase";
 import { GetAllAccountNamesUseCase } from "contexts/Accounts/application/get-all-account-names.usecase";
 import { GetAllAccountsUseCase } from "contexts/Accounts/application/get-all-accounts.usecase";
 import { AccountsLocalRepository } from "contexts/Accounts/infrastructure/persistence/local/accounts-local.repository";
@@ -122,6 +123,7 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 			.inject(() => ({ _db: localDB })),
 		_accountsService: asClass(AccountsService).singleton(),
 		createAccountUseCase: asClass(CreateAccountUseCase).singleton(),
+		deleteAccountUseCase: asClass(DeleteAccountUseCase).singleton(),
 		getAllAccountNamesUseCase: asClass(
 			GetAllAccountNamesUseCase
 		).singleton(),
