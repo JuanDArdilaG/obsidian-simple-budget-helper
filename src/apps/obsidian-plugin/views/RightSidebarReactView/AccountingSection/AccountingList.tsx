@@ -59,6 +59,7 @@ const MOBILE_TRANSACTION_HEIGHT = 130; // Increased height for mobile to accommo
 export function AccountingList({
 	selection,
 	setSelection,
+	statusBarAddText,
 }: Readonly<{
 	statusBarAddText: (val: string | DocumentFragment) => void;
 	selection: Transaction[];
@@ -407,6 +408,14 @@ export function AccountingList({
 
 	useEffect(() => {
 		logger.debug("selection changed", { selection });
+		statusBarAddText(
+			`${
+				selection.length
+			} transactions selected. Total: ${selection.reduce(
+				(acc, curr) => curr.fromAmount.plus(acc),
+				PriceValueObject.zero()
+			)}`
+		);
 	}, [selection]);
 
 	return (

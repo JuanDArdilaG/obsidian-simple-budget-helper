@@ -1,17 +1,18 @@
-import { useEffect, useState } from "react";
-import {
-	SectionButtons,
-	MainSidebarSections,
-} from "../../components/SectionButtons";
-import { AccountingSection } from "./AccountingSection/AccountingSection";
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
-import { AppProviders } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import {
 	AccountsList,
+	ItemsSection,
 	ScheduledItemsSection,
 } from "apps/obsidian-plugin/views";
-import { CategoriesList } from "./AccountingSection/CategoriesList";
+import { AppProviders } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import { useEffect, useState } from "react";
 import { LocalPersistenceSettings } from "../../components/LocalPersistenceSettings";
+import {
+	MainSidebarSections,
+	SectionButtons,
+} from "../../components/SectionButtons";
+import { AccountingSection } from "./AccountingSection/AccountingSection";
+import { CategoriesList } from "./AccountingSection/CategoriesList";
 
 export const RightSidebarReactView = ({
 	statusBarAddText,
@@ -42,6 +43,9 @@ export const RightSidebarReactView = ({
 			)}
 			{sectionSelection === "accounts" && <AccountsList />}
 			{sectionSelection === "categories" && <CategoriesList />}
+			{sectionSelection === "items" && (
+				<ItemsSection statusBarAddText={statusBarAddText} />
+			)}
 			{sectionSelection === "localPersistence" && (
 				<LocalPersistenceSettings plugin={plugin} />
 			)}

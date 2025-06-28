@@ -1,4 +1,10 @@
-import { CalendarSync, Landmark, ListCollapse, Settings } from "lucide-react";
+import {
+	CalendarSync,
+	Landmark,
+	ListCollapse,
+	Package,
+	Settings,
+} from "lucide-react";
 import { JSX } from "react";
 import { Button } from "./Button";
 
@@ -7,6 +13,7 @@ export type MainSidebarSections =
 	| "accounting"
 	| "accounts"
 	| "categories"
+	| "items"
 	| "localPersistence";
 
 export const SectionButtons = ({
@@ -29,6 +36,15 @@ export const SectionButtons = ({
 				}
 				selected={selected}
 				onClick={() => setSelected("accounting")}
+			/>
+			<SectionButton
+				type="items"
+				label="Items"
+				icon={
+					<Package size={16} style={{ color: "var(--color-cyan)" }} />
+				}
+				selected={selected}
+				onClick={() => setSelected("items")}
 			/>
 			<SectionButton
 				type="scheduledItems"
