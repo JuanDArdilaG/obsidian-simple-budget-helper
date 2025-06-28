@@ -431,6 +431,43 @@ input {
 	font-size: 12px;
 }
 
+/* Edit Button */
+.edit-item-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 6px;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+	opacity: 0.7;
+}
+
+.edit-item-btn:hover {
+	opacity: 1;
+	background: rgba(25, 118, 210, 0.1);
+	transform: scale(1.05);
+}
+
+.edit-item-btn:active {
+	transform: scale(0.95);
+}
+
+/* Show History Button */
+.show-history-btn {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	transition: all 0.2s ease;
+	opacity: 0.7;
+}
+
+.show-history-btn:hover {
+	opacity: 1;
+	background: rgba(0, 255, 255, 0.1);
+	border-radius: 4px;
+	padding: 4px 6px;
+}
+
 /* Item Name */
 .item-name {
 	font-size: 16px;
@@ -520,6 +557,22 @@ input {
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 8px;
+	}
+
+	.item-header .item-type-badge,
+	.item-header .item-date,
+	.item-header .edit-item-btn,
+	.item-header .show-history-btn {
+		font-size: 11px;
+	}
+
+	.edit-item-btn {
+		padding: 4px;
+	}
+
+	.edit-item-btn svg {
+		width: 14px;
+		height: 14px;
 	}
 
 	.item-meta {

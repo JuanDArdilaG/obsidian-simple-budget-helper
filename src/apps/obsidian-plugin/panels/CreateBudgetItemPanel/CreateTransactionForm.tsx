@@ -63,6 +63,7 @@ interface TransactionItem {
 	id: string;
 	name: string;
 	amount: number;
+	quantity: number;
 	category: string;
 	subCategory: string;
 	itemType: ItemType;
@@ -131,6 +132,18 @@ const useMultiTransactionValidation = (
 					newErrors.items = `Transaction ${
 						i + 1
 					}: Amount must be greater than 0`;
+					break;
+				}
+				if (item.quantity < 1) {
+					newErrors.items = `Transaction ${
+						i + 1
+					}: Quantity must be at least 1`;
+					break;
+				}
+				if (!Number.isInteger(item.quantity)) {
+					newErrors.items = `Transaction ${
+						i + 1
+					}: Quantity must be a whole number`;
 					break;
 				}
 				if (item.brand && item.brand.length > 50) {
@@ -300,6 +313,7 @@ export const CreateTransactionForm = ({
 				id: "1",
 				name: "",
 				amount: 0,
+				quantity: 1,
 				category: "",
 				subCategory: "",
 				itemType: ItemType.PRODUCT,
@@ -341,7 +355,7 @@ export const CreateTransactionForm = ({
 
 	// Calculate total amount
 	const totalAmount = transactionItems.reduce(
-		(sum, item) => sum + item.amount,
+		(sum, item) => sum + item.amount * item.quantity,
 		0
 	);
 
@@ -531,6 +545,7 @@ export const CreateTransactionForm = ({
 			id: Date.now().toString(),
 			name: "",
 			amount: 0,
+			quantity: 1,
 			category: "",
 			subCategory: "",
 			itemType: ItemType.PRODUCT,
@@ -948,30 +963,34 @@ export const CreateTransactionForm = ({
 					amount: (split.amount / totalAmount) * item.amount,
 				}));
 
-				const transactionPrimitives: TransactionPrimitives = {
-					id: TransactionID.generate().value,
-					item: itemId,
-					name: item.name,
-					category:
-						categories.find((c) => c.name.value === item.category)
-							?.id.value ?? "",
-					subCategory:
-						subCategories.find(
-							(s) => s.name.value === item.subCategory
-						)?.id.value ?? "",
-					fromSplits: itemFromSplits,
-					toSplits: itemToSplits,
-					operation: sharedProperties.operation,
-					date,
-					brand: item.brand || undefined,
-					store: sharedProperties.store || undefined,
-					updatedAt: new Date().toISOString(),
-				};
+				// Create multiple transactions based on quantity
+				for (let i = 0; i < item.quantity; i++) {
+					const transactionPrimitives: TransactionPrimitives = {
+						id: TransactionID.generate().value,
+						item: itemId,
+						name: item.name,
+						category:
+							categories.find(
+								(c) => c.name.value === item.category
+							)?.id.value ?? "",
+						subCategory:
+							subCategories.find(
+								(s) => s.name.value === item.subCategory
+							)?.id.value ?? "",
+						fromSplits: itemFromSplits,
+						toSplits: itemToSplits,
+						operation: sharedProperties.operation,
+						date,
+						brand: item.brand || undefined,
+						store: sharedProperties.store || undefined,
+						updatedAt: new Date().toISOString(),
+					};
 
-				const transactionToPersist = Transaction.fromPrimitives(
-					transactionPrimitives
-				);
-				await recordTransaction.execute(transactionToPersist);
+					const transactionToPersist = Transaction.fromPrimitives(
+						transactionPrimitives
+					);
+					await recordTransaction.execute(transactionToPersist);
+				}
 			}
 
 			updateTransactions();
@@ -990,6 +1009,7 @@ export const CreateTransactionForm = ({
 					id: "1",
 					name: "",
 					amount: 0,
+					quantity: 1,
 					category: "",
 					subCategory: "",
 					itemType: ItemType.PRODUCT,
@@ -1115,6 +1135,26 @@ export const CreateTransactionForm = ({
 									<CalculateIcon />
 								</IconButton>
 							</Box>
+							<TextField
+								id={`quantity-${item.id}`}
+								label="Quantity"
+								type="number"
+								value={item.quantity}
+								onChange={(e) => {
+									const value = parseInt(e.target.value) ?? 0;
+									updateTransactionItem(item.id, {
+										quantity: value,
+									});
+								}}
+								slotProps={{
+									htmlInput: {
+										min: 0,
+										step: 1,
+									},
+								}}
+								variant="outlined"
+								size="small"
+							/>
 							<Select
 								id={`itemType-${item.id}`}
 								label="Item Type"
@@ -1260,9 +1300,31 @@ export const CreateTransactionForm = ({
 						borderRadius: 1,
 					}}
 				>
-					<Typography variant="h6" sx={{ textAlign: "center" }}>
+					<Typography
+						variant="h6"
+						sx={{ textAlign: "center", mb: 1 }}
+					>
 						Total Amount: ${totalAmount.toFixed(2)}
 					</Typography>
+					{transactionItems.length > 0 && (
+						<Box sx={{ mt: 1 }}>
+							<Typography variant="body2" color="text.secondary">
+								Breakdown:
+							</Typography>
+							{transactionItems.map((item, index) => (
+								<Typography
+									key={item.id}
+									variant="body2"
+									color="text.secondary"
+									sx={{ ml: 1 }}
+								>
+									• {item.name || `Item ${index + 1}`}: $
+									{(item.amount * item.quantity).toFixed(2)} (
+									{item.quantity} × ${item.amount.toFixed(2)})
+								</Typography>
+							))}
+						</Box>
+					)}
 				</Box>
 			</Box>
 

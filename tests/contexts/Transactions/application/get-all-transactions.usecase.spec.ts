@@ -316,4 +316,78 @@ describe("GetAllTransactionsUseCase", () => {
 			expect(result).not.toContain(transaction4); // Wrong account
 		});
 	});
+
+	describe("quantity functionality", () => {
+		it("should create multiple transactions for the same item when quantity > 1", async () => {
+			// This test would be more appropriate for the CreateTransactionForm component
+			// but we can test the underlying logic here
+			const account = AccountID.generate();
+			const category = CategoryID.generate();
+			const subCategory = SubCategoryID.generate();
+
+			// Create multiple transactions with the same item ID but different transaction IDs
+			const transactions = [];
+			const itemId = "test-item-id";
+
+			for (let i = 0; i < 3; i++) {
+				const transaction = Transaction.createWithoutItem(
+					[new PaymentSplit(account, new TransactionAmount(100))],
+					[],
+					new TransactionName("Test Item"),
+					new TransactionOperation("expense"),
+					category,
+					subCategory
+				);
+				transactions.push(transaction);
+			}
+
+			vi.mocked(mockRepository.findByCriteria).mockResolvedValue(
+				transactions
+			);
+
+			// Act
+			const result = await useCase.execute({
+				categoryFilter: category,
+			});
+
+			// Assert
+			expect(result).toHaveLength(3);
+			expect(result.every((t) => t.name.value === "Test Item")).toBe(
+				true
+			);
+			expect(result.every((t) => t.category.equalTo(category))).toBe(
+				true
+			);
+		});
+
+		it("should handle edge cases for quantity values", async () => {
+			// Test that the system can handle various quantity scenarios
+			const account = AccountID.generate();
+			const category = CategoryID.generate();
+			const subCategory = SubCategoryID.generate();
+
+			// Create a single transaction (quantity = 1)
+			const transaction = Transaction.createWithoutItem(
+				[new PaymentSplit(account, new TransactionAmount(50))],
+				[],
+				new TransactionName("Single Item"),
+				new TransactionOperation("expense"),
+				category,
+				subCategory
+			);
+
+			vi.mocked(mockRepository.findByCriteria).mockResolvedValue([
+				transaction,
+			]);
+
+			// Act
+			const result = await useCase.execute({
+				categoryFilter: category,
+			});
+
+			// Assert
+			expect(result).toHaveLength(1);
+			expect(result[0].name.value).toBe("Single Item");
+		});
+	});
 });

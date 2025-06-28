@@ -8,7 +8,7 @@ import {
 import { JSX, useEffect, useState } from "react";
 import { WithLockField } from "../WithLockField";
 
-export const Select = <T extends string | number>({
+export const Select = <T,>({
 	id,
 	label,
 	value,
@@ -17,35 +17,33 @@ export const Select = <T extends string | number>({
 	isLocked,
 	setIsLocked,
 	error,
+	getOptionLabel,
+	getOptionValue,
 }: {
 	id: string;
 	label: string;
-	value?: T;
-	values: T[] | { [key: string]: T };
-	onChange: (value: T) => void;
+	value?: string;
+	values: T[];
+	onChange: (value: string) => void;
 	isLocked?: boolean;
 	setIsLocked?: (value: boolean) => void;
 	error?: string;
+	getOptionLabel?: (option: T) => string;
+	getOptionValue?: (option: T) => string;
 }) => {
 	const [options, setOptions] = useState<JSX.Element[]>([]);
 	useEffect(() => {
 		setOptions(
-			Array.isArray(values)
-				? values.map((v) => (
-						<MenuItem key={v} value={v}>
-							{v}
-						</MenuItem>
-				  ))
-				: Object.keys(values).map(
-						(key) => (
-							<MenuItem key={key} value={key}>
-								{values[key]}
-							</MenuItem>
-						),
-						[]
-				  )
+			values.map((v) => (
+				<MenuItem
+					key={getOptionValue ? getOptionValue(v) : String(v)}
+					value={getOptionValue ? getOptionValue(v) : String(v)}
+				>
+					{getOptionLabel ? getOptionLabel(v) : String(v)}
+				</MenuItem>
+			))
 		);
-	}, [values]);
+	}, [values, getOptionLabel, getOptionValue]);
 
 	return (
 		<WithLockField
@@ -72,7 +70,7 @@ export const Select = <T extends string | number>({
 					value={value}
 					label={label}
 					variant="standard"
-					onChange={(e) => onChange(e.target.value as T)}
+					onChange={(e) => onChange(e.target.value as string)}
 					disabled={isLocked}
 					style={{
 						color: "var(--text-normal)",

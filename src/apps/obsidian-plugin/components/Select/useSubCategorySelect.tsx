@@ -1,12 +1,12 @@
-import { useContext, useEffect, useMemo, useState } from "react";
-import { Select } from "./Select";
 import { CategoriesContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import { Category } from "contexts/Categories/domain";
 import {
 	SubCategory,
 	SubCategoryID,
 	SubCategoryName,
 } from "contexts/Subcategories/domain";
-import { Category } from "contexts/Categories/domain";
+import { useContext, useEffect, useMemo, useState } from "react";
+import { Select } from "./Select";
 
 export const useSubCategorySelect = ({
 	label,
@@ -27,66 +27,73 @@ export const useSubCategorySelect = ({
 	overrideSubCategoriesIDs?: SubCategoryID[];
 	error?: string;
 }) => {
-	const [subCategoryName, setSubCategoryName] = useState(
-		initialValueName?.value ?? ""
-	);
+	const [subCategoryId, setSubCategoryId] = useState(initialValueID ?? "");
 	const [subCategory, setSubCategory] = useState<SubCategory>();
 
 	const { subCategories, getSubCategoriesByCategory, getSubCategoryByID } =
 		useContext(CategoriesContext);
 
-	const subCategoriesNames = useMemo(() => {
+	const subCategoriesList = useMemo(() => {
 		if (category)
 			return getSubCategoriesByCategory(category)
-				.map((cat) => cat.name.value)
+				.map((cat) => ({ id: cat.id.value, name: cat.name.value }))
 				.unique()
-				.sort((a, b) => a.localeCompare(b));
+				.sort((a, b) => a.name.localeCompare(b.name));
 		return (
 			!overrideSubCategoriesIDs
-				? subCategories.map((acc) => acc.name.value)
+				? subCategories.map((cat) => ({
+						id: cat.id.value,
+						name: cat.name.value,
+				  }))
 				: [
-						...new Set(
-							overrideSubCategoriesIDs.map((subID) => subID.value)
-						),
-				  ].map(
-						(subID) =>
-							getSubCategoryByID(new SubCategoryID(subID))?.name
-								.value ?? `not found id: ${subID}`
-				  )
+						{ id: "", name: "" },
+						...[
+							...new Set(
+								overrideSubCategoriesIDs.map(
+									(subID) => subID.value
+								)
+							),
+						].map((subID) => {
+							const sub = getSubCategoryByID(
+								new SubCategoryID(subID)
+							);
+							return {
+								id: subID,
+								name:
+									sub?.name.value ?? `not found id: ${subID}`,
+							};
+						}),
+				  ]
 		)
 			.unique()
-			.sort((a, b) => a.localeCompare(b));
+			.sort((a, b) => a.name.localeCompare(b.name));
 	}, [subCategories, category, overrideSubCategoriesIDs]);
 
 	useEffect(() => {
-		if (initialValueID)
-			setSubCategoryName(
-				getSubCategoryByID(new SubCategoryID(initialValueID))?.name
-					.value ?? ""
-			);
+		if (initialValueID) setSubCategoryId(initialValueID);
 	}, [initialValueID]);
 
 	useEffect(() => {
 		setSubCategory(
-			subCategoryName
-				? subCategories.find((acc) =>
-						acc.name.equalTo(new SubCategoryName(subCategoryName))
-				  )
+			subCategoryId
+				? getSubCategoryByID(new SubCategoryID(subCategoryId))
 				: undefined
 		);
-	}, [subCategoryName]);
+	}, [subCategoryId]);
 
 	return {
 		SubCategorySelect: (
 			<Select
 				id="subCategory"
 				label={label ?? "SubCategory"}
-				value={subCategoryName}
-				values={["", ...subCategoriesNames]}
-				onChange={(subCategory) => setSubCategoryName(subCategory)}
+				value={subCategoryId}
+				values={[{ id: "", name: "" }, ...subCategoriesList]}
+				onChange={(id) => setSubCategoryId(id)}
 				isLocked={lock}
 				setIsLocked={setLock ? (lock) => setLock(lock) : undefined}
 				error={error}
+				getOptionLabel={(option) => option.name}
+				getOptionValue={(option) => option.id}
 			/>
 		),
 		subCategory,
