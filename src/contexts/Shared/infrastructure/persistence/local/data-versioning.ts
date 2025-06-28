@@ -35,7 +35,7 @@ interface ItemData {
 
 export class DataVersioning {
 	private logger: Logger = new Logger("DataVersioning");
-	private currentVersion = "1.2.2";
+	private currentVersion = "1.2.3";
 	private versions: DataVersion[] = [
 		{
 			version: "1.0.0",
@@ -61,6 +61,19 @@ export class DataVersioning {
 			version: "1.2.2",
 			compatibleVersions: ["1.0.0", "1.1.0", "1.2.0", "1.2.1", "1.2.2"],
 			migrationScript: this.migrateToArrayBasedRelationships.bind(this),
+		},
+		{
+			version: "1.2.3",
+			compatibleVersions: [
+				"1.0.0",
+				"1.1.0",
+				"1.2.0",
+				"1.2.1",
+				"1.2.2",
+				"1.2.3",
+			],
+			migrationScript:
+				this.migrateToConsolidatedBrandsAndProviders.bind(this),
 		},
 		// Add future versions here with migration scripts
 	];
@@ -558,6 +571,270 @@ export class DataVersioning {
 		}
 
 		this.logger.debug("Array-based relationships migration completed");
+		return migratedData;
+	}
+
+	/**
+	 * Migration script to consolidate duplicate brand and provider entities
+	 * This migrates data from version 1.2.2 to 1.2.3
+	 */
+	private async migrateToConsolidatedBrandsAndProviders(
+		data: unknown
+	): Promise<unknown> {
+		this.logger.debug(
+			"Starting migration to consolidate duplicate brands and providers"
+		);
+
+		if (!data || typeof data !== "object") {
+			throw new Error(
+				"Invalid data format for brand/provider consolidation migration"
+			);
+		}
+
+		const dataObj = data as MigrationData;
+
+		// Ensure we have the data structure
+		if (
+			!dataObj.data ||
+			typeof dataObj.data !== "object" ||
+			dataObj.data === null
+		) {
+			throw new Error(
+				"Invalid data format for brand/provider consolidation migration"
+			);
+		}
+
+		const migratedData = { ...dataObj };
+		const dataContent = migratedData.data as Record<string, unknown>;
+
+		// Consolidate duplicate brands
+		if (dataContent.brands && Array.isArray(dataContent.brands)) {
+			this.logger.debug(
+				`Consolidating ${dataContent.brands.length} brands`
+			);
+
+			const brandNameMap = new Map<string, string[]>(); // name -> array of IDs
+			const brandIdMap = new Map<string, string>(); // old ID -> new ID to keep
+			const brandsToKeep: Record<string, unknown>[] = [];
+
+			// Group brands by name
+			dataContent.brands.forEach((brand: Record<string, unknown>) => {
+				const name = brand.name as string;
+				const id = brand.id as string;
+
+				if (!brandNameMap.has(name)) {
+					brandNameMap.set(name, []);
+				}
+				brandNameMap.get(name)!.push(id);
+			});
+
+			// For each group of brands with the same name, keep the first one and map others to it
+			brandNameMap.forEach((ids, name) => {
+				if (ids.length > 1) {
+					this.logger.debug(
+						`Found ${ids.length} duplicate brands with name: ${name}`
+					);
+
+					// Keep the first brand, map others to it
+					const brandToKeep = ids[0];
+					brandsToKeep.push(
+						(dataContent.brands as Record<string, unknown>[]).find(
+							(b: Record<string, unknown>) => b.id === brandToKeep
+						)!
+					);
+
+					// Map all other IDs to the one we're keeping
+					ids.slice(1).forEach((id) => {
+						brandIdMap.set(id, brandToKeep);
+					});
+				} else {
+					// No duplicates, keep as is
+					brandsToKeep.push(
+						(dataContent.brands as Record<string, unknown>[]).find(
+							(b: Record<string, unknown>) => b.id === ids[0]
+						)!
+					);
+				}
+			});
+
+			// Update brands array to only include the ones we're keeping
+			dataContent.brands = brandsToKeep;
+
+			// Update items to use the consolidated brand IDs
+			if (dataContent.items && Array.isArray(dataContent.items)) {
+				this.logger.debug(
+					`Updating ${dataContent.items.length} items with consolidated brand IDs`
+				);
+
+				dataContent.items = dataContent.items.map(
+					(item: Record<string, unknown>) => {
+						const itemCopy = { ...item };
+
+						if (itemCopy.brands && Array.isArray(itemCopy.brands)) {
+							itemCopy.brands = itemCopy.brands.map(
+								(brandId: string) => {
+									return brandIdMap.get(brandId) || brandId;
+								}
+							);
+						}
+
+						return itemCopy;
+					}
+				);
+			}
+
+			// Update transactions to use the consolidated brand IDs
+			if (
+				dataContent.transactions &&
+				Array.isArray(dataContent.transactions)
+			) {
+				this.logger.debug(
+					`Updating ${dataContent.transactions.length} transactions with consolidated brand IDs`
+				);
+
+				dataContent.transactions = dataContent.transactions.map(
+					(transaction: Record<string, unknown>) => {
+						const transactionCopy = { ...transaction };
+
+						if (
+							transactionCopy.brand &&
+							typeof transactionCopy.brand === "string"
+						) {
+							const newBrandId = brandIdMap.get(
+								transactionCopy.brand
+							);
+							if (newBrandId) {
+								transactionCopy.brand = newBrandId;
+							}
+						}
+
+						return transactionCopy;
+					}
+				);
+			}
+		}
+
+		// Consolidate duplicate providers
+		if (dataContent.providers && Array.isArray(dataContent.providers)) {
+			this.logger.debug(
+				`Consolidating ${dataContent.providers.length} providers`
+			);
+
+			const providerNameMap = new Map<string, string[]>(); // name -> array of IDs
+			const providerIdMap = new Map<string, string>(); // old ID -> new ID to keep
+			const providersToKeep: Record<string, unknown>[] = [];
+
+			// Group providers by name
+			dataContent.providers.forEach(
+				(provider: Record<string, unknown>) => {
+					const name = provider.name as string;
+					const id = provider.id as string;
+
+					if (!providerNameMap.has(name)) {
+						providerNameMap.set(name, []);
+					}
+					providerNameMap.get(name)!.push(id);
+				}
+			);
+
+			// For each group of providers with the same name, keep the first one and map others to it
+			providerNameMap.forEach((ids, name) => {
+				if (ids.length > 1) {
+					this.logger.debug(
+						`Found ${ids.length} duplicate providers with name: ${name}`
+					);
+
+					// Keep the first provider, map others to it
+					const providerToKeep = ids[0];
+					providersToKeep.push(
+						(
+							dataContent.providers as Record<string, unknown>[]
+						).find(
+							(p: Record<string, unknown>) =>
+								p.id === providerToKeep
+						)!
+					);
+
+					// Map all other IDs to the one we're keeping
+					ids.slice(1).forEach((id) => {
+						providerIdMap.set(id, providerToKeep);
+					});
+				} else {
+					// No duplicates, keep as is
+					providersToKeep.push(
+						(
+							dataContent.providers as Record<string, unknown>[]
+						).find((p: Record<string, unknown>) => p.id === ids[0])!
+					);
+				}
+			});
+
+			// Update providers array to only include the ones we're keeping
+			dataContent.providers = providersToKeep;
+
+			// Update items to use the consolidated provider IDs
+			if (dataContent.items && Array.isArray(dataContent.items)) {
+				this.logger.debug(
+					`Updating ${dataContent.items.length} items with consolidated provider IDs`
+				);
+
+				dataContent.items = dataContent.items.map(
+					(item: Record<string, unknown>) => {
+						const itemCopy = { ...item };
+
+						if (
+							itemCopy.providers &&
+							Array.isArray(itemCopy.providers)
+						) {
+							itemCopy.providers = itemCopy.providers.map(
+								(providerId: string) => {
+									return (
+										providerIdMap.get(providerId) ||
+										providerId
+									);
+								}
+							);
+						}
+
+						return itemCopy;
+					}
+				);
+			}
+
+			// Update transactions to use the consolidated provider IDs
+			if (
+				dataContent.transactions &&
+				Array.isArray(dataContent.transactions)
+			) {
+				this.logger.debug(
+					`Updating ${dataContent.transactions.length} transactions with consolidated provider IDs`
+				);
+
+				dataContent.transactions = dataContent.transactions.map(
+					(transaction: Record<string, unknown>) => {
+						const transactionCopy = { ...transaction };
+
+						if (
+							transactionCopy.provider &&
+							typeof transactionCopy.provider === "string"
+						) {
+							const newProviderId = providerIdMap.get(
+								transactionCopy.provider
+							);
+							if (newProviderId) {
+								transactionCopy.provider = newProviderId;
+							}
+						}
+
+						return transactionCopy;
+					}
+				);
+			}
+		}
+
+		this.logger.debug(
+			"Brand and provider consolidation migration completed"
+		);
 		return migratedData;
 	}
 
