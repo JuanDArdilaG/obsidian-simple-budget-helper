@@ -639,6 +639,73 @@ export const CreateTransactionForm = ({
 			}
 			updateSubCategories();
 
+			// 3. Pre-process all unique brands, stores, and providers
+			const uniqueBrands = Array.from(
+				new Set(
+					transactionItems
+						.filter(
+							(item) =>
+								item.itemType === ItemType.PRODUCT && item.brand
+						)
+						.map((item) => item.brand)
+				)
+			);
+			const uniqueStores = sharedProperties.store
+				? [sharedProperties.store]
+				: [];
+			const uniqueProviders = Array.from(
+				new Set(
+					transactionItems
+						.filter(
+							(item) =>
+								item.itemType === ItemType.SERVICE &&
+								item.provider
+						)
+						.map((item) => item.provider)
+				)
+			);
+
+			// Create missing brands
+			const brandMap = new Map<string, BrandEntity>();
+			for (const brandName of uniqueBrands) {
+				let brandEntity = brands.find(
+					(b) => b.name.value === brandName
+				);
+				if (!brandEntity) {
+					brandEntity = BrandEntity.create(new ItemName(brandName));
+					await createBrand.execute(brandEntity);
+				}
+				brandMap.set(brandName, brandEntity);
+			}
+
+			// Create missing stores
+			const storeMap = new Map<string, StoreEntity>();
+			for (const storeName of uniqueStores) {
+				let storeEntity = stores.find(
+					(s) => s.name.value === storeName
+				);
+				if (!storeEntity) {
+					storeEntity = StoreEntity.create(new ItemName(storeName));
+					await createStore.execute(storeEntity);
+				}
+				storeMap.set(storeName, storeEntity);
+			}
+
+			// Create missing providers
+			const providerMap = new Map<string, ProviderEntity>();
+			for (const providerName of uniqueProviders) {
+				let providerEntity = providers.find(
+					(p) => p.name.value === providerName
+				);
+				if (!providerEntity) {
+					providerEntity = ProviderEntity.create(
+						new ItemName(providerName)
+					);
+					await createProvider.execute(providerEntity);
+				}
+				providerMap.set(providerName, providerEntity);
+			}
+
 			// Create individual transactions for each item
 			for (const item of transactionItems) {
 				// Handle item creation/update
@@ -655,40 +722,23 @@ export const CreateTransactionForm = ({
 						let newItem;
 
 						if (item.itemType === ItemType.PRODUCT) {
-							// Handle brand and store creation for products
+							// Use pre-processed brand and store entities
 							const brandEntities: BrandEntity[] = [];
 							const storeEntities: StoreEntity[] = [];
 
 							if (item.brand) {
-								// Check if brand exists, if not create it
-								const existingBrand = brands.find(
-									(b) => b.name.value === item.brand
-								);
-								if (!existingBrand) {
-									const brandEntity = BrandEntity.create(
-										new ItemName(item.brand)
-									);
-									await createBrand.execute(brandEntity);
+								const brandEntity = brandMap.get(item.brand);
+								if (brandEntity) {
 									brandEntities.push(brandEntity);
-								} else {
-									brandEntities.push(existingBrand);
 								}
 							}
 
 							if (sharedProperties.store) {
-								// Check if store exists, if not create it
-								const existingStore = stores.find(
-									(s) =>
-										s.name.value === sharedProperties.store
+								const storeEntity = storeMap.get(
+									sharedProperties.store
 								);
-								if (!existingStore) {
-									const storeEntity = StoreEntity.create(
-										new ItemName(sharedProperties.store)
-									);
-									await createStore.execute(storeEntity);
+								if (storeEntity) {
 									storeEntities.push(storeEntity);
-								} else {
-									storeEntities.push(existingStore);
 								}
 							}
 
@@ -701,25 +751,15 @@ export const CreateTransactionForm = ({
 								storeEntities.map((s) => s.id)
 							);
 						} else {
-							// Handle provider creation for services
+							// Use pre-processed provider entities
 							const providerEntities: ProviderEntity[] = [];
 
 							if (item.provider) {
-								// Check if provider exists, if not create it
-								const existingProvider = providers.find(
-									(p) => p.name.value === item.provider
+								const providerEntity = providerMap.get(
+									item.provider
 								);
-								if (!existingProvider) {
-									const providerEntity =
-										ProviderEntity.create(
-											new ItemName(item.provider)
-										);
-									await createProvider.execute(
-										providerEntity
-									);
+								if (providerEntity) {
 									providerEntities.push(providerEntity);
-								} else {
-									providerEntities.push(existingProvider);
 								}
 							}
 
@@ -769,17 +809,15 @@ export const CreateTransactionForm = ({
 							needsUpdate = true;
 						}
 
-						// Handle brand/store/provider updates
+						// Handle brand/store/provider updates using pre-processed entities
 						if (
 							item.itemType === ItemType.PRODUCT &&
 							existingItem instanceof ProductItem
 						) {
 							if (item.brand) {
-								const existingBrand = brands.find(
-									(b) => b.name.value === item.brand
-								);
-								if (existingBrand) {
-									const brandId = existingBrand.id;
+								const brandEntity = brandMap.get(item.brand);
+								if (brandEntity) {
+									const brandId = brandEntity.id;
 									if (
 										!existingItem.brands.some(
 											(b) => b.value === brandId.value
@@ -792,12 +830,11 @@ export const CreateTransactionForm = ({
 							}
 
 							if (sharedProperties.store) {
-								const existingStore = stores.find(
-									(s) =>
-										s.name.value === sharedProperties.store
+								const storeEntity = storeMap.get(
+									sharedProperties.store
 								);
-								if (existingStore) {
-									const storeId = existingStore.id;
+								if (storeEntity) {
+									const storeId = storeEntity.id;
 									if (
 										!existingItem.stores.some(
 											(s) => s.value === storeId.value
@@ -813,11 +850,11 @@ export const CreateTransactionForm = ({
 							existingItem instanceof ServiceItem
 						) {
 							if (item.provider) {
-								const existingProvider = providers.find(
-									(p) => p.name.value === item.provider
+								const providerEntity = providerMap.get(
+									item.provider
 								);
-								if (existingProvider) {
-									const providerId = existingProvider.id;
+								if (providerEntity) {
+									const providerId = providerEntity.id;
 									if (
 										!existingItem.providers.some(
 											(p) => p.value === providerId.value
