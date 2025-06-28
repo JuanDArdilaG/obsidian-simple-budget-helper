@@ -1,4 +1,5 @@
-import { useContext, useState } from "react";
+import { Input } from "apps/obsidian-plugin/components/Input/Input";
+import { Select } from "apps/obsidian-plugin/components/Select/Select";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import {
 	Account,
@@ -6,8 +7,7 @@ import {
 	AccountType,
 	AccountTypeType,
 } from "contexts/Accounts/domain";
-import { Select } from "apps/obsidian-plugin/components/Select/Select";
-import { Input } from "apps/obsidian-plugin/components/Input/Input";
+import { useContext, useState } from "react";
 
 export const CreateAccountPanel = ({ onCreate }: { onCreate: () => void }) => {
 	const {
@@ -40,7 +40,7 @@ export const CreateAccountPanel = ({ onCreate }: { onCreate: () => void }) => {
 				label="Type"
 				value={type}
 				values={["asset", "liability"]}
-				onChange={(type) => setType(type)}
+				onChange={(type) => setType(type as AccountTypeType)}
 			/>
 			<button onClick={handleSubmit()}>Create</button>
 		</div>

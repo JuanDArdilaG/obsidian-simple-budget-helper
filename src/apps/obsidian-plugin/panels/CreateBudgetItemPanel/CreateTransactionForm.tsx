@@ -264,6 +264,7 @@ export const CreateTransactionForm = ({
 			getAllStores,
 			getAllProviders,
 		},
+		updateItems,
 	} = useContext(ItemsContext);
 
 	// State for brands, stores, and providers
@@ -997,6 +998,7 @@ export const CreateTransactionForm = ({
 			updateAccounts();
 			updateBrands();
 			updateStores();
+			updateItems();
 
 			onCreate();
 

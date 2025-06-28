@@ -1,7 +1,7 @@
 import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
 import { Transaction } from "contexts/Transactions/domain";
 import React, { useCallback, useContext, useMemo } from "react";
-import { AppContext, TransactionsContext } from "../Contexts";
+import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
 import { DisplayableTransactionWithAccumulatedBalance } from "./AccountingList";
 
 import {
@@ -56,6 +56,7 @@ export const AccountingListItem = ({
 		useCases: { deleteTransaction },
 		updateFilteredTransactions,
 	} = useContext(TransactionsContext);
+	const { updateAccounts } = useContext(AccountsContext);
 
 	const isEditing = editingTransactionId === transaction.id.toString();
 	const isTransfer = transaction.operation.isTransfer();
@@ -75,6 +76,7 @@ export const AccountingListItem = ({
 				if (confirm) {
 					await deleteTransaction.execute(transaction.id);
 					updateFilteredTransactions();
+					updateAccounts();
 					setSelection([]);
 				}
 			}).open();
@@ -85,6 +87,7 @@ export const AccountingListItem = ({
 			transaction.id,
 			updateFilteredTransactions,
 			setSelection,
+			updateAccounts,
 		]
 	);
 

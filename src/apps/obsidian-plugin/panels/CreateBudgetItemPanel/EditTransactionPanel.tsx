@@ -12,6 +12,7 @@ import { useLogger } from "apps/obsidian-plugin/hooks";
 import { TransactionsContext } from "apps/obsidian-plugin/views";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts/AccountsContext";
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
+import { OperationType } from "contexts/Shared/domain/value-objects/operation.valueobject";
 import {
 	Transaction,
 	TransactionDate,
@@ -102,7 +103,7 @@ export const EditTransactionPanel = ({
 				label="Type"
 				value={type}
 				values={["expense", "transfer", "income"]}
-				onChange={(type) => setType(type)}
+				onChange={(type) => setType(type as OperationType)}
 			/>
 			{CategorySelect}
 			{SubCategorySelect}
