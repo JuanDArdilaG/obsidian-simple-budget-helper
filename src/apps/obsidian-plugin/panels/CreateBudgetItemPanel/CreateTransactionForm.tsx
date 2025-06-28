@@ -1,11 +1,18 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
 import AddIcon from "@mui/icons-material/Add";
+import CalculateIcon from "@mui/icons-material/Calculate";
 import DeleteIcon from "@mui/icons-material/Delete";
 import {
+	Alert,
 	Box,
 	Button,
 	ButtonGroup,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
 	IconButton,
+	TextField,
 	Typography,
 } from "@mui/material";
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
@@ -43,6 +50,7 @@ import {
 	TransactionID,
 	TransactionPrimitives,
 } from "contexts/Transactions/domain";
+import * as math from "mathjs";
 import React, {
 	PropsWithChildren,
 	useContext,
@@ -301,6 +309,12 @@ export const CreateTransactionForm = ({
 		]
 	);
 
+	// Calculator modal state
+	const [calculatorModalOpen, setCalculatorModalOpen] = useState(false);
+	const [calculatorExpression, setCalculatorExpression] = useState("");
+	const [calculatorError, setCalculatorError] = useState("");
+	const [currentAmountField, setCurrentAmountField] = useState<string>("");
+
 	const [selectedTransaction, setSelectedTransaction] =
 		useState<TransactionPrimitives>(Transaction.emptyPrimitives());
 
@@ -454,6 +468,7 @@ export const CreateTransactionForm = ({
 		return brandsList;
 	};
 
+	// Get provider options for a specific item by name
 	const getProviderOptionsForItem = (itemName?: string) => {
 		const item = items.find((i) => i.name.value === itemName);
 		if (!item || !(item instanceof ServiceItem)) {
@@ -467,6 +482,47 @@ export const CreateTransactionForm = ({
 			.map((provider) => provider.name.value)
 			.filter((name) => !!name && name.trim() !== "");
 		return providersList;
+	};
+
+	// Calculator functions
+	const openCalculator = (itemId: string, currentAmount: number) => {
+		setCurrentAmountField(itemId);
+		setCalculatorExpression(currentAmount.toString());
+		setCalculatorError("");
+		setCalculatorModalOpen(true);
+	};
+
+	const calculateResult = () => {
+		try {
+			setCalculatorError("");
+			const result = math.evaluate(calculatorExpression);
+			const numericResult = Number(result);
+
+			if (isNaN(numericResult)) {
+				setCalculatorError("Invalid expression");
+				return;
+			}
+
+			if (numericResult < 0) {
+				setCalculatorError("Amount cannot be negative");
+				return;
+			}
+
+			// Update the amount field
+			updateTransactionItem(currentAmountField, {
+				amount: numericResult,
+			});
+
+			setCalculatorModalOpen(false);
+		} catch {
+			setCalculatorError("Invalid mathematical expression");
+		}
+	};
+
+	const handleCalculatorKeyPress = (event: React.KeyboardEvent) => {
+		if (event.key === "Enter") {
+			calculateResult();
+		}
 	};
 
 	// Add new transaction item
@@ -1023,21 +1079,42 @@ export const CreateTransactionForm = ({
 								isLocked={false}
 								setIsLocked={() => {}}
 							/>
-							<PriceInput
-								id={`amount-${item.id}`}
-								label="Amount"
-								value={
-									new PriceValueObject(item.amount || 0, {
-										withSign: false,
-										decimals: 0,
-									})
-								}
-								onChange={(val) =>
-									updateTransactionItem(item.id, {
-										amount: val.toNumber(),
-									})
-								}
-							/>
+							<Box
+								sx={{
+									display: "flex",
+									alignItems: "flex-end",
+									gap: 1,
+								}}
+							>
+								<PriceInput
+									id={`amount-${item.id}`}
+									label="Amount"
+									value={
+										new PriceValueObject(item.amount || 0, {
+											withSign: false,
+											decimals: 0,
+										})
+									}
+									onChange={(val) =>
+										updateTransactionItem(item.id, {
+											amount: val.toNumber(),
+										})
+									}
+								/>
+								<IconButton
+									size="small"
+									onClick={() =>
+										openCalculator(
+											item.id,
+											item.amount || 0
+										)
+									}
+									sx={{ mb: 1 }}
+									title="Calculator"
+								>
+									<CalculateIcon />
+								</IconButton>
+							</Box>
 							<Select
 								id={`itemType-${item.id}`}
 								label="Item Type"
@@ -1353,6 +1430,51 @@ export const CreateTransactionForm = ({
 				</Button>
 				<Button onClick={handleSubmit(true)}>Save & Finish</Button>
 			</ButtonGroup>
+
+			{/* Calculator Modal */}
+			<Dialog
+				open={calculatorModalOpen}
+				onClose={() => setCalculatorModalOpen(false)}
+				maxWidth="sm"
+				fullWidth
+			>
+				<DialogTitle>Calculator</DialogTitle>
+				<DialogContent>
+					<Typography variant="body2" sx={{ mb: 2 }}>
+						Enter a mathematical expression using numbers, operators
+						(+, -, *, /), and parentheses for grouping.
+					</Typography>
+					<TextField
+						autoFocus
+						fullWidth
+						label="Expression"
+						value={calculatorExpression}
+						onChange={(e) =>
+							setCalculatorExpression(e.target.value)
+						}
+						onKeyUp={handleCalculatorKeyPress}
+						placeholder="e.g., 10 + 5 * 2, (15 + 3) / 2"
+						variant="outlined"
+						sx={{ mb: 2 }}
+					/>
+					{calculatorError && (
+						<Alert severity="error" sx={{ mb: 2 }}>
+							{calculatorError}
+						</Alert>
+					)}
+					<Typography variant="body2" color="text.secondary">
+						Examples: 10 + 5, 20 * 0.15, (100 - 10) / 2
+					</Typography>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={() => setCalculatorModalOpen(false)}>
+						Cancel
+					</Button>
+					<Button onClick={calculateResult} variant="contained">
+						Calculate
+					</Button>
+				</DialogActions>
+			</Dialog>
 		</div>
 	);
 };
