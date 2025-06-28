@@ -9,7 +9,7 @@ export const Button = ({
 }: {
 	label: string;
 	icon?: React.ReactNode;
-	onClick: () => Promise<void>;
+	onClick: (() => Promise<void>) | (() => void);
 	disabled?: boolean;
 	style?: React.CSSProperties;
 }) => {
@@ -18,12 +18,21 @@ export const Button = ({
 			navigator.userAgent
 		);
 
+	const handleClick = () => {
+		const result = onClick();
+		if (result instanceof Promise) {
+			result.catch((error) => {
+				console.error("Button onClick error:", error);
+			});
+		}
+	};
+
 	return (
 		<MuiButton
 			disabled={disabled}
 			variant="contained"
 			startIcon={icon}
-			onClick={onClick}
+			onClick={handleClick}
 			style={{
 				color: "var(--text-normal)",
 				padding: isMobile ? "12px 16px" : "20px",

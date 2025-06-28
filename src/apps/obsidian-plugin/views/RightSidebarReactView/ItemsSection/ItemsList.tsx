@@ -464,7 +464,31 @@ export const ItemsList = ({
 						}}
 					/>
 					<h3>No items found</h3>
-					<p>Try adjusting your search or create a new item</p>
+					<p>
+						Items are automatically created when you record
+						transactions. They represent the products and services
+						you buy or sell.
+					</p>
+					<p
+						style={{
+							fontSize: "12px",
+							marginTop: "8px",
+							opacity: 0.7,
+						}}
+					>
+						To create items, go to the Accounting section and create
+						a transaction. The items will appear here automatically.
+					</p>
+					<p
+						style={{
+							fontSize: "12px",
+							marginTop: "4px",
+							opacity: 0.7,
+						}}
+					>
+						Note: This is different from Scheduled Items, which are
+						recurring transactions.
+					</p>
 				</div>
 			</div>
 		);

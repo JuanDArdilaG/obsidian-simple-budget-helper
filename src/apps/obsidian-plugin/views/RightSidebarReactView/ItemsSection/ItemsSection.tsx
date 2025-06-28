@@ -28,8 +28,24 @@ export const ItemsSection = ({
 		try {
 			setIsLoading(true);
 			console.log("Loading items...");
+			console.log(
+				"useCases.getAllRegularItems:",
+				useCases.getAllRegularItems
+			);
+
 			const result = await useCases.getAllRegularItems.execute();
 			console.log("Items loaded:", result.items.length, "items");
+			console.log("Items result:", result);
+
+			if (result.items.length === 0) {
+				console.log(
+					"No regular items found. This might be normal if no regular items have been created yet."
+				);
+				console.log(
+					"Regular items are different from scheduled items. Regular items are created when you create transactions."
+				);
+			}
+
 			setItems(result.items);
 		} catch (error) {
 			console.error("Error loading items", error);
