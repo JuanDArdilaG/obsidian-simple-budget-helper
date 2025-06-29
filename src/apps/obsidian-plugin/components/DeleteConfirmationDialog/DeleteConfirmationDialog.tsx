@@ -491,21 +491,28 @@ export const DeleteConfirmationDialog = ({
 											},
 									}}
 								>
-									{filteredReassignments.map((item) => (
-										<MenuItem
-											key={item.id}
-											value={item.id}
-											sx={{
-												color: "var(--text-normal)",
-												"&:hover": {
+									{filteredReassignments
+										.sort((a, b) =>
+											a.name.localeCompare(b.name)
+										)
+										.map((item) => (
+											<MenuItem
+												key={item.id}
+												value={item.id}
+												sx={{
+													color: "var(--text-normal)",
 													backgroundColor:
-														"var(--background-modifier-hover)",
-												},
-											}}
-										>
-											{item.name}
-										</MenuItem>
-									))}
+														"var(--background-secondary)",
+													"&:hover": {
+														color: "var(--text-accent-hover)",
+														backgroundColor:
+															"var(--background-modifier-hover)",
+													},
+												}}
+											>
+												{item.name}
+											</MenuItem>
+										))}
 								</Select>
 							</FormControl>
 

@@ -1,13 +1,18 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
-import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
+import { List, ListSubheader } from "@mui/material";
+import { ResponsiveScheduledItem } from "apps/obsidian-plugin/components/ResponsiveScheduledItem";
 import { useLogger } from "apps/obsidian-plugin/hooks";
 import { EditItemPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemPanel";
-import { AccountID, AccountType } from "contexts/Accounts/domain";
-import { ERecurrenceState, ScheduledItem } from "contexts/Items/domain";
+import { AccountID, AccountName, AccountType } from "contexts/Accounts/domain";
+import {
+	ERecurrenceState,
+	ItemRecurrenceInfo,
+	ScheduledItem,
+} from "contexts/Items/domain";
 import { ReportBalance } from "contexts/Reports/domain";
 import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
-import { ChevronDown, ChevronRight, Forward, X } from "lucide-react";
+import { ChevronDown, ChevronRight, X } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import {
 	CartesianGrid,
@@ -464,8 +469,10 @@ export const AllItemsList = ({
 
 	return (
 		<div>
-			<ul>
-				{items
+			{/* Group items by month */}
+			{(() => {
+				// Group items by month
+				const itemsByMonth = items
 					.map((item) => {
 						const recurrence = item.recurrence.recurrences.find(
 							(recurrence) =>
@@ -485,145 +492,105 @@ export const AllItemsList = ({
 							return itemA.name.compareTo(itemB.name);
 						}
 					)
-					.map(({ item, recurrence }) => {
-						const account = getAccountByID(item.operation.account);
-						const toAccount = item.operation.toAccount
-							? getAccountByID(item.operation.toAccount)
-							: undefined;
-						const remainingDays =
-							recurrence!.date.getRemainingDays() ?? 0;
-						const totalRecurrences =
-							item.recurrence?.totalRecurrences ?? 1;
+					.reduce((groups, { item, recurrence }) => {
+						const monthKey =
+							recurrence!.date.value.toLocaleDateString(
+								"default",
+								{
+									year: "numeric",
+									month: "long",
+								}
+							);
 
-						let panelContent;
-						if (showPanel && item === showPanel.item) {
-							if (showPanel.action === "edit") {
-								panelContent = (
-									<EditItemPanel
-										item={item}
-										onClose={() => {
-											setShowPanel(undefined);
-											updateItems();
-										}}
-									/>
-								);
-							}
+						if (!groups[monthKey]) {
+							groups[monthKey] = [];
 						}
+						groups[monthKey].push({
+							item,
+							recurrence: recurrence!,
+						});
+						return groups;
+					}, {} as Record<string, Array<{ item: ScheduledItem; recurrence: ItemRecurrenceInfo }>>);
 
-						let remainingDaysColor = "var(--color-green)";
-						if (Math.abs(remainingDays) <= 3)
-							remainingDaysColor = "var(--color-yellow)";
-						else if (remainingDays < -3)
-							remainingDaysColor = "var(--color-red)";
-
-						return (
-							<li
-								key={item.id.value}
-								onContextMenu={(e) => {
-									e.preventDefault();
-									setSelectedItem(item);
-								}}
+				return Object.entries(itemsByMonth).map(
+					([monthKey, monthItems]) => (
+						<List key={monthKey} style={{ width: "100%" }}>
+							<ListSubheader
 								style={{
-									border: "none",
-									width: "100%",
-									textAlign: "left",
-									padding: 0,
-									cursor: "pointer",
+									backgroundColor:
+										"var(--background-primary-alt)",
+									color: "var(--text-normal)",
 								}}
 							>
-								<div className="two-columns-list">
-									<span>
-										{item.name.value}
-										{item.recurrence?.frequency && (
-											<span
-												className="light-text"
-												style={{
-													paddingLeft: "6px",
-												}}
-											>
-												{item.recurrence?.frequency.toString()}
-											</span>
-										)}
-										<span
-											className="light-text"
-											style={{ paddingLeft: "6px" }}
-										>
-											{totalRecurrences > 0
-												? `x${totalRecurrences}`
-												: "∞"}
-										</span>
-										<br />
-										<span
-											style={{
-												fontSize: "0.9em",
-												marginLeft: "15px",
-											}}
-										>
-											{recurrence!.date.toPrettyFormatDate()}
-											<br />
-											<span
-												style={{
-													marginLeft: "15px",
-													color: remainingDaysColor,
-												}}
-											>
-												{
-													recurrence!.date
-														.remainingDaysStr
-												}
-											</span>
-										</span>
-									</span>
-									<span style={{ textAlign: "right" }}>
-										<PriceLabel
-											price={item.fromAmount}
-											operation={item.operation.type}
-										/>
-										<span
-											style={{
-												marginLeft: "8px",
-												paddingTop: "20px",
-											}}
-										>
-											<Forward
-												style={{
-													cursor: "pointer",
-													color: "var(--color-green)",
-												}}
-												size={19}
-												onClick={() => {
-													setAction("record");
-													setSelectedItem(item);
+								{monthKey}
+							</ListSubheader>
+							{monthItems.map(({ item, recurrence }) => {
+								const account = getAccountByID(
+									item.operation.account
+								);
+								const toAccount = item.operation.toAccount
+									? getAccountByID(item.operation.toAccount)
+									: undefined;
+								const accountName =
+									account?.name ??
+									new AccountName("Unknown Account");
+								const toAccountName = toAccount?.name;
+								const fullAccountName = toAccountName
+									? new AccountName(
+											`${accountName.toString()} -> ${toAccountName.toString()}`
+									  )
+									: accountName;
+
+								let panelContent;
+								if (showPanel && item === showPanel.item) {
+									if (showPanel.action === "edit") {
+										panelContent = (
+											<EditItemPanel
+												item={item}
+												onClose={() => {
+													setShowPanel(undefined);
+													updateItems();
 												}}
 											/>
-										</span>
-										<br />
-										<div
-											style={{ textAlign: "right" }}
-											className="light-text"
-										>
-											<div>
-												Per Month ≈{" "}
-												{item
-													.getPricePerMonthWithAccountTypes(
-														accountTypeLookup
-													)
-													.toString()}
-											</div>
-											<div>
-												{account?.name.toString()}
-												{toAccount
-													? ` -> ${toAccount.name}`
-													: undefined}
-											</div>
-										</div>
-									</span>
-								</div>
-								{panelContent}
-							</li>
-						);
-					})}{" "}
-			</ul>
+										);
+									}
+								}
+
+								return (
+									<div key={item.id.value}>
+										<ResponsiveScheduledItem
+											item={item}
+											recurrence={recurrence}
+											accountName={fullAccountName}
+											price={item.fromAmount}
+											isSelected={false}
+											onClick={() => {
+												setAction("record");
+												setSelectedItem(item);
+											}}
+											onContextMenu={(
+												e: React.MouseEvent
+											) => {
+												e.preventDefault();
+												setSelectedItem(item);
+											}}
+											showBalanceInfo={false}
+											accountTypeLookup={
+												accountTypeLookup
+											}
+											remainingDays={
+												recurrence.date.getRemainingDays() ??
+												0
+											}
+										/>
+										{panelContent}
+									</div>
+								);
+							})}
+						</List>
+					)
+				);
+			})()}
 
 			{/* Enhanced Totals Section */}
 			<div

@@ -3,11 +3,17 @@ import {
 	NumberValueObject,
 	PriceValueObject,
 } from "@juandardilag/value-objects";
-import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
+import { List, ListSubheader } from "@mui/material";
+import { ResponsiveScheduledItem } from "apps/obsidian-plugin/components/ResponsiveScheduledItem";
 import { useLogger } from "apps/obsidian-plugin/hooks";
 import { EditItemRecurrencePanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemRecurrencePanel";
 import { RecordItemPanel } from "apps/obsidian-plugin/panels/RecordItemPanel";
-import { AccountBalance, AccountName } from "contexts/Accounts/domain";
+import {
+	AccountBalance,
+	AccountID,
+	AccountName,
+	AccountType,
+} from "contexts/Accounts/domain";
 import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
 import { ItemWithAccumulatedBalance } from "contexts/Items/application/items-with-accumulated-balance.usecase";
 import {
@@ -17,7 +23,6 @@ import {
 } from "contexts/Items/domain";
 import { AccountsReport } from "contexts/Reports/domain";
 import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
-import { Forward } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { AccountsContext, ItemsContext } from "../../Contexts";
 import { ItemReportContext } from "../../Contexts/ItemReportContext";
@@ -124,6 +129,13 @@ export const CalendarItemsList = ({
 		}
 	}, [action, selectedItem]);
 
+	// Define the accountTypeLookup function
+	const accountTypeLookup = (id: AccountID): AccountType => {
+		const account = getAccountByID(id);
+		if (!account) return new AccountType("asset"); // fallback
+		return account.type;
+	};
+
 	return (
 		<div>
 			<div
@@ -132,39 +144,173 @@ export const CalendarItemsList = ({
 					marginTop: 10,
 					marginBottom: 10,
 					fontSize: "1.3em",
+					padding: "12px",
+					backgroundColor: "var(--background-secondary)",
+					borderRadius: "6px",
+					border: "1px solid var(--background-modifier-border)",
 				}}
 			>
-				<div>
-					<b>Total Incomes:</b>{" "}
-					<span
+				{/* Scheduled Items Summary */}
+				<div
+					style={{
+						marginBottom: "12px",
+						paddingBottom: "8px",
+						borderBottom:
+							"1px solid var(--background-modifier-border)",
+					}}
+				>
+					<div
 						style={{
-							color: "var(--color-green)",
+							fontSize: "0.9em",
+							color: "var(--text-muted)",
+							marginBottom: "4px",
 						}}
 					>
-						{totalIncomes.toString()}
-					</span>
+						Scheduled Items Summary
+					</div>
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+							marginBottom: "4px",
+						}}
+					>
+						<span
+							style={{
+								fontSize: "0.8em",
+								color: "var(--text-muted)",
+							}}
+						>
+							Incomes:
+						</span>
+						<span
+							style={{
+								color: "var(--color-green)",
+								fontWeight: "500",
+							}}
+						>
+							{totalIncomes.toString()}
+						</span>
+					</div>
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+							marginBottom: "4px",
+						}}
+					>
+						<span
+							style={{
+								fontSize: "0.8em",
+								color: "var(--text-muted)",
+							}}
+						>
+							Expenses:
+						</span>
+						<span
+							style={{
+								color: "var(--color-red)",
+								fontWeight: "500",
+							}}
+						>
+							{totalExpenses.toString()}
+						</span>
+					</div>
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+						}}
+					>
+						<span
+							style={{
+								fontSize: "0.8em",
+								color: "var(--text-muted)",
+							}}
+						>
+							{total.isNegative() ? "Deficit" : "Surplus"}:
+						</span>
+						<span
+							style={{
+								fontWeight: "600",
+								color: total.isNegative()
+									? "var(--color-red)"
+									: "var(--color-green)",
+							}}
+						>
+							{total.toString()}
+						</span>
+					</div>
 				</div>
+
+				{/* Current Financial Position */}
 				<div>
-					<b>Total Expenses:</b>{" "}
-					<span style={{ color: "var(--color-red)" }}>
-						{totalExpenses.toString()}
-					</span>
-				</div>
-				<div>
-					<b>{total.isNegative() ? "Deficit" : "Surplus"}:</b>{" "}
-					<span>{total.toString()}</span>
-				</div>
-				<div>
-					<b>Today Assets:</b> <span>{totalAssets.toString()}</span>
-				</div>
-				<div>
-					<b>Balance:</b>{" "}
-					<span>{totalAssets.plus(total).toString()}</span>
+					<div
+						style={{
+							fontSize: "0.9em",
+							color: "var(--text-muted)",
+							marginBottom: "4px",
+						}}
+					>
+						Current Financial Position
+					</div>
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+							marginBottom: "4px",
+						}}
+					>
+						<span
+							style={{
+								fontSize: "0.8em",
+								color: "var(--text-muted)",
+							}}
+						>
+							Current Assets:
+						</span>
+						<span style={{ fontWeight: "500" }}>
+							{totalAssets.toString()}
+						</span>
+					</div>
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+						}}
+					>
+						<span
+							style={{
+								fontSize: "0.8em",
+								color: "var(--text-muted)",
+							}}
+						>
+							Projected Balance:
+						</span>
+						<span
+							style={{
+								fontWeight: "600",
+								color: totalAssets.plus(total).isNegative()
+									? "var(--color-red)"
+									: "var(--color-green)",
+							}}
+						>
+							{totalAssets.plus(total).toString()}
+						</span>
+					</div>
 				</div>
 			</div>
-			<ul>
-				{itemsWithAccountsBalance.map(
+			{/* Group items by month */}
+			{(() => {
+				// Group items by month
+				const itemsByMonth = itemsWithAccountsBalance.reduce(
 					(
+						groups,
 						{
 							item,
 							n,
@@ -175,58 +321,139 @@ export const CalendarItemsList = ({
 							toAccountPrevBalance,
 						},
 						index
-					) => (
-						<div key={item.id.value + index}>
-							<CalendarItemsListItem
-								key={item.id.value + index}
-								item={item}
-								n={n}
-								recurrence={recurrence}
-								accountName={
-									getAccountByID(
-										recurrence.account ??
-											item.operation.account
-									)?.name ?? AccountName.empty()
+					) => {
+						const monthKey =
+							recurrence.date.value.toLocaleDateString(
+								"default",
+								{
+									year: "numeric",
+									month: "long",
 								}
-								accountBalance={accountBalance}
-								accountPrevBalance={accountPrevBalance}
-								showPanel={showPanel}
-								setShowPanel={setShowPanel}
-								setSelectedItem={setSelectedItem}
-								setAction={setAction}
-								updateItems={updateItems}
-							/>
-							{item.operation.type.isTransfer() &&
-								toAccountBalance &&
-								toAccountPrevBalance && (
-									<CalendarItemsListItem
-										key={
-											item.id.value + index + "-transfer"
-										}
-										item={item}
-										n={n}
-										recurrence={recurrence}
-										accountName={
-											getAccountByID(
-												recurrence.toAccount ??
-													item.operation.toAccount!
-											)?.name ?? AccountName.empty()
-										}
-										accountBalance={toAccountBalance}
-										accountPrevBalance={
-											toAccountPrevBalance
-										}
-										showPanel={showPanel}
-										setShowPanel={setShowPanel}
-										setSelectedItem={setSelectedItem}
-										setAction={setAction}
-										updateItems={updateItems}
-									/>
-								)}
-						</div>
+							);
+
+						if (!groups[monthKey]) {
+							groups[monthKey] = [];
+						}
+						groups[monthKey].push({
+							item,
+							n,
+							recurrence,
+							accountBalance,
+							accountPrevBalance,
+							toAccountBalance,
+							toAccountPrevBalance,
+							index,
+						});
+						return groups;
+					},
+					{} as Record<
+						string,
+						Array<{
+							item: ScheduledItem;
+							n: NumberValueObject;
+							recurrence: ItemRecurrenceInfo;
+							accountBalance: AccountBalance;
+							accountPrevBalance: AccountBalance;
+							toAccountBalance?: AccountBalance;
+							toAccountPrevBalance?: AccountBalance;
+							index: number;
+						}>
+					>
+				);
+
+				return Object.entries(itemsByMonth).map(
+					([monthKey, monthItems]) => (
+						<List key={monthKey} style={{ width: "100%" }}>
+							<ListSubheader
+								style={{
+									backgroundColor:
+										"var(--background-primary-alt)",
+									color: "var(--text-normal)",
+								}}
+							>
+								{monthKey}
+							</ListSubheader>
+							{monthItems.map(
+								({
+									item,
+									n,
+									recurrence,
+									accountBalance,
+									accountPrevBalance,
+									toAccountBalance,
+									toAccountPrevBalance,
+									index,
+								}) => (
+									<div key={item.id.value + index}>
+										<CalendarItemsListItem
+											key={item.id.value + index}
+											item={item}
+											n={n}
+											recurrence={recurrence}
+											accountName={
+												getAccountByID(
+													recurrence.account ??
+														item.operation.account
+												)?.name ?? AccountName.empty()
+											}
+											accountBalance={accountBalance}
+											accountPrevBalance={
+												accountPrevBalance
+											}
+											showPanel={showPanel}
+											setShowPanel={setShowPanel}
+											setSelectedItem={setSelectedItem}
+											setAction={setAction}
+											updateItems={updateItems}
+											accountTypeLookup={
+												accountTypeLookup
+											}
+										/>
+										{item.operation.type.isTransfer() &&
+											toAccountBalance &&
+											toAccountPrevBalance && (
+												<CalendarItemsListItem
+													key={
+														item.id.value +
+														index +
+														"-transfer"
+													}
+													item={item}
+													n={n}
+													recurrence={recurrence}
+													accountName={
+														getAccountByID(
+															recurrence.toAccount ??
+																item.operation
+																	.toAccount!
+														)?.name ??
+														AccountName.empty()
+													}
+													accountBalance={
+														toAccountBalance
+													}
+													accountPrevBalance={
+														toAccountPrevBalance
+													}
+													showPanel={showPanel}
+													setShowPanel={setShowPanel}
+													setSelectedItem={
+														setSelectedItem
+													}
+													setAction={setAction}
+													updateItems={updateItems}
+													accountTypeLookup={
+														accountTypeLookup
+													}
+												/>
+											)}
+									</div>
+								)
+							)}
+						</List>
 					)
-				)}
-			</ul>
+				);
+			})()}
 			{showPanel && (
 				<>
 					{showPanel.action === "edit" &&
@@ -284,6 +511,7 @@ const CalendarItemsListItem = ({
 	setSelectedItem,
 	setAction,
 	updateItems,
+	accountTypeLookup,
 }: {
 	item: ScheduledItem;
 	n: NumberValueObject;
@@ -325,6 +553,7 @@ const CalendarItemsListItem = ({
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
 	updateItems: () => void;
+	accountTypeLookup: (id: AccountID) => AccountType;
 }) => {
 	const getItemSplitPrice = (item: ScheduledItem): PriceValueObject => {
 		const accountId = recurrence.account ?? item.operation.account;
@@ -338,16 +567,6 @@ const CalendarItemsListItem = ({
 
 	const price = getItemSplitPrice(item);
 
-	// --- AllItemsList style ---
-	const totalRecurrences = item.recurrence?.totalRecurrences ?? 1;
-	const frequency = item.recurrence?.frequency;
-	const prettyDate = recurrence.date.toPrettyFormatDate();
-	const remainingDays = recurrence.date.getRemainingDays() ?? 0;
-	let remainingDaysColor = "var(--color-green)";
-	if (Math.abs(remainingDays) <= 3)
-		remainingDaysColor = "var(--color-yellow)";
-	else if (remainingDays < -3) remainingDaysColor = "var(--color-red)";
-
 	// Check if this item is currently selected for recording
 	const isSelectedForRecord =
 		showPanel?.action === "record" &&
@@ -355,20 +574,16 @@ const CalendarItemsListItem = ({
 		showPanel.item.recurrence.date.value.getTime() ===
 			recurrence.date.value.getTime();
 
+	// Reusable responsive scheduled item component
 	return (
-		<li
-			style={{
-				border: "none",
-				width: "100%",
-				textAlign: "left",
-				padding: 0,
-				cursor: "pointer",
-				backgroundColor: isSelectedForRecord
-					? "var(--background-modifier-hover)"
-					: "transparent",
-				borderRadius: "4px",
-				marginBottom: "2px",
-			}}
+		<ResponsiveScheduledItem
+			item={item}
+			recurrence={recurrence}
+			accountName={accountName}
+			accountBalance={accountBalance}
+			accountPrevBalance={accountPrevBalance}
+			price={price}
+			isSelected={isSelectedForRecord}
 			onClick={() => {
 				setSelectedItem({ recurrence, itemID: item.id });
 				setAction("record");
@@ -378,50 +593,8 @@ const CalendarItemsListItem = ({
 				setSelectedItem({ recurrence, itemID: item.id });
 				setAction("edit");
 			}}
-		>
-			<div className="two-columns-list">
-				<span>
-					{item.name.toString()}
-					{frequency && (
-						<span
-							className="light-text"
-							style={{ paddingLeft: "6px" }}
-						>
-							{frequency.toString()}
-						</span>
-					)}
-					<span className="light-text" style={{ paddingLeft: "6px" }}>
-						{totalRecurrences > 0 ? `x${totalRecurrences}` : "∞"}
-					</span>
-					<br />
-					<span style={{ fontSize: "0.9em", marginLeft: "15px" }}>
-						{prettyDate}
-						<br />
-						<span
-							style={{
-								marginLeft: "15px",
-								color: remainingDaysColor,
-							}}
-						>
-							{recurrence.date.remainingDaysStr}
-						</span>
-					</span>
-				</span>
-				<span style={{ textAlign: "right" }}>
-					<PriceLabel price={price} operation={item.operation.type} />
-					<Forward
-						style={{
-							cursor: "pointer",
-							color: "var(--color-green)",
-						}}
-						size={19}
-					/>
-					<br />
-					<div style={{ textAlign: "right" }} className="light-text">
-						<div>{accountName.toString()}</div>
-					</div>
-				</span>
-			</div>
-		</li>
+			accountTypeLookup={accountTypeLookup}
+			remainingDays={recurrence.date.getRemainingDays() ?? 0}
+		/>
 	);
 };
