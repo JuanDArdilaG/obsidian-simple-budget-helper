@@ -29,7 +29,7 @@ export class GroupByCategoryWithAccumulatedBalanceUseCase
 {
 	constructor(
 		private readonly categoriesService: ICategoriesService,
-		private readonly subcategoriesService: ISubCategoriesService
+		private readonly subCategoriesService: ISubCategoriesService
 	) {}
 
 	async execute(
@@ -49,7 +49,7 @@ export class GroupByCategoryWithAccumulatedBalanceUseCase
 			result[transaction.category.value].subCategories[
 				transaction.subCategory.value
 			] ??= {
-				subcategory: await this.subcategoriesService.getByID(
+				subcategory: await this.subCategoriesService.getByID(
 					transaction.subCategory
 				),
 				balance: PriceValueObject.zero(),

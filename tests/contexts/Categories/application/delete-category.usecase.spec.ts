@@ -28,14 +28,14 @@ const makeServices = (opts: {
 		hasItemsBySubCategory: vi.fn().mockResolvedValue(false),
 		getBySubCategory: vi.fn().mockResolvedValue([]),
 	};
-	const subcategoriesService = {
+	const subCategoriesService = {
 		getAll: vi.fn().mockResolvedValue([]),
 	};
 	return {
 		categoriesService,
 		transactionsService,
 		itemsService,
-		subcategoriesService,
+		subCategoriesService,
 	};
 };
 
@@ -45,13 +45,13 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService,
 			transactionsService,
 			itemsService,
-			subcategoriesService,
+			subCategoriesService,
 		} = makeServices({ hasRelated: false });
 		const useCase = new DeleteCategoryUseCase(
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subcategoriesService as any
+			subCategoriesService as any
 		);
 		await expect(
 			useCase.execute(CategoryID.generate())
@@ -70,13 +70,13 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService,
 			transactionsService,
 			itemsService,
-			subcategoriesService,
+			subCategoriesService,
 		} = makeServices({ hasRelated: true });
 		const useCase = new DeleteCategoryUseCase(
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subcategoriesService as any
+			subCategoriesService as any
 		);
 		await expect(useCase.execute(CategoryID.generate())).rejects.toThrow(
 			"Cannot delete category with related data. Please provide a category to reassign them to."
@@ -90,13 +90,13 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService,
 			transactionsService,
 			itemsService,
-			subcategoriesService,
+			subCategoriesService,
 		} = makeServices({ hasRelated: true });
 		const useCase = new DeleteCategoryUseCase(
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subcategoriesService as any
+			subCategoriesService as any
 		);
 		const catId = CategoryID.generate();
 		const reassignId = CategoryID.generate();
@@ -137,14 +137,14 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService,
 			transactionsService,
 			itemsService,
-			subcategoriesService,
+			subCategoriesService,
 		} = makeServices({
 			hasRelated: false,
 			subcategoriesWithTransactions,
 		});
 
 		// Mock subcategories service to return subcategories
-		subcategoriesService.getAll.mockResolvedValue(mockSubcategories);
+		subCategoriesService.getAll.mockResolvedValue(mockSubcategories);
 
 		// Mock transactions service to return transactions for subcategories
 		transactionsService.hasTransactionsBySubCategory
@@ -158,7 +158,7 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subcategoriesService as any
+			subCategoriesService as any
 		);
 
 		await expect(useCase.execute(CategoryID.generate())).rejects.toThrow(
@@ -198,14 +198,14 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService,
 			transactionsService,
 			itemsService,
-			subcategoriesService,
+			subCategoriesService,
 		} = makeServices({
 			hasRelated: false,
 			subcategoriesWithItems,
 		});
 
 		// Mock subcategories service to return subcategories
-		subcategoriesService.getAll.mockResolvedValue(mockSubcategories);
+		subCategoriesService.getAll.mockResolvedValue(mockSubcategories);
 
 		// Mock items service to return items for subcategories
 		itemsService.hasItemsBySubCategory
@@ -219,7 +219,7 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subcategoriesService as any
+			subCategoriesService as any
 		);
 
 		const error = await useCase
@@ -235,13 +235,13 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService,
 			transactionsService,
 			itemsService,
-			subcategoriesService,
+			subCategoriesService,
 		} = makeServices({ hasRelated: false });
 		const useCase = new DeleteCategoryUseCase(
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subcategoriesService as any
+			subCategoriesService as any
 		);
 
 		const result = await useCase.checkCategoryDeletion(
@@ -255,13 +255,13 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService,
 			transactionsService,
 			itemsService,
-			subcategoriesService,
+			subCategoriesService,
 		} = makeServices({ hasRelated: true });
 		const useCase = new DeleteCategoryUseCase(
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subcategoriesService as any
+			subCategoriesService as any
 		);
 
 		const result = await useCase.checkCategoryDeletion(

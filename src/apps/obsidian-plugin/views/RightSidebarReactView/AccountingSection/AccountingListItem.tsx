@@ -24,6 +24,7 @@ interface AccountingListItemProps {
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
 	editingTransactionId: string | null;
 	setEditingTransactionId: (id: string | null) => void;
+	updateTransactions: () => void;
 }
 
 const modalStyle = {
@@ -46,6 +47,7 @@ export const AccountingListItem = ({
 	setSelection,
 	editingTransactionId,
 	setEditingTransactionId,
+	updateTransactions,
 }: Readonly<AccountingListItemProps>) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -101,7 +103,12 @@ export const AccountingListItem = ({
 
 	const handleCloseEdit = useCallback(async () => {
 		setEditingTransactionId(null);
-	}, [setEditingTransactionId]);
+		updateTransactions();
+	}, [setEditingTransactionId, updateTransactions]);
+
+	const handleUpdateTransaction = useCallback(async () => {
+		updateTransactions();
+	}, [updateTransactions]);
 
 	const handleSelectionToggle = useCallback(() => {
 		setSelection((prevSelection) => {
@@ -377,7 +384,7 @@ export const AccountingListItem = ({
 					<EditTransactionPanel
 						transaction={transaction}
 						onClose={handleCloseEdit}
-						onUpdate={handleCloseEdit}
+						onUpdate={handleUpdateTransaction}
 					/>
 				</Box>
 			</Modal>

@@ -13,7 +13,7 @@ describe("execute", () => {
 		const categoriesService = new CategoriesServiceMock([
 			Category.create(new CategoryName("test")),
 		]);
-		const subcategoriesService = new SubcategoriesServiceMock([
+		const subCategoriesService = new SubcategoriesServiceMock([
 			SubCategory.create(
 				categoriesService.categories[0].id,
 				new SubCategoryName("test")
@@ -25,20 +25,20 @@ describe("execute", () => {
 		]);
 		const useCase = new GroupByCategoryWithAccumulatedBalanceUseCase(
 			categoriesService,
-			subcategoriesService
+			subCategoriesService
 		);
 		const transactions = buildTestTransactions([
 			{
 				amount: 100,
 				category: categoriesService.categories[0].id.value,
-				subcategory: subcategoriesService.subcategories[0].id.value,
+				subcategory: subCategoriesService.subcategories[0].id.value,
 				operation: "expense",
 				account: AccountID.generate().value,
 			},
 			{
 				amount: 200,
 				category: categoriesService.categories[0].id.value,
-				subcategory: subcategoriesService.subcategories[1].id.value,
+				subcategory: subCategoriesService.subcategories[1].id.value,
 				operation: "income",
 				account: AccountID.generate().value,
 			},
@@ -52,12 +52,12 @@ describe("execute", () => {
 		).toBe(100);
 		expect(
 			result[categoriesService.categories[0].id.value].subCategories[
-				subcategoriesService.subcategories[0].id.value
+				subCategoriesService.subcategories[0].id.value
 			].balance.value
 		).toBe(-100);
 		expect(
 			result[categoriesService.categories[0].id.value].subCategories[
-				subcategoriesService.subcategories[1].id.value
+				subCategoriesService.subcategories[1].id.value
 			].balance.value
 		).toBe(200);
 	});

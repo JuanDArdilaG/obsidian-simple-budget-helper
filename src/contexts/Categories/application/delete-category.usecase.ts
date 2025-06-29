@@ -24,7 +24,7 @@ export class DeleteCategoryUseCase {
 		private readonly categoriesService: CategoriesService,
 		private readonly transactionsService: TransactionsService,
 		private readonly itemsService: ItemsService,
-		private readonly subcategoriesService: ISubCategoriesService
+		private readonly subCategoriesService: ISubCategoriesService
 	) {}
 
 	async checkCategoryDeletion(
@@ -39,7 +39,7 @@ export class DeleteCategoryUseCase {
 		);
 
 		// Get all subcategories for this category
-		const subcategories = await this.subcategoriesService.getAll();
+		const subcategories = await this.subCategoriesService.getAll();
 		const categorySubcategories = subcategories.filter((sub) =>
 			sub.category.equalTo(categoryId)
 		);

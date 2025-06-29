@@ -69,8 +69,11 @@ export function AccountingList({
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
 	const { logger } = useLogger("AccountingList");
-	const { setFilters, filteredTransactionsReport } =
-		useContext(TransactionsContext);
+	const {
+		setFilters,
+		filteredTransactionsReport,
+		updateFilteredTransactions,
+	} = useContext(TransactionsContext);
 	const { getAccountByID } = useContext(AccountsContext);
 	const { getCategoryByID, getSubCategoryByID } =
 		useContext(CategoriesContext);
@@ -363,6 +366,9 @@ export function AccountingList({
 												}
 												selection={selection}
 												setSelection={setSelection}
+												updateTransactions={
+													updateFilteredTransactions
+												}
 											/>
 										</ListItem>
 									);
@@ -379,6 +385,7 @@ export function AccountingList({
 			setSelection,
 			isMobile,
 			editingTransactionId,
+			updateFilteredTransactions,
 		]
 	);
 

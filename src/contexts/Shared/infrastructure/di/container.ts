@@ -169,7 +169,7 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 			.singleton()
 			.inject(() => ({ _db: localDB })),
 		categoriesService: asClass(CategoriesService).singleton(),
-		subcategoriesService: asClass(SubCategoriesService).singleton(),
+		subCategoriesService: asClass(SubCategoriesService).singleton(),
 		transactionsService: asClass(TransactionsService).singleton(),
 		itemsService: asClass(ItemsService).singleton(),
 		createCategoryUseCase: asClass(CreateCategoryUseCase).singleton(),

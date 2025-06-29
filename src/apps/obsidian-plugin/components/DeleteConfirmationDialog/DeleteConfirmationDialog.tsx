@@ -181,9 +181,9 @@ export const DeleteConfirmationDialog = ({
 								mb: 2,
 								backgroundColor:
 									"var(--background-modifier-error)",
-								color: "var(--text-error)",
+								color: "var(--text-on-accent)",
 								"& .MuiAlert-icon": {
-									color: "var(--text-error)",
+									color: "var(--text-on-accent)",
 								},
 							}}
 						>

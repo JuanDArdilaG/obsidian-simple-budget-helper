@@ -24,7 +24,7 @@ export class ItemsService
 	constructor(
 		private readonly _scheduledItemsRepository: IScheduledItemsRepository,
 		private readonly _accountsService: IAccountsService,
-		private readonly subcategoriesService: ISubCategoriesService
+		private readonly subCategoriesService: ISubCategoriesService
 	) {
 		super("ScheduledItem", _scheduledItemsRepository);
 	}
@@ -68,7 +68,7 @@ export class ItemsService
 		const items = await this.getBySubCategory(oldSubCategory);
 
 		// Get the new subcategory to find its parent category
-		const newSubCategoryEntity = await this.subcategoriesService.getByID(
+		const newSubCategoryEntity = await this.subCategoriesService.getByID(
 			newSubCategory
 		);
 		const newCategory = newSubCategoryEntity.category;

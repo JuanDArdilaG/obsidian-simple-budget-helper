@@ -33,7 +33,7 @@ export class TransactionsService implements ITransactionsService {
 		private readonly _accountsService: IAccountsService,
 		private readonly _transactionsRepository: ITransactionsRepository,
 		private readonly categoriesService: ICategoriesService,
-		private readonly subcategoriesService: ISubCategoriesService
+		private readonly subCategoriesService: ISubCategoriesService
 	) {}
 
 	async getAll(): Promise<Transaction[]> {
@@ -89,7 +89,7 @@ export class TransactionsService implements ITransactionsService {
 		const transactions = await this.getBySubCategory(oldSubCategory);
 
 		// Get the new subcategory to find its parent category
-		const newSubCategoryEntity = await this.subcategoriesService.getByID(
+		const newSubCategoryEntity = await this.subCategoriesService.getByID(
 			newSubCategory
 		);
 		const newCategory = newSubCategoryEntity.category;
@@ -132,7 +132,7 @@ export class TransactionsService implements ITransactionsService {
 			new CategoryName("Adjustment")
 		);
 		const subCategory =
-			await this.subcategoriesService.getByNameWithCreation(
+			await this.subCategoriesService.getByNameWithCreation(
 				category.id,
 				new SubCategoryName("Adjustment")
 			);

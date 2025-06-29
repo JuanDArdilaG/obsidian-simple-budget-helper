@@ -34,13 +34,13 @@ describe("update", () => {
 			persist: vi.fn(),
 		};
 		const categoriesService = {};
-		const subcategoriesService = {};
+		const subCategoriesService = {};
 
 		const service = new TransactionsService(
 			accountsService as any,
 			transactionsRepository as any,
 			categoriesService as any,
-			subcategoriesService as any
+			subCategoriesService as any
 		);
 
 		await service.update(mockTransaction as any);
@@ -80,13 +80,13 @@ describe("delete", () => {
 			deleteById: vi.fn(),
 		};
 		const categoriesService = {};
-		const subcategoriesService = {};
+		const subCategoriesService = {};
 
 		const service = new TransactionsService(
 			accountsService as any,
 			transactionsRepository as any,
 			categoriesService as any,
-			subcategoriesService as any
+			subCategoriesService as any
 		);
 
 		await service.delete(mockTransaction.id as any);
@@ -220,7 +220,7 @@ describe("reassignTransactionsSubCategory", () => {
 		};
 
 		// Mock subcategory service to return a subcategory with parent category
-		const subcategoriesService = {
+		const subCategoriesService = {
 			getByID: vi.fn().mockResolvedValue({
 				category: newCategoryId,
 			}),
@@ -236,7 +236,7 @@ describe("reassignTransactionsSubCategory", () => {
 			{} as any,
 			transactionsRepository as any,
 			{} as any,
-			subcategoriesService as any
+			subCategoriesService as any
 		);
 
 		await service.reassignTransactionsSubCategory(
@@ -245,7 +245,7 @@ describe("reassignTransactionsSubCategory", () => {
 		);
 
 		// Verify that the subcategory service was called to get the new subcategory
-		expect(subcategoriesService.getByID).toHaveBeenCalledWith(
+		expect(subCategoriesService.getByID).toHaveBeenCalledWith(
 			newSubCategoryId
 		);
 
