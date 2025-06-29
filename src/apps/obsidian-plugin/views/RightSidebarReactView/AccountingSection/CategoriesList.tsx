@@ -205,35 +205,46 @@ export const CategoriesList = () => {
 			type: "category" | "subcategory";
 		}> = [];
 
-		// Add categories (excluding the one being deleted if it's a category)
-		sortedCategories.forEach((cat) => {
-			if (
-				deleteItem?.type !== "category" ||
-				cat.category.id.value !== deleteItem?.id
-			) {
+		if (!deleteItem) {
+			return reassignments;
+		}
+
+		if (deleteItem.type === "category") {
+			// When deleting a category, show all other categories as options
+			sortedCategories.forEach((cat) => {
+				if (cat.category.id.value !== deleteItem.id) {
+					reassignments.push({
+						id: cat.category.id.value,
+						name: cat.category.name.toString(),
+						type: "category" as const,
+					});
+				}
+			});
+		} else if (deleteItem.type === "subcategory") {
+			// When deleting a subcategory, show all categories and all other subcategories
+
+			// Add all categories as options
+			sortedCategories.forEach((cat) => {
 				reassignments.push({
 					id: cat.category.id.value,
 					name: cat.category.name.toString(),
 					type: "category" as const,
 				});
-			}
-		});
-
-		// Add subcategories (excluding the one being deleted if it's a subcategory)
-		sortedCategories.forEach((cat) => {
-			cat.subCategories.forEach((subCat) => {
-				if (
-					deleteItem?.type !== "subcategory" ||
-					subCat.id.value !== deleteItem?.id
-				) {
-					reassignments.push({
-						id: subCat.id.value,
-						name: `${cat.category.name.toString()} > ${subCat.name.toString()}`,
-						type: "subcategory" as const,
-					});
-				}
 			});
-		});
+
+			// Add all subcategories (excluding the one being deleted)
+			sortedCategories.forEach((cat) => {
+				cat.subCategories.forEach((subCat) => {
+					if (subCat.id.value !== deleteItem.id) {
+						reassignments.push({
+							id: subCat.id.value,
+							name: `${cat.category.name.toString()} > ${subCat.name.toString()}`,
+							type: "subcategory" as const,
+						});
+					}
+				});
+			});
+		}
 
 		return reassignments;
 	};

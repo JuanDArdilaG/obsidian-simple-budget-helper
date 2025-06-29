@@ -24,44 +24,76 @@ export const useCategorySelect = ({
 	const [category, setCategory] = useState<Category>();
 
 	const { categories, getCategoryByID } = useContext(CategoriesContext);
-	const categoriesList = useMemo(
-		() =>
-			!overrideCategoriesIDs
-				? categories
-						.map((cat) => ({
-							id: cat.id.value,
-							name: cat.name.value,
-						}))
-						.sort((a, b) => a.name.localeCompare(b.name))
-				: [
-						{ id: "", name: "" },
-						...[
-							...new Set(
-								overrideCategoriesIDs.map(
-									(catID) => catID.value
-								)
-							),
-						].map((catID) => {
-							const cat = getCategoryByID(new CategoryID(catID));
-							return {
-								id: catID,
-								name:
-									cat?.name.value ?? `not found id: ${catID}`,
-							};
-						}),
-				  ],
-		[categories, overrideCategoriesIDs]
-	);
+	const categoriesList = useMemo(() => {
+		if (!overrideCategoriesIDs) {
+			// Use all categories, sorted by name
+			const allCategories = (categories || [])
+				.map((cat) => ({
+					id: cat.id.value,
+					name: cat.name.value,
+				}))
+				.sort((a, b) => a.name.localeCompare(b.name));
+
+			// Remove duplicates by ID using Map
+			const categoryMap = new Map<string, { id: string; name: string }>();
+			allCategories.forEach((cat) => {
+				categoryMap.set(cat.id, cat);
+			});
+			const uniqueCategories = Array.from(categoryMap.values());
+
+			return uniqueCategories;
+		} else {
+			// Use only the specified category IDs
+			const filteredCategories = overrideCategoriesIDs
+				.map((catID) => {
+					try {
+						const cat = getCategoryByID(catID);
+						return {
+							id: catID.value,
+							name:
+								cat?.name.value ??
+								`Category not found: ${catID.value}`,
+						};
+					} catch {
+						return {
+							id: catID.value,
+							name: `Error loading category: ${catID.value}`,
+						};
+					}
+				})
+				.filter(
+					(cat) =>
+						!cat.name.includes("not found") &&
+						!cat.name.includes("Error loading")
+				) // Remove not found categories
+				.sort((a, b) => a.name.localeCompare(b.name));
+
+			// Remove duplicates by ID using Map
+			const categoryMap = new Map<string, { id: string; name: string }>();
+			filteredCategories.forEach((cat) => {
+				categoryMap.set(cat.id, cat);
+			});
+			const uniqueCategories = Array.from(categoryMap.values());
+
+			return uniqueCategories;
+		}
+	}, [categories, overrideCategoriesIDs, getCategoryByID]);
 
 	useEffect(() => {
 		setCategoryId(initialValueID ?? "");
 	}, [initialValueID]);
 
 	useEffect(() => {
-		setCategory(
-			categoryId ? getCategoryByID(new CategoryID(categoryId)) : undefined
-		);
-	}, [categoryId]);
+		if (categoryId && getCategoryByID) {
+			try {
+				setCategory(getCategoryByID(new CategoryID(categoryId)));
+			} catch {
+				setCategory(undefined);
+			}
+		} else {
+			setCategory(undefined);
+		}
+	}, [categoryId, getCategoryByID]);
 
 	return {
 		CategorySelect: (

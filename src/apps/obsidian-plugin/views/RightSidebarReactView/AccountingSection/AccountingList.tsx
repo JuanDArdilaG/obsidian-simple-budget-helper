@@ -19,7 +19,9 @@ import {
 	CategoriesContext,
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import { CategoryID } from "contexts/Categories/domain";
 import { TransactionWithAccumulatedBalance } from "contexts/Reports/domain";
+import { SubCategoryID } from "contexts/Subcategories/domain";
 import { Transaction } from "contexts/Transactions/domain";
 import {
 	useCallback,
@@ -90,15 +92,29 @@ export function AccountingList({
 
 	const { AccountSelect, account } = useAccountSelect({});
 	const { CategorySelect, category } = useCategorySelect({
-		overrideCategoriesIDs: filteredTransactionsReport.transactions.map(
-			(t) => t.category
-		),
+		overrideCategoriesIDs:
+			filteredTransactionsReport.transactions.length > 0
+				? [
+						...new Set(
+							filteredTransactionsReport.transactions.map(
+								(t) => t.category.value
+							)
+						),
+				  ].map((id) => new CategoryID(id))
+				: undefined,
 	});
 	const { SubCategorySelect, subCategory } = useSubCategorySelect({
 		category,
-		overrideSubCategoriesIDs: filteredTransactionsReport.transactions.map(
-			(t) => t.subCategory
-		),
+		overrideSubCategoriesIDs:
+			filteredTransactionsReport.transactions.length > 0
+				? [
+						...new Set(
+							filteredTransactionsReport.transactions.map(
+								(t) => t.subCategory.value
+							)
+						),
+				  ].map((id) => new SubCategoryID(id))
+				: undefined,
 	});
 
 	const handleAuxClick = (transaction: Transaction) => {
@@ -252,7 +268,10 @@ export function AccountingList({
 
 				const date = transaction.date.toLocaleDateString();
 				if (!res.find((r) => r[0] === date)) res.push([date, []]);
-				res.last()?.[1].push(displayableTransaction);
+				const lastGroup = res[res.length - 1];
+				if (lastGroup) {
+					lastGroup[1].push(displayableTransaction);
+				}
 			});
 		const endTime = performance.now();
 		setRenderTime(endTime - startTime);

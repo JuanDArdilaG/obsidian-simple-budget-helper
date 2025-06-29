@@ -1,5 +1,3 @@
-import { useState, useEffect, useCallback } from "react";
-import { useLogger } from "./useLogger";
 import {
 	GetAllCategoriesWithSubCategoriesUseCase,
 	GetAllCategoriesWithSubCategoriesUseCaseOutput,
@@ -10,6 +8,8 @@ import {
 	SubCategoryID,
 	SubCategoryName,
 } from "contexts/Subcategories/domain";
+import { useCallback, useEffect, useState } from "react";
+import { useLogger } from "./useLogger";
 
 export const useCategories = ({
 	getAllCategoriesWithSubCategories,
@@ -43,13 +43,18 @@ export const useCategories = ({
 			logger.debug("updating categories", {
 				categories,
 			});
-			getAllCategoriesWithSubCategories
-				.execute()
-				.then((catWithSubs) =>
-					setCategories(
-						catWithSubs.map((catWithSubs) => catWithSubs.category)
-					)
+			getAllCategoriesWithSubCategories.execute().then((catWithSubs) => {
+				const allCategories = catWithSubs.map(
+					(catWithSubs) => catWithSubs.category
 				);
+				// Remove duplicates by ID using Map
+				const categoryMap = new Map<string, Category>();
+				allCategories.forEach((cat) => {
+					categoryMap.set(cat.id.value, cat);
+				});
+				const uniqueCategories = Array.from(categoryMap.values());
+				setCategories(uniqueCategories);
+			});
 		}
 	}, [updateCategories]);
 
@@ -58,15 +63,18 @@ export const useCategories = ({
 	useEffect(() => {
 		if (updateSubCategories) {
 			setUpdateSubCategories(false);
-			getAllCategoriesWithSubCategories
-				.execute()
-				.then((catsWithSubs) =>
-					setSubCategories(
-						catsWithSubs
-							.map((catWithSubs) => catWithSubs.subCategories)
-							.flat()
-					)
-				);
+			getAllCategoriesWithSubCategories.execute().then((catsWithSubs) => {
+				const allSubCategories = catsWithSubs
+					.map((catWithSubs) => catWithSubs.subCategories)
+					.flat();
+				// Remove duplicates by ID using Map
+				const subCategoryMap = new Map<string, SubCategory>();
+				allSubCategories.forEach((subCat) => {
+					subCategoryMap.set(subCat.id.value, subCat);
+				});
+				const uniqueSubCategories = Array.from(subCategoryMap.values());
+				setSubCategories(uniqueSubCategories);
+			});
 		}
 	}, [updateSubCategories]);
 
