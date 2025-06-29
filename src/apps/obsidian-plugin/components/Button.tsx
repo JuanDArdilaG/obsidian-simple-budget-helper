@@ -35,12 +35,17 @@ export const Button = ({
 			onClick={handleClick}
 			style={{
 				color: "var(--text-normal)",
-				padding: isMobile ? "12px 16px" : "20px",
-				minHeight: isMobile ? "44px" : "auto",
+				padding: isMobile ? "8px 16px" : "8px 18px",
+				minHeight: isMobile ? "36px" : "32px",
 				fontSize: isMobile ? "14px" : "inherit",
 				backgroundColor: "var(--interactive-normal)",
 				borderRadius: "8px",
 				textTransform: "none",
+				width: "auto",
+				minWidth: 0,
+				maxWidth: "100%",
+				boxSizing: "border-box",
+				whiteSpace: "nowrap",
 				...style,
 			}}
 		>

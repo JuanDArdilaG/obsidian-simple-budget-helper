@@ -564,66 +564,74 @@ export const ItemsList = ({
 
 							<div className="item-content">
 								<div className="item-header">
-									<div
-										className="item-type-badge"
-										style={{
-											color: getItemTypeColor(item.type),
-										}}
-									>
-										{getItemTypeIcon(item.type)}
-										<span>
-											{getItemTypeLabel(item.type)}
-										</span>
+									<div className="item-header-left">
+										<div
+											className="item-type-badge"
+											style={{
+												color: getItemTypeColor(
+													item.type
+												),
+											}}
+										>
+											{getItemTypeIcon(item.type)}
+											<span>
+												{getItemTypeLabel(item.type)}
+											</span>
+										</div>
+										<div className="item-date">
+											<Calendar size={12} />
+											<span>
+												{new Date(
+													item.updatedAt.value
+												).toLocaleDateString()}
+											</span>
+										</div>
 									</div>
-									<div className="item-date">
-										<Calendar size={12} />
-										<span>
-											{new Date(
-												item.updatedAt.value
-											).toLocaleDateString()}
-										</span>
+									<div className="item-header-actions">
+										<button
+											type="button"
+											className="edit-item-btn"
+											onClick={(e) =>
+												handleEditItem(item, e)
+											}
+											style={{
+												background: "none",
+												border: "none",
+												cursor: "pointer",
+												color: "var(--color-blue)",
+												display: "flex",
+												alignItems: "center",
+												gap: 4,
+												marginRight: 8,
+											}}
+											title="Edit item"
+										>
+											<Edit size={16} />
+										</button>
+										<button
+											type="button"
+											className="show-history-btn"
+											onClick={(e) => {
+												e.stopPropagation();
+												toggleExpand(item.id.value);
+											}}
+											style={{
+												background: "none",
+												border: "none",
+												cursor: "pointer",
+												color: "var(--color-cyan)",
+												display: "flex",
+												alignItems: "center",
+												gap: 4,
+											}}
+										>
+											<BarChart2 size={16} />
+											<span style={{ fontSize: 12 }}>
+												{isExpanded ? "Hide" : "Show"}{" "}
+												Price History
+											</span>
+										</button>
 									</div>
-									<button
-										type="button"
-										className="edit-item-btn"
-										onClick={(e) => handleEditItem(item, e)}
-										style={{
-											background: "none",
-											border: "none",
-											cursor: "pointer",
-											color: "var(--color-blue)",
-											display: "flex",
-											alignItems: "center",
-											gap: 4,
-											marginRight: 8,
-										}}
-										title="Edit item"
-									>
-										<Edit size={16} />
-									</button>
-									<button
-										type="button"
-										className="show-history-btn"
-										onClick={(e) => {
-											e.stopPropagation();
-											toggleExpand(item.id.value);
-										}}
-										style={{
-											background: "none",
-											border: "none",
-											cursor: "pointer",
-											color: "var(--color-cyan)",
-											display: "flex",
-											alignItems: "center",
-											gap: 4,
-										}}
-									>
-										<BarChart2 size={16} />
-										<span style={{ fontSize: 12 }}>
-											{isExpanded ? "Hide" : "Show"} Price
-											History
-										</span>
-									</button>
 								</div>
 
 								<div className="item-name">

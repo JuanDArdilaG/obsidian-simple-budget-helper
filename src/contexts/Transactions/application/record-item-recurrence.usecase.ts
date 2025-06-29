@@ -1,4 +1,5 @@
 import {
+	DateValueObject,
 	InvalidArgumentError,
 	NumberValueObject,
 } from "@juandardilag/value-objects";
@@ -7,6 +8,7 @@ import {
 	ERecurrenceState,
 	IScheduledItemsRepository,
 } from "contexts/Items/domain";
+import { ItemDate } from "contexts/Items/domain/item-date.valueobject";
 import { ItemID } from "contexts/Items/domain/item-id.valueobject";
 import { EntityNotFoundError } from "contexts/Shared/domain/errors/not-found.error";
 import { CommandUseCase } from "../../Shared/domain/command-use-case.interface";
@@ -25,6 +27,8 @@ export type RecordItemRecurrenceUseCaseInput = {
 	account?: AccountID;
 	toAccount?: AccountID;
 	permanentChanges?: boolean;
+	fromSplits?: PaymentSplit[];
+	toSplits?: PaymentSplit[];
 };
 
 export class RecordItemRecurrenceUseCase
@@ -43,6 +47,9 @@ export class RecordItemRecurrenceUseCase
 		amount,
 		account,
 		toAccount,
+		permanentChanges,
+		fromSplits,
+		toSplits,
 	}: RecordItemRecurrenceUseCaseInput): Promise<void> {
 		this.#logger.debug("attributes", {
 			itemID,
@@ -51,6 +58,9 @@ export class RecordItemRecurrenceUseCase
 			account,
 			toAccount,
 			n,
+			permanentChanges,
+			fromSplits,
+			toSplits,
 		});
 		const item = await this._scheduledItemsRepository.findById(itemID);
 		if (!item) throw new EntityNotFoundError("ScheduledItem", itemID);
@@ -70,20 +80,83 @@ export class RecordItemRecurrenceUseCase
 			item,
 		});
 
-		// Update splits if amount/account/toAccount are provided
-		if (amount || account || toAccount) {
-			let fromSplits = transaction.fromSplits;
-			let toSplits = transaction.toSplits;
+		// Update splits if provided
+		let shouldUpdateSplits = false;
+		let newFromSplits = transaction.fromSplits;
+		let newToSplits = transaction.toSplits;
+
+		// Handle multiple splits if provided
+		if (fromSplits && fromSplits.length > 0) {
+			newFromSplits = fromSplits;
+			shouldUpdateSplits = true;
+		} else if (amount || account) {
+			// Fallback to single split logic for backward compatibility
 			if (account && amount) {
-				fromSplits = [new PaymentSplit(account, amount)];
+				newFromSplits = [new PaymentSplit(account, amount)];
+				shouldUpdateSplits = true;
 			}
-			if (toAccount && amount) {
-				toSplits = [new PaymentSplit(toAccount, amount)];
-			}
-			transaction.setFromSplits(fromSplits);
-			transaction.setToSplits(toSplits);
 		}
 
+		if (toSplits && toSplits.length > 0) {
+			newToSplits = toSplits;
+			shouldUpdateSplits = true;
+		} else if (amount || toAccount) {
+			// Fallback to single split logic for backward compatibility
+			if (toAccount && amount) {
+				newToSplits = [new PaymentSplit(toAccount, amount)];
+				shouldUpdateSplits = true;
+			}
+		}
+
+		if (shouldUpdateSplits) {
+			transaction.setFromSplits(newFromSplits);
+			transaction.setToSplits(newToSplits);
+
+			// If permanent changes are requested, update the scheduled item as well
+			if (permanentChanges) {
+				this.#logger.debug(
+					"Applying permanent changes to scheduled item",
+					{
+						fromSplits: newFromSplits,
+						toSplits: newToSplits,
+						date,
+					}
+				);
+
+				// Update the scheduled item's splits
+				item.setFromSplits(newFromSplits);
+				item.setToSplits(newToSplits);
+
+				// Update the operation if accounts are provided (use first split for backward compatibility)
+				if (newFromSplits.length > 0) {
+					item.operation.updateAccount(newFromSplits[0].accountId);
+				}
+				if (newToSplits.length > 0) {
+					item.operation.updateToAccount(newToSplits[0].accountId);
+				}
+			}
+		}
+
+		// If permanent changes are requested, update the recurrence start date if a new date is provided
+		if (permanentChanges && date) {
+			this.#logger.debug("Updating recurrence start date", {
+				oldStartDate: item.recurrence.startDate,
+				newStartDate: date.value,
+			});
+			// Advance to the next occurrence after the recorded date
+			const freq = item.recurrence.frequency;
+			if (freq) {
+				const recordedDate = new ItemDate(date.value);
+				const nextDate = recordedDate.next(freq);
+				item.recurrence.updateStartDate(nextDate);
+			} else {
+				item.recurrence.updateStartDate(
+					new DateValueObject(date.value)
+				);
+			}
+		}
+
+		// Mark the current recurrence as completed
 		item.recurrence.recurrences[n.value].updateState(
 			ERecurrenceState.COMPLETED
 		);

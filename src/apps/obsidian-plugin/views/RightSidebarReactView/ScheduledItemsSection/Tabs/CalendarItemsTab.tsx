@@ -1,14 +1,14 @@
-import { useContext, useEffect, useState } from "react";
-import { RightSidebarReactTab } from "../../RightSidebarReactTab";
-import { BudgetItemsListContextMenu } from "../BudgetItemsListContextMenu";
-import { ItemDate, ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
+import { DateValueObject } from "@juandardilag/value-objects";
+import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
 import { useLogger } from "apps/obsidian-plugin/hooks";
 import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
-import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
+import { ItemDate, ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
+import { useContext, useEffect, useState } from "react";
 import { ItemsContext } from "../../Contexts/ItemsContext";
-import { CalendarItemsList } from "./CalendarItemsList";
-import { DateValueObject } from "@juandardilag/value-objects";
+import { RightSidebarReactTab } from "../../RightSidebarReactTab";
+import { BudgetItemsListContextMenu } from "../BudgetItemsListContextMenu";
 import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
+import { CalendarItemsList } from "./CalendarItemsList";
 
 export const CalendarItemsTab = () => {
 	const { logger } = useLogger("CalendarRightSidebarReactTab");
@@ -38,7 +38,8 @@ export const CalendarItemsTab = () => {
 	const [action, setAction] = useState<"edit" | "record">();
 
 	const [items, setItems] = useState<GetItemsUntilDateUseCaseOutput>([]);
-	const [timeframe, setTimeframe] = useState<CalendarTimeframe>();
+	const [timeframe, setTimeframe] = useState<CalendarTimeframe>("3days");
+	const [refreshCounter, setRefreshCounter] = useState(0);
 
 	useEffect(() => {
 		setUntilDate(untilDateFilter);
@@ -74,15 +75,27 @@ export const CalendarItemsTab = () => {
 		setUntilDateFilter(date);
 	}, [timeframe]);
 
-	useEffect(() => {
+	const refreshItems = () => {
+		logger.debug("refreshItems called", { untilDate });
 		getItemsUntilDate.execute(new ItemDate(untilDate)).then((items) => {
-			logger.debug("getItemsUntilDate", {
+			logger.debug("getItemsUntilDate returned", {
 				untilDate,
-				items,
+				itemsCount: items.length,
+				items: items.map((item) => ({
+					id: item.item.id.value,
+					name: item.item.name.toString(),
+					recurrenceDate: item.recurrence.date.value,
+					state: item.recurrence.state,
+				})),
 			});
 			setItems(items);
+			setRefreshCounter((prev) => prev + 1);
 		});
-	}, [untilDate]);
+	};
+
+	useEffect(() => {
+		refreshItems();
+	}, [untilDate, getItemsUntilDate]);
 
 	return (
 		<>
@@ -101,13 +114,14 @@ export const CalendarItemsTab = () => {
 					setSelected={setTimeframe}
 				/>
 				<CalendarItemsList
+					key={`refresh-${refreshCounter}`}
 					items={items}
 					untilDate={untilDate}
 					selectedItem={selectedItem}
 					setSelectedItem={setSelectedItem}
 					action={action}
 					setAction={setAction}
-					updateItems={() => {}}
+					updateItems={refreshItems}
 				/>
 			</RightSidebarReactTab>
 		</>

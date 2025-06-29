@@ -10,6 +10,8 @@ import {
 	TransactionAmount,
 	TransactionDate,
 } from "contexts/Transactions/domain";
+import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { X } from "lucide-react";
 import { useContext, useState } from "react";
 import { ReactMoneyInput } from "react-input-price";
 import { DateInput } from "../components/Input/DateInput";
@@ -20,6 +22,7 @@ export const RecordItemPanel = ({
 	item,
 	recurrence: { recurrence, n },
 	onClose,
+	updateItems,
 }: {
 	item: ScheduledItem;
 	recurrence: {
@@ -27,6 +30,7 @@ export const RecordItemPanel = ({
 		n: NumberValueObject;
 	};
 	onClose: () => void;
+	updateItems?: () => void;
 }) => {
 	const { logger, debug } = useLogger("RecordItemPanel");
 	debug("item", { item });
@@ -50,12 +54,108 @@ export const RecordItemPanel = ({
 	);
 	const [date, setDate] = useState<Date>(recurrence.date.value);
 	const [isPermanent, setIsPermanent] = useState(false);
+	const [isRecording, setIsRecording] = useState(false);
+
+	const handleRecord = async () => {
+		setIsRecording(true);
+		try {
+			// Convert the split arrays to PaymentSplit objects
+			const paymentFromSplits = fromSplits.map(
+				(split) =>
+					new PaymentSplit(
+						new AccountID(split.accountId),
+						split.amount
+					)
+			);
+			const paymentToSplits = toSplits.map(
+				(split) =>
+					new PaymentSplit(
+						new AccountID(split.accountId),
+						split.amount
+					)
+			);
+
+			await recordItemRecurrence.execute({
+				itemID: item.id,
+				n,
+				fromSplits: paymentFromSplits,
+				toSplits: paymentToSplits,
+				date: new TransactionDate(date),
+				permanentChanges: isPermanent,
+			});
+			if (!item.recurrence) {
+				logger.debug("eliminating", { item });
+				await deleteItem.execute(item.id);
+			}
+			updateAccounts();
+			updateTransactions();
+
+			// Call updateItems immediately to refresh the UI
+			logger.debug("Calling updateItems to refresh the list");
+			updateItems?.();
+
+			onClose();
+		} catch {
+			logger.debug("Failed to record item");
+		} finally {
+			setIsRecording(false);
+		}
+	};
 
 	return (
-		<div className="record-budget-item-modal">
-			<h3>Record:</h3>
-			<div>
-				<h4>From Splits</h4>
+		<div
+			className="record-budget-item-modal"
+			style={{
+				position: "fixed",
+				top: "50%",
+				left: "50%",
+				transform: "translate(-50%, -50%)",
+				backgroundColor: "var(--background-primary)",
+				border: "1px solid var(--background-modifier-border)",
+				borderRadius: "8px",
+				padding: "20px",
+				maxWidth: "500px",
+				width: "90%",
+				maxHeight: "80vh",
+				overflow: "auto",
+				zIndex: 1000,
+				boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+			}}
+		>
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					marginBottom: "20px",
+				}}
+			>
+				<h3 style={{ margin: 0, color: "var(--text-normal)" }}>
+					Record: {item.name.toString()}
+				</h3>
+				<button
+					onClick={onClose}
+					style={{
+						background: "none",
+						border: "none",
+						cursor: "pointer",
+						color: "var(--text-muted)",
+						padding: "4px",
+					}}
+				>
+					<X size={20} />
+				</button>
+			</div>
+
+			<div style={{ marginBottom: "20px" }}>
+				<h4
+					style={{
+						margin: "0 0 10px 0",
+						color: "var(--text-normal)",
+					}}
+				>
+					From Splits
+				</h4>
 				{fromSplits.map((split, idx) => (
 					<div
 						key={idx}
@@ -63,36 +163,66 @@ export const RecordItemPanel = ({
 							display: "flex",
 							gap: 8,
 							alignItems: "center",
+							marginBottom: "8px",
+							padding: "8px",
+							backgroundColor: "var(--background-secondary)",
+							borderRadius: "4px",
+							flexWrap: "wrap",
+							flexDirection:
+								window.innerWidth < 600 ? "column" : "row",
 						}}
 					>
-						<Select
-							id={`from-account-${idx}`}
-							label="Account"
-							value={split.accountId}
-							values={accounts.map((acc) => acc.id.value)}
-							onChange={(val) => {
-								const newSplits = [...fromSplits];
-								newSplits[idx].accountId = val;
-								setFromSplits(newSplits);
-							}}
-						/>
-						<ReactMoneyInput
-							id={`from-amount-${idx}`}
-							initialValue={split.amount.toNumber()}
-							onValueChange={(priceVO) => {
-								const newSplits = [...fromSplits];
-								newSplits[idx].amount = new TransactionAmount(
-									priceVO.toNumber()
-								);
-								setFromSplits(newSplits);
-							}}
-						/>
+						<div style={{ flex: 1, minWidth: 0, width: "100%" }}>
+							<Select
+								id={`from-account-${idx}`}
+								label="Account"
+								value={split.accountId}
+								values={accounts}
+								onChange={(val) => {
+									const newSplits = [...fromSplits];
+									newSplits[idx].accountId = val;
+									setFromSplits(newSplits);
+								}}
+								getOptionLabel={(account) =>
+									account.name.toString()
+								}
+								getOptionValue={(account) => account.id.value}
+							/>
+						</div>
+						<div style={{ flex: 2, minWidth: 0, width: "100%" }}>
+							<ReactMoneyInput
+								id={`from-amount-${idx}`}
+								initialValue={split.amount.toNumber()}
+								onValueChange={(priceVO) => {
+									const newSplits = [...fromSplits];
+									newSplits[idx].amount =
+										new TransactionAmount(
+											priceVO.toNumber()
+										);
+									setFromSplits(newSplits);
+								}}
+							/>
+						</div>
 						<button
 							onClick={() =>
 								setFromSplits(
 									fromSplits.filter((_, i) => i !== idx)
 								)
 							}
+							style={{
+								backgroundColor: "var(--color-red)",
+								color: "white",
+								border: "none",
+								borderRadius: "4px",
+								padding: "4px 8px",
+								cursor: "pointer",
+								fontSize: "0.8em",
+								marginTop: window.innerWidth < 600 ? 8 : 0,
+								width:
+									window.innerWidth < 600
+										? "100%"
+										: undefined,
+							}}
 						>
 							Remove
 						</button>
@@ -108,12 +238,29 @@ export const RecordItemPanel = ({
 							},
 						])
 					}
+					style={{
+						backgroundColor: "var(--color-green)",
+						color: "white",
+						border: "none",
+						borderRadius: "4px",
+						padding: "6px 12px",
+						cursor: "pointer",
+						fontSize: "0.9em",
+					}}
 				>
 					Add Split
 				</button>
 			</div>
-			<div>
-				<h4>To Splits</h4>
+
+			<div style={{ marginBottom: "20px" }}>
+				<h4
+					style={{
+						margin: "0 0 10px 0",
+						color: "var(--text-normal)",
+					}}
+				>
+					To Splits
+				</h4>
 				{toSplits.map((split, idx) => (
 					<div
 						key={idx}
@@ -121,36 +268,66 @@ export const RecordItemPanel = ({
 							display: "flex",
 							gap: 8,
 							alignItems: "center",
+							marginBottom: "8px",
+							padding: "8px",
+							backgroundColor: "var(--background-secondary)",
+							borderRadius: "4px",
+							flexWrap: "wrap",
+							flexDirection:
+								window.innerWidth < 600 ? "column" : "row",
 						}}
 					>
-						<Select
-							id={`to-account-${idx}`}
-							label="Account"
-							value={split.accountId}
-							values={accounts.map((acc) => acc.id.value)}
-							onChange={(val) => {
-								const newSplits = [...toSplits];
-								newSplits[idx].accountId = val;
-								setToSplits(newSplits);
-							}}
-						/>
-						<ReactMoneyInput
-							id={`to-amount-${idx}`}
-							initialValue={split.amount.toNumber()}
-							onValueChange={(priceVO) => {
-								const newSplits = [...toSplits];
-								newSplits[idx].amount = new TransactionAmount(
-									priceVO.toNumber()
-								);
-								setToSplits(newSplits);
-							}}
-						/>
+						<div style={{ flex: 1, minWidth: 0, width: "100%" }}>
+							<Select
+								id={`to-account-${idx}`}
+								label="Account"
+								value={split.accountId}
+								values={accounts}
+								onChange={(val) => {
+									const newSplits = [...toSplits];
+									newSplits[idx].accountId = val;
+									setToSplits(newSplits);
+								}}
+								getOptionLabel={(account) =>
+									account.name.toString()
+								}
+								getOptionValue={(account) => account.id.value}
+							/>
+						</div>
+						<div style={{ flex: 2, minWidth: 0, width: "100%" }}>
+							<ReactMoneyInput
+								id={`to-amount-${idx}`}
+								initialValue={split.amount.toNumber()}
+								onValueChange={(priceVO) => {
+									const newSplits = [...toSplits];
+									newSplits[idx].amount =
+										new TransactionAmount(
+											priceVO.toNumber()
+										);
+									setToSplits(newSplits);
+								}}
+							/>
+						</div>
 						<button
 							onClick={() =>
 								setToSplits(
 									toSplits.filter((_, i) => i !== idx)
 								)
 							}
+							style={{
+								backgroundColor: "var(--color-red)",
+								color: "white",
+								border: "none",
+								borderRadius: "4px",
+								padding: "4px 8px",
+								cursor: "pointer",
+								fontSize: "0.8em",
+								marginTop: window.innerWidth < 600 ? 8 : 0,
+								width:
+									window.innerWidth < 600
+										? "100%"
+										: undefined,
+							}}
 						>
 							Remove
 						</button>
@@ -166,51 +343,88 @@ export const RecordItemPanel = ({
 							},
 						])
 					}
+					style={{
+						backgroundColor: "var(--color-green)",
+						color: "white",
+						border: "none",
+						borderRadius: "4px",
+						padding: "6px 12px",
+						cursor: "pointer",
+						fontSize: "0.9em",
+					}}
 				>
 					Add Split
 				</button>
 			</div>
-			<DateInput label="Date" value={date} onChange={setDate} />
-			<div style={{ display: "flex", alignItems: "center" }}>
+
+			<div style={{ marginBottom: "20px" }}>
+				<DateInput label="Date" value={date} onChange={setDate} />
+			</div>
+
+			<div
+				style={{
+					display: "flex",
+					alignItems: "center",
+					marginBottom: "20px",
+					padding: "8px",
+					backgroundColor: "var(--background-secondary)",
+					borderRadius: "4px",
+				}}
+			>
 				<input
 					id="permanent-input"
 					type="checkbox"
-					placeholder="isPermanent"
 					onChange={(e) => {
 						setIsPermanent(e.target.checked);
 					}}
+					style={{ marginRight: "8px" }}
 				/>
-				<label htmlFor="permanent-input">Modify recurrence</label>
+				<label
+					htmlFor="permanent-input"
+					style={{ color: "var(--text-normal)" }}
+				>
+					Modify recurrence permanently
+				</label>
 			</div>
-			<button
-				onClick={async () => {
-					// Only the first split of each is used due to current use case limitations
-					await recordItemRecurrence.execute({
-						itemID: item.id,
-						n,
-						account: fromSplits[0]
-							? new AccountID(fromSplits[0].accountId)
-							: undefined,
-						toAccount: toSplits[0]
-							? new AccountID(toSplits[0].accountId)
-							: undefined,
-						amount: fromSplits[0]
-							? fromSplits[0].amount
-							: undefined,
-						date: new TransactionDate(date),
-						permanentChanges: isPermanent,
-					});
-					if (!item.recurrence) {
-						logger.debug("eliminating", { item });
-						await deleteItem.execute(item.id);
-					}
-					onClose();
-					updateAccounts();
-					updateTransactions();
+
+			<div
+				style={{
+					display: "flex",
+					gap: "10px",
+					justifyContent: "flex-end",
 				}}
 			>
-				Record
-			</button>
+				<button
+					onClick={onClose}
+					style={{
+						backgroundColor: "var(--background-modifier-border)",
+						color: "var(--text-normal)",
+						border: "none",
+						borderRadius: "4px",
+						padding: "8px 16px",
+						cursor: "pointer",
+					}}
+				>
+					Cancel
+				</button>
+				<button
+					onClick={handleRecord}
+					disabled={isRecording}
+					style={{
+						backgroundColor: isRecording
+							? "var(--text-muted)"
+							: "var(--color-blue)",
+						color: "white",
+						border: "none",
+						borderRadius: "4px",
+						padding: "8px 16px",
+						cursor: isRecording ? "not-allowed" : "pointer",
+						opacity: isRecording ? 0.6 : 1,
+					}}
+				>
+					{isRecording ? "Recording..." : "Record"}
+				</button>
+			</div>
 		</div>
 	);
 };

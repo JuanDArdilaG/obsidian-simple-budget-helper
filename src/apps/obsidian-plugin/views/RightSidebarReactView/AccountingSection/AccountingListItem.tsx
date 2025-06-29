@@ -152,7 +152,6 @@ export const AccountingListItem = ({
 								<Typography
 									variant="body2"
 									style={{
-										fontWeight: "bold",
 										wordBreak: "break-word",
 									}}
 								>
@@ -278,7 +277,6 @@ export const AccountingListItem = ({
 								<Typography
 									variant="body2"
 									style={{
-										fontWeight: "bold",
 										wordBreak: "break-word",
 										marginBottom: "4px",
 									}}

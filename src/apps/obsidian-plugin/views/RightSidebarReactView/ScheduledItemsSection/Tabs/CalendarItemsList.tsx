@@ -17,6 +17,7 @@ import {
 } from "contexts/Items/domain";
 import { AccountsReport } from "contexts/Reports/domain";
 import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
+import { Forward } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { AccountsContext, ItemsContext } from "../../Contexts";
 import { ItemReportContext } from "../../Contexts/ItemReportContext";
@@ -261,6 +262,7 @@ export const CalendarItemsList = ({
 										n: new NumberValueObject(1),
 									}}
 									onClose={() => setShowPanel(undefined)}
+									updateItems={updateItems}
 								/>
 							) : null;
 						})()}
@@ -336,15 +338,36 @@ const CalendarItemsListItem = ({
 
 	const price = getItemSplitPrice(item);
 
+	// --- AllItemsList style ---
+	const totalRecurrences = item.recurrence?.totalRecurrences ?? 1;
+	const frequency = item.recurrence?.frequency;
+	const prettyDate = recurrence.date.toPrettyFormatDate();
+	const remainingDays = recurrence.date.getRemainingDays() ?? 0;
+	let remainingDaysColor = "var(--color-green)";
+	if (Math.abs(remainingDays) <= 3)
+		remainingDaysColor = "var(--color-yellow)";
+	else if (remainingDays < -3) remainingDaysColor = "var(--color-red)";
+
+	// Check if this item is currently selected for recording
+	const isSelectedForRecord =
+		showPanel?.action === "record" &&
+		showPanel.item.itemID.value === item.id.value &&
+		showPanel.item.recurrence.date.value.getTime() ===
+			recurrence.date.value.getTime();
+
 	return (
 		<li
 			style={{
-				display: "flex",
-				justifyContent: "space-between",
-				alignItems: "center",
-				padding: "8px",
-				borderBottom: "1px solid #eee",
+				border: "none",
+				width: "100%",
+				textAlign: "left",
+				padding: 0,
 				cursor: "pointer",
+				backgroundColor: isSelectedForRecord
+					? "var(--background-modifier-hover)"
+					: "transparent",
+				borderRadius: "4px",
+				marginBottom: "2px",
 			}}
 			onClick={() => {
 				setSelectedItem({ recurrence, itemID: item.id });
@@ -356,21 +379,48 @@ const CalendarItemsListItem = ({
 				setAction("edit");
 			}}
 		>
-			<div style={{ flex: 1 }}>
-				<div style={{ fontWeight: "bold" }}>
-					{item.name.toString()} ({n.toString()})
-				</div>
-				<div style={{ fontSize: "0.9em", color: "#666" }}>
-					{accountName.toString()} - {recurrence.date.toString()}
-				</div>
-			</div>
-			<div style={{ textAlign: "right" }}>
-				<div>
+			<div className="two-columns-list">
+				<span>
+					{item.name.toString()}
+					{frequency && (
+						<span
+							className="light-text"
+							style={{ paddingLeft: "6px" }}
+						>
+							{frequency.toString()}
+						</span>
+					)}
+					<span className="light-text" style={{ paddingLeft: "6px" }}>
+						{totalRecurrences > 0 ? `x${totalRecurrences}` : "∞"}
+					</span>
+					<br />
+					<span style={{ fontSize: "0.9em", marginLeft: "15px" }}>
+						{prettyDate}
+						<br />
+						<span
+							style={{
+								marginLeft: "15px",
+								color: remainingDaysColor,
+							}}
+						>
+							{recurrence.date.remainingDaysStr}
+						</span>
+					</span>
+				</span>
+				<span style={{ textAlign: "right" }}>
 					<PriceLabel price={price} operation={item.operation.type} />
-				</div>
-				<div style={{ fontSize: "0.8em", color: "#666" }}>
-					{accountBalance.toString()}
-				</div>
+					<Forward
+						style={{
+							cursor: "pointer",
+							color: "var(--color-green)",
+						}}
+						size={19}
+					/>
+					<br />
+					<div style={{ textAlign: "right" }} className="light-text">
+						<div>{accountName.toString()}</div>
+					</div>
+				</span>
 			</div>
 		</li>
 	);
