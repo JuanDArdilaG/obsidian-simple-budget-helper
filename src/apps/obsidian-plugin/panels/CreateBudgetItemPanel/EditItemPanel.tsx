@@ -29,9 +29,11 @@ import { useCreateRecurrenceForm } from "./useCreateRecurrenceForm";
 export const EditItemPanel = ({
 	item,
 	onClose,
+	context = "all-items",
 }: {
 	item: ScheduledItem;
 	onClose: () => void;
+	context?: "calendar" | "all-items";
 }) => {
 	const {
 		useCases: { updateItem },
@@ -76,6 +78,26 @@ export const EditItemPanel = ({
 	return (
 		<div className="create-budget-item-modal">
 			<h3>Edit Item</h3>
+
+			{/* Context Warning */}
+			<div
+				style={{
+					padding: "12px",
+					marginBottom: "16px",
+					backgroundColor: "var(--background-warning)",
+					border: "1px solid var(--color-orange)",
+					borderRadius: "6px",
+					color: "var(--text-normal)",
+					fontSize: "14px",
+				}}
+			>
+				<strong>⚠️ Full Item Edit</strong>
+				<br />
+				You are editing the entire scheduled item, which will affect all
+				future recurrences. To modify only a specific recurrence
+				instance, use the calendar view instead.
+			</div>
+
 			<Input
 				id="name"
 				label="Name"

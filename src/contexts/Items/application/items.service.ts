@@ -15,6 +15,7 @@ import {
 	ISubCategoriesService,
 	SubCategoryID,
 } from "contexts/Subcategories/domain";
+import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { IItemsService } from "../domain/items-service.interface";
 
 export class ItemsService
@@ -83,7 +84,9 @@ export class ItemsService
 	async modifyRecurrence(
 		id: ItemID,
 		n: NumberValueObject,
-		newRecurrence: ItemRecurrenceInfo
+		newRecurrence: ItemRecurrenceInfo,
+		fromSplits?: PaymentSplit[],
+		toSplits?: PaymentSplit[]
 	): Promise<void> {
 		const item = await this.getByID(id);
 		if (!item.recurrence)
@@ -93,6 +96,15 @@ export class ItemsService
 				"item doesn't have recurrence"
 			);
 		item.recurrence.recurrences[n.value] = newRecurrence;
+
+		// Update splits if provided
+		if (fromSplits) {
+			item.setFromSplits(fromSplits);
+		}
+		if (toSplits) {
+			item.setToSplits(toSplits);
+		}
+
 		await this._scheduledItemsRepository.persist(item);
 	}
 

@@ -558,6 +558,7 @@ export const AllItemsList = ({
 													setShowPanel(undefined);
 													updateItems();
 												}}
+												context="all-items"
 											/>
 										);
 									} else if (showPanel.action === "record") {

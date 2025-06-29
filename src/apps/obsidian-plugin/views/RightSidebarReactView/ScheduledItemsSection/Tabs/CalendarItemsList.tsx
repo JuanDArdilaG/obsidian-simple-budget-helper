@@ -567,6 +567,7 @@ const CalendarItemsListItem = ({
 									n: new NumberValueObject(1),
 								}}
 								onClose={() => setShowPanel(undefined)}
+								context="calendar"
 							/>
 						)}
 						{showPanel.action === "record" && (
