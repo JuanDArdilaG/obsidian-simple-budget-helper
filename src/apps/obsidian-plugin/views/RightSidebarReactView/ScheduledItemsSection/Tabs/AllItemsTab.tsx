@@ -2,7 +2,6 @@ import { ItemsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/C
 import { ScheduledItem } from "contexts/Items/domain";
 import { useContext, useEffect, useState } from "react";
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
-import { BudgetItemsListContextMenu } from "../BudgetItemsListContextMenu";
 import { AllItemsList } from "./AllItemsList";
 
 export const AllItemsTab = () => {
@@ -15,23 +14,15 @@ export const AllItemsTab = () => {
 	}, []);
 
 	return (
-		<>
-			{selectedItem && (
-				<BudgetItemsListContextMenu
-					setAction={setAction}
-					recurrent={selectedItem}
-				/>
-			)}
-			<RightSidebarReactTab title="All Items" subtitle>
-				<AllItemsList
-					items={scheduledItems}
-					action={action}
-					setAction={setAction}
-					updateItems={updateItems}
-					selectedItem={selectedItem}
-					setSelectedItem={setSelectedItem}
-				/>
-			</RightSidebarReactTab>
-		</>
+		<RightSidebarReactTab title="All Items" subtitle>
+			<AllItemsList
+				items={scheduledItems}
+				action={action}
+				setAction={setAction}
+				updateItems={updateItems}
+				selectedItem={selectedItem}
+				setSelectedItem={setSelectedItem}
+			/>
+		</RightSidebarReactTab>
 	);
 };

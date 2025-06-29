@@ -1,8 +1,12 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
+import {
+	NumberValueObject,
+	PriceValueObject,
+} from "@juandardilag/value-objects";
 import { List, ListSubheader } from "@mui/material";
 import { ResponsiveScheduledItem } from "apps/obsidian-plugin/components/ResponsiveScheduledItem";
 import { useLogger } from "apps/obsidian-plugin/hooks";
 import { EditItemPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemPanel";
+import { RecordItemPanel } from "apps/obsidian-plugin/panels/RecordItemPanel";
 import { AccountID, AccountName, AccountType } from "contexts/Accounts/domain";
 import {
 	ERecurrenceState,
@@ -109,6 +113,9 @@ export const AllItemsList = ({
 		});
 		if (selectedItem) {
 			setShowPanel({ item: selectedItem, action });
+		} else {
+			// Clear the panel when selectedItem is undefined
+			setShowPanel(undefined);
 		}
 	}, [action, selectedItem]);
 
@@ -553,6 +560,38 @@ export const AllItemsList = ({
 												}}
 											/>
 										);
+									} else if (showPanel.action === "record") {
+										// Find the first pending recurrence for this item
+										const pendingRecurrenceIndex =
+											item.recurrence.recurrences.findIndex(
+												(r) =>
+													r.state ===
+													ERecurrenceState.PENDING
+											);
+
+										if (pendingRecurrenceIndex !== -1) {
+											const pendingRecurrence =
+												item.recurrence.recurrences[
+													pendingRecurrenceIndex
+												];
+											panelContent = (
+												<RecordItemPanel
+													item={item}
+													recurrence={{
+														recurrence:
+															pendingRecurrence,
+														n: new NumberValueObject(
+															pendingRecurrenceIndex
+														),
+													}}
+													onClose={() => {
+														setShowPanel(undefined);
+														updateItems();
+													}}
+													updateItems={updateItems}
+												/>
+											);
+										}
 									}
 								}
 
@@ -564,16 +603,6 @@ export const AllItemsList = ({
 											accountName={fullAccountName}
 											price={item.fromAmount}
 											isSelected={false}
-											onClick={() => {
-												setAction("record");
-												setSelectedItem(item);
-											}}
-											onContextMenu={(
-												e: React.MouseEvent
-											) => {
-												e.preventDefault();
-												setSelectedItem(item);
-											}}
 											showBalanceInfo={false}
 											accountTypeLookup={
 												accountTypeLookup
@@ -582,6 +611,10 @@ export const AllItemsList = ({
 												recurrence.date.getRemainingDays() ??
 												0
 											}
+											setAction={setAction}
+											setSelectedItem={setSelectedItem}
+											context="all-items"
+											currentAction={showPanel?.action}
 										/>
 										{panelContent}
 									</div>

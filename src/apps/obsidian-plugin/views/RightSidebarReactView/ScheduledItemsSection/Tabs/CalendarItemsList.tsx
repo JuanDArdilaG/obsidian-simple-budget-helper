@@ -126,6 +126,9 @@ export const CalendarItemsList = ({
 				showPanel,
 			});
 			setShowPanel({ item: selectedItem, action });
+		} else {
+			// Clear the panel when selectedItem is undefined
+			setShowPanel(undefined);
 		}
 	}, [action, selectedItem]);
 
@@ -454,47 +457,6 @@ export const CalendarItemsList = ({
 					)
 				);
 			})()}
-			{showPanel && (
-				<>
-					{showPanel.action === "edit" &&
-						(() => {
-							const foundItem = items.find(
-								(i) =>
-									i.item.id.value ===
-									showPanel.item.itemID.value
-							);
-							return foundItem ? (
-								<EditItemRecurrencePanel
-									item={foundItem.item}
-									recurrence={{
-										recurrence: showPanel.item.recurrence,
-										n: new NumberValueObject(1),
-									}}
-									onClose={() => setShowPanel(undefined)}
-								/>
-							) : null;
-						})()}
-					{showPanel.action === "record" &&
-						(() => {
-							const foundItem = items.find(
-								(i) =>
-									i.item.id.value ===
-									showPanel.item.itemID.value
-							);
-							return foundItem ? (
-								<RecordItemPanel
-									item={foundItem.item}
-									recurrence={{
-										recurrence: showPanel.item.recurrence,
-										n: new NumberValueObject(1),
-									}}
-									onClose={() => setShowPanel(undefined)}
-									updateItems={updateItems}
-								/>
-							) : null;
-						})()}
-				</>
-			)}
 		</div>
 	);
 };
@@ -576,25 +538,50 @@ const CalendarItemsListItem = ({
 
 	// Reusable responsive scheduled item component
 	return (
-		<ResponsiveScheduledItem
-			item={item}
-			recurrence={recurrence}
-			accountName={accountName}
-			accountBalance={accountBalance}
-			accountPrevBalance={accountPrevBalance}
-			price={price}
-			isSelected={isSelectedForRecord}
-			onClick={() => {
-				setSelectedItem({ recurrence, itemID: item.id });
-				setAction("record");
-			}}
-			onContextMenu={(e) => {
-				e.preventDefault();
-				setSelectedItem({ recurrence, itemID: item.id });
-				setAction("edit");
-			}}
-			accountTypeLookup={accountTypeLookup}
-			remainingDays={recurrence.date.getRemainingDays() ?? 0}
-		/>
+		<>
+			<ResponsiveScheduledItem
+				item={item}
+				recurrence={recurrence}
+				accountName={accountName}
+				accountBalance={accountBalance}
+				accountPrevBalance={accountPrevBalance}
+				price={price}
+				isSelected={isSelectedForRecord}
+				accountTypeLookup={accountTypeLookup}
+				remainingDays={recurrence.date.getRemainingDays() ?? 0}
+				setAction={setAction}
+				setSelectedItem={setSelectedItem}
+				context="calendar"
+				currentAction={showPanel?.action}
+			/>
+			{showPanel &&
+				showPanel.item.itemID.value === item.id.value &&
+				showPanel.item.recurrence.date.value.getTime() ===
+					recurrence.date.value.getTime() && (
+					<>
+						{showPanel.action === "edit" && (
+							<EditItemRecurrencePanel
+								item={item}
+								recurrence={{
+									recurrence: showPanel.item.recurrence,
+									n: new NumberValueObject(1),
+								}}
+								onClose={() => setShowPanel(undefined)}
+							/>
+						)}
+						{showPanel.action === "record" && (
+							<RecordItemPanel
+								item={item}
+								recurrence={{
+									recurrence: showPanel.item.recurrence,
+									n: new NumberValueObject(1),
+								}}
+								onClose={() => setShowPanel(undefined)}
+								updateItems={updateItems}
+							/>
+						)}
+					</>
+				)}
+		</>
 	);
 };

@@ -435,12 +435,14 @@ export function AccountingList({
 	useEffect(() => {
 		logger.debug("selection changed", { selection });
 		statusBarAddText(
-			`${
-				selection.length
-			} transactions selected. Total: ${selection.reduce(
-				(acc, curr) => curr.fromAmount.plus(acc),
-				PriceValueObject.zero()
-			)}`
+			selection.length > 0
+				? `${
+						selection.length
+				  } transactions selected. Total: ${selection.reduce(
+						(acc, curr) => curr.fromAmount.plus(acc),
+						PriceValueObject.zero()
+				  )}`
+				: ""
 		);
 	}, [selection]);
 

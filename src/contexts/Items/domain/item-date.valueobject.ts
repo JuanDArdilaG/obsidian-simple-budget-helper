@@ -36,11 +36,29 @@ export class ItemDate extends DateValueObject {
 		if (!frequencyObject) return new ItemDate(this.value);
 
 		const nextDate = new Date(this.getTime());
+		// Add years
 		nextDate.setFullYear(
 			nextDate.getFullYear() + frequencyObject.years.value
 		);
-		nextDate.setMonth(nextDate.getMonth() + frequencyObject.months.value);
-		nextDate.setDate(nextDate.getDate() + frequencyObject.days.value);
+
+		// Add months
+		if (frequencyObject.months.value > 0) {
+			const originalMonth = nextDate.getMonth();
+			nextDate.setMonth(originalMonth + frequencyObject.months.value);
+
+			// If month overflowed, set to last day of previous month (target month)
+			if (
+				nextDate.getMonth() !==
+				(originalMonth + frequencyObject.months.value) % 12
+			) {
+				nextDate.setDate(0);
+			}
+		}
+
+		// Add days
+		if (frequencyObject.days.value > 0) {
+			nextDate.setDate(nextDate.getDate() + frequencyObject.days.value);
+		}
 
 		return new ItemDate(nextDate);
 	}

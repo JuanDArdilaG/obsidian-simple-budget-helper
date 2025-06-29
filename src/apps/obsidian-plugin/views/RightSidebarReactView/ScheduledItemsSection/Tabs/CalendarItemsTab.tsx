@@ -6,7 +6,6 @@ import { ItemDate, ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
 import { useContext, useEffect, useState } from "react";
 import { ItemsContext } from "../../Contexts/ItemsContext";
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
-import { BudgetItemsListContextMenu } from "../BudgetItemsListContextMenu";
 import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
 import { CalendarItemsList } from "./CalendarItemsList";
 
@@ -98,32 +97,21 @@ export const CalendarItemsTab = () => {
 	}, [untilDate, getItemsUntilDate]);
 
 	return (
-		<>
-			{selectedItem && (
-				<BudgetItemsListContextMenu
-					setAction={setAction}
-					recurrent={selectedItem}
-				/>
-			)}
-			<RightSidebarReactTab title={"Upcoming Schedules"} subtitle>
-				<div style={{ display: "flex", justifyContent: "center" }}>
-					{UntilDateFilterInput}
-				</div>
-				<TimeframeButtons
-					selected={timeframe}
-					setSelected={setTimeframe}
-				/>
-				<CalendarItemsList
-					key={`refresh-${refreshCounter}`}
-					items={items}
-					untilDate={untilDate}
-					selectedItem={selectedItem}
-					setSelectedItem={setSelectedItem}
-					action={action}
-					setAction={setAction}
-					updateItems={refreshItems}
-				/>
-			</RightSidebarReactTab>
-		</>
+		<RightSidebarReactTab title={"Upcoming Schedules"} subtitle>
+			<div style={{ display: "flex", justifyContent: "center" }}>
+				{UntilDateFilterInput}
+			</div>
+			<TimeframeButtons selected={timeframe} setSelected={setTimeframe} />
+			<CalendarItemsList
+				key={`refresh-${refreshCounter}`}
+				items={items}
+				untilDate={untilDate}
+				selectedItem={selectedItem}
+				setSelectedItem={setSelectedItem}
+				action={action}
+				setAction={setAction}
+				updateItems={refreshItems}
+			/>
+		</RightSidebarReactTab>
 	);
 };

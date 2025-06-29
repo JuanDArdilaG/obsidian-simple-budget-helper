@@ -24,6 +24,7 @@ export const RightSidebarReactTab = ({
 				padding: "10px",
 				height: "100%",
 				backgroundColor: "var(--background-primary)",
+				mb: 10,
 			}}
 		>
 			<Box
@@ -31,7 +32,6 @@ export const RightSidebarReactTab = ({
 					display: "flex",
 					justifyContent: "space-between",
 					alignItems: "center",
-					mb: 2,
 				}}
 			>
 				<Typography

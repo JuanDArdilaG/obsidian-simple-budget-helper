@@ -2,13 +2,18 @@ import { PriceValueObject } from "@juandardilag/value-objects";
 import { useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
+import { BudgetItemsListContextMenu } from "apps/obsidian-plugin/views/RightSidebarReactView/ScheduledItemsSection/BudgetItemsListContextMenu";
 import {
 	AccountBalance,
 	AccountID,
 	AccountName,
 	AccountType,
 } from "contexts/Accounts/domain";
-import { ItemRecurrenceInfo, ScheduledItem } from "contexts/Items/domain";
+import {
+	ItemID,
+	ItemRecurrenceInfo,
+	ScheduledItem,
+} from "contexts/Items/domain";
 import { Forward } from "lucide-react";
 
 // Reusable responsive scheduled item component
@@ -20,11 +25,13 @@ export const ResponsiveScheduledItem = ({
 	accountPrevBalance,
 	price,
 	isSelected,
-	onClick,
-	onContextMenu,
 	showBalanceInfo = true,
 	accountTypeLookup,
 	remainingDays,
+	setAction,
+	setSelectedItem,
+	context = "calendar", // "calendar" or "all-items"
+	currentAction,
 }: {
 	item: ScheduledItem;
 	recurrence: ItemRecurrenceInfo;
@@ -33,11 +40,21 @@ export const ResponsiveScheduledItem = ({
 	accountPrevBalance?: AccountBalance;
 	price: PriceValueObject;
 	isSelected: boolean;
-	onClick: () => void;
-	onContextMenu: (e: React.MouseEvent) => void;
 	showBalanceInfo?: boolean;
 	accountTypeLookup: (id: AccountID) => AccountType;
 	remainingDays?: number;
+	setAction: React.Dispatch<
+		React.SetStateAction<"edit" | "record" | undefined>
+	>;
+	setSelectedItem: React.Dispatch<
+		React.SetStateAction<
+			| { recurrence: ItemRecurrenceInfo; itemID: ItemID }
+			| ScheduledItem
+			| undefined
+		>
+	>;
+	context?: "calendar" | "all-items";
+	currentAction?: "edit" | "record";
 }) => {
 	const theme = useTheme();
 	const isWideScreen = useMediaQuery(theme.breakpoints.up("lg")); // ≥1200px
@@ -72,13 +89,11 @@ export const ResponsiveScheduledItem = ({
 					marginBottom: "4px",
 					border: "1px solid var(--background-modifier-border)",
 				}}
-				onClick={onClick}
-				onContextMenu={onContextMenu}
 			>
 				<div
 					style={{
 						display: "grid",
-						gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
+						gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr auto",
 						gap: "16px",
 						alignItems: "center",
 						width: "100%",
@@ -197,6 +212,20 @@ export const ResponsiveScheduledItem = ({
 							</div>
 						)}
 					</div>
+
+					{/* Actions */}
+					<div>
+						<BudgetItemsListContextMenu
+							recurrent={
+								context === "calendar"
+									? { recurrence, itemID: item.id }
+									: item
+							}
+							setAction={setAction}
+							setSelectedItem={setSelectedItem}
+							currentAction={currentAction}
+						/>
+					</div>
 				</div>
 			</li>
 		);
@@ -218,13 +247,11 @@ export const ResponsiveScheduledItem = ({
 					marginBottom: "3px",
 					border: "1px solid var(--background-modifier-border)",
 				}}
-				onClick={onClick}
-				onContextMenu={onContextMenu}
 			>
 				<div
 					style={{
 						display: "grid",
-						gridTemplateColumns: "2fr 1fr 1fr",
+						gridTemplateColumns: "2fr 1fr 1fr auto",
 						gap: "12px",
 						alignItems: "center",
 						width: "100%",
@@ -331,6 +358,20 @@ export const ResponsiveScheduledItem = ({
 							</div>
 						)}
 					</div>
+
+					{/* Actions */}
+					<div>
+						<BudgetItemsListContextMenu
+							recurrent={
+								context === "calendar"
+									? { recurrence, itemID: item.id }
+									: item
+							}
+							setAction={setAction}
+							setSelectedItem={setSelectedItem}
+							currentAction={currentAction}
+						/>
+					</div>
 				</div>
 			</li>
 		);
@@ -350,8 +391,6 @@ export const ResponsiveScheduledItem = ({
 				borderRadius: "4px",
 				marginBottom: "2px",
 			}}
-			onClick={onClick}
-			onContextMenu={onContextMenu}
 		>
 			<div className="two-columns-list">
 				<span>
@@ -382,15 +421,36 @@ export const ResponsiveScheduledItem = ({
 					</span>
 				</span>
 				<span style={{ textAlign: "right" }}>
-					<PriceLabel price={price} operation={item.operation.type} />
-					<Forward
+					<div
 						style={{
-							cursor: "pointer",
-							color: "var(--color-green)",
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "flex-end",
+							gap: "4px",
 						}}
-						size={19}
-					/>
-					<br />
+					>
+						<PriceLabel
+							price={price}
+							operation={item.operation.type}
+						/>
+						<Forward
+							style={{
+								cursor: "pointer",
+								color: "var(--color-green)",
+							}}
+							size={19}
+						/>
+						<BudgetItemsListContextMenu
+							recurrent={
+								context === "calendar"
+									? { recurrence, itemID: item.id }
+									: item
+							}
+							setAction={setAction}
+							setSelectedItem={setSelectedItem}
+							currentAction={currentAction}
+						/>
+					</div>
 					<div style={{ textAlign: "right" }} className="light-text">
 						<div>{accountName.toString()}</div>
 						{showBalanceInfo &&
