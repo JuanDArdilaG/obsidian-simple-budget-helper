@@ -29,14 +29,18 @@ describe("getRealPriceForAccount", () => {
 		const account = buildTestAccounts(1)[0];
 		const item = buildTestItems([
 			{
-				price: new ItemPrice(100),
 				operation: ItemOperation.expense(),
 				account: account.id,
 				modifications: [
 					{
 						date: ItemDate.createNowDate(),
 						state: ERecurrenceState.PENDING,
-						amount: 200,
+						fromSplits: [
+							{
+								accountId: account.id.value,
+								amount: 200,
+							},
+						],
 					},
 				],
 			},
