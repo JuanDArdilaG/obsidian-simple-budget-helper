@@ -1,4 +1,5 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
+import { CategoryID } from "contexts/Categories/domain";
 import {
 	ItemID,
 	ItemPrice,
@@ -8,43 +9,147 @@ import {
 } from "contexts/Items/domain";
 import { IItemsService } from "contexts/Items/domain/items-service.interface";
 import { Criteria } from "contexts/Shared/domain";
+import { SubCategoryID } from "contexts/Subcategories/domain";
+import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 
 export class ItemsServiceMock implements IItemsService {
 	constructor(public items: ScheduledItem[]) {}
-	getPricePerMonth(itemID: ItemID): Promise<ItemPrice> {
-		throw new Error("Method not implemented.");
+
+	async getByCategory(category: CategoryID): Promise<ScheduledItem[]> {
+		return this.items.filter((item) => item.category.equalTo(category));
 	}
 
-	modifyRecurrence(
+	async getBySubCategory(
+		subCategory: SubCategoryID
+	): Promise<ScheduledItem[]> {
+		return this.items.filter((item) =>
+			item.subCategory.equalTo(subCategory)
+		);
+	}
+
+	async hasItemsByCategory(category: CategoryID): Promise<boolean> {
+		const items = await this.getByCategory(category);
+		return items.length > 0;
+	}
+
+	async hasItemsBySubCategory(subCategory: SubCategoryID): Promise<boolean> {
+		const items = await this.getBySubCategory(subCategory);
+		return items.length > 0;
+	}
+
+	async reassignItemsCategory(
+		oldCategory: CategoryID,
+		newCategory: CategoryID
+	): Promise<void> {
+		const items = await this.getByCategory(oldCategory);
+		for (const item of items) {
+			item.updateCategory(newCategory);
+		}
+	}
+
+	async reassignItemsSubCategory(
+		oldSubCategory: SubCategoryID,
+		newSubCategory: SubCategoryID
+	): Promise<void> {
+		const items = await this.getBySubCategory(oldSubCategory);
+		for (const item of items) {
+			item.updateSubCategory(newSubCategory);
+		}
+	}
+
+	async modifyRecurrence(
 		id: ItemID,
 		n: NumberValueObject,
-		newRecurrence: ItemRecurrenceInfo
+		newRecurrence: ItemRecurrenceInfo,
+		fromSplits?: PaymentSplit[],
+		toSplits?: PaymentSplit[]
 	): Promise<void> {
-		throw new Error("Method not implemented.");
+		const item = await this.getByID(id);
+		item.modifyRecurrence(n.value, newRecurrence);
+		if (fromSplits) {
+			item.setFromSplits(fromSplits);
+		}
+		if (toSplits) {
+			item.setToSplits(toSplits);
+		}
 	}
-	exists(id: ItemID): Promise<boolean> {
-		throw new Error("Method not implemented.");
+
+	async deleteRecurrence(id: ItemID, n: NumberValueObject): Promise<void> {
+		const item = await this.getByID(id);
+		item.deleteRecurrence(n.value);
 	}
-	create(item: ScheduledItem): Promise<void> {
-		throw new Error("Method not implemented.");
+
+	async completeRecurrence(id: ItemID, n: NumberValueObject): Promise<void> {
+		const item = await this.getByID(id);
+		item.completeRecurrence(n.value);
 	}
-	getByID(id: ItemID): Promise<ScheduledItem> {
+
+	async recordFutureRecurrence(
+		id: ItemID,
+		n: NumberValueObject
+	): Promise<void> {
+		const item = await this.getByID(id);
+		item.recordFutureRecurrence(n.value);
+	}
+
+	async getAllRecurrencesWithStates(
+		id: ItemID
+	): Promise<{ recurrence: ItemRecurrenceInfo; n: NumberValueObject }[]> {
+		const item = await this.getByID(id);
+		return item.getAllRecurrencesWithStates();
+	}
+
+	async getRecurrenceStats(id: ItemID): Promise<{
+		active: number;
+		completed: number;
+		pending: number;
+		deleted: number;
+		total: number;
+	}> {
+		const item = await this.getByID(id);
+		return item.getRecurrenceStats();
+	}
+
+	async getPricePerMonth(itemID: ItemID): Promise<ItemPrice> {
+		const item = await this.getByID(itemID);
+		return item.realPrice.times(item.recurrence.perMonthRelation);
+	}
+
+	async exists(id: ItemID): Promise<boolean> {
+		return this.items.some((item) => item.id.equalTo(id));
+	}
+
+	async create(item: ScheduledItem): Promise<void> {
+		this.items.push(item);
+	}
+
+	async getByID(id: ItemID): Promise<ScheduledItem> {
 		const item = this.items.find((i) => i.id.equalTo(id));
 		if (!item) throw new Error("item not found on get");
 		return Promise.resolve(item);
 	}
-	getByCriteria(
+
+	async getByCriteria(
 		criteria: Criteria<ScheduledItemPrimitives>
 	): Promise<ScheduledItem[]> {
 		throw new Error("Method not implemented.");
 	}
-	getAll(): Promise<ScheduledItem[]> {
+
+	async getAll(): Promise<ScheduledItem[]> {
 		return Promise.resolve(this.items);
 	}
-	update(item: ScheduledItem): Promise<void> {
-		throw new Error("Method not implemented.");
+
+	async update(item: ScheduledItem): Promise<void> {
+		const index = this.items.findIndex((i) => i.id.equalTo(item.id));
+		if (index !== -1) {
+			this.items[index] = item;
+		}
 	}
-	delete(id: ItemID): Promise<void> {
-		throw new Error("Method not implemented.");
+
+	async delete(id: ItemID): Promise<void> {
+		const index = this.items.findIndex((i) => i.id.equalTo(id));
+		if (index !== -1) {
+			this.items.splice(index, 1);
+		}
 	}
 }

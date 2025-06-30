@@ -1,5 +1,4 @@
 import { AccountID } from "contexts/Accounts/domain";
-import { ValueObject } from "contexts/Shared/domain/value-objects/value-object";
 import { TransactionAmount } from "./transaction-amount.valueobject";
 
 export interface PaymentSplitPrimitives {
@@ -8,15 +7,11 @@ export interface PaymentSplitPrimitives {
 	amount: number;
 }
 
-export class PaymentSplit extends ValueObject<PaymentSplitPrimitives> {
+export class PaymentSplit {
 	constructor(
 		private readonly _accountId: AccountID,
 		private readonly _amount: TransactionAmount
 	) {
-		super({
-			accountId: _accountId.value,
-			amount: _amount.value,
-		});
 		this.validate();
 	}
 

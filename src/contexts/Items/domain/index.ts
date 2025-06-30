@@ -14,6 +14,8 @@ export * from "./item-recurrence-untildate.valueobject";
 export * from "./item-recurrence.entity";
 export * from "./item-repository.interface";
 export * from "./item-store.valueobject";
+export * from "./item-tag.valueobject";
+export * from "./item-tags.valueobject";
 export * from "./item.entity";
 export * from "./items-service.interface";
 export * from "./ItemsCriteria";

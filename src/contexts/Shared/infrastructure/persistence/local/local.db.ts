@@ -285,15 +285,27 @@ export class LocalDB extends DB {
 	}
 
 	#initializeTables() {
-		this.db.version(1).stores({
+		this.db.version(3).stores({
 			[Config.accountsTableName]: Object.keys(
 				Account.emptyPrimitives()
 			).join(", "),
 			[Config.categoriesTableName]: Object.keys(
 				Category.emptyPrimitives()
 			).join(", "),
+			[Config.itemsTableName]: Object.keys(
+				ProductItem.emptyPrimitives()
+			).join(", "),
 			[Config.scheduledItemsTableName]: Object.keys(
 				ScheduledItem.emptyPrimitives()
+			).join(", "),
+			[Config.brandsTableName]: Object.keys(Brand.emptyPrimitives()).join(
+				", "
+			),
+			[Config.storesTableName]: Object.keys(Store.emptyPrimitives()).join(
+				", "
+			),
+			[Config.providersTableName]: Object.keys(
+				Provider.emptyPrimitives()
 			).join(", "),
 			[Config.subCategoriesTableName]: Object.keys(
 				SubCategory.emptyPrimitives()
@@ -302,48 +314,5 @@ export class LocalDB extends DB {
 				Transaction.emptyPrimitives()
 			).join(", "),
 		});
-
-		this.db
-			.version(2)
-			.stores({
-				[Config.accountsTableName]: Object.keys(
-					Account.emptyPrimitives()
-				).join(", "),
-				[Config.categoriesTableName]: Object.keys(
-					Category.emptyPrimitives()
-				).join(", "),
-				[Config.itemsTableName]: Object.keys(
-					ProductItem.emptyPrimitives()
-				).join(", "),
-				[Config.scheduledItemsTableName]: Object.keys(
-					ScheduledItem.emptyPrimitives()
-				).join(", "),
-				[Config.brandsTableName]: Object.keys(
-					Brand.emptyPrimitives()
-				).join(", "),
-				[Config.storesTableName]: Object.keys(
-					Store.emptyPrimitives()
-				).join(", "),
-				[Config.providersTableName]: Object.keys(
-					Provider.emptyPrimitives()
-				).join(", "),
-				[Config.subCategoriesTableName]: Object.keys(
-					SubCategory.emptyPrimitives()
-				).join(", "),
-				[Config.transactionsTableName]: Object.keys(
-					Transaction.emptyPrimitives()
-				).join(", "),
-			})
-			.upgrade(async (tx) => {
-				// Migrate data from version 1 to version 2
-				await tx
-					.table(Config.scheduledItemsTableName)
-					.toArray()
-					.then((items) => {
-						// The items are already in the correct table, just need to ensure they're properly formatted
-						return Promise.resolve();
-					});
-				return tx;
-			});
 	}
 }

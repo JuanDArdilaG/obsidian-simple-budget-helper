@@ -10,7 +10,6 @@ import {
 	ScheduledItemPrimitives,
 } from "contexts/Items/domain";
 import { Service } from "contexts/Shared/application/service.abstract";
-import { InvalidArgumentError } from "contexts/Shared/domain";
 import {
 	ISubCategoriesService,
 	SubCategoryID,
@@ -89,13 +88,9 @@ export class ItemsService
 		toSplits?: PaymentSplit[]
 	): Promise<void> {
 		const item = await this.getByID(id);
-		if (!item.recurrence)
-			throw new InvalidArgumentError(
-				"Scheduled Item",
-				id.toString(),
-				"item doesn't have recurrence"
-			);
-		item.recurrence.recurrences[n.value] = newRecurrence;
+
+		// Use the improved recurrence modification method
+		item.modifyRecurrence(n.value, newRecurrence);
 
 		// Update splits if provided
 		if (fromSplits) {
@@ -106,6 +101,60 @@ export class ItemsService
 		}
 
 		await this._scheduledItemsRepository.persist(item);
+	}
+
+	/**
+	 * Deletes a specific recurrence (marks as deleted)
+	 */
+	async deleteRecurrence(id: ItemID, n: NumberValueObject): Promise<void> {
+		const item = await this.getByID(id);
+		item.deleteRecurrence(n.value);
+		await this._scheduledItemsRepository.persist(item);
+	}
+
+	/**
+	 * Marks a specific recurrence as completed
+	 */
+	async completeRecurrence(id: ItemID, n: NumberValueObject): Promise<void> {
+		const item = await this.getByID(id);
+		item.completeRecurrence(n.value);
+		await this._scheduledItemsRepository.persist(item);
+	}
+
+	/**
+	 * Records a future recurrence in advance
+	 */
+	async recordFutureRecurrence(
+		id: ItemID,
+		n: NumberValueObject
+	): Promise<void> {
+		const item = await this.getByID(id);
+		item.recordFutureRecurrence(n.value);
+		await this._scheduledItemsRepository.persist(item);
+	}
+
+	/**
+	 * Gets all recurrences with their states for an item
+	 */
+	async getAllRecurrencesWithStates(
+		id: ItemID
+	): Promise<{ recurrence: ItemRecurrenceInfo; n: NumberValueObject }[]> {
+		const item = await this.getByID(id);
+		return item.getAllRecurrencesWithStates();
+	}
+
+	/**
+	 * Gets recurrence statistics for an item
+	 */
+	async getRecurrenceStats(id: ItemID): Promise<{
+		active: number;
+		completed: number;
+		pending: number;
+		deleted: number;
+		total: number;
+	}> {
+		const item = await this.getByID(id);
+		return item.getRecurrenceStats();
 	}
 
 	/**

@@ -1,4 +1,7 @@
-import { DateValueObject } from "@juandardilag/value-objects";
+import {
+	DateValueObject,
+	NumberValueObject,
+} from "@juandardilag/value-objects";
 import { AccountID, AccountType } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import { InvalidArgumentError } from "contexts/Shared/domain";
@@ -23,6 +26,8 @@ import { ItemRecurrenceFrequency } from "./item-recurrence-frequency.valueobject
 import { ItemRecurrenceInfo } from "./item-recurrence-modification.valueobject";
 import { ItemRecurrence, RecurrencePrimitives } from "./item-recurrence.entity";
 import { ItemStore } from "./item-store.valueobject";
+import { ItemTag } from "./item-tag.valueobject";
+import { ItemTags } from "./item-tags.valueobject";
 
 export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 	readonly _ = new Logger("ScheduledItem");
@@ -36,7 +41,8 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 		private _subCategory: SubCategoryID,
 		private _recurrence: ItemRecurrence,
 		updatedAt: DateValueObject,
-		private readonly _info?: ItemProductInfo
+		private readonly _info?: ItemProductInfo,
+		private _tags?: ItemTags
 	) {
 		super(id, updatedAt);
 		this.validateTransferOperation();
@@ -62,7 +68,8 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 		toSplits: PaymentSplit[],
 		operation: ItemOperation,
 		category: CategoryID,
-		subCategory: SubCategoryID
+		subCategory: SubCategoryID,
+		tags: ItemTags = ItemTags.empty()
 	): ScheduledItem {
 		const item = new ScheduledItem(
 			ItemID.generate(),
@@ -73,7 +80,9 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 			category,
 			subCategory,
 			ItemRecurrence.oneTime(date),
-			DateValueObject.createNowDate()
+			DateValueObject.createNowDate(),
+			undefined,
+			tags
 		);
 		return item;
 	}
@@ -86,7 +95,8 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 		operation: ItemOperation,
 		category: CategoryID,
 		subCategory: SubCategoryID,
-		frequency: ItemRecurrenceFrequency
+		frequency: ItemRecurrenceFrequency,
+		tags: ItemTags = ItemTags.empty()
 	): ScheduledItem {
 		const item = new ScheduledItem(
 			ItemID.generate(),
@@ -97,7 +107,9 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 			category,
 			subCategory,
 			ItemRecurrence.infinite(startDate, frequency),
-			DateValueObject.createNowDate()
+			DateValueObject.createNowDate(),
+			undefined,
+			tags
 		);
 		return item;
 	}
@@ -111,7 +123,8 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 		subCategory: SubCategoryID,
 		frequency: ItemRecurrenceFrequency,
 		startDate: DateValueObject,
-		untilDate: DateValueObject
+		untilDate: DateValueObject,
+		tags: ItemTags = ItemTags.empty()
 	): ScheduledItem {
 		const item = new ScheduledItem(
 			ItemID.generate(),
@@ -122,7 +135,9 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 			category,
 			subCategory,
 			ItemRecurrence.untilDate(startDate, frequency, untilDate),
-			DateValueObject.createNowDate()
+			DateValueObject.createNowDate(),
+			undefined,
+			tags
 		);
 		return item;
 	}
@@ -138,7 +153,8 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 			this._subCategory,
 			this._recurrence,
 			this._updatedAt,
-			this._info
+			this._info,
+			this._tags
 		);
 	}
 
@@ -248,6 +264,53 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 		return this._info;
 	}
 
+	get tags(): ItemTags | undefined {
+		return this._tags;
+	}
+
+	/**
+	 * Add a tag to the item
+	 */
+	addTag(tag: ItemTag): void {
+		if (!this._tags) this._tags = ItemTags.empty();
+		this._tags = this._tags.add(tag);
+		this.updateTimestamp();
+	}
+
+	/**
+	 * Remove a tag from the item
+	 */
+	removeTag(tag: ItemTag): void {
+		if (!this._tags) return;
+		this._tags = this._tags.remove(tag);
+		this.updateTimestamp();
+	}
+
+	/**
+	 * Check if the item has a specific tag
+	 */
+	hasTag(tag: ItemTag): boolean {
+		if (!this._tags) return false;
+		return this._tags.has(tag);
+	}
+
+	/**
+	 * Set all tags for the item
+	 */
+	setTags(tags: ItemTags): void {
+		this._tags = tags;
+		this.updateTimestamp();
+	}
+
+	/**
+	 * Clear all tags from the item
+	 */
+	clearTags(): void {
+		if (!this._tags) return;
+		this._tags = ItemTags.empty();
+		this.updateTimestamp();
+	}
+
 	get recurrence(): ItemRecurrence {
 		return this._recurrence;
 	}
@@ -265,6 +328,112 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 		modification.toAccount &&
 			this._operation.updateToAccount(modification.toAccount);
 		this.updateTimestamp();
+	}
+
+	/**
+	 * Safely modifies a specific recurrence with validation
+	 */
+	modifyRecurrence(index: number, modification: ItemRecurrenceInfo): void {
+		if (!this._recurrence) {
+			throw new InvalidArgumentError(
+				"ScheduledItem",
+				"recurrence",
+				"Item doesn't have recurrence"
+			);
+		}
+
+		this._recurrence.modifyRecurrence(index, modification);
+		this.updateTimestamp();
+	}
+
+	/**
+	 * Deletes a specific recurrence (marks as deleted)
+	 */
+	deleteRecurrence(index: number): void {
+		if (!this._recurrence) {
+			throw new InvalidArgumentError(
+				"ScheduledItem",
+				"recurrence",
+				"Item doesn't have recurrence"
+			);
+		}
+
+		this._recurrence.deleteRecurrence(index);
+		this.updateTimestamp();
+	}
+
+	/**
+	 * Marks a specific recurrence as completed
+	 */
+	completeRecurrence(index: number): void {
+		if (!this._recurrence) {
+			throw new InvalidArgumentError(
+				"ScheduledItem",
+				"recurrence",
+				"Item doesn't have recurrence"
+			);
+		}
+
+		this._recurrence.completeRecurrence(index);
+		this.updateTimestamp();
+	}
+
+	/**
+	 * Records a future recurrence in advance
+	 */
+	recordFutureRecurrence(index: number): void {
+		if (!this._recurrence) {
+			throw new InvalidArgumentError(
+				"ScheduledItem",
+				"recurrence",
+				"Item doesn't have recurrence"
+			);
+		}
+
+		this._recurrence.recordFutureRecurrence(index);
+		this.updateTimestamp();
+	}
+
+	/**
+	 * Gets all recurrences with their states for display/management
+	 */
+	getAllRecurrencesWithStates(): {
+		recurrence: ItemRecurrenceInfo;
+		n: NumberValueObject;
+	}[] {
+		if (!this._recurrence) {
+			return [];
+		}
+		return this._recurrence.getAllRecurrencesWithStates();
+	}
+
+	/**
+	 * Gets recurrence statistics
+	 */
+	getRecurrenceStats(): {
+		active: number;
+		completed: number;
+		pending: number;
+		deleted: number;
+		total: number;
+	} {
+		if (!this._recurrence) {
+			return {
+				active: 0,
+				completed: 0,
+				pending: 0,
+				deleted: 0,
+				total: 0,
+			};
+		}
+
+		return {
+			active: this._recurrence.activeRecurrenceCount,
+			completed: this._recurrence.completedRecurrenceCount,
+			pending: this._recurrence.pendingRecurrenceCount,
+			deleted: this._recurrence.deletedRecurrenceCount,
+			total: this._recurrence.recurrences.length,
+		};
 	}
 
 	get fromSplits(): PaymentSplit[] {
@@ -349,6 +518,10 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 			store: this._info?.store?.value,
 			recurrence: this._recurrence?.toPrimitives(),
 			updatedAt: this._updatedAt.toISOString(),
+			tags: this._tags?.toArray().reduce((acc, tag, index) => {
+				acc[index.toString()] = tag;
+				return acc;
+			}, {} as Record<string, string>),
 		};
 	}
 
@@ -374,6 +547,7 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 				untilDate: undefined,
 			},
 			updatedAt: new Date().toISOString(),
+			tags: {},
 		};
 	}
 
@@ -390,6 +564,7 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 		recurrence,
 		updatedAt,
 		price,
+		tags,
 	}: ScheduledItemPrimitives): ScheduledItem {
 		let _fromSplits: PaymentSplit[] = [];
 		let _toSplits: PaymentSplit[] = [];
@@ -411,6 +586,10 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 				),
 			];
 		}
+
+		// Convert tags record back to array
+		const tagArray = Object.values(tags || {});
+
 		return new ScheduledItem(
 			new ItemID(id),
 			new ItemName(name),
@@ -428,7 +607,8 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 						brand: brand ? new ItemBrand(brand) : undefined,
 						store: store ? new ItemStore(store) : undefined,
 				  })
-				: undefined
+				: undefined,
+			ItemTags.fromPrimitives(tagArray)
 		);
 	}
 }
@@ -446,4 +626,5 @@ export type ScheduledItemPrimitives = {
 	recurrence: RecurrencePrimitives;
 	updatedAt: string;
 	price?: number;
+	tags?: Record<string, string>;
 };

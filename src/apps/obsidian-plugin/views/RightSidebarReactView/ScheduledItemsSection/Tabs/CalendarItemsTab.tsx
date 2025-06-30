@@ -1,13 +1,43 @@
 import { DateValueObject } from "@juandardilag/value-objects";
 import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
 import { useLogger } from "apps/obsidian-plugin/hooks";
+import { AccountID } from "contexts/Accounts/domain";
+import { CategoryID } from "contexts/Categories/domain";
 import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
 import { ItemDate, ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
+import { SubCategoryID } from "contexts/Subcategories/domain";
 import { useContext, useEffect, useState } from "react";
 import { ItemsContext } from "../../Contexts/ItemsContext";
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
 import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
 import { CalendarItemsList } from "./CalendarItemsList";
+
+// Filter types
+interface FilterState {
+	searchText: string;
+	selectedCategory: CategoryID | null;
+	selectedSubCategory: SubCategoryID | null;
+	selectedAccount: AccountID | null;
+	selectedOperationType: "income" | "expense" | "transfer" | "all";
+	selectedTags: string[];
+	priceRange: {
+		min: number | null;
+		max: number | null;
+	};
+}
+
+const initialFilterState: FilterState = {
+	searchText: "",
+	selectedCategory: null,
+	selectedSubCategory: null,
+	selectedAccount: null,
+	selectedOperationType: "all",
+	selectedTags: [],
+	priceRange: {
+		min: null,
+		max: null,
+	},
+};
 
 export const CalendarItemsTab = () => {
 	const { logger } = useLogger("CalendarRightSidebarReactTab");
@@ -15,12 +45,19 @@ export const CalendarItemsTab = () => {
 		useCases: { getItemsUntilDate },
 	} = useContext(ItemsContext);
 
-	const [untilDate, setUntilDate] = useState<Date>(
-		DateValueObject.createNowDate()
+	// Filter state - lifted up to persist across timeframe/date changes
+	const [filters, setFilters] = useState<FilterState>(initialFilterState);
+	const [showFilters, setShowFilters] = useState(false);
+
+	const [untilDate, setUntilDate] = useState<Date>(() => {
+		const initialDate = DateValueObject.createNowDate()
 			.updateDay(1)
 			.updateMonth(new Date().getMonth() + 1)
-			.addDays(-1)
-	);
+			.addDays(-1);
+		const dateWithEndTime = new Date(initialDate);
+		dateWithEndTime.setHours(23, 59, 59, 999);
+		return dateWithEndTime;
+	});
 	const {
 		DateInput: UntilDateFilterInput,
 		date: untilDateFilter,
@@ -28,6 +65,7 @@ export const CalendarItemsTab = () => {
 	} = useDateInput({
 		id: "untilDateFilter",
 		initialValue: untilDate,
+		withTime: false,
 	});
 
 	const [selectedItem, setSelectedItem] = useState<{
@@ -43,6 +81,15 @@ export const CalendarItemsTab = () => {
 	useEffect(() => {
 		setUntilDate(untilDateFilter);
 	}, [untilDateFilter]);
+
+	// Set the time to 23:59:59 whenever the date changes
+	useEffect(() => {
+		const dateWithEndTime = new Date(untilDateFilter);
+		dateWithEndTime.setHours(23, 59, 59, 999);
+		if (dateWithEndTime.getTime() !== untilDateFilter.getTime()) {
+			setUntilDateFilter(dateWithEndTime);
+		}
+	}, [untilDateFilter, setUntilDateFilter]);
 
 	useEffect(() => {
 		if (!timeframe) return;
@@ -70,8 +117,12 @@ export const CalendarItemsTab = () => {
 				new Date().getMonth() + 36
 			);
 
-		setUntilDate(date);
-		setUntilDateFilter(date);
+		// Set the time to 23:59:59 for the calculated date
+		const dateWithEndTime = new Date(date);
+		dateWithEndTime.setHours(23, 59, 59, 999);
+
+		setUntilDate(dateWithEndTime);
+		setUntilDateFilter(dateWithEndTime);
 	}, [timeframe]);
 
 	const refreshItems = () => {
@@ -111,6 +162,10 @@ export const CalendarItemsTab = () => {
 				action={action}
 				setAction={setAction}
 				updateItems={refreshItems}
+				filters={filters}
+				setFilters={setFilters}
+				showFilters={showFilters}
+				setShowFilters={setShowFilters}
 			/>
 		</RightSidebarReactTab>
 	);

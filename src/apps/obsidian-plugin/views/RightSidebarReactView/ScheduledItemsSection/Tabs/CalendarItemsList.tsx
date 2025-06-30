@@ -3,7 +3,22 @@ import {
 	NumberValueObject,
 	PriceValueObject,
 } from "@juandardilag/value-objects";
-import { List, ListSubheader } from "@mui/material";
+import {
+	Box,
+	Button,
+	Card,
+	CardContent,
+	Chip,
+	Collapse,
+	FormControl,
+	InputLabel,
+	List,
+	ListSubheader,
+	MenuItem,
+	Select,
+	TextField,
+	Typography,
+} from "@mui/material";
 import { ResponsiveScheduledItem } from "apps/obsidian-plugin/components/ResponsiveScheduledItem";
 import { useLogger } from "apps/obsidian-plugin/hooks";
 import { EditItemRecurrencePanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemRecurrencePanel";
@@ -14,6 +29,7 @@ import {
 	AccountName,
 	AccountType,
 } from "contexts/Accounts/domain";
+import { CategoryID } from "contexts/Categories/domain";
 import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
 import { ItemWithAccumulatedBalance } from "contexts/Items/application/items-with-accumulated-balance.usecase";
 import {
@@ -23,9 +39,28 @@ import {
 } from "contexts/Items/domain";
 import { AccountsReport } from "contexts/Reports/domain";
 import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
+import { SubCategoryID } from "contexts/Subcategories/domain";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { AccountsContext, ItemsContext } from "../../Contexts";
+import {
+	AccountsContext,
+	CategoriesContext,
+	ItemsContext,
+} from "../../Contexts";
 import { ItemReportContext } from "../../Contexts/ItemReportContext";
+
+// Filter types
+interface FilterState {
+	searchText: string;
+	selectedCategory: CategoryID | null;
+	selectedSubCategory: SubCategoryID | null;
+	selectedAccount: AccountID | null;
+	selectedOperationType: "income" | "expense" | "transfer" | "all";
+	selectedTags: string[];
+	priceRange: {
+		min: number | null;
+		max: number | null;
+	};
+}
 
 export const CalendarItemsList = ({
 	items,
@@ -35,6 +70,10 @@ export const CalendarItemsList = ({
 	action,
 	setAction,
 	updateItems,
+	filters,
+	setFilters,
+	showFilters,
+	setShowFilters,
 }: {
 	items: GetItemsUntilDateUseCaseOutput;
 	untilDate: Date;
@@ -56,9 +95,14 @@ export const CalendarItemsList = ({
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
 	updateItems: () => void;
+	filters: FilterState;
+	setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
+	showFilters: boolean;
+	setShowFilters: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
 	const logger = useLogger("CalendarItemsList");
 	const { getAccountByID, accounts } = useContext(AccountsContext);
+	const { categories, subCategories } = useContext(CategoriesContext);
 	const report = useMemo(() => new AccountsReport(accounts), [accounts]);
 	const totalAssets = useMemo(() => report.getTotalForAssets(), [report]);
 
@@ -77,16 +121,6 @@ export const CalendarItemsList = ({
 		action?: "edit" | "record";
 	}>();
 
-	const itemsReport = useMemo(() => {
-		const modifiedItems = items
-			.map(({ recurrence, item }) => {
-				item?.applyModification(recurrence);
-				return item;
-			})
-			.filter((item) => !!item);
-		logger.logger.debug("modifiedItems", { modifiedItems });
-		return new ItemsReport(modifiedItems);
-	}, [items]);
 	const [itemsWithAccountsBalance, setItemsWithAccountsBalance] = useState<
 		ItemWithAccumulatedBalance[]
 	>([]);
@@ -97,26 +131,132 @@ export const CalendarItemsList = ({
 			.then((items) => setItemsWithAccountsBalance(items));
 	}, [untilDate]);
 
+	// Filter the items based on current filters
+	const filteredItems = useMemo(() => {
+		return itemsWithAccountsBalance.filter(({ item, recurrence }) => {
+			// Text search
+			if (
+				filters.searchText &&
+				!item.name.value
+					.toLowerCase()
+					.includes(filters.searchText.toLowerCase())
+			) {
+				return false;
+			}
+
+			// Category filter
+			if (
+				filters.selectedCategory &&
+				!item.category.equalTo(filters.selectedCategory)
+			) {
+				return false;
+			}
+
+			// Subcategory filter
+			if (
+				filters.selectedSubCategory &&
+				!item.subCategory.equalTo(filters.selectedSubCategory)
+			) {
+				return false;
+			}
+
+			// Account filter
+			if (filters.selectedAccount) {
+				const hasFromAccount = item.fromSplits.some((split) =>
+					split.accountId.equalTo(filters.selectedAccount!)
+				);
+				const hasToAccount = item.toSplits.some((split) =>
+					split.accountId.equalTo(filters.selectedAccount!)
+				);
+				if (!hasFromAccount && !hasToAccount) {
+					return false;
+				}
+			}
+
+			// Operation type filter
+			if (filters.selectedOperationType !== "all") {
+				const operationType = item.operation.type.value;
+				if (operationType !== filters.selectedOperationType) {
+					return false;
+				}
+			}
+
+			// Tags filter
+			if (filters.selectedTags.length > 0) {
+				const itemTags = item.tags?.toArray() ?? [];
+				const hasSelectedTag = filters.selectedTags.some(
+					(selectedTag) => itemTags.includes(selectedTag)
+				);
+				if (!hasSelectedTag) {
+					return false;
+				}
+			}
+
+			// Price range filter - use the same logic as getItemSplitPrice
+			const accountId = recurrence.account ?? item.operation.account;
+			const split = item.fromSplits.find(
+				(split) => split.accountId.value === accountId.value
+			);
+			const itemPrice = split ? Math.abs(split.amount.value) : 0;
+
+			if (
+				filters.priceRange.min !== null &&
+				itemPrice < filters.priceRange.min
+			) {
+				return false;
+			}
+			if (
+				filters.priceRange.max !== null &&
+				itemPrice > filters.priceRange.max
+			) {
+				return false;
+			}
+
+			return true;
+		});
+	}, [itemsWithAccountsBalance, filters]);
+
+	// Create a filtered report based on the filtered items
+	const filteredItemsReport = useMemo(() => {
+		const filteredModifiedItems = filteredItems
+			.map(({ recurrence, item }) => {
+				item?.applyModification(recurrence);
+				return item;
+			})
+			.filter((item) => !!item);
+		logger.logger.debug("filteredModifiedItems", { filteredModifiedItems });
+		return new ItemsReport(filteredModifiedItems);
+	}, [filteredItems]);
+
 	const [total, setTotal] = useState(NumberValueObject.zero());
 	useEffect(() => {
-		getTotal.execute({ report: itemsReport }).then(setTotal);
-	}, [getTotal, itemsReport]);
+		getTotal.execute({ report: filteredItemsReport }).then(setTotal);
+	}, [getTotal, filteredItemsReport]);
 
 	const [totalExpenses, setTotalExpenses] = useState(
 		NumberValueObject.zero()
 	);
 	useEffect(() => {
 		getTotal
-			.execute({ report: itemsReport, type: "expenses" })
+			.execute({ report: filteredItemsReport, type: "expenses" })
 			.then(setTotalExpenses);
-	}, [getTotal, itemsReport]);
+	}, [getTotal, filteredItemsReport]);
 
 	const [totalIncomes, setTotalIncomes] = useState(NumberValueObject.zero());
 	useEffect(() => {
 		getTotal
-			.execute({ report: itemsReport, type: "incomes" })
+			.execute({ report: filteredItemsReport, type: "incomes" })
 			.then(setTotalIncomes);
-	}, [getTotal, itemsReport]);
+	}, [getTotal, filteredItemsReport]);
+
+	// Get all available tags from items
+	const availableTags = useMemo(() => {
+		const tagSet = new Set<string>();
+		itemsWithAccountsBalance.forEach(({ item }) => {
+			item.tags?.toArray().forEach((tag) => tagSet.add(tag));
+		});
+		return Array.from(tagSet).sort();
+	}, [itemsWithAccountsBalance]);
 
 	useEffect(() => {
 		if (selectedItem) {
@@ -138,6 +278,42 @@ export const CalendarItemsList = ({
 		if (!account) return new AccountType("asset"); // fallback
 		return account.type;
 	};
+
+	// Filter handlers
+	const handleFilterChange = <K extends keyof FilterState>(
+		key: K,
+		value: FilterState[K]
+	) => {
+		setFilters((prev) => ({ ...prev, [key]: value }));
+	};
+
+	const handleResetFilters = () => {
+		setFilters({
+			searchText: "",
+			selectedCategory: null,
+			selectedSubCategory: null,
+			selectedAccount: null,
+			selectedOperationType: "all",
+			selectedTags: [],
+			priceRange: {
+				min: null,
+				max: null,
+			},
+		});
+	};
+
+	const activeFiltersCount = useMemo(() => {
+		let count = 0;
+		if (filters.searchText) count++;
+		if (filters.selectedCategory) count++;
+		if (filters.selectedSubCategory) count++;
+		if (filters.selectedAccount) count++;
+		if (filters.selectedOperationType !== "all") count++;
+		if (filters.selectedTags.length > 0) count++;
+		if (filters.priceRange.min !== null || filters.priceRange.max !== null)
+			count++;
+		return count;
+	}, [filters]);
 
 	return (
 		<div>
@@ -170,6 +346,18 @@ export const CalendarItemsList = ({
 						}}
 					>
 						Scheduled Items Summary
+						{activeFiltersCount > 0 && (
+							<span
+								style={{
+									fontSize: "0.8em",
+									color: "var(--text-muted)",
+									marginLeft: "8px",
+								}}
+							>
+								({filteredItems.length} of{" "}
+								{itemsWithAccountsBalance.length} items)
+							</span>
+						)}
 					</div>
 					<div
 						style={{
@@ -308,10 +496,403 @@ export const CalendarItemsList = ({
 					</div>
 				</div>
 			</div>
+
+			{/* Filter Section */}
+			<Card
+				style={{
+					marginBottom: "16px",
+					backgroundColor: "var(--background-secondary)",
+				}}
+			>
+				<CardContent style={{ padding: "12px" }}>
+					<Box
+						display="flex"
+						alignItems="center"
+						justifyContent="space-between"
+						marginBottom="12px"
+					>
+						<Typography
+							variant="h6"
+							style={{
+								fontSize: "1em",
+								color: "var(--text-normal)",
+							}}
+						>
+							Filters{" "}
+							{activeFiltersCount > 0 && (
+								<Chip
+									label={activeFiltersCount}
+									size="small"
+									style={{ marginLeft: "8px" }}
+								/>
+							)}
+						</Typography>
+						<Box>
+							<Button
+								size="small"
+								onClick={() => setShowFilters(!showFilters)}
+								style={{
+									marginRight: "8px",
+									color: "var(--text-normal)",
+								}}
+							>
+								{showFilters ? "Hide" : "Show"} Filters
+							</Button>
+							{activeFiltersCount > 0 && (
+								<Button
+									size="small"
+									onClick={handleResetFilters}
+									style={{ color: "var(--text-muted)" }}
+								>
+									Clear All
+								</Button>
+							)}
+						</Box>
+					</Box>
+
+					<Collapse in={showFilters}>
+						<Box
+							display="grid"
+							gridTemplateColumns="repeat(auto-fit, minmax(200px, 1fr))"
+							gap="12px"
+						>
+							{/* Search Text */}
+							<TextField
+								label="Search Items"
+								value={filters.searchText}
+								onChange={(e) =>
+									handleFilterChange(
+										"searchText",
+										e.target.value
+									)
+								}
+								size="small"
+								style={{
+									backgroundColor:
+										"var(--background-primary)",
+								}}
+								slotProps={{
+									inputLabel: {
+										style: { color: "var(--text-muted)" },
+									},
+								}}
+							/>
+
+							{/* Category Filter */}
+							<FormControl
+								size="small"
+								style={{
+									backgroundColor:
+										"var(--background-primary)",
+								}}
+							>
+								<InputLabel
+									style={{ color: "var(--text-muted)" }}
+								>
+									Category
+								</InputLabel>
+								<Select
+									value={
+										filters.selectedCategory?.value || ""
+									}
+									onChange={(e) => {
+										const categoryId = e.target.value
+											? new CategoryID(e.target.value)
+											: null;
+										handleFilterChange(
+											"selectedCategory",
+											categoryId
+										);
+										// Reset subcategory when category changes
+										handleFilterChange(
+											"selectedSubCategory",
+											null
+										);
+									}}
+									label="Category"
+									sx={{
+										"& .MuiSelect-select": {
+											color: "var(--text-muted)",
+										},
+									}}
+								>
+									<MenuItem value="">All Categories</MenuItem>
+									{categories.map((category) => (
+										<MenuItem
+											key={category.id.value}
+											value={category.id.value}
+										>
+											{category.name.value}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+
+							{/* Subcategory Filter */}
+							<FormControl
+								size="small"
+								style={{
+									backgroundColor:
+										"var(--background-primary)",
+								}}
+							>
+								<InputLabel
+									style={{ color: "var(--text-muted)" }}
+								>
+									Subcategory
+								</InputLabel>
+								<Select
+									value={
+										filters.selectedSubCategory?.value || ""
+									}
+									onChange={(e) => {
+										const subCategoryId = e.target.value
+											? new SubCategoryID(e.target.value)
+											: null;
+										handleFilterChange(
+											"selectedSubCategory",
+											subCategoryId
+										);
+									}}
+									label="Subcategory"
+									disabled={!filters.selectedCategory}
+									sx={{
+										"& .MuiSelect-select": {
+											color: "var(--text-muted)",
+										},
+									}}
+								>
+									<MenuItem value="">
+										All Subcategories
+									</MenuItem>
+									{filters.selectedCategory &&
+										subCategories
+											.filter((sub) =>
+												sub.category.equalTo(
+													filters.selectedCategory!
+												)
+											)
+											.map((subCategory) => (
+												<MenuItem
+													key={subCategory.id.value}
+													value={subCategory.id.value}
+												>
+													{subCategory.name.value}
+												</MenuItem>
+											))}
+								</Select>
+							</FormControl>
+
+							{/* Account Filter */}
+							<FormControl
+								size="small"
+								style={{
+									backgroundColor:
+										"var(--background-primary)",
+								}}
+							>
+								<InputLabel
+									style={{ color: "var(--text-muted)" }}
+								>
+									Account
+								</InputLabel>
+								<Select
+									value={filters.selectedAccount?.value || ""}
+									onChange={(e) => {
+										const accountId = e.target.value
+											? new AccountID(e.target.value)
+											: null;
+										handleFilterChange(
+											"selectedAccount",
+											accountId
+										);
+									}}
+									label="Account"
+									sx={{
+										"& .MuiSelect-select": {
+											color: "var(--text-muted)",
+										},
+									}}
+								>
+									<MenuItem value="">All Accounts</MenuItem>
+									{accounts.map((account) => (
+										<MenuItem
+											key={account.id.value}
+											value={account.id.value}
+										>
+											{account.name.value}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+
+							{/* Operation Type Filter */}
+							<FormControl
+								size="small"
+								style={{
+									backgroundColor:
+										"var(--background-primary)",
+								}}
+							>
+								<InputLabel
+									style={{ color: "var(--text-muted)" }}
+								>
+									Type
+								</InputLabel>
+								<Select
+									value={filters.selectedOperationType}
+									onChange={(e) =>
+										handleFilterChange(
+											"selectedOperationType",
+											e.target.value as
+												| "income"
+												| "expense"
+												| "transfer"
+												| "all"
+										)
+									}
+									label="Type"
+									sx={{
+										"& .MuiSelect-select": {
+											color: "var(--text-muted)",
+										},
+									}}
+								>
+									<MenuItem value="all">All Types</MenuItem>
+									<MenuItem value="income">Income</MenuItem>
+									<MenuItem value="expense">Expense</MenuItem>
+									<MenuItem value="transfer">
+										Transfer
+									</MenuItem>
+								</Select>
+							</FormControl>
+
+							{/* Tags Filter */}
+							<FormControl
+								size="small"
+								style={{
+									backgroundColor:
+										"var(--background-primary)",
+								}}
+							>
+								<InputLabel
+									style={{ color: "var(--text-muted)" }}
+								>
+									Tags
+								</InputLabel>
+								<Select
+									multiple
+									value={filters.selectedTags}
+									onChange={(e) => {
+										const value = e.target.value;
+										handleFilterChange(
+											"selectedTags",
+											typeof value === "string"
+												? value.split(",")
+												: value
+										);
+									}}
+									label="Tags"
+									renderValue={(selected) => (
+										<Box
+											sx={{
+												display: "flex",
+												flexWrap: "wrap",
+												gap: 0.5,
+											}}
+										>
+											{selected.map((value) => (
+												<Chip
+													key={value}
+													label={value}
+													size="small"
+													sx={{
+														backgroundColor:
+															"var(--background-secondary)",
+														color: "var(--text-normal)",
+														border: "1px solid var(--background-modifier-border)",
+													}}
+												/>
+											))}
+										</Box>
+									)}
+									sx={{
+										"& .MuiSelect-select": {
+											color: "var(--text-muted)",
+										},
+									}}
+								>
+									{availableTags.map((tag) => (
+										<MenuItem key={tag} value={tag}>
+											{tag}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+
+							{/* Price Range */}
+							<Box display="flex" gap="8px" alignItems="center">
+								<TextField
+									label="Min Price"
+									type="number"
+									value={filters.priceRange.min || ""}
+									onChange={(e) =>
+										handleFilterChange("priceRange", {
+											...filters.priceRange,
+											min: e.target.value
+												? Number(e.target.value)
+												: null,
+										})
+									}
+									size="small"
+									style={{
+										backgroundColor:
+											"var(--background-primary)",
+										flex: 1,
+									}}
+									slotProps={{
+										inputLabel: {
+											style: {
+												color: "var(--text-muted)",
+											},
+										},
+									}}
+								/>
+								<TextField
+									label="Max Price"
+									type="number"
+									value={filters.priceRange.max || ""}
+									onChange={(e) =>
+										handleFilterChange("priceRange", {
+											...filters.priceRange,
+											max: e.target.value
+												? Number(e.target.value)
+												: null,
+										})
+									}
+									size="small"
+									style={{
+										backgroundColor:
+											"var(--background-primary)",
+										flex: 1,
+									}}
+									slotProps={{
+										inputLabel: {
+											style: {
+												color: "var(--text-muted)",
+											},
+										},
+									}}
+								/>
+							</Box>
+						</Box>
+					</Collapse>
+				</CardContent>
+			</Card>
 			{/* Group items by month */}
 			{(() => {
 				// Group items by month
-				const itemsByMonth = itemsWithAccountsBalance.reduce(
+				const itemsByMonth = filteredItems.reduce(
 					(
 						groups,
 						{

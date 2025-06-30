@@ -1,5 +1,5 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
-import { useMediaQuery } from "@mui/material";
+import { Chip, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
 import { BudgetItemsListContextMenu } from "apps/obsidian-plugin/views/RightSidebarReactView/ScheduledItemsSection/BudgetItemsListContextMenu";
@@ -64,6 +64,7 @@ export const ResponsiveScheduledItem = ({
 	const totalRecurrences = item.recurrence?.totalRecurrences ?? 1;
 	const frequency = item.recurrence?.frequency;
 	const prettyDate = recurrence.date.toPrettyFormatDate();
+	const itemTags = item.tags?.toArray() ?? [];
 
 	// Use provided remainingDays or calculate it
 	const daysRemaining =
@@ -108,6 +109,7 @@ export const ResponsiveScheduledItem = ({
 							style={{
 								fontSize: "12px",
 								color: "var(--text-muted)",
+								marginBottom: "4px",
 							}}
 						>
 							{frequency && `${frequency.toString()} • `}
@@ -115,6 +117,34 @@ export const ResponsiveScheduledItem = ({
 								? `x${totalRecurrences}`
 								: "∞"}
 						</div>
+						{/* Tags */}
+						{itemTags.length > 0 && (
+							<div
+								style={{
+									display: "flex",
+									flexWrap: "wrap",
+									gap: "4px",
+								}}
+							>
+								{itemTags.map((tag, index) => (
+									<Chip
+										key={index}
+										label={tag}
+										size="small"
+										sx={{
+											height: "20px",
+											fontSize: "10px",
+											backgroundColor:
+												"var(--background-modifier-border)",
+											color: "var(--text-normal)",
+											"& .MuiChip-label": {
+												padding: "0 6px",
+											},
+										}}
+									/>
+								))}
+							</div>
+						)}
 					</div>
 
 					{/* Date and Timing */}
@@ -266,6 +296,7 @@ export const ResponsiveScheduledItem = ({
 							style={{
 								fontSize: "12px",
 								color: "var(--text-muted)",
+								marginBottom: "4px",
 							}}
 						>
 							{frequency && `${frequency.toString()} • `}
@@ -273,6 +304,34 @@ export const ResponsiveScheduledItem = ({
 								? `x${totalRecurrences}`
 								: "∞"}
 						</div>
+						{/* Tags */}
+						{itemTags.length > 0 && (
+							<div
+								style={{
+									display: "flex",
+									flexWrap: "wrap",
+									gap: "3px",
+								}}
+							>
+								{itemTags.map((tag, index) => (
+									<Chip
+										key={index}
+										label={tag}
+										size="small"
+										sx={{
+											height: "18px",
+											fontSize: "9px",
+											backgroundColor:
+												"var(--background-modifier-border)",
+											color: "var(--text-normal)",
+											"& .MuiChip-label": {
+												padding: "0 5px",
+											},
+										}}
+									/>
+								))}
+							</div>
+						)}
 					</div>
 
 					{/* Middle Column - Date and Timing */}
@@ -419,6 +478,36 @@ export const ResponsiveScheduledItem = ({
 							{recurrence.date.remainingDaysStr}
 						</span>
 					</span>
+					{/* Tags for mobile */}
+					{itemTags.length > 0 && (
+						<div style={{ marginTop: "4px", marginLeft: "15px" }}>
+							<div
+								style={{
+									display: "flex",
+									flexWrap: "wrap",
+									gap: "3px",
+								}}
+							>
+								{itemTags.map((tag, index) => (
+									<Chip
+										key={index}
+										label={tag}
+										size="small"
+										sx={{
+											height: "16px",
+											fontSize: "8px",
+											backgroundColor:
+												"var(--background-modifier-border)",
+											color: "var(--text-normal)",
+											"& .MuiChip-label": {
+												padding: "0 4px",
+											},
+										}}
+									/>
+								))}
+							</div>
+						</div>
+					)}
 				</span>
 				<span style={{ textAlign: "right" }}>
 					<div

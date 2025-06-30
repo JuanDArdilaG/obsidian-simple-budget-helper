@@ -1,5 +1,5 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
-import { Typography } from "@mui/material";
+import { Box, Chip, TextField, Typography } from "@mui/material";
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
 import {
@@ -23,7 +23,13 @@ import {
 } from "contexts/Items/domain";
 import { OperationType } from "contexts/Shared/domain";
 import { TransactionDate } from "contexts/Transactions/domain";
-import { PropsWithChildren, useContext, useEffect, useState } from "react";
+import {
+	PropsWithChildren,
+	useContext,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 
 export const CreateItemForm = ({
 	items,
@@ -60,6 +66,7 @@ export const CreateItemForm = ({
 		updatedAt: false,
 		fromSplits: false,
 		toSplits: false,
+		tags: false,
 	});
 	const [item, setItem] = useState<ScheduledItemPrimitives>({
 		...ScheduledItem.emptyPrimitives(),
@@ -102,6 +109,10 @@ export const CreateItemForm = ({
 		lock: locks.subCategory,
 		setLock: (lock) => updateLock("subCategory", lock),
 	});
+
+	const [tagInput, setTagInput] = useState("");
+	const [tags, setTags] = useState<string[]>([]);
+	const tagInputRef = useRef<HTMLInputElement>(null);
 
 	const getLockedOrSelectedValue = <T,>(
 		key: keyof Omit<ScheduledItemPrimitives, "id">
@@ -185,12 +196,59 @@ export const CreateItemForm = ({
 			newItem.operation.toAccount = newValues.operation?.toAccount;
 		if (newValues.operation?.account !== undefined)
 			newItem.operation.account = newValues.operation?.account;
+		if (newValues.tags !== undefined) newItem.tags = newValues.tags;
 
 		logger.debug("item to create updated", {
 			newItem,
 		});
 
 		setItem(newItem);
+	};
+
+	// Handle tag input and chips
+	const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setTagInput(e.target.value);
+	};
+
+	const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key === "Enter" || e.key === ",") {
+			e.preventDefault();
+			const value = tagInput.trim();
+			if (value && !tags.includes(value)) {
+				const newTags = [...tags, value];
+				setTags(newTags);
+				setTagInput("");
+				const tagsRecord: Record<string, string> = {};
+				newTags.forEach((tag, idx) => {
+					tagsRecord[idx.toString()] = tag;
+				});
+				update({ tags: tagsRecord });
+			}
+		}
+	};
+
+	const handleTagDelete = (tagToDelete: string) => {
+		const newTags = tags.filter((tag) => tag !== tagToDelete);
+		setTags(newTags);
+		const tagsRecord: Record<string, string> = {};
+		newTags.forEach((tag, idx) => {
+			tagsRecord[idx.toString()] = tag;
+		});
+		update({ tags: tagsRecord });
+	};
+
+	const handleBlur = () => {
+		const value = tagInput.trim();
+		if (value && !tags.includes(value)) {
+			const newTags = [...tags, value];
+			setTags(newTags);
+			setTagInput("");
+			const tagsRecord: Record<string, string> = {};
+			newTags.forEach((tag, idx) => {
+				tagsRecord[idx.toString()] = tag;
+			});
+			update({ tags: tagsRecord });
+		}
 	};
 
 	const handleSubmit = (withClose: boolean) => async () => {
@@ -212,6 +270,8 @@ export const CreateItemForm = ({
 			fromSplits: [{ accountId: "", amount: 0 }],
 			toSplits: [],
 		});
+		setTags([]);
+		setTagInput("");
 	};
 
 	const handleAttemptSubmit = (withClose: boolean) => async () => {
@@ -222,121 +282,370 @@ export const CreateItemForm = ({
 	};
 
 	return (
-		<div className="create-budget-item-modal">
-			<Typography variant="h3" component="h3" gutterBottom>
-				Create Item
-			</Typography>
-			<SelectWithCreation<ScheduledItemPrimitives>
-				id="name"
-				label="Name"
-				item={item}
-				items={items.map((item) => item.toPrimitives())}
-				getLabel={(item) => {
-					if (!item) return "";
-					const label = `${item.name} - ${
-						getAccountByID(new AccountID(item.operation.account))
-							?.name.value
-					}${
-						item.operation.type === "transfer" &&
-						item.operation.toAccount
-							? ` -> ${
-									getAccountByID(
-										new AccountID(item.operation.toAccount)
-									)?.name.value
-							  } - `
-							: ""
-					}${
-						item.fromSplits?.[0]?.amount === 0
-							? ""
-							: "  " +
-							  new ItemPrice(
-									item.fromSplits?.[0]?.amount ?? 0
-							  ).toString()
-					}`;
-					return label.length > 40
-						? label.slice(0, 40) + "..."
-						: label;
+		<Box
+			sx={{
+				padding: "24px",
+				maxWidth: "600px",
+				margin: "0 auto",
+				backgroundColor: "var(--background-primary)",
+				borderRadius: "8px",
+				boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+			}}
+		>
+			<Typography
+				variant="h4"
+				component="h2"
+				gutterBottom
+				sx={{
+					color: "var(--text-normal)",
+					fontWeight: 600,
+					marginBottom: "24px",
+					textAlign: "center",
 				}}
-				getKey={(item) => item.name}
-				setSelectedItem={setSelectedItem}
-				onChange={(name) => update({ name })}
-				isLocked={locks.name}
-				setIsLocked={(value) => updateLock("name", value)}
-				error={showErrors ? errors.name : undefined}
-			/>
-			<div className="form-row">
-				{DateInput}
-				<PriceInput
-					id="amount"
-					label="Amount"
-					isLocked={locks.price}
-					setIsLocked={(value) => updateLock("price", value)}
-					value={
-						new PriceValueObject(
-							item.fromSplits?.reduce(
-								(sum, split) => sum + split.amount,
-								0
-							) ?? 0,
-							{
-								withSign: false,
-								decimals: 0,
-							}
-						)
-					}
-					onChange={(amount) => update({ price: amount.toNumber() })}
-					error={showErrors ? errors.fromSplits : undefined}
+			>
+				Create Scheduled Item
+			</Typography>
+
+			{/* Basic Information Section */}
+			<Box sx={{ marginBottom: "32px" }}>
+				<Typography
+					variant="h6"
+					sx={{
+						color: "var(--text-normal)",
+						fontWeight: 500,
+						marginBottom: "16px",
+						paddingBottom: "8px",
+						borderBottom:
+							"2px solid var(--background-modifier-border)",
+					}}
+				>
+					Basic Information
+				</Typography>
+
+				<SelectWithCreation<ScheduledItemPrimitives>
+					id="name"
+					label="Item Name"
+					item={item}
+					items={items.map((item) => item.toPrimitives())}
+					getLabel={(item) => {
+						if (!item) return "";
+						const label = `${item.name} - ${
+							getAccountByID(
+								new AccountID(item.operation.account)
+							)?.name.value
+						}${
+							item.operation.type === "transfer" &&
+							item.operation.toAccount
+								? ` -> ${
+										getAccountByID(
+											new AccountID(
+												item.operation.toAccount
+											)
+										)?.name.value
+								  } - `
+								: ""
+						}${
+							item.fromSplits?.[0]?.amount === 0
+								? ""
+								: "  " +
+								  new ItemPrice(
+										item.fromSplits?.[0]?.amount ?? 0
+								  ).toString()
+						}`;
+						return label.length > 40
+							? label.slice(0, 40) + "..."
+							: label;
+					}}
+					getKey={(item) => item.name}
+					setSelectedItem={setSelectedItem}
+					onChange={(name) => update({ name })}
+					isLocked={locks.name}
+					setIsLocked={(value) => updateLock("name", value)}
+					error={showErrors ? errors.name : undefined}
 				/>
-			</div>
-			<div className="form-row">
-				<Select
-					id="type"
-					label="Type"
-					value={item.operation.type}
-					values={["expense", "income", "transfer"]}
-					onChange={(type) =>
-						update({
-							operation: {
-								...item.operation,
-								type: type.toLowerCase() as OperationType,
+
+				<Box
+					sx={{
+						display: "grid",
+						gridTemplateColumns: "1fr 1fr",
+						gap: "16px",
+						marginTop: "16px",
+					}}
+				>
+					{DateInput}
+					<PriceInput
+						id="amount"
+						label="Amount"
+						isLocked={locks.price}
+						setIsLocked={(value) => updateLock("price", value)}
+						value={
+							new PriceValueObject(
+								item.fromSplits?.reduce(
+									(sum, split) => sum + split.amount,
+									0
+								) ?? 0,
+								{
+									withSign: false,
+									decimals: 0,
+								}
+							)
+						}
+						onChange={(amount) =>
+							update({ price: amount.toNumber() })
+						}
+						error={showErrors ? errors.fromSplits : undefined}
+					/>
+				</Box>
+			</Box>
+
+			{/* Transaction Details Section */}
+			<Box sx={{ marginBottom: "32px" }}>
+				<Typography
+					variant="h6"
+					sx={{
+						color: "var(--text-normal)",
+						fontWeight: 500,
+						marginBottom: "16px",
+						paddingBottom: "8px",
+						borderBottom:
+							"2px solid var(--background-modifier-border)",
+					}}
+				>
+					Transaction Details
+				</Typography>
+
+				<Box
+					sx={{
+						display: "grid",
+						gridTemplateColumns: "1fr 1fr",
+						gap: "16px",
+						marginBottom: "16px",
+					}}
+				>
+					<Select
+						id="type"
+						label="Type"
+						value={item.operation.type}
+						values={["expense", "income", "transfer"]}
+						onChange={(type) =>
+							update({
+								operation: {
+									...item.operation,
+									type: type.toLowerCase() as OperationType,
+								},
+							})
+						}
+						isLocked={locks.operation}
+						setIsLocked={(value) => updateLock("operation", value)}
+					/>
+					{AccountSelect}
+				</Box>
+
+				<Box
+					sx={{
+						display: "grid",
+						gridTemplateColumns: "1fr 1fr",
+						gap: "16px",
+					}}
+				>
+					{CategorySelect}
+					{SubCategorySelect}
+				</Box>
+			</Box>
+
+			{/* Additional Information Section */}
+			<Box sx={{ marginBottom: "32px" }}>
+				<Typography
+					variant="h6"
+					sx={{
+						color: "var(--text-normal)",
+						fontWeight: 500,
+						marginBottom: "16px",
+						paddingBottom: "8px",
+						borderBottom:
+							"2px solid var(--background-modifier-border)",
+					}}
+				>
+					Additional Information
+				</Typography>
+
+				<Box
+					sx={{
+						display: "grid",
+						gridTemplateColumns: "1fr 1fr",
+						gap: "16px",
+						marginBottom: "16px",
+					}}
+				>
+					<SelectWithCreation
+						id="brand"
+						label="Brand"
+						item={item.brand ?? ""}
+						items={brands.map((b) => b.value)}
+						onChange={(brand) => update({ brand })}
+						isLocked={locks.brand}
+						setIsLocked={(lock) => updateLock("brand", lock)}
+					/>
+					<SelectWithCreation
+						id="store"
+						label="Store"
+						item={item.store ?? ""}
+						items={stores.map((s) => s.value)}
+						onChange={(store) => update({ store })}
+						isLocked={locks.store}
+						setIsLocked={(lock) => updateLock("store", lock)}
+					/>
+				</Box>
+
+				{/* Chips-based tags input */}
+				<Box sx={{ mt: 2 }}>
+					<TextField
+						label="Tags"
+						placeholder="Add a tag and press Enter or comma"
+						value={tagInput}
+						inputRef={tagInputRef}
+						onChange={handleTagInputChange}
+						onKeyDown={handleTagKeyDown}
+						onBlur={handleBlur}
+						fullWidth
+						margin="normal"
+						variant="outlined"
+						helperText="Tags help you organize and filter your scheduled items"
+						slotProps={{
+							formHelperText: {
+								sx: {
+									color: "var(--text-muted)",
+									fontSize: "12px",
+								},
 							},
-						})
-					}
-					isLocked={locks.operation}
-					setIsLocked={(value) => updateLock("operation", value)}
-				/>
-				{AccountSelect}
-			</div>
-			<div className="form-row">
-				{CategorySelect}
-				{SubCategorySelect}
-			</div>
-			<div className="form-row">
-				<SelectWithCreation
-					id="brand"
-					label="Brand"
-					item={item.brand ?? ""}
-					items={brands.map((b) => b.value)}
-					onChange={(brand) => update({ brand })}
-					isLocked={locks.brand}
-					setIsLocked={(lock) => updateLock("brand", lock)}
-				/>
-				<SelectWithCreation
-					id="store"
-					label="Store"
-					item={item.store ?? ""}
-					items={stores.map((s) => s.value)}
-					onChange={(store) => update({ store })}
-					isLocked={locks.store}
-					setIsLocked={(lock) => updateLock("store", lock)}
-				/>
-			</div>
-			{children}
-			<div className="modal-button-container">
-				<button onClick={handleAttemptSubmit(true)}>
-					Create and close
+						}}
+						sx={{
+							"& .MuiOutlinedInput-root": {
+								"& fieldset": {
+									borderColor:
+										"var(--background-modifier-border)",
+								},
+								"&:hover fieldset": {
+									borderColor: "var(--interactive-accent)",
+								},
+								"&.Mui-focused fieldset": {
+									borderColor: "var(--interactive-accent)",
+								},
+							},
+							"& .MuiInputLabel-root": {
+								color: "var(--text-muted)",
+							},
+							"& .MuiInputLabel-root.Mui-focused": {
+								color: "var(--interactive-accent)",
+							},
+						}}
+					/>
+					<Box
+						sx={{
+							display: "flex",
+							flexWrap: "wrap",
+							gap: 1,
+							mt: 1,
+						}}
+					>
+						{tags.map((tag) => (
+							<Chip
+								key={tag}
+								label={tag}
+								onDelete={() => handleTagDelete(tag)}
+								color="default"
+								size="small"
+								sx={{
+									backgroundColor:
+										"var(--background-secondary)",
+									color: "var(--text-normal)",
+									border: "1px solid var(--background-modifier-border)",
+								}}
+							/>
+						))}
+					</Box>
+				</Box>
+			</Box>
+
+			{/* Recurrence Section */}
+			{children && (
+				<Box sx={{ marginBottom: "32px" }}>
+					<Typography
+						variant="h6"
+						sx={{
+							color: "var(--text-normal)",
+							fontWeight: 500,
+							marginBottom: "16px",
+							paddingBottom: "8px",
+							borderBottom:
+								"2px solid var(--background-modifier-border)",
+						}}
+					>
+						Recurrence Settings
+					</Typography>
+					{children}
+				</Box>
+			)}
+
+			{/* Action Buttons */}
+			<Box
+				sx={{
+					display: "flex",
+					gap: "12px",
+					justifyContent: "flex-end",
+					paddingTop: "16px",
+					borderTop: "1px solid var(--background-modifier-border)",
+				}}
+			>
+				<button
+					onClick={handleAttemptSubmit(false)}
+					style={{
+						padding: "10px 20px",
+						border: "1px solid var(--background-modifier-border)",
+						backgroundColor: "var(--background-secondary)",
+						color: "var(--text-normal)",
+						borderRadius: "6px",
+						cursor: "pointer",
+						fontSize: "14px",
+						fontWeight: 500,
+						transition: "all 0.2s ease",
+					}}
+					onMouseEnter={(e) => {
+						e.currentTarget.style.backgroundColor =
+							"var(--background-modifier-hover)";
+					}}
+					onMouseLeave={(e) => {
+						e.currentTarget.style.backgroundColor =
+							"var(--background-secondary)";
+					}}
+				>
+					Create
 				</button>
-				<button onClick={handleAttemptSubmit(false)}>Create</button>
-			</div>
-		</div>
+				<button
+					onClick={handleAttemptSubmit(true)}
+					style={{
+						padding: "10px 20px",
+						border: "none",
+						backgroundColor: "var(--interactive-accent)",
+						color: "var(--text-on-accent)",
+						borderRadius: "6px",
+						cursor: "pointer",
+						fontSize: "14px",
+						fontWeight: 500,
+						transition: "all 0.2s ease",
+					}}
+					onMouseEnter={(e) => {
+						e.currentTarget.style.backgroundColor =
+							"var(--interactive-accent-hover)";
+					}}
+					onMouseLeave={(e) => {
+						e.currentTarget.style.backgroundColor =
+							"var(--interactive-accent)";
+					}}
+				>
+					Create & Close
+				</button>
+			</Box>
+		</Box>
 	);
 };
