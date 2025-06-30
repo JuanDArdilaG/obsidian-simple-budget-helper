@@ -50,7 +50,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Salary"),
 				[split(assetAccount, 5000)],
 				[],
-				ItemOperation.income(assetAccount.id),
+				ItemOperation.income(),
 				categoryId,
 				subCategoryId
 			);
@@ -59,7 +59,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Bonus"),
 				[split(assetAccount, 1000)],
 				[],
-				ItemOperation.income(assetAccount.id),
+				ItemOperation.income(),
 				categoryId,
 				subCategoryId
 			);
@@ -76,7 +76,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Monthly Salary"),
 				[split(assetAccount, 3000)],
 				[],
-				ItemOperation.income(assetAccount.id),
+				ItemOperation.income(),
 				categoryId,
 				subCategoryId,
 				new ItemRecurrenceFrequency("1mo")
@@ -100,7 +100,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Groceries"),
 				[split(assetAccount, 200)],
 				[],
-				ItemOperation.expense(assetAccount.id),
+				ItemOperation.expense(),
 				categoryId,
 				subCategoryId
 			);
@@ -109,7 +109,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Gas"),
 				[split(assetAccount, 50)],
 				[],
-				ItemOperation.expense(assetAccount.id),
+				ItemOperation.expense(),
 				categoryId,
 				subCategoryId
 			);
@@ -127,7 +127,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Rent"),
 				[split(assetAccount, 1200)],
 				[],
-				ItemOperation.expense(assetAccount.id),
+				ItemOperation.expense(),
 				categoryId,
 				subCategoryId,
 				new ItemRecurrenceFrequency("1mo")
@@ -148,7 +148,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Credit Card Payment"),
 				[split(assetAccount, 500)],
 				[split(liabilityAccount, 500)],
-				ItemOperation.transfer(assetAccount.id, liabilityAccount.id),
+				ItemOperation.transfer(),
 				categoryId,
 				subCategoryId
 			);
@@ -170,7 +170,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Credit Card Withdrawal"),
 				[split(liabilityAccount, 300)],
 				[split(assetAccount, 300)],
-				ItemOperation.transfer(liabilityAccount.id, assetAccount.id),
+				ItemOperation.transfer(),
 				categoryId,
 				subCategoryId
 			);
@@ -205,7 +205,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Transfer to Savings"),
 				[split(assetAccount, 1000)],
 				[split(savingsAccount, 1000)],
-				ItemOperation.transfer(assetAccount.id, savingsAccount.id),
+				ItemOperation.transfer(),
 				categoryId,
 				subCategoryId
 			);
@@ -232,7 +232,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Salary"),
 				[split(assetAccount, 4000)],
 				[],
-				ItemOperation.income(assetAccount.id),
+				ItemOperation.income(),
 				categoryId,
 				subCategoryId
 			);
@@ -241,7 +241,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Rent"),
 				[split(assetAccount, 1500)],
 				[],
-				ItemOperation.expense(assetAccount.id),
+				ItemOperation.expense(),
 				categoryId,
 				subCategoryId
 			);
@@ -269,7 +269,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Salary"),
 				[split(assetAccount, 5000)],
 				[],
-				ItemOperation.income(assetAccount.id),
+				ItemOperation.income(),
 				categoryId,
 				subCategoryId
 			);
@@ -278,7 +278,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Groceries"),
 				[split(assetAccount, 300)],
 				[],
-				ItemOperation.expense(assetAccount.id),
+				ItemOperation.expense(),
 				categoryId,
 				subCategoryId
 			);
@@ -287,7 +287,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Credit Card Payment"),
 				[split(assetAccount, 500)],
 				[split(liabilityAccount, 500)],
-				ItemOperation.transfer(assetAccount.id, liabilityAccount.id),
+				ItemOperation.transfer(),
 				categoryId,
 				subCategoryId
 			);
@@ -296,7 +296,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Credit Card Withdrawal"),
 				[split(liabilityAccount, 200)],
 				[split(assetAccount, 200)],
-				ItemOperation.transfer(liabilityAccount.id, assetAccount.id),
+				ItemOperation.transfer(),
 				categoryId,
 				subCategoryId
 			);
@@ -329,7 +329,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Monthly Salary"),
 				[split(assetAccount, 4000)],
 				[],
-				ItemOperation.income(assetAccount.id),
+				ItemOperation.income(),
 				categoryId,
 				subCategoryId,
 				new ItemRecurrenceFrequency("1mo")
@@ -340,7 +340,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Car Repair"),
 				[split(assetAccount, 800)],
 				[],
-				ItemOperation.expense(assetAccount.id),
+				ItemOperation.expense(),
 				categoryId,
 				subCategoryId
 			);
@@ -350,7 +350,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Monthly Rent"),
 				[split(assetAccount, 1200)],
 				[],
-				ItemOperation.expense(assetAccount.id),
+				ItemOperation.expense(),
 				categoryId,
 				subCategoryId,
 				new ItemRecurrenceFrequency("1mo")
@@ -392,7 +392,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Zero Income"),
 				[split(assetAccount, 0)],
 				[],
-				ItemOperation.income(assetAccount.id),
+				ItemOperation.income(),
 				categoryId,
 				subCategoryId
 			);
@@ -402,7 +402,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Zero Expense"),
 				[split(assetAccount, 0)],
 				[],
-				ItemOperation.expense(assetAccount.id),
+				ItemOperation.expense(),
 				categoryId,
 				subCategoryId
 			);
@@ -457,7 +457,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Weekly Allowance"),
 				[split(assetAccount, 100)],
 				[],
-				ItemOperation.income(assetAccount.id),
+				ItemOperation.income(),
 				categoryId,
 				subCategoryId,
 				new ItemRecurrenceFrequency("1w")
@@ -469,7 +469,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Yearly Insurance"),
 				[split(assetAccount, 1200)],
 				[],
-				ItemOperation.expense(assetAccount.id),
+				ItemOperation.expense(),
 				categoryId,
 				subCategoryId,
 				new ItemRecurrenceFrequency("1y")
@@ -529,7 +529,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Transfer to Savings"),
 				[split(checkingAccount, 500)],
 				[split(savingsAccount, 500)],
-				ItemOperation.transfer(checkingAccount.id, savingsAccount.id),
+				ItemOperation.transfer(),
 				categoryId,
 				subCategoryId
 			);
@@ -540,7 +540,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Credit Card Payment"),
 				[split(checkingAccount, 300)],
 				[split(creditCard, 300)],
-				ItemOperation.transfer(checkingAccount.id, creditCard.id),
+				ItemOperation.transfer(),
 				categoryId,
 				subCategoryId
 			);
@@ -551,7 +551,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Credit Card Withdrawal"),
 				[split(creditCard, 200)],
 				[split(checkingAccount, 200)],
-				ItemOperation.transfer(creditCard.id, checkingAccount.id),
+				ItemOperation.transfer(),
 				categoryId,
 				subCategoryId
 			);
@@ -562,7 +562,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Debt Consolidation"),
 				[split(creditCard, 1000)],
 				[split(loan, 1000)],
-				ItemOperation.transfer(creditCard.id, loan.id),
+				ItemOperation.transfer(),
 				categoryId,
 				subCategoryId
 			);
@@ -603,7 +603,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Monthly Credit Card Payment"),
 				[split(assetAccount, 500)],
 				[split(liabilityAccount, 500)],
-				ItemOperation.transfer(assetAccount.id, liabilityAccount.id),
+				ItemOperation.transfer(),
 				categoryId,
 				subCategoryId,
 				new ItemRecurrenceFrequency("1mo")
@@ -615,7 +615,7 @@ describe("ReportsService.getTotalPerMonth", () => {
 				new ItemName("Credit Card Withdrawal"),
 				[split(liabilityAccount, 1000)],
 				[split(assetAccount, 1000)],
-				ItemOperation.transfer(liabilityAccount.id, assetAccount.id),
+				ItemOperation.transfer(),
 				categoryId,
 				subCategoryId
 			);

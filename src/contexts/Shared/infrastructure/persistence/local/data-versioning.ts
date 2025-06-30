@@ -35,7 +35,7 @@ interface ItemData {
 
 export class DataVersioning {
 	private logger: Logger = new Logger("DataVersioning");
-	private currentVersion = "1.2.4";
+	private currentVersion = "1.2.6";
 	private versions: DataVersion[] = [
 		{
 			version: "1.0.0",
@@ -87,6 +87,36 @@ export class DataVersioning {
 				"1.2.4",
 			],
 			migrationScript: this.migrateToMergedItems.bind(this),
+		},
+		{
+			version: "1.2.5",
+			compatibleVersions: [
+				"1.0.0",
+				"1.1.0",
+				"1.2.0",
+				"1.2.1",
+				"1.2.2",
+				"1.2.3",
+				"1.2.4",
+				"1.2.5",
+			],
+			migrationScript:
+				this.migrateToNewItemOperationAndRecurrenceSplits.bind(this),
+		},
+		{
+			version: "1.2.6",
+			compatibleVersions: [
+				"1.0.0",
+				"1.1.0",
+				"1.2.0",
+				"1.2.1",
+				"1.2.2",
+				"1.2.3",
+				"1.2.4",
+				"1.2.5",
+				"1.2.6",
+			],
+			migrationScript: this.migrateScheduledItemsToSplits.bind(this),
 		},
 		// Add future versions here with migration scripts
 	];
@@ -214,7 +244,6 @@ export class DataVersioning {
 				return this.migrateItem(item as ItemData);
 			});
 		}
-
 		this.logger.debug("Payment splits migration completed");
 		return migratedData;
 	}
@@ -1088,6 +1117,287 @@ export class DataVersioning {
 		}
 
 		this.logger.debug("Item merging migration completed");
+		return migratedData;
+	}
+
+	/**
+	 * Migration script to update ItemOperation structure and migrate recurrence account/toAccount to splits
+	 * This migrates data from version 1.2.4 to 1.2.5
+	 */
+	private async migrateToNewItemOperationAndRecurrenceSplits(
+		data: unknown
+	): Promise<unknown> {
+		this.logger.debug(
+			"Starting migration to new ItemOperation structure and recurrence splits"
+		);
+
+		if (!data || typeof data !== "object") {
+			throw new Error("Invalid data format for migration");
+		}
+
+		const dataObj = data as MigrationData;
+
+		// Ensure we have the data structure
+		if (
+			!dataObj.data ||
+			typeof dataObj.data !== "object" ||
+			dataObj.data === null
+		) {
+			throw new Error("Invalid data format for migration");
+		}
+
+		const migratedData = { ...dataObj };
+		const dataContent = migratedData.data as Record<string, unknown>;
+
+		// Migrate scheduled items
+		if (
+			dataContent.scheduledItems &&
+			Array.isArray(dataContent.scheduledItems)
+		) {
+			this.logger.debug(
+				`Migrating ${dataContent.scheduledItems.length} scheduled items`
+			);
+			dataContent.scheduledItems = dataContent.scheduledItems.map(
+				(item: Record<string, unknown>) => {
+					// Remove account, toAccount, and amount from operation
+					if (
+						item.operation &&
+						typeof item.operation === "object" &&
+						item.operation !== null
+					) {
+						const operation = item.operation as Record<
+							string,
+							unknown
+						>;
+						if (operation.account !== undefined) {
+							delete operation.account;
+						}
+						if (operation.toAccount !== undefined) {
+							delete operation.toAccount;
+						}
+						if (operation.amount !== undefined) {
+							delete operation.amount;
+						}
+					}
+
+					// Migrate recurrences' account/toAccount/amount to splits
+					if (
+						item.recurrence &&
+						typeof item.recurrence === "object" &&
+						item.recurrence !== null &&
+						Array.isArray(
+							(item.recurrence as Record<string, unknown>)
+								.recurrences
+						)
+					) {
+						const recurrenceObj = item.recurrence as Record<
+							string,
+							unknown
+						>;
+						recurrenceObj.recurrences = (
+							recurrenceObj.recurrences as Record<
+								string,
+								unknown
+							>[]
+						).map((rec: Record<string, unknown>) => {
+							const migratedRec = { ...rec };
+							if (migratedRec.account || migratedRec.toAccount) {
+								// Initialize splits arrays if they don't exist
+								if (!migratedRec.fromSplits) {
+									migratedRec.fromSplits = [];
+								}
+								if (!migratedRec.toSplits) {
+									migratedRec.toSplits = [];
+								}
+
+								// Add account/amount to fromSplits if account exists
+								if (
+									migratedRec.account &&
+									migratedRec.amount !== undefined
+								) {
+									(
+										migratedRec.fromSplits as Array<{
+											accountId: string;
+											amount: number;
+										}>
+									).push({
+										accountId:
+											migratedRec.account as string,
+										amount: migratedRec.amount as number,
+									});
+								}
+
+								// Add toAccount/amount to toSplits if toAccount exists
+								if (
+									migratedRec.toAccount &&
+									migratedRec.amount !== undefined
+								) {
+									(
+										migratedRec.toSplits as Array<{
+											accountId: string;
+											amount: number;
+										}>
+									).push({
+										accountId:
+											migratedRec.toAccount as string,
+										amount: migratedRec.amount as number,
+									});
+								}
+
+								// Remove old fields
+								delete migratedRec.account;
+								delete migratedRec.toAccount;
+								delete migratedRec.amount;
+							}
+							return migratedRec;
+						});
+					}
+
+					return item;
+				}
+			);
+		}
+
+		this.logger.debug(
+			"Migration to new ItemOperation structure and recurrence splits completed"
+		);
+		return migratedData;
+	}
+
+	/**
+	 * Migration script to ensure scheduled items have proper fromSplits and toSplits arrays
+	 * This migrates data from version 1.2.5 to 1.2.6
+	 */
+	private async migrateScheduledItemsToSplits(
+		data: unknown
+	): Promise<unknown> {
+		this.logger.debug(
+			"Starting migration to ensure scheduled items have proper splits arrays"
+		);
+
+		if (!data || typeof data !== "object") {
+			throw new Error("Invalid data format for migration");
+		}
+
+		const dataObj = data as MigrationData;
+
+		// Ensure we have the data structure
+		if (
+			!dataObj.data ||
+			typeof dataObj.data !== "object" ||
+			dataObj.data === null
+		) {
+			throw new Error("Invalid data format for migration");
+		}
+
+		const migratedData = { ...dataObj };
+		const dataContent = migratedData.data as Record<string, unknown>;
+
+		// Migrate scheduled items to ensure they have proper splits arrays
+		if (
+			dataContent.scheduledItems &&
+			Array.isArray(dataContent.scheduledItems)
+		) {
+			this.logger.debug(
+				`Migrating ${dataContent.scheduledItems.length} scheduled items to ensure proper splits arrays`
+			);
+
+			dataContent.scheduledItems = dataContent.scheduledItems.map(
+				(item: Record<string, unknown>) => {
+					const migratedItem = { ...item };
+
+					if (!migratedItem.fromSplits) {
+						migratedItem.fromSplits = [
+							{
+								accountId:
+									migratedItem.account ??
+									(
+										migratedItem.operation as Record<
+											string,
+											unknown
+										>
+									).account,
+								amount:
+									migratedItem.amount ??
+									(
+										migratedItem.operation as Record<
+											string,
+											unknown
+										>
+									).amount,
+							},
+						];
+					}
+					if (!migratedItem.toSplits) {
+						migratedItem.toSplits = [];
+					}
+
+					// If this is a transfer operation and toSplits is empty, we need to create a default entry
+					if (
+						migratedItem.operation &&
+						typeof migratedItem.operation === "object" &&
+						migratedItem.operation !== null
+					) {
+						const operation = migratedItem.operation as Record<
+							string,
+							unknown
+						>;
+
+						if (operation.type === "transfer") {
+							if (
+								Array.isArray(migratedItem.toSplits) &&
+								migratedItem.toSplits.length === 0
+							) {
+								this.logger.debug(
+									"Found transfer operation with empty toSplits, creating default entry",
+									{ itemId: migratedItem.id }
+								);
+
+								(
+									migratedItem.toSplits as Array<{
+										accountId: string;
+										amount: number;
+									}>
+								).push({
+									accountId:
+										(migratedItem.toAccount as string) ??
+										((
+											migratedItem.operation as Record<
+												string,
+												unknown
+											>
+										).toAccount as string),
+									amount:
+										(migratedItem.amount as number) ??
+										((
+											migratedItem.operation as Record<
+												string,
+												unknown
+											>
+										).amount as number),
+								});
+							}
+						}
+					}
+
+					delete migratedItem.account;
+					delete migratedItem.toAccount;
+					delete (migratedItem.operation as Record<string, unknown>)
+						.account;
+					delete (migratedItem.operation as Record<string, unknown>)
+						.toAccount;
+					delete (migratedItem.operation as Record<string, unknown>)
+						.amount;
+					delete migratedItem.amount;
+
+					return migratedItem;
+				}
+			);
+		}
+
+		this.logger.debug(
+			"Migration to ensure scheduled items have proper splits arrays completed"
+		);
 		return migratedData;
 	}
 

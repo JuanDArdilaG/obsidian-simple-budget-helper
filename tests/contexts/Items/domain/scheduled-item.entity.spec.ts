@@ -30,7 +30,7 @@ describe("ScheduledItem Recurrence Management", () => {
 			new ItemName("Test Item"),
 			fromSplits,
 			toSplits,
-			ItemOperation.income(accountId),
+			ItemOperation.income(),
 			CategoryID.generate(),
 			SubCategoryID.generate(),
 			frequency
@@ -78,7 +78,7 @@ describe("ScheduledItem Recurrence Management", () => {
 			new ItemName("Test Item"),
 			fromSplits,
 			toSplits,
-			ItemOperation.income(accountId),
+			ItemOperation.income(),
 			CategoryID.generate(),
 			SubCategoryID.generate(),
 			frequency
@@ -106,7 +106,7 @@ describe("ScheduledItem Recurrence Management", () => {
 			new ItemName("Test Item"),
 			fromSplits,
 			toSplits,
-			ItemOperation.income(accountId),
+			ItemOperation.income(),
 			CategoryID.generate(),
 			SubCategoryID.generate(),
 			frequency

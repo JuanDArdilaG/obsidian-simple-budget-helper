@@ -28,7 +28,7 @@ describe("ScheduledItem Tags", () => {
 			new ItemName("Test Item"),
 			fromSplits,
 			toSplits,
-			ItemOperation.income(accountId),
+			ItemOperation.income(),
 			CategoryID.generate(),
 			SubCategoryID.generate(),
 			frequency,

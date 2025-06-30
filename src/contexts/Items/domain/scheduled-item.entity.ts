@@ -322,11 +322,8 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 	}
 
 	applyModification(modification: ItemRecurrenceInfo): void {
-		// TODO: Support split modification if needed
-		modification.account &&
-			this._operation.updateAccount(modification.account);
-		modification.toAccount &&
-			this._operation.updateToAccount(modification.toAccount);
+		modification.fromSplits && this.setFromSplits(modification.fromSplits);
+		modification.toSplits && this.setToSplits(modification.toSplits);
 		this.updateTimestamp();
 	}
 
@@ -533,8 +530,6 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 			toSplits: [],
 			operation: {
 				type: "expense",
-				account: "",
-				toAccount: undefined,
 			},
 			category: "",
 			subCategory: "",
@@ -563,39 +558,17 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 		store,
 		recurrence,
 		updatedAt,
-		price,
 		tags,
 	}: ScheduledItemPrimitives): ScheduledItem {
-		let _fromSplits: PaymentSplit[] = [];
-		let _toSplits: PaymentSplit[] = [];
-		const op = ItemOperation.fromPrimitives(operation);
-		if (fromSplits && fromSplits.length > 0) {
-			_fromSplits = fromSplits.map(PaymentSplit.fromPrimitives);
-		} else if (op.account) {
-			_fromSplits = [
-				new PaymentSplit(op.account, new TransactionAmount(price ?? 0)),
-			];
-		}
-		if (toSplits && toSplits.length > 0) {
-			_toSplits = toSplits.map(PaymentSplit.fromPrimitives);
-		} else if (op.toAccount) {
-			_toSplits = [
-				new PaymentSplit(
-					op.toAccount,
-					new TransactionAmount(price ?? 0)
-				),
-			];
-		}
-
 		// Convert tags record back to array
 		const tagArray = Object.values(tags || {});
 
 		return new ScheduledItem(
 			new ItemID(id),
 			new ItemName(name),
-			_fromSplits,
-			_toSplits,
-			op,
+			fromSplits?.map(PaymentSplit.fromPrimitives) ?? [],
+			toSplits?.map(PaymentSplit.fromPrimitives) ?? [],
+			ItemOperation.fromPrimitives(operation),
 			new CategoryID(category),
 			new SubCategoryID(subCategory),
 			ItemRecurrence.fromPrimitives(recurrence),
@@ -616,8 +589,8 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 export type ScheduledItemPrimitives = {
 	id: string;
 	name: string;
-	fromSplits?: PaymentSplitPrimitives[];
-	toSplits?: PaymentSplitPrimitives[];
+	fromSplits: PaymentSplitPrimitives[];
+	toSplits: PaymentSplitPrimitives[];
 	operation: ItemOperationPrimitives;
 	category: string;
 	subCategory: string;
@@ -625,6 +598,5 @@ export type ScheduledItemPrimitives = {
 	store?: string;
 	recurrence: RecurrencePrimitives;
 	updatedAt: string;
-	price?: number;
 	tags?: Record<string, string>;
 };

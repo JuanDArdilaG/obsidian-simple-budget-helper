@@ -31,7 +31,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 		testItems = buildTestItems([
 			{
 				price: new ItemPrice(100),
-				operation: ItemOperation.expense(account1),
+				operation: ItemOperation.expense(),
 				account: account1,
 			},
 		]);
@@ -83,7 +83,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 			const itemWithoutRecurrence = buildTestItems([
 				{
 					price: new ItemPrice(100),
-					operation: ItemOperation.expense(AccountID.generate()),
+					operation: ItemOperation.expense(),
 				},
 			])[0];
 
@@ -145,7 +145,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 			const transferItems = buildTestItems([
 				{
 					price: new ItemPrice(100),
-					operation: ItemOperation.transfer(account1, account2),
+					operation: ItemOperation.transfer(),
 					account: account1,
 					toAccount: account2,
 				},
@@ -221,7 +221,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 			const transferItems = buildTestItems([
 				{
 					price: new ItemPrice(100),
-					operation: ItemOperation.transfer(account1, account2),
+					operation: ItemOperation.transfer(),
 					account: account1,
 					toAccount: account2,
 				},
@@ -370,7 +370,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 			const n = new NumberValueObject(0);
 			const newAccount = AccountID.generate();
 			const newToAccount = AccountID.generate();
-			const originalAccount = item.operation.account;
+			const originalAccount = item.fromSplits[0]?.accountId;
 
 			// Act
 			await useCase.execute({
@@ -389,10 +389,10 @@ describe("RecordItemRecurrenceUseCase", () => {
 
 			// Assert
 			// Check that the scheduled item operation was updated
-			expect(item.operation.account.value).toBe(newAccount.value);
-			expect(item.operation.toAccount?.value).toBe(newToAccount.value);
-			expect(item.operation.account.value).not.toBe(
-				originalAccount?.value
+			expect(item.fromSplits[0]?.accountId.value).toBe(newAccount.value);
+			expect(item.toSplits[0]?.accountId?.value).toBe(newToAccount.value);
+			expect(item.fromSplits[0]?.accountId.value).not.toBe(
+				originalAccount.value
 			);
 		});
 
@@ -403,7 +403,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 			const transferItems = buildTestItems([
 				{
 					price: new ItemPrice(100),
-					operation: ItemOperation.transfer(account1, account2),
+					operation: ItemOperation.transfer(),
 					account: account1,
 					toAccount: account2,
 				},

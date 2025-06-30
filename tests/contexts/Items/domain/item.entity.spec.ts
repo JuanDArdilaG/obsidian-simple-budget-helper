@@ -179,7 +179,7 @@ describe("transfer operation validation", () => {
 				new ItemName("Transfer Test"),
 				fromSplits,
 				toSplits,
-				ItemOperation.transfer(fromAccount, toAccount),
+				ItemOperation.transfer(),
 				CategoryID.generate(),
 				SubCategoryID.generate()
 			);
@@ -202,7 +202,7 @@ describe("transfer operation validation", () => {
 				new ItemName("Transfer Test"),
 				fromSplits,
 				toSplits,
-				ItemOperation.transfer(fromAccount, toAccount),
+				ItemOperation.transfer(),
 				CategoryID.generate(),
 				SubCategoryID.generate()
 			);
@@ -224,7 +224,7 @@ describe("transfer operation validation", () => {
 			new ItemName("Transfer Test"),
 			fromSplits,
 			toSplits,
-			ItemOperation.transfer(fromAccount, toAccount),
+			ItemOperation.transfer(),
 			CategoryID.generate(),
 			SubCategoryID.generate()
 		);
@@ -247,15 +247,13 @@ describe("transfer operation validation", () => {
 			new ItemName("Test Item"),
 			fromSplits,
 			toSplits,
-			ItemOperation.expense(fromAccount),
+			ItemOperation.expense(),
 			CategoryID.generate(),
 			SubCategoryID.generate()
 		);
 
 		expect(() => {
-			item.updateOperation(
-				ItemOperation.transfer(fromAccount, toAccount)
-			);
+			item.updateOperation(ItemOperation.transfer());
 		}).toThrow("Transfer operations must have a toSplits array");
 	});
 
@@ -274,15 +272,13 @@ describe("transfer operation validation", () => {
 			new ItemName("Test Item"),
 			fromSplits,
 			toSplits,
-			ItemOperation.expense(fromAccount),
+			ItemOperation.expense(),
 			CategoryID.generate(),
 			SubCategoryID.generate()
 		);
 
 		expect(() => {
-			item.updateOperation(
-				ItemOperation.transfer(fromAccount, toAccount)
-			);
+			item.updateOperation(ItemOperation.transfer());
 		}).not.toThrow();
 	});
 });

@@ -1,13 +1,9 @@
-import { AccountID } from "contexts/Accounts/domain";
 import { ItemOperation } from "contexts/Shared/domain";
 import { describe, expect, it } from "vitest";
 
 describe("is", () => {
 	it("isTransfer", () => {
-		const operation = ItemOperation.transfer(
-			AccountID.generate(),
-			AccountID.generate()
-		);
+		const operation = ItemOperation.transfer();
 
 		const isTransfer = operation.type.isTransfer();
 
@@ -15,7 +11,7 @@ describe("is", () => {
 	});
 
 	it("isExpense", () => {
-		const operation = ItemOperation.expense(AccountID.generate());
+		const operation = ItemOperation.expense();
 
 		const isExpense = operation.type.isExpense();
 
@@ -23,10 +19,27 @@ describe("is", () => {
 	});
 
 	it("isIncome", () => {
-		const operation = ItemOperation.income(AccountID.generate());
+		const operation = ItemOperation.income();
 
 		const isIncome = operation.type.isIncome();
 
 		expect(isIncome).toBeTruthy();
+	});
+});
+
+describe("ItemOperation", () => {
+	it("should create a transfer operation", () => {
+		const operation = ItemOperation.transfer();
+		expect(operation.type.value).toBe("transfer");
+	});
+
+	it("should create an expense operation", () => {
+		const operation = ItemOperation.expense();
+		expect(operation.type.value).toBe("expense");
+	});
+
+	it("should create an income operation", () => {
+		const operation = ItemOperation.income();
+		expect(operation.type.value).toBe("income");
 	});
 });

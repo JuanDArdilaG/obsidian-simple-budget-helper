@@ -30,7 +30,7 @@ describe("getRealPriceForAccount", () => {
 		const item = buildTestItems([
 			{
 				price: new ItemPrice(100),
-				operation: ItemOperation.expense(account.id),
+				operation: ItemOperation.expense(),
 				account: account.id,
 				modifications: [
 					{
@@ -43,13 +43,13 @@ describe("getRealPriceForAccount", () => {
 		])[0];
 
 		const result = item.recurrence.recurrences[0].getRealPriceForAccount(
-			ItemOperation.expense(account.id),
+			ItemOperation.expense(),
 			account,
 			new ItemPrice(
 				-item.fromSplits.reduce((sum, s) => sum + s.amount.value, 0)
 			),
-			item.operation.account,
-			item.operation.toAccount
+			item.fromSplits[0]?.accountId,
+			item.toSplits[0]?.accountId
 		);
 
 		expect(result.value).toBe(-200);

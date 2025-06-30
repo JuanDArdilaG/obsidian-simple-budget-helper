@@ -193,7 +193,9 @@ export const CalendarItemsList = ({
 			}
 
 			// Price range filter - use the same logic as getItemSplitPrice
-			const accountId = recurrence.account ?? item.operation.account;
+			const accountId =
+				recurrence.fromSplits?.[0]?.accountId ??
+				item.fromSplits[0]?.accountId;
 			const split = item.fromSplits.find(
 				(split) => split.accountId.value === accountId.value
 			);
@@ -220,8 +222,17 @@ export const CalendarItemsList = ({
 	const filteredItemsReport = useMemo(() => {
 		const filteredModifiedItems = filteredItems
 			.map(({ recurrence, item }) => {
-				item?.applyModification(recurrence);
-				return item;
+				// Instead of mutating the original item, create a clone/copy and apply modification
+				const itemCopy = item.copy
+					? item.copy()
+					: Object.create(
+							Object.getPrototypeOf(item),
+							Object.getOwnPropertyDescriptors(item)
+					  );
+				if (itemCopy.applyModification) {
+					itemCopy.applyModification(recurrence);
+				}
+				return itemCopy;
 			})
 			.filter((item) => !!item);
 		logger.logger.debug("filteredModifiedItems", { filteredModifiedItems });
@@ -976,8 +987,10 @@ export const CalendarItemsList = ({
 											recurrence={recurrence}
 											accountName={
 												getAccountByID(
-													recurrence.account ??
-														item.operation.account
+													recurrence.fromSplits?.[0]
+														?.accountId ??
+														item.fromSplits[0]
+															?.accountId
 												)?.name ?? AccountName.empty()
 											}
 											accountBalance={accountBalance}
@@ -1007,9 +1020,11 @@ export const CalendarItemsList = ({
 													recurrence={recurrence}
 													accountName={
 														getAccountByID(
-															recurrence.toAccount ??
-																item.operation
-																	.toAccount!
+															recurrence
+																.toSplits?.[0]
+																?.accountId ??
+																item.toSplits[0]
+																	?.accountId
 														)?.name ??
 														AccountName.empty()
 													}
@@ -1099,13 +1114,15 @@ const CalendarItemsListItem = ({
 	accountTypeLookup: (id: AccountID) => AccountType;
 }) => {
 	const getItemSplitPrice = (item: ScheduledItem): PriceValueObject => {
-		const accountId = recurrence.account ?? item.operation.account;
-		const split = item.fromSplits.find(
-			(split) => split.accountId.value === accountId.value
-		);
-		return split
-			? new PriceValueObject(split.amount.value)
-			: PriceValueObject.zero();
+		// If the recurrence has custom splits, use those
+		if (recurrence.fromSplits && recurrence.fromSplits.length > 0) {
+			const totalAmount = recurrence.fromSplits.reduce(
+				(sum, split) => sum + split.amount.value,
+				0
+			);
+			return new PriceValueObject(totalAmount);
+		}
+		return item.fromAmount;
 	};
 
 	const price = getItemSplitPrice(item);
@@ -1145,10 +1162,15 @@ const CalendarItemsListItem = ({
 								item={item}
 								recurrence={{
 									recurrence: showPanel.item.recurrence,
-									n: new NumberValueObject(1),
+									n: n,
 								}}
-								onClose={() => setShowPanel(undefined)}
+								onClose={() => {
+									setShowPanel(undefined);
+									setSelectedItem(undefined);
+									setAction(undefined);
+								}}
 								context="calendar"
+								updateItems={updateItems}
 							/>
 						)}
 						{showPanel.action === "record" && (
@@ -1156,9 +1178,13 @@ const CalendarItemsListItem = ({
 								item={item}
 								recurrence={{
 									recurrence: showPanel.item.recurrence,
-									n: new NumberValueObject(1),
+									n: n,
 								}}
-								onClose={() => setShowPanel(undefined)}
+								onClose={() => {
+									setShowPanel(undefined);
+									setSelectedItem(undefined);
+									setAction(undefined);
+								}}
 								updateItems={updateItems}
 							/>
 						)}

@@ -8,7 +8,6 @@ import {
 	useCategorySelect,
 	useSubCategorySelect,
 } from "apps/obsidian-plugin/components/Select";
-import { useAccountSelect } from "apps/obsidian-plugin/components/Select/useAccountSelect";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 import {
 	AccountsContext,
@@ -27,6 +26,7 @@ import {
 	PropsWithChildren,
 	useContext,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
 } from "react";
@@ -51,12 +51,12 @@ export const CreateItemForm = ({
 
 	const { getAccountByID } = useContext(AccountsContext);
 	const { brands, stores } = useContext(TransactionsContext);
+	const { accounts } = useContext(AccountsContext);
 
 	const [locks, setLocks] = useState<{
 		[K in keyof Omit<Required<ScheduledItemPrimitives>, "id">]: boolean;
 	}>({
 		name: false,
-		price: false,
 		brand: false,
 		category: false,
 		subCategory: false,
@@ -93,11 +93,21 @@ export const CreateItemForm = ({
 	const { DateInput, date } = useDateInput({
 		id: "date",
 	});
-	const { AccountSelect } = useAccountSelect({
-		label: "From",
-		initialValueID: item.operation.account,
-		error: showErrors ? errors.account : undefined,
-	});
+	const accountNames = useMemo(
+		() =>
+			accounts
+				.map((acc) => acc.name.value)
+				.toSorted((a, b) => a.localeCompare(b)),
+		[accounts]
+	);
+	const fromAccountName = useMemo(() => {
+		const id =
+			item.fromSplits && item.fromSplits.length > 0
+				? item.fromSplits[0].accountId
+				: undefined;
+		if (!id) return "";
+		return getAccountByID(new AccountID(id))?.name.value ?? "";
+	}, [item.fromSplits, getAccountByID]);
 	const { CategorySelect, category } = useCategorySelect({
 		initialValueID: item.category,
 		lock: locks.category,
@@ -113,6 +123,16 @@ export const CreateItemForm = ({
 	const [tagInput, setTagInput] = useState("");
 	const [tags, setTags] = useState<string[]>([]);
 	const tagInputRef = useRef<HTMLInputElement>(null);
+
+	// Get the current "To Account" name for display
+	const toAccountName = useMemo(() => {
+		const id =
+			Array.isArray(item.toSplits) && item.toSplits.length > 0
+				? item.toSplits[0].accountId
+				: undefined;
+		if (!id) return "";
+		return getAccountByID(new AccountID(id))?.name.value ?? "";
+	}, [item.toSplits, getAccountByID]);
 
 	const getLockedOrSelectedValue = <T,>(
 		key: keyof Omit<ScheduledItemPrimitives, "id">
@@ -192,10 +212,6 @@ export const CreateItemForm = ({
 			newItem.subCategory = newValues.subCategory;
 		if (newValues.brand !== undefined) newItem.brand = newValues.brand;
 		if (newValues.store !== undefined) newItem.store = newValues.store;
-		if (newValues.operation?.toAccount)
-			newItem.operation.toAccount = newValues.operation?.toAccount;
-		if (newValues.operation?.account !== undefined)
-			newItem.operation.account = newValues.operation?.account;
 		if (newValues.tags !== undefined) newItem.tags = newValues.tags;
 
 		logger.debug("item to create updated", {
@@ -326,20 +342,30 @@ export const CreateItemForm = ({
 					id="name"
 					label="Item Name"
 					item={item}
-					items={items.map((item) => item.toPrimitives())}
+					items={[
+						...new Set(
+							items
+								.map((item) => item.toPrimitives())
+								.filter((item) => item?.name)
+								.sort((a, b) => a.name.localeCompare(b.name))
+						),
+					]}
 					getLabel={(item) => {
-						if (!item) return "";
-						const label = `${item.name} - ${
+						const labelStr = `${item.name} - ${
 							getAccountByID(
-								new AccountID(item.operation.account)
+								new AccountID(
+									item.fromSplits?.[0]?.accountId || ""
+								)
 							)?.name.value
 						}${
+							item.operation &&
 							item.operation.type === "transfer" &&
-							item.operation.toAccount
+							item.toSplits?.[0]?.accountId
 								? ` -> ${
 										getAccountByID(
 											new AccountID(
-												item.operation.toAccount
+												item.toSplits[0]?.accountId ||
+													""
 											)
 										)?.name.value
 								  } - `
@@ -352,11 +378,11 @@ export const CreateItemForm = ({
 										item.fromSplits?.[0]?.amount ?? 0
 								  ).toString()
 						}`;
-						return label.length > 40
-							? label.slice(0, 40) + "..."
-							: label;
+						return labelStr;
 					}}
-					getKey={(item) => item.name}
+					getKey={(item) => {
+						return item.id;
+					}}
 					setSelectedItem={setSelectedItem}
 					onChange={(name) => update({ name })}
 					isLocked={locks.name}
@@ -376,8 +402,6 @@ export const CreateItemForm = ({
 					<PriceInput
 						id="amount"
 						label="Amount"
-						isLocked={locks.price}
-						setIsLocked={(value) => updateLock("price", value)}
 						value={
 							new PriceValueObject(
 								item.fromSplits?.reduce(
@@ -391,7 +415,16 @@ export const CreateItemForm = ({
 							)
 						}
 						onChange={(amount) =>
-							update({ price: amount.toNumber() })
+							update({
+								fromSplits: [
+									{
+										accountId:
+											item.fromSplits?.[0]?.accountId ??
+											"",
+										amount: amount.toNumber(),
+									},
+								],
+							})
 						}
 						error={showErrors ? errors.fromSplits : undefined}
 					/>
@@ -433,13 +466,86 @@ export const CreateItemForm = ({
 									...item.operation,
 									type: type.toLowerCase() as OperationType,
 								},
+								toSplits:
+									type.toLowerCase() === "transfer"
+										? [{ accountId: "", amount: 0 }]
+										: [],
 							})
 						}
 						isLocked={locks.operation}
 						setIsLocked={(value) => updateLock("operation", value)}
 					/>
-					{AccountSelect}
+					<Select
+						id="account"
+						label="From"
+						value={fromAccountName}
+						values={["", ...accountNames]}
+						onChange={(accountName) => {
+							const selectedAccount = accounts.find(
+								(acc) => acc.name.value === accountName
+							);
+							update({
+								fromSplits: selectedAccount
+									? [
+											{
+												accountId:
+													selectedAccount.id.value,
+												amount:
+													item.fromSplits?.[0]
+														?.amount ?? 0,
+											},
+									  ]
+									: [
+											{
+												accountId: "",
+												amount:
+													item.fromSplits?.[0]
+														?.amount ?? 0,
+											},
+									  ],
+							});
+						}}
+						error={showErrors ? errors.account : undefined}
+					/>
 				</Box>
+
+				{/* Show To Account select only for transfer type */}
+				{item.operation.type === "transfer" && (
+					<Box
+						sx={{
+							display: "grid",
+							gridTemplateColumns: "1fr 1fr",
+							gap: "16px",
+							marginBottom: "16px",
+						}}
+					>
+						<div></div> {/* Empty div for spacing */}
+						<Select
+							id="toAccount"
+							label="To"
+							value={toAccountName}
+							values={["", ...accountNames]}
+							onChange={(accountName) => {
+								const selectedAccount = accounts.find(
+									(acc) => acc.name.value === accountName
+								);
+								update({
+									toSplits: selectedAccount
+										? [
+												{
+													accountId:
+														selectedAccount.id
+															.value,
+													amount: 0,
+												},
+										  ]
+										: [],
+								});
+							}}
+							error={showErrors ? errors.toAccount : undefined}
+						/>
+					</Box>
+				)}
 
 				<Box
 					sx={{

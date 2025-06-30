@@ -60,8 +60,8 @@ export const AccountsList = () => {
 			originalItem.operation,
 			account,
 			originalItem.fromAmount,
-			originalItem.operation.account,
-			originalItem.operation.toAccount
+			originalItem.fromSplits[0]?.accountId,
+			originalItem.toSplits[0]?.accountId
 		);
 
 		return impact;
@@ -82,11 +82,11 @@ export const AccountsList = () => {
 							state: item.recurrence.state,
 							accountBalance:
 								item.accountBalance.value.toString(),
-							account: item.recurrence.account?.value,
+							account: item.recurrence.fromSplits?.[0]?.accountId,
 							itemOperationAccount:
-								item.item.operation.account.value,
+								item.item.fromSplits[0]?.accountId,
 							itemOperationToAccount:
-								item.item.operation.toAccount?.value,
+								item.item.toSplits[0]?.accountId,
 						})),
 					});
 					setItemsWithAccountsBalance(result);
@@ -121,9 +121,10 @@ export const AccountsList = () => {
 				({ recurrence, item }: ItemWithAccumulatedBalance) => {
 					// Check if this account is involved in the transaction
 					const isMainAccount =
-						recurrence.account?.equalTo(account.id) ||
-						item.operation.account.equalTo(account.id);
-					const isToAccount = item.operation.toAccount?.equalTo(
+						recurrence.fromSplits?.[0]?.accountId?.equalTo(
+							account.id
+						) || item.fromSplits[0]?.accountId?.equalTo(account.id);
+					const isToAccount = item.toSplits[0]?.accountId?.equalTo(
 						account.id
 					);
 
@@ -134,16 +135,22 @@ export const AccountsList = () => {
 			console.log(`Account ${account.name.toString()}:`, {
 				originalBalance: account.balance.value.toString(),
 				accountItemsCount: accountItems.length,
-				accountItems: accountItems.map((item) => ({
-					itemName: item.item.name.toString(),
-					accountBalance: item.accountBalance.value.toString(),
-					date: item.recurrence.date.toString(),
+				accountItems: accountItems.map((itemWithBalance) => ({
+					itemName: itemWithBalance.item.name.toString(),
+					accountBalance:
+						itemWithBalance.accountBalance.value.toString(),
+					date: itemWithBalance.recurrence.date.toString(),
 					isMainAccount:
-						item.recurrence.account?.equalTo(account.id) ||
-						item.item.operation.account.equalTo(account.id),
-					isToAccount: item.item.operation.toAccount?.equalTo(
-						account.id
-					),
+						itemWithBalance.recurrence.fromSplits?.[0]?.accountId?.equalTo(
+							account.id
+						) ||
+						itemWithBalance.item.fromSplits[0]?.accountId?.equalTo(
+							account.id
+						),
+					isToAccount:
+						itemWithBalance.item.toSplits[0]?.accountId?.equalTo(
+							account.id
+						),
 				})),
 			});
 

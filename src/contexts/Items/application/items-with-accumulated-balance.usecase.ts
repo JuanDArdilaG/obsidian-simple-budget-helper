@@ -104,25 +104,33 @@ export class ItemsWithAccumulatedBalanceUseCase
 					item: recurrence,
 					account: accounts.find((acc) =>
 						acc.id.equalTo(
-							recurrence.account ?? item.operation.account
+							recurrence.fromSplits?.[0]?.accountId ??
+								item.fromSplits[0]?.accountId
 						)
 					),
 				});
 				return accounts.find((acc) =>
-					acc.id.equalTo(recurrence.account ?? item.operation.account)
+					acc.id.equalTo(
+						recurrence.fromSplits?.[0]?.accountId ??
+							item.fromSplits[0]?.accountId
+					)
 				);
 			})
 			.map(({ recurrence, item, n }) => ({
 				item,
 				recurrence: { recurrence, item, n },
 				account: accounts.find((acc) =>
-					acc.id.equalTo(recurrence.account ?? item.operation.account)
+					acc.id.equalTo(
+						recurrence.fromSplits?.[0]?.accountId ??
+							item.fromSplits[0]?.accountId
+					)
 				)!,
 				toAccount:
-					item.operation.toAccount &&
+					item.toSplits[0]?.accountId &&
 					accounts.find((acc) =>
 						acc.id.equalTo(
-							recurrence.toAccount ?? item.operation.toAccount!
+							recurrence.toSplits?.[0]?.accountId ??
+								item.toSplits[0]?.accountId
 						)
 					),
 			}));
@@ -172,8 +180,8 @@ export class ItemsWithAccumulatedBalanceUseCase
 			item.operation,
 			account,
 			item.fromAmount,
-			item.operation.account,
-			item.operation.toAccount
+			item.fromSplits[0]?.accountId,
+			item.toSplits[0]?.accountId
 		);
 		accountBalance = accountBalance.plus(recurrenceAmount);
 
@@ -183,8 +191,8 @@ export class ItemsWithAccumulatedBalanceUseCase
 					item.operation,
 					toAccount,
 					item.toAmount,
-					item.operation.account,
-					item.operation.toAccount
+					item.fromSplits[0]?.accountId,
+					item.toSplits[0]?.accountId
 				)
 			);
 

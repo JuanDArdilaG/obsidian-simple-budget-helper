@@ -85,7 +85,7 @@ describe("ItemsService", () => {
 				new ItemName("Income Item"),
 				fromSplits,
 				toSplits,
-				ItemOperation.income(accountID),
+				ItemOperation.income(),
 				CategoryID.generate(),
 				SubCategoryID.generate()
 			);
@@ -110,7 +110,7 @@ describe("ItemsService", () => {
 				new ItemName("Expense Item"),
 				fromSplits,
 				toSplits,
-				ItemOperation.expense(accountID),
+				ItemOperation.expense(),
 				CategoryID.generate(),
 				SubCategoryID.generate()
 			);
@@ -138,7 +138,7 @@ describe("ItemsService", () => {
 				new ItemName("Transfer Item"),
 				fromSplits,
 				toSplits,
-				ItemOperation.transfer(fromAccountID, toAccountID),
+				ItemOperation.transfer(),
 				CategoryID.generate(),
 				SubCategoryID.generate()
 			);
@@ -178,7 +178,7 @@ describe("ItemsService", () => {
 				new ItemName("Transfer Item"),
 				fromSplits,
 				toSplits,
-				ItemOperation.transfer(fromAccountID, toAccountID),
+				ItemOperation.transfer(),
 				CategoryID.generate(),
 				SubCategoryID.generate()
 			);
@@ -218,7 +218,7 @@ describe("ItemsService", () => {
 				new ItemName("Transfer Item"),
 				fromSplits,
 				toSplits,
-				ItemOperation.transfer(fromAccountID, toAccountID),
+				ItemOperation.transfer(),
 				CategoryID.generate(),
 				SubCategoryID.generate()
 			);
@@ -258,7 +258,7 @@ describe("ItemsService", () => {
 				new ItemName("Transfer Item"),
 				fromSplits,
 				toSplits,
-				ItemOperation.transfer(fromAccountID, toAccountID),
+				ItemOperation.transfer(),
 				CategoryID.generate(),
 				SubCategoryID.generate()
 			);
@@ -295,7 +295,7 @@ describe("ItemsService", () => {
 				new ItemName("Recurring Income Item"),
 				fromSplits,
 				toSplits,
-				ItemOperation.income(accountID),
+				ItemOperation.income(),
 				CategoryID.generate(),
 				SubCategoryID.generate(),
 				new ItemRecurrenceFrequency("1w")

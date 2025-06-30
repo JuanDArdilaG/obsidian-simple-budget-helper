@@ -234,8 +234,8 @@ export const AllItemsList = ({
 				);
 				if (!isInfinite) return false;
 
-				const account = getAccountByID(item.operation.account);
-				const toAccount = getAccountByID(item.operation.toAccount!);
+				const account = getAccountByID(item.fromSplits[0]?.accountId);
+				const toAccount = getAccountByID(item.toSplits[0]?.accountId);
 				return account?.type.isAsset() && toAccount?.type.isLiability();
 			}
 		);
@@ -272,8 +272,8 @@ export const AllItemsList = ({
 				);
 				if (!isFinite) return false;
 
-				const account = getAccountByID(item.operation.account);
-				const toAccount = getAccountByID(item.operation.toAccount!);
+				const account = getAccountByID(item.fromSplits[0]?.accountId);
+				const toAccount = getAccountByID(item.toSplits[0]?.accountId);
 				return account?.type.isAsset() && toAccount?.type.isLiability();
 			}
 		);
@@ -295,8 +295,8 @@ export const AllItemsList = ({
 		// Filter transfer items that are Liability to Asset
 		const liabilityToAssetTransfers = transferItems.filter(
 			(item: ScheduledItem) => {
-				const account = getAccountByID(item.operation.account);
-				const toAccount = getAccountByID(item.operation.toAccount!);
+				const account = getAccountByID(item.fromSplits[0]?.accountId);
+				const toAccount = getAccountByID(item.toSplits[0]?.accountId);
 				return account?.type.isLiability() && toAccount?.type.isAsset();
 			}
 		);
@@ -317,8 +317,8 @@ export const AllItemsList = ({
 		// Filter transfer items that are Asset to Liability
 		const assetToLiabilityTransfers = transferItems.filter(
 			(item: ScheduledItem) => {
-				const account = getAccountByID(item.operation.account);
-				const toAccount = getAccountByID(item.operation.toAccount!);
+				const account = getAccountByID(item.fromSplits[0]?.accountId);
+				const toAccount = getAccountByID(item.toSplits[0]?.accountId);
 				return account?.type.isAsset() && toAccount?.type.isLiability();
 			}
 		);
@@ -533,10 +533,12 @@ export const AllItemsList = ({
 							</ListSubheader>
 							{monthItems.map(({ item, recurrence }) => {
 								const account = getAccountByID(
-									item.operation.account
+									item.fromSplits[0]?.accountId
 								);
-								const toAccount = item.operation.toAccount
-									? getAccountByID(item.operation.toAccount)
+								const toAccount = item.toSplits[0]?.accountId
+									? getAccountByID(
+											item.toSplits[0]?.accountId
+									  )
 									: undefined;
 								const accountName =
 									account?.name ??
@@ -861,13 +863,14 @@ export const AllItemsList = ({
 										{selectedMonthData.incomeItems.map(
 											(item, index) => {
 												const account = getAccountByID(
-													item.operation.account
+													item.fromSplits[0]
+														?.accountId
 												);
-												const toAccount = item.operation
-													.toAccount
+												const toAccount = item
+													.toSplits[0]?.accountId
 													? getAccountByID(
-															item.operation
-																.toAccount
+															item.toSplits[0]
+																?.accountId
 													  )
 													: undefined;
 												const price =
@@ -951,13 +954,14 @@ export const AllItemsList = ({
 										{selectedMonthData.expenseItems.map(
 											(item, index) => {
 												const account = getAccountByID(
-													item.operation.account
+													item.fromSplits[0]
+														?.accountId
 												);
-												const toAccount = item.operation
-													.toAccount
+												const toAccount = item
+													.toSplits[0]?.accountId
 													? getAccountByID(
-															item.operation
-																.toAccount
+															item.toSplits[0]
+																?.accountId
 													  )
 													: undefined;
 												const price =

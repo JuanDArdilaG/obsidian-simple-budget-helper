@@ -10,7 +10,7 @@ describe("Item Price Calculations", () => {
 			const items = buildTestItems([
 				{
 					price: new ItemPrice(100),
-					operation: ItemOperation.income(AccountID.generate()),
+					operation: ItemOperation.income(),
 					account: AccountID.generate(),
 					toAccount: AccountID.generate(),
 				},
@@ -24,7 +24,7 @@ describe("Item Price Calculations", () => {
 			const items = buildTestItems([
 				{
 					price: new ItemPrice(100),
-					operation: ItemOperation.expense(AccountID.generate()),
+					operation: ItemOperation.expense(),
 					account: AccountID.generate(),
 					toAccount: AccountID.generate(),
 				},
@@ -38,10 +38,7 @@ describe("Item Price Calculations", () => {
 			const items = buildTestItems([
 				{
 					price: new ItemPrice(100),
-					operation: ItemOperation.transfer(
-						AccountID.generate(),
-						AccountID.generate()
-					),
+					operation: ItemOperation.transfer(),
 					account: AccountID.generate(),
 					toAccount: AccountID.generate(),
 				},
@@ -65,7 +62,7 @@ describe("Item Price Calculations", () => {
 				const items = buildTestItems([
 					{
 						price: new ItemPrice(100),
-						operation: ItemOperation.income(AccountID.generate()),
+						operation: ItemOperation.income(),
 						account: AccountID.generate(),
 						toAccount: AccountID.generate(),
 					},
@@ -82,7 +79,7 @@ describe("Item Price Calculations", () => {
 				const items = buildTestItems([
 					{
 						price: new ItemPrice(100),
-						operation: ItemOperation.expense(AccountID.generate()),
+						operation: ItemOperation.expense(),
 						account: AccountID.generate(),
 						toAccount: AccountID.generate(),
 					},
@@ -99,10 +96,7 @@ describe("Item Price Calculations", () => {
 				const items = buildTestItems([
 					{
 						price: new ItemPrice(100),
-						operation: ItemOperation.transfer(
-							AccountID.generate(),
-							AccountID.generate()
-						),
+						operation: ItemOperation.transfer(),
 						account: AccountID.generate(),
 						toAccount: AccountID.generate(),
 					},
@@ -122,7 +116,7 @@ describe("Item Price Calculations", () => {
 				const items = buildTestItems([
 					{
 						price: new ItemPrice(100),
-						operation: ItemOperation.income(AccountID.generate()),
+						operation: ItemOperation.income(),
 						recurrence: { frequency: "1w" },
 						account: AccountID.generate(),
 						toAccount: AccountID.generate(),
@@ -141,7 +135,7 @@ describe("Item Price Calculations", () => {
 				const items = buildTestItems([
 					{
 						price: new ItemPrice(100),
-						operation: ItemOperation.expense(AccountID.generate()),
+						operation: ItemOperation.expense(),
 						recurrence: { frequency: "1w" },
 						account: AccountID.generate(),
 						toAccount: AccountID.generate(),
@@ -160,10 +154,7 @@ describe("Item Price Calculations", () => {
 				const items = buildTestItems([
 					{
 						price: new ItemPrice(100),
-						operation: ItemOperation.transfer(
-							AccountID.generate(),
-							AccountID.generate()
-						),
+						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1w" },
 						account: AccountID.generate(),
 						toAccount: AccountID.generate(),
@@ -183,10 +174,7 @@ describe("Item Price Calculations", () => {
 				const items = buildTestItems([
 					{
 						price: new ItemPrice(100),
-						operation: ItemOperation.transfer(
-							AccountID.generate(),
-							AccountID.generate()
-						),
+						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1mo" },
 						account: AccountID.generate(),
 						toAccount: AccountID.generate(),
@@ -206,10 +194,7 @@ describe("Item Price Calculations", () => {
 				const items = buildTestItems([
 					{
 						price: new ItemPrice(10),
-						operation: ItemOperation.transfer(
-							AccountID.generate(),
-							AccountID.generate()
-						),
+						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1d" },
 						account: AccountID.generate(),
 						toAccount: AccountID.generate(),
@@ -233,10 +218,7 @@ describe("Item Price Calculations", () => {
 				const items = buildTestItems([
 					{
 						price: new ItemPrice(100),
-						operation: ItemOperation.transfer(
-							fromAccount,
-							toAccount
-						),
+						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1mo" },
 						account: fromAccount,
 						toAccount: toAccount,
@@ -267,10 +249,7 @@ describe("Item Price Calculations", () => {
 				const items = buildTestItems([
 					{
 						price: new ItemPrice(100),
-						operation: ItemOperation.transfer(
-							fromAccount,
-							toAccount
-						),
+						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1mo" },
 						account: fromAccount,
 						toAccount: toAccount,

@@ -126,14 +126,6 @@ export class RecordItemRecurrenceUseCase
 				// Update the scheduled item's splits
 				item.setFromSplits(newFromSplits);
 				item.setToSplits(newToSplits);
-
-				// Update the operation if accounts are provided (use first split for backward compatibility)
-				if (newFromSplits.length > 0) {
-					item.operation.updateAccount(newFromSplits[0].accountId);
-				}
-				if (newToSplits.length > 0) {
-					item.operation.updateToAccount(newToSplits[0].accountId);
-				}
 			}
 		}
 

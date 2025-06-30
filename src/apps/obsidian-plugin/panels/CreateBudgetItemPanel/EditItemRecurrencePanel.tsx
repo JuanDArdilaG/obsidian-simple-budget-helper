@@ -25,6 +25,7 @@ export const EditItemRecurrencePanel = ({
 	recurrence: { recurrence, n },
 	onClose,
 	context = "calendar",
+	updateItems,
 }: {
 	item: ScheduledItem;
 	recurrence: {
@@ -33,6 +34,7 @@ export const EditItemRecurrencePanel = ({
 	};
 	onClose: () => void;
 	context?: "calendar" | "all-items";
+	updateItems?: () => void;
 }) => {
 	const {
 		useCases: { modifyNItemRecurrence },
@@ -318,24 +320,25 @@ export const EditItemRecurrencePanel = ({
 								)
 						);
 
-						// Create the new recurrence info
+						// Create the new recurrence info with custom splits
 						const newRecurrence = new ItemRecurrenceInfo(
 							new ItemDate(date),
 							recurrence.state,
 							undefined, // price - not used for splits
-							undefined, // account - not used for splits
-							undefined // toAccount - not used for splits
+							fromSplitObjs,
+							toSplitObjs
 						);
 
 						await modifyNItemRecurrence.execute({
 							id: item.id,
 							n,
 							newRecurrence,
-							fromSplits: fromSplitObjs,
-							toSplits: toSplitObjs,
 						});
 
-						// Close the panel after successful update
+						// Call updateItems if provided to refresh the list
+						updateItems?.();
+
+						// Close the panel after successful update and refresh
 						onClose();
 					}}
 				>

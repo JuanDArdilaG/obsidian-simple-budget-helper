@@ -13,10 +13,7 @@ describe("execute", () => {
 		const items = buildTestItems([
 			{
 				price: new ItemPrice(100),
-				operation: ItemOperation.transfer(
-					AccountID.generate(),
-					AccountID.generate()
-				),
+				operation: ItemOperation.transfer(),
 				account: AccountID.generate(),
 				toAccount: AccountID.generate(),
 			},

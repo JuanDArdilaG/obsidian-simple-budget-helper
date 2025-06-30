@@ -26,12 +26,12 @@ export class ReportsService implements IReportsService {
 		return await Promise.all(
 			report.items.map(async (item) => {
 				const account = await this._accountsService.getByID(
-					item.operation.account
+					item.fromSplits[0]?.accountId
 				);
 				const toAccount =
-					item.operation.toAccount &&
+					item.toSplits[0]?.accountId &&
 					(await this._accountsService.getByID(
-						item.operation.toAccount
+						item.toSplits[0]?.accountId
 					));
 				return { item, account, toAccount };
 			})

@@ -49,7 +49,7 @@ export const buildTestItems = (
 				new ItemName("test"),
 				fromSplits,
 				toSplits,
-				ItemOperation.expense(AccountID.generate()),
+				ItemOperation.expense(),
 				CategoryID.generate(),
 				SubCategoryID.generate()
 			);
@@ -76,20 +76,28 @@ export const buildTestItems = (
 				const absPrice = price ? Math.abs(price.value) : 100;
 
 				// Determine the accounts to use for splits
-				const fromAccount =
-					account ||
-					(operation ? operation.account : AccountID.generate());
-				const toAccountForSplits = toAccount || operation?.toAccount;
+				const fromAccount = account || AccountID.generate();
+				const toAccountForSplits =
+					toAccount ||
+					(operation?.type.isTransfer()
+						? AccountID.generate()
+						: undefined);
 
 				const fromSplits = makeSplits(fromAccount, absPrice);
 				const toSplits = makeSplits(toAccountForSplits, absPrice);
+
+				// Ensure transfer operations have toSplits
+				const finalToSplits =
+					operation?.type.isTransfer() && toSplits.length === 0
+						? makeSplits(AccountID.generate(), absPrice)
+						: toSplits;
 
 				let item = ScheduledItem.oneTime(
 					startDate,
 					new ItemName("test"),
 					fromSplits,
-					toSplits,
-					operation ?? ItemOperation.expense(fromAccount),
+					finalToSplits,
+					operation ?? ItemOperation.expense(),
 					CategoryID.generate(),
 					SubCategoryID.generate()
 				);
@@ -98,8 +106,8 @@ export const buildTestItems = (
 						startDate,
 						new ItemName("test"),
 						fromSplits,
-						toSplits,
-						operation ?? ItemOperation.expense(fromAccount),
+						finalToSplits,
+						operation ?? ItemOperation.expense(),
 						CategoryID.generate(),
 						SubCategoryID.generate(),
 						new ItemRecurrenceFrequency(recurrence.frequency)
@@ -108,8 +116,8 @@ export const buildTestItems = (
 						item = ScheduledItem.untilDate(
 							new ItemName("test"),
 							fromSplits,
-							toSplits,
-							operation ?? ItemOperation.expense(fromAccount),
+							finalToSplits,
+							operation ?? ItemOperation.expense(),
 							CategoryID.generate(),
 							SubCategoryID.generate(),
 							new ItemRecurrenceFrequency(recurrence.frequency),

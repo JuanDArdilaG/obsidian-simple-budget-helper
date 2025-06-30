@@ -10,9 +10,9 @@ describe("ItemsReport", () => {
 	describe("basic filtering methods", () => {
 		it("should filter only expenses", () => {
 			const items = buildTestItems([
-				{ operation: ItemOperation.expense(AccountID.generate()) },
-				{ operation: ItemOperation.income(AccountID.generate()) },
-				{ operation: ItemOperation.expense(AccountID.generate()) },
+				{ operation: ItemOperation.expense() },
+				{ operation: ItemOperation.income() },
+				{ operation: ItemOperation.expense() },
 			]);
 			const report = new ItemsReport(items);
 
@@ -25,9 +25,9 @@ describe("ItemsReport", () => {
 
 		it("should filter only incomes", () => {
 			const items = buildTestItems([
-				{ operation: ItemOperation.expense(AccountID.generate()) },
-				{ operation: ItemOperation.income(AccountID.generate()) },
-				{ operation: ItemOperation.income(AccountID.generate()) },
+				{ operation: ItemOperation.expense() },
+				{ operation: ItemOperation.income() },
+				{ operation: ItemOperation.income() },
 			]);
 			const report = new ItemsReport(items);
 
@@ -87,9 +87,9 @@ describe("ItemsReport", () => {
 	describe("getter methods", () => {
 		it("should get expense items", () => {
 			const items = buildTestItems([
-				{ operation: ItemOperation.expense(AccountID.generate()) },
-				{ operation: ItemOperation.income(AccountID.generate()) },
-				{ operation: ItemOperation.expense(AccountID.generate()) },
+				{ operation: ItemOperation.expense() },
+				{ operation: ItemOperation.income() },
+				{ operation: ItemOperation.expense() },
 			]);
 			const report = new ItemsReport(items);
 
@@ -102,9 +102,9 @@ describe("ItemsReport", () => {
 
 		it("should get income items", () => {
 			const items = buildTestItems([
-				{ operation: ItemOperation.expense(AccountID.generate()) },
-				{ operation: ItemOperation.income(AccountID.generate()) },
-				{ operation: ItemOperation.income(AccountID.generate()) },
+				{ operation: ItemOperation.expense() },
+				{ operation: ItemOperation.income() },
+				{ operation: ItemOperation.income() },
 			]);
 			const report = new ItemsReport(items);
 
@@ -119,10 +119,10 @@ describe("ItemsReport", () => {
 			const account1 = AccountID.generate();
 			const account2 = AccountID.generate();
 			const items = buildTestItems([
-				{ operation: ItemOperation.expense(account1) },
-				{ operation: ItemOperation.transfer(account1, account2) },
-				{ operation: ItemOperation.income(account1) },
-				{ operation: ItemOperation.transfer(account2, account1) },
+				{ operation: ItemOperation.expense() },
+				{ operation: ItemOperation.transfer() },
+				{ operation: ItemOperation.income() },
+				{ operation: ItemOperation.transfer() },
 			]);
 			const report = new ItemsReport(items);
 
@@ -222,10 +222,10 @@ describe("ItemsReport", () => {
 			const account1 = AccountID.generate();
 			const account2 = AccountID.generate();
 			const items = buildTestItems([
-				{ operation: ItemOperation.expense(account1) },
-				{ operation: ItemOperation.income(account1) },
-				{ operation: ItemOperation.transfer(account1, account2) },
-				{ operation: ItemOperation.expense(account2) },
+				{ operation: ItemOperation.expense() },
+				{ operation: ItemOperation.income() },
+				{ operation: ItemOperation.transfer() },
+				{ operation: ItemOperation.expense() },
 			]);
 			const report = new ItemsReport(items);
 
@@ -275,9 +275,9 @@ describe("ItemsReport", () => {
 			const account1 = AccountID.generate();
 			const account2 = AccountID.generate();
 			const items = buildTestItems([
-				{ operation: ItemOperation.transfer(account1, account2) },
-				{ operation: ItemOperation.transfer(account2, account1) },
-				{ operation: ItemOperation.expense(account1) },
+				{ operation: ItemOperation.transfer() },
+				{ operation: ItemOperation.transfer() },
+				{ operation: ItemOperation.expense() },
 			]);
 			const report = new ItemsReport(items);
 
@@ -285,7 +285,7 @@ describe("ItemsReport", () => {
 			expect(transferItems).toHaveLength(2);
 			transferItems.forEach((item) => {
 				expect(item.operation.type.isTransfer()).toBe(true);
-				expect(item.operation.toAccount).toBeDefined();
+				expect(item.toSplits[0]?.accountId).toBeDefined();
 			});
 		});
 
@@ -318,12 +318,12 @@ describe("ItemsReport", () => {
 			const items = buildTestItems([
 				// Infinite recurrent expense
 				{
-					operation: ItemOperation.expense(account1),
+					operation: ItemOperation.expense(),
 					recurrence: { frequency: "monthly" },
 				},
 				// Finite recurrent expense
 				{
-					operation: ItemOperation.expense(account1),
+					operation: ItemOperation.expense(),
 					recurrence: {
 						frequency: "monthly",
 						untilDate: DateValueObject.createNowDate(),
@@ -331,12 +331,12 @@ describe("ItemsReport", () => {
 				},
 				// Infinite recurrent transfer (Asset to Liability)
 				{
-					operation: ItemOperation.transfer(account1, account2),
+					operation: ItemOperation.transfer(),
 					recurrence: { frequency: "monthly" },
 				},
 				// Income
 				{
-					operation: ItemOperation.income(account1),
+					operation: ItemOperation.income(),
 					recurrence: { frequency: "monthly" },
 				},
 			]);

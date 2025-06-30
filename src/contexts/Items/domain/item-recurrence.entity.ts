@@ -2,8 +2,8 @@ import {
 	DateValueObject,
 	NumberValueObject,
 } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
+import { PaymentSplit } from "../../Transactions/domain/payment-split.valueobject";
 import { ItemDate } from "./item-date.valueobject";
 import { ItemPrice } from "./item-price.valueobject";
 import { ItemRecurrenceFrequency } from "./item-recurrence-frequency.valueobject";
@@ -212,6 +212,31 @@ export class ItemRecurrence {
 		this.restoreModifications(modifications);
 	}
 
+	/**
+	 * Creates a new recurrence with the same properties but optionally preserves modifications
+	 */
+	static createWithPreservedModifications(
+		originalRecurrence: ItemRecurrence,
+		newRecurrence: ItemRecurrence,
+		preserveModifications: boolean = true
+	): ItemRecurrence {
+		if (preserveModifications) {
+			// Preserve modifications from the original recurrence
+			const modifications = originalRecurrence.preserveModifications();
+
+			// Create the new recurrence
+			const result = newRecurrence;
+
+			// Restore modifications to the new recurrence
+			result.restoreModifications(modifications);
+
+			return result;
+		} else {
+			// Don't preserve modifications - return the new recurrence as-is
+			return newRecurrence;
+		}
+	}
+
 	get recurrences(): ItemRecurrenceInfo[] {
 		return this._recurrences;
 	}
@@ -222,15 +247,15 @@ export class ItemRecurrence {
 	}
 
 	/**
-	 * Preserves modifications (price, account, toAccount, state) from existing recurrences
+	 * Preserves modifications (price, fromSplits, toSplits, state) from existing recurrences
 	 * to be restored after recreating the recurrence pattern
 	 */
 	private preserveModifications(): Map<
 		number,
 		{
 			price?: ItemPrice;
-			account?: AccountID;
-			toAccount?: AccountID;
+			fromSplits?: PaymentSplit[];
+			toSplits?: PaymentSplit[];
 			state?: ERecurrenceState;
 		}
 	> {
@@ -238,8 +263,8 @@ export class ItemRecurrence {
 			number,
 			{
 				price?: ItemPrice;
-				account?: AccountID;
-				toAccount?: AccountID;
+				fromSplits?: PaymentSplit[];
+				toSplits?: PaymentSplit[];
 				state?: ERecurrenceState;
 			}
 		>();
@@ -247,15 +272,16 @@ export class ItemRecurrence {
 		this._recurrences.forEach((recurrence, index) => {
 			const modification: {
 				price?: ItemPrice;
-				account?: AccountID;
-				toAccount?: AccountID;
+				fromSplits?: PaymentSplit[];
+				toSplits?: PaymentSplit[];
 				state?: ERecurrenceState;
 			} = {};
 
 			if (recurrence.price) modification.price = recurrence.price;
-			if (recurrence.account) modification.account = recurrence.account;
-			if (recurrence.toAccount)
-				modification.toAccount = recurrence.toAccount;
+			if (recurrence.fromSplits)
+				modification.fromSplits = recurrence.fromSplits;
+			if (recurrence.toSplits)
+				modification.toSplits = recurrence.toSplits;
 			if (recurrence.state !== ERecurrenceState.PENDING) {
 				modification.state = recurrence.state;
 			}
@@ -276,8 +302,8 @@ export class ItemRecurrence {
 			number,
 			{
 				price?: ItemPrice;
-				account?: AccountID;
-				toAccount?: AccountID;
+				fromSplits?: PaymentSplit[];
+				toSplits?: PaymentSplit[];
 				state?: ERecurrenceState;
 			}
 		>
@@ -309,11 +335,11 @@ export class ItemRecurrence {
 				if (modification.price) {
 					recurrence.updatePrice(modification.price);
 				}
-				if (modification.account) {
-					recurrence.updateAccount(modification.account);
+				if (modification.fromSplits) {
+					recurrence.updateFromSplits(modification.fromSplits);
 				}
-				if (modification.toAccount) {
-					recurrence.updateToAccount(modification.toAccount);
+				if (modification.toSplits) {
+					recurrence.updateToSplits(modification.toSplits);
 				}
 				if (modification.state) {
 					recurrence.updateState(modification.state);
@@ -343,11 +369,11 @@ export class ItemRecurrence {
 		if (modification.price) {
 			currentRecurrence.updatePrice(modification.price);
 		}
-		if (modification.account) {
-			currentRecurrence.updateAccount(modification.account);
+		if (modification.fromSplits) {
+			currentRecurrence.updateFromSplits(modification.fromSplits);
 		}
-		if (modification.toAccount) {
-			currentRecurrence.updateToAccount(modification.toAccount);
+		if (modification.toSplits) {
+			currentRecurrence.updateToSplits(modification.toSplits);
 		}
 		if (modification.state) {
 			currentRecurrence.updateState(modification.state);
@@ -476,8 +502,8 @@ export class ItemRecurrence {
 					recurrence.date,
 					recurrence.state,
 					recurrence.price,
-					recurrence.account,
-					recurrence.toAccount
+					recurrence.fromSplits,
+					recurrence.toSplits
 				),
 				n: new NumberValueObject(i),
 			}))
@@ -502,8 +528,8 @@ export class ItemRecurrence {
 				recurrence.date,
 				recurrence.state,
 				recurrence.price,
-				recurrence.account,
-				recurrence.toAccount
+				recurrence.fromSplits,
+				recurrence.toSplits
 			),
 			n: new NumberValueObject(i),
 		}));
