@@ -1,11 +1,11 @@
-import { useContext, useEffect, useState } from "react";
-import { AccountingList } from "./AccountingList";
-import { AccountingSectionSelection } from "./AccountingSectionButtons";
-import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 import { CreateTransactionPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/CreateTransactionPanel";
 import { Transaction } from "contexts/Transactions/domain";
+import { useContext, useEffect, useState } from "react";
 import { TransactionsContext } from "../Contexts";
+import { RightSidebarReactTab } from "../RightSidebarReactTab";
+import { AccountingList } from "./AccountingList";
+import { AccountingSectionSelection } from "./AccountingSectionButtons";
 
 export const AccountingSection = ({
 	statusBarAddText,
@@ -15,6 +15,8 @@ export const AccountingSection = ({
 	const { updateFilteredTransactions } = useContext(TransactionsContext);
 	const logger = useLogger("AccountingSection");
 	const [showCreateForm, setShowCreateForm] = useState(false);
+	const [editingTransaction, setEditingTransaction] =
+		useState<Transaction | null>(null);
 	const [sectionSelection] =
 		useState<AccountingSectionSelection>("movements");
 
@@ -24,17 +26,38 @@ export const AccountingSection = ({
 
 	const [selection, setSelection] = useState<Transaction[]>([]);
 
+	const handleCloseForm = () => {
+		setShowCreateForm(false);
+		setEditingTransaction(null);
+	};
+
+	const handleCreate = () => {
+		setEditingTransaction(null);
+		setShowCreateForm(!showCreateForm);
+	};
+
+	const handleEdit = (transaction: Transaction) => {
+		setEditingTransaction(transaction);
+		setShowCreateForm(true);
+	};
+
+	const handleFormSubmit = () => {
+		setSelection([]);
+		handleCloseForm();
+	};
+
 	return (
 		<RightSidebarReactTab
 			title="Accounting"
-			handleCreate={async () => setShowCreateForm(!showCreateForm)}
+			handleCreate={async () => handleCreate()}
 			handleRefresh={async () => updateFilteredTransactions()}
 			isCreating={showCreateForm}
 		>
 			{showCreateForm && (
 				<CreateTransactionPanel
-					close={() => setShowCreateForm(false)}
-					onCreate={() => setSelection([])}
+					close={handleCloseForm}
+					onCreate={handleFormSubmit}
+					transaction={editingTransaction}
 				/>
 			)}
 			{sectionSelection === "movements" && (
@@ -42,6 +65,7 @@ export const AccountingSection = ({
 					statusBarAddText={statusBarAddText}
 					selection={selection}
 					setSelection={setSelection}
+					onEditTransaction={handleEdit}
 				/>
 			)}
 		</RightSidebarReactTab>

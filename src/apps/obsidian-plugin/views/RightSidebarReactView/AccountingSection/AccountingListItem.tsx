@@ -4,49 +4,26 @@ import React, { useCallback, useContext, useMemo } from "react";
 import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
 import { DisplayableTransactionWithAccumulatedBalance } from "./AccountingList";
 
-import {
-	Box,
-	IconButton,
-	Modal,
-	Typography,
-	useMediaQuery,
-} from "@mui/material";
+import { Box, IconButton, Typography, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { ConfirmationModal } from "apps/obsidian-plugin/components/ConfirmationModal";
-import { EditTransactionPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel";
 
 interface AccountingListItemProps {
 	transactionWithBalance: DisplayableTransactionWithAccumulatedBalance;
 	selection: Transaction[];
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
-	editingTransactionId: string | null;
-	setEditingTransactionId: (id: string | null) => void;
+	onEditTransaction: (transaction: Transaction) => void;
 	updateTransactions: () => void;
 }
-
-const modalStyle = {
-	position: "absolute" as const,
-	top: "50%",
-	left: "50%",
-	transform: "translate(-50%, -50%)",
-	width: "90%",
-	maxWidth: "500px",
-	bgcolor: "var(--background-primary)",
-	border: "2px solid var(--background-modifier-border)",
-	boxShadow: 24,
-	p: 4,
-	color: "var(--text-normal)",
-};
 
 export const AccountingListItem = ({
 	transactionWithBalance: { transaction, balance, prevBalance, display },
 	selection,
 	setSelection,
-	editingTransactionId,
-	setEditingTransactionId,
+	onEditTransaction,
 	updateTransactions,
 }: Readonly<AccountingListItemProps>) => {
 	const theme = useTheme();
@@ -60,7 +37,6 @@ export const AccountingListItem = ({
 	} = useContext(TransactionsContext);
 	const { updateAccounts } = useContext(AccountsContext);
 
-	const isEditing = editingTransactionId === transaction.id.toString();
 	const isTransfer = transaction.operation.isTransfer();
 
 	const isSelected = useMemo(
@@ -96,19 +72,10 @@ export const AccountingListItem = ({
 	const handleEdit = useCallback(
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
-			setEditingTransactionId(transaction.id.toString());
+			onEditTransaction(transaction);
 		},
-		[setEditingTransactionId, transaction.id]
+		[onEditTransaction, transaction]
 	);
-
-	const handleCloseEdit = useCallback(async () => {
-		setEditingTransactionId(null);
-		updateTransactions();
-	}, [setEditingTransactionId, updateTransactions]);
-
-	const handleUpdateTransaction = useCallback(async () => {
-		updateTransactions();
-	}, [updateTransactions]);
 
 	const handleSelectionToggle = useCallback(() => {
 		setSelection((prevSelection) => {
@@ -143,6 +110,8 @@ export const AccountingListItem = ({
 						flexGrow: 1,
 						padding: isMobile ? "8px 4px" : "8px 16px",
 						width: "100%",
+						display: "flex",
+						flexDirection: "column",
 					}}
 				>
 					{isMobile ? (
@@ -367,27 +336,6 @@ export const AccountingListItem = ({
 					)}
 				</div>
 			</div>
-			<Modal
-				open={isEditing}
-				onClose={handleCloseEdit}
-				aria-labelledby="edit-transaction-modal-title"
-			>
-				<Box sx={modalStyle}>
-					<Typography
-						id="edit-transaction-modal-title"
-						variant="h6"
-						component="h2"
-						sx={{ mb: 2 }}
-					>
-						Edit Transaction
-					</Typography>
-					<EditTransactionPanel
-						transaction={transaction}
-						onClose={handleCloseEdit}
-						onUpdate={handleUpdateTransaction}
-					/>
-				</Box>
-			</Modal>
 		</>
 	);
 };

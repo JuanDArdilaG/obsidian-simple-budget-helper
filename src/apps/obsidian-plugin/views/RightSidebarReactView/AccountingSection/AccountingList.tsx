@@ -62,10 +62,12 @@ export function AccountingList({
 	selection,
 	setSelection,
 	statusBarAddText,
+	onEditTransaction,
 }: Readonly<{
 	statusBarAddText: (val: string | DocumentFragment) => void;
 	selection: Transaction[];
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
+	onEditTransaction: (transaction: Transaction) => void;
 }>) {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -83,9 +85,6 @@ export function AccountingList({
 	// Performance tracking
 	const [renderTime, setRenderTime] = useState<number>(0);
 	const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
-	const [editingTransactionId, setEditingTransactionId] = useState<
-		string | null
-	>(null);
 
 	// Virtual list ref for resetting cache
 	const virtualListRef = useRef<VirtualList>(null);
@@ -374,11 +373,8 @@ export function AccountingList({
 											}}
 										>
 											<AccountingListItem
-												editingTransactionId={
-													editingTransactionId
-												}
-												setEditingTransactionId={
-													setEditingTransactionId
+												onEditTransaction={
+													onEditTransaction
 												}
 												transactionWithBalance={
 													transactionWithBalance
@@ -403,16 +399,17 @@ export function AccountingList({
 			selection,
 			setSelection,
 			isMobile,
-			editingTransactionId,
+			onEditTransaction,
 			updateFilteredTransactions,
 		]
 	);
 
 	const getItemSize = (index: number) => {
+		const [, withBalanceTransactions] = visibleTransactions[index];
 		return (
 			BASE_ITEM_HEIGHT +
 			(isMobile ? MOBILE_TRANSACTION_HEIGHT : TRANSACTION_HEIGHT) *
-				(visibleTransactions[index]?.[1].length ?? 1)
+				(withBalanceTransactions.length ?? 1)
 		);
 	};
 
