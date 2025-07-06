@@ -67,11 +67,87 @@ describe("adjustOnTransactionDeletion", () => {
 	});
 });
 
+describe("adjustFromTransaction with liability accounts", () => {
+	it("liability account balance should decrease on income transaction (reduces debt)", () => {
+		const liabilityAccount = buildTestLiabilityAccount();
+		const transactions = buildTestTransactions([
+			{
+				account: liabilityAccount.id.value,
+				amount: 100,
+				operation: "income",
+			},
+		]);
+
+		liabilityAccount.adjustFromTransaction(transactions[0]);
+
+		// For liability accounts, income should reduce the debt (negative balance becomes less negative)
+		expect(liabilityAccount.balance.value.value).toBe(-100);
+	});
+
+	it("liability account balance should increase on expense transaction (increases debt)", () => {
+		const liabilityAccount = buildTestLiabilityAccount();
+		const transactions = buildTestTransactions([
+			{
+				account: liabilityAccount.id.value,
+				amount: 100,
+				operation: "expense",
+			},
+		]);
+
+		liabilityAccount.adjustFromTransaction(transactions[0]);
+
+		// For liability accounts, expense should increase the debt (negative balance becomes more negative)
+		expect(liabilityAccount.balance.value.value).toBe(100);
+	});
+
+	it("asset account balance should increase on income transaction", () => {
+		const assetAccount = buildTestAccount();
+		const transactions = buildTestTransactions([
+			{
+				account: assetAccount.id.value,
+				amount: 100,
+				operation: "income",
+			},
+		]);
+
+		assetAccount.adjustFromTransaction(transactions[0]);
+
+		// For asset accounts, income should increase the balance
+		expect(assetAccount.balance.value.value).toBe(100);
+	});
+
+	it("asset account balance should decrease on expense transaction", () => {
+		const assetAccount = buildTestAccount();
+		const transactions = buildTestTransactions([
+			{
+				account: assetAccount.id.value,
+				amount: 100,
+				operation: "expense",
+			},
+		]);
+
+		assetAccount.adjustFromTransaction(transactions[0]);
+
+		// For asset accounts, expense should decrease the balance
+		expect(assetAccount.balance.value.value).toBe(-100);
+	});
+});
+
 const buildTestAccount = (): Account => {
 	return new Account(
 		AccountID.generate(),
 		AccountType.asset(),
 		new AccountName("name"),
+		new AccountBalance(PriceValueObject.zero()),
+		DateValueObject.createNowDate()
+	);
+};
+
+const buildTestLiabilityAccount = (): Account => {
+	return new Account(
+		AccountID.generate(),
+		AccountType.liability(),
+		new AccountName("Liability Account"),
 		new AccountBalance(PriceValueObject.zero()),
 		DateValueObject.createNowDate()
 	);

@@ -77,9 +77,17 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			transaction: transaction.toPrimitives(),
 			balance: this._balance.value,
 		});
-		this._balance = this._balance.plus(
-			transaction.getRealAmountForAccount(this._id)
-		);
+
+		// Get the base amount from the transaction
+		const baseAmount = transaction.getRealAmountForAccount(this._id);
+
+		// For liability accounts, we need to invert the sign
+		// because liability accounts have opposite accounting rules
+		const adjustedAmount = this._type.isLiability()
+			? baseAmount.times(new NumberValueObject(-1))
+			: baseAmount;
+
+		this._balance = this._balance.plus(adjustedAmount);
 		this.updateTimestamp();
 	}
 
@@ -87,22 +95,32 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		prevTransaction: Transaction,
 		transaction: Transaction
 	) {
-		if (
-			prevTransaction
-				.getRealAmountForAccount(this.id)
-				.equalTo(transaction.getRealAmountForAccount(this.id))
-		)
-			return;
-		this._balance = this._balance
-			.sustract(prevTransaction.getRealAmountForAccount(this.id))
-			.plus(transaction.getRealAmountForAccount(this.id));
+		const prevAmount = this._type.isLiability()
+			? prevTransaction
+					.getRealAmountForAccount(this.id)
+					.times(new NumberValueObject(-1))
+			: prevTransaction.getRealAmountForAccount(this.id);
+
+		const newAmount = this._type.isLiability()
+			? transaction
+					.getRealAmountForAccount(this.id)
+					.times(new NumberValueObject(-1))
+			: transaction.getRealAmountForAccount(this.id);
+
+		if (prevAmount.equalTo(newAmount)) return;
+
+		this._balance = this._balance.sustract(prevAmount).plus(newAmount);
 		this.updateTimestamp();
 	}
 
 	adjustOnTransactionDeletion(transaction: Transaction) {
-		this._balance = this._balance.sustract(
-			transaction.getRealAmountForAccount(this.id)
-		);
+		const amount = this._type.isLiability()
+			? transaction
+					.getRealAmountForAccount(this.id)
+					.times(new NumberValueObject(-1))
+			: transaction.getRealAmountForAccount(this.id);
+
+		this._balance = this._balance.sustract(amount);
 		this.updateTimestamp();
 	}
 
