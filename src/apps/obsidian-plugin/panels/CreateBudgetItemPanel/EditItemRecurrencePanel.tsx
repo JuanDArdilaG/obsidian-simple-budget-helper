@@ -12,10 +12,11 @@ import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactVie
 import { AccountID } from "contexts/Accounts/domain";
 import {
 	ItemDate,
+	ItemName,
 	ItemRecurrenceInfo,
 	ScheduledItem,
 } from "contexts/Items/domain";
-import { OperationType } from "contexts/Shared/domain";
+import { ItemOperation, OperationType } from "contexts/Shared/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { useContext, useState } from "react";
@@ -37,10 +38,13 @@ export const EditItemRecurrencePanel = ({
 	updateItems?: () => void;
 }) => {
 	const {
-		useCases: { modifyNItemRecurrence },
+		useCases: { modifyNItemRecurrence, updateItem },
 	} = useContext(ItemsContext);
 	const { brands, stores } = useContext(TransactionsContext);
 	const { accounts } = useContext(AccountsContext);
+
+	// Check if this is a single recurrence item
+	const isSingleRecurrence = item.recurrence.isOneTime();
 
 	const [name, setName] = useState(item.name.value);
 	const [type, setType] = useState(item.operation.type.value);
@@ -76,8 +80,8 @@ export const EditItemRecurrencePanel = ({
 		<div className="create-budget-item-modal">
 			<h3>Edit Item</h3>
 
-			{/* Context Warning */}
-			{context === "calendar" && (
+			{/* Context Warning - Only show for non-single recurrence items */}
+			{!isSingleRecurrence && context === "calendar" && (
 				<div
 					style={{
 						padding: "12px",
@@ -97,7 +101,7 @@ export const EditItemRecurrencePanel = ({
 				</div>
 			)}
 
-			{context === "all-items" && (
+			{!isSingleRecurrence && context === "all-items" && (
 				<div
 					style={{
 						padding: "12px",
@@ -301,7 +305,68 @@ export const EditItemRecurrencePanel = ({
 				</button>
 			</div>
 			{/* End Splits Editor */}
-			{typeof modifyNItemRecurrence.execute === "function" ? (
+
+			{/* Save button - Different logic for single vs recurring items */}
+			{isSingleRecurrence ? (
+				// For single recurrence items, update the entire item
+				typeof updateItem.execute === "function" ? (
+					<button
+						onClick={async () => {
+							// Create PaymentSplit objects from the UI state
+							const fromSplitObjs = fromSplits.map(
+								(s) =>
+									new PaymentSplit(
+										new AccountID(s.accountId),
+										s.amount
+									)
+							);
+							const toSplitObjs = toSplits.map(
+								(s) =>
+									new PaymentSplit(
+										new AccountID(s.accountId),
+										s.amount
+									)
+							);
+
+							// Create a copy of the item and update it
+							const updatedItem = item.copy();
+
+							// Update basic properties
+							updatedItem.updateName(new ItemName(name));
+							updatedItem.updateOperation(
+								ItemOperation.fromPrimitives({ type })
+							);
+
+							// Update splits
+							updatedItem.setFromSplits(fromSplitObjs);
+							updatedItem.setToSplits(toSplitObjs);
+
+							// Update recurrence with new date
+							const newRecurrence = new ItemRecurrenceInfo(
+								new ItemDate(date),
+								recurrence.state,
+								undefined, // price - not used for splits
+								fromSplitObjs,
+								toSplitObjs
+							);
+
+							// Update the recurrence
+							updatedItem.modifyRecurrence(0, newRecurrence);
+
+							await updateItem.execute(updatedItem);
+
+							// Call updateItems if provided to refresh the list
+							updateItems?.();
+
+							// Close the panel after successful update and refresh
+							onClose();
+						}}
+					>
+						Save
+					</button>
+				) : null
+			) : // For recurring items, use the existing modifyNItemRecurrence logic
+			typeof modifyNItemRecurrence.execute === "function" ? (
 				<button
 					onClick={async () => {
 						// Create PaymentSplit objects from the UI state
