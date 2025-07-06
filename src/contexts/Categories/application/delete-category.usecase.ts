@@ -1,5 +1,8 @@
 import { ItemsService } from "contexts/Items/application/items.service";
-import { ISubCategoriesService } from "contexts/Subcategories/domain";
+import {
+	ISubCategoriesService,
+	SubCategoryID,
+} from "contexts/Subcategories/domain";
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 import { CategoryID } from "../domain";
 import { CategoriesService } from "./categories.service";
@@ -109,7 +112,8 @@ export class DeleteCategoryUseCase {
 
 	async execute(
 		categoryId: CategoryID,
-		reassignToCategoryId?: CategoryID
+		reassignToCategoryId?: CategoryID,
+		reassignToSubcategoryId?: SubCategoryID
 	): Promise<void> {
 		// If no reassignment category is provided, we need to check if there are related transactions/items
 		if (!reassignToCategoryId) {
@@ -153,7 +157,7 @@ export class DeleteCategoryUseCase {
 				}
 
 				throw new Error(
-					`Cannot delete category with related data. Please provide a category to reassign them to.\n\nIssues found:\n${errorMessages.join(
+					`Cannot delete category with related data. Please provide a category and subcategory to reassign them to.\n\nIssues found:\n${errorMessages.join(
 						"\n"
 					)}`
 				);
@@ -162,14 +166,29 @@ export class DeleteCategoryUseCase {
 
 		// Reassign related transactions and items if a target category is provided
 		if (reassignToCategoryId) {
-			await this.transactionsService.reassignTransactionsCategory(
-				categoryId,
-				reassignToCategoryId
-			);
-			await this.itemsService.reassignItemsCategory(
-				categoryId,
-				reassignToCategoryId
-			);
+			if (reassignToSubcategoryId) {
+				// Reassign to both category and subcategory
+				await this.transactionsService.reassignTransactionsCategoryAndSubcategory(
+					categoryId,
+					reassignToCategoryId,
+					reassignToSubcategoryId
+				);
+				await this.itemsService.reassignItemsCategoryAndSubcategory(
+					categoryId,
+					reassignToCategoryId,
+					reassignToSubcategoryId
+				);
+			} else {
+				// Reassign only to category
+				await this.transactionsService.reassignTransactionsCategory(
+					categoryId,
+					reassignToCategoryId
+				);
+				await this.itemsService.reassignItemsCategory(
+					categoryId,
+					reassignToCategoryId
+				);
+			}
 		}
 
 		// Delete the category

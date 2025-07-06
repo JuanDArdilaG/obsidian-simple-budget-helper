@@ -25,6 +25,11 @@ export interface IItemsService
 		oldSubCategory: SubCategoryID,
 		newSubCategory: SubCategoryID
 	): Promise<void>;
+	reassignItemsCategoryAndSubcategory(
+		oldCategory: CategoryID,
+		newCategory: CategoryID,
+		newSubCategory: SubCategoryID
+	): Promise<void>;
 	modifyRecurrence(
 		id: ItemID,
 		n: NumberValueObject,

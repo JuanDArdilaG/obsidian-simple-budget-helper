@@ -146,7 +146,10 @@ export const CategoriesList = () => {
 		handleMenuClose();
 	};
 
-	const handleDeleteConfirm = async (reassignToId?: string) => {
+	const handleDeleteConfirm = async (reassignment?: {
+		categoryId: string;
+		subcategoryId?: string;
+	}) => {
 		if (!deleteItem) return;
 		try {
 			if (deleteItem.type === "category") {
@@ -155,7 +158,12 @@ export const CategoriesList = () => {
 				);
 				await deleteCategoryUseCase.execute(
 					new CategoryID(deleteItem.id),
-					reassignToId ? new CategoryID(reassignToId) : undefined
+					reassignment?.categoryId
+						? new CategoryID(reassignment.categoryId)
+						: undefined,
+					reassignment?.subcategoryId
+						? new SubCategoryID(reassignment.subcategoryId)
+						: undefined
 				);
 			} else if (deleteItem.type === "subcategory") {
 				const deleteSubCategoryUseCase = container.resolve(
@@ -163,7 +171,9 @@ export const CategoriesList = () => {
 				);
 				await deleteSubCategoryUseCase.execute(
 					new SubCategoryID(deleteItem.id),
-					reassignToId ? new SubCategoryID(reassignToId) : undefined
+					reassignment?.subcategoryId
+						? new SubCategoryID(reassignment.subcategoryId)
+						: undefined
 				);
 			}
 			await updateCategoriesWithSubcategories();
@@ -172,7 +182,7 @@ export const CategoriesList = () => {
 					deleteItem.type.charAt(0).toUpperCase() +
 					deleteItem.type.slice(1)
 				} "${deleteItem.name}" deleted successfully${
-					reassignToId ? " and related items reassigned" : ""
+					reassignment ? " and related items reassigned" : ""
 				}`,
 				"success"
 			);
@@ -203,6 +213,8 @@ export const CategoriesList = () => {
 			id: string;
 			name: string;
 			type: "category" | "subcategory";
+			parentCategoryId?: string;
+			parentCategoryName?: string;
 		}> = [];
 
 		if (!deleteItem) {
@@ -217,6 +229,21 @@ export const CategoriesList = () => {
 						id: cat.category.id.value,
 						name: cat.category.name.toString(),
 						type: "category" as const,
+					});
+				}
+			});
+
+			// Add all subcategories from all categories (excluding the one being deleted)
+			sortedCategories.forEach((cat) => {
+				if (cat.category.id.value !== deleteItem.id) {
+					cat.subCategories.forEach((subCat) => {
+						reassignments.push({
+							id: subCat.id.value,
+							name: subCat.name.toString(),
+							type: "subcategory" as const,
+							parentCategoryId: cat.category.id.value,
+							parentCategoryName: cat.category.name.toString(),
+						});
 					});
 				}
 			});
@@ -240,6 +267,8 @@ export const CategoriesList = () => {
 							id: subCat.id.value,
 							name: `${cat.category.name.toString()} > ${subCat.name.toString()}`,
 							type: "subcategory" as const,
+							parentCategoryId: cat.category.id.value,
+							parentCategoryName: cat.category.name.toString(),
 						});
 					}
 				});

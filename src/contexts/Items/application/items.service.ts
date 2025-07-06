@@ -80,6 +80,20 @@ export class ItemsService
 		}
 	}
 
+	async reassignItemsCategoryAndSubcategory(
+		oldCategory: CategoryID,
+		newCategory: CategoryID,
+		newSubCategory: SubCategoryID
+	): Promise<void> {
+		const items = await this.getByCategory(oldCategory);
+
+		for (const item of items) {
+			item.updateCategory(newCategory);
+			item.updateSubCategory(newSubCategory);
+			await this._scheduledItemsRepository.persist(item);
+		}
+	}
+
 	async modifyRecurrence(
 		id: ItemID,
 		n: NumberValueObject,

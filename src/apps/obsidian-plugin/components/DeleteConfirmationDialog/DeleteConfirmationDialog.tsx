@@ -32,19 +32,26 @@ interface TransactionSummary {
 	account?: string;
 }
 
+interface ReassignmentOption {
+	id: string;
+	name: string;
+	type: "category" | "subcategory";
+	parentCategoryId?: string;
+	parentCategoryName?: string;
+}
+
 interface DeleteConfirmationDialogProps {
 	open: boolean;
 	onClose: () => void;
-	onConfirm: (reassignToId?: string) => void;
+	onConfirm: (reassignment?: {
+		categoryId: string;
+		subcategoryId?: string;
+	}) => void;
 	title: string;
 	message: string;
 	itemName: string;
 	itemType: "category" | "subcategory";
-	availableReassignments: Array<{
-		id: string;
-		name: string;
-		type: "category" | "subcategory";
-	}>;
+	availableReassignments: ReassignmentOption[];
 	hasRelatedItems: boolean;
 	relatedTransactions?: TransactionSummary[];
 }
@@ -61,30 +68,70 @@ export const DeleteConfirmationDialog = ({
 	hasRelatedItems,
 	relatedTransactions = [],
 }: DeleteConfirmationDialogProps) => {
-	const [reassignToId, setReassignToId] = useState<string>("");
+	const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+	const [selectedSubcategoryId, setSelectedSubcategoryId] =
+		useState<string>("");
 	const [showReassignSection, setShowReassignSection] = useState(false);
 
 	useEffect(() => {
 		if (open) {
-			setReassignToId("");
+			setSelectedCategoryId("");
+			setSelectedSubcategoryId("");
 			setShowReassignSection(hasRelatedItems);
 		}
 	}, [open, hasRelatedItems]);
 
 	const handleConfirm = () => {
-		onConfirm(showReassignSection ? reassignToId : undefined);
+		if (showReassignSection) {
+			if (itemType === "category") {
+				// For category deletion, require both category and subcategory
+				onConfirm({
+					categoryId: selectedCategoryId,
+					subcategoryId: selectedSubcategoryId,
+				});
+			} else {
+				// For subcategory deletion, only require subcategory
+				onConfirm({
+					categoryId: selectedCategoryId,
+					subcategoryId: selectedSubcategoryId,
+				});
+			}
+		} else {
+			onConfirm();
+		}
 		onClose();
 	};
 
 	const handleClose = () => {
-		setReassignToId("");
+		setSelectedCategoryId("");
+		setSelectedSubcategoryId("");
 		setShowReassignSection(hasRelatedItems);
 		onClose();
 	};
 
-	const filteredReassignments = availableReassignments.filter(
-		(item) => item.type === itemType
-	);
+	// Filter available reassignments based on item type
+	const getAvailableCategories = () => {
+		return availableReassignments.filter(
+			(item) => item.type === "category"
+		);
+	};
+
+	const getAvailableSubcategories = () => {
+		if (itemType === "category") {
+			// When deleting a category, show all subcategories from the selected category
+			if (!selectedCategoryId) return [];
+			return availableReassignments.filter(
+				(item) =>
+					item.type === "subcategory" &&
+					item.parentCategoryId === selectedCategoryId
+			);
+		} else {
+			// When deleting a subcategory, show all other subcategories
+			return availableReassignments.filter(
+				(item) => item.type === "subcategory"
+			);
+		}
+	};
 
 	const formatAmount = (amount: number) => {
 		return new Intl.NumberFormat("en-US", {
@@ -114,6 +161,19 @@ export const DeleteConfirmationDialog = ({
 			month: "short",
 			day: "numeric",
 		});
+	};
+
+	// Check if the form is valid for submission
+	const isFormValid = () => {
+		if (!showReassignSection) return true;
+
+		if (itemType === "category") {
+			// For category deletion, both category and subcategory are required
+			return selectedCategoryId && selectedSubcategoryId;
+		} else {
+			// For subcategory deletion, only subcategory is required
+			return selectedSubcategoryId;
+		}
 	};
 
 	return (
@@ -461,16 +521,85 @@ export const DeleteConfirmationDialog = ({
 								Reassign to another {itemType}:
 							</Typography>
 
+							{/* Category selection (only shown when deleting a category) */}
+							{itemType === "category" && (
+								<FormControl
+									fullWidth
+									size="small"
+									sx={{ mb: 2 }}
+								>
+									<InputLabel
+										sx={{ color: "var(--text-muted)" }}
+									>
+										Select category to reassign to
+									</InputLabel>
+									<Select
+										value={selectedCategoryId}
+										onChange={(e) => {
+											setSelectedCategoryId(
+												e.target.value
+											);
+											setSelectedSubcategoryId(""); // Reset subcategory when category changes
+										}}
+										label="Select category to reassign to"
+										sx={{
+											backgroundColor:
+												"var(--background-secondary)",
+											color: "var(--text-normal)",
+											"& .MuiOutlinedInput-notchedOutline":
+												{
+													borderColor:
+														"var(--background-modifier-border)",
+												},
+											"&:hover .MuiOutlinedInput-notchedOutline":
+												{
+													borderColor:
+														"var(--text-muted)",
+												},
+											"&.Mui-focused .MuiOutlinedInput-notchedOutline":
+												{
+													borderColor:
+														"var(--interactive-accent)",
+												},
+										}}
+									>
+										{getAvailableCategories()
+											.sort((a, b) =>
+												a.name.localeCompare(b.name)
+											)
+											.map((item) => (
+												<MenuItem
+													key={item.id}
+													value={item.id}
+													sx={{
+														color: "var(--text-normal)",
+														backgroundColor:
+															"var(--background-secondary)",
+														"&:hover": {
+															color: "var(--text-accent-hover)",
+															backgroundColor:
+																"var(--background-modifier-hover)",
+														},
+													}}
+												>
+													{item.name}
+												</MenuItem>
+											))}
+									</Select>
+								</FormControl>
+							)}
+
+							{/* Subcategory selection */}
 							<FormControl fullWidth size="small">
 								<InputLabel sx={{ color: "var(--text-muted)" }}>
-									Select {itemType} to reassign to
+									Select subcategory to reassign to
 								</InputLabel>
 								<Select
-									value={reassignToId}
+									value={selectedSubcategoryId}
 									onChange={(e) =>
-										setReassignToId(e.target.value)
+										setSelectedSubcategoryId(e.target.value)
 									}
-									label={`Select ${itemType} to reassign to`}
+									label="Select subcategory to reassign to"
 									sx={{
 										backgroundColor:
 											"var(--background-secondary)",
@@ -491,7 +620,7 @@ export const DeleteConfirmationDialog = ({
 											},
 									}}
 								>
-									{filteredReassignments
+									{getAvailableSubcategories()
 										.sort((a, b) =>
 											a.name.localeCompare(b.name)
 										)
@@ -516,7 +645,7 @@ export const DeleteConfirmationDialog = ({
 								</Select>
 							</FormControl>
 
-							{filteredReassignments.length === 0 && (
+							{getAvailableSubcategories().length === 0 && (
 								<Typography
 									variant="body2"
 									color="text.secondary"
@@ -525,8 +654,10 @@ export const DeleteConfirmationDialog = ({
 										color: "var(--text-muted)",
 									}}
 								>
-									No other {itemType}s available for
-									reassignment.
+									{itemType === "category" &&
+									!selectedCategoryId
+										? "Please select a category first to see available subcategories."
+										: `No subcategories available for reassignment.`}
 								</Typography>
 							)}
 						</Box>
@@ -575,7 +706,7 @@ export const DeleteConfirmationDialog = ({
 					onClick={handleConfirm}
 					color="error"
 					variant="contained"
-					disabled={showReassignSection && !reassignToId}
+					disabled={!isFormValid()}
 					sx={{
 						backgroundColor: "var(--text-error)",
 						color: "var(--text-on-accent)",

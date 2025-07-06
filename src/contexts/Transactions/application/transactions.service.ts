@@ -101,6 +101,20 @@ export class TransactionsService implements ITransactionsService {
 		}
 	}
 
+	async reassignTransactionsCategoryAndSubcategory(
+		oldCategory: CategoryID,
+		newCategory: CategoryID,
+		newSubCategory: SubCategoryID
+	): Promise<void> {
+		const transactions = await this.getByCategory(oldCategory);
+
+		for (const transaction of transactions) {
+			transaction.updateCategory(newCategory);
+			transaction.updateSubCategory(newSubCategory);
+			await this._transactionsRepository.persist(transaction);
+		}
+	}
+
 	async record(transaction: Transaction): Promise<void> {
 		this.#logger.debug("recording transaction", {
 			transaction,

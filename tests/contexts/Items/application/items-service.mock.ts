@@ -57,6 +57,18 @@ export class ItemsServiceMock implements IItemsService {
 		}
 	}
 
+	async reassignItemsCategoryAndSubcategory(
+		oldCategory: CategoryID,
+		newCategory: CategoryID,
+		newSubCategory: SubCategoryID
+	): Promise<void> {
+		const items = await this.getByCategory(oldCategory);
+		for (const item of items) {
+			item.updateCategory(newCategory);
+			item.updateSubCategory(newSubCategory);
+		}
+	}
+
 	async modifyRecurrence(
 		id: ItemID,
 		n: NumberValueObject,

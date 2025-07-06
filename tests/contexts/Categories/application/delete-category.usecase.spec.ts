@@ -19,12 +19,18 @@ const makeServices = (opts: {
 	const transactionsService = {
 		hasTransactionsByCategory: vi.fn().mockResolvedValue(opts.hasRelated),
 		reassignTransactionsCategory: vi.fn().mockResolvedValue(undefined),
+		reassignTransactionsCategoryAndSubcategory: vi
+			.fn()
+			.mockResolvedValue(undefined),
 		hasTransactionsBySubCategory: vi.fn().mockResolvedValue(false),
 		getBySubCategory: vi.fn().mockResolvedValue([]),
 	};
 	const itemsService = {
 		hasItemsByCategory: vi.fn().mockResolvedValue(opts.hasRelated),
 		reassignItemsCategory: vi.fn().mockResolvedValue(undefined),
+		reassignItemsCategoryAndSubcategory: vi
+			.fn()
+			.mockResolvedValue(undefined),
 		hasItemsBySubCategory: vi.fn().mockResolvedValue(false),
 		getBySubCategory: vi.fn().mockResolvedValue([]),
 	};
@@ -79,7 +85,7 @@ describe("DeleteCategoryUseCase", () => {
 			subCategoriesService as any
 		);
 		await expect(useCase.execute(CategoryID.generate())).rejects.toThrow(
-			"Cannot delete category with related data. Please provide a category to reassign them to."
+			"Cannot delete category with related data. Please provide a category and subcategory to reassign them to."
 		);
 		// Should NOT call delete
 		expect(categoriesService.delete).not.toHaveBeenCalled();
@@ -110,6 +116,46 @@ describe("DeleteCategoryUseCase", () => {
 		expect(itemsService.reassignItemsCategory).toHaveBeenCalledWith(
 			catId,
 			reassignId
+		);
+		expect(categoriesService.delete).toHaveBeenCalledWith(catId);
+	});
+
+	it("reassigns to both category and subcategory when both are provided", async () => {
+		const {
+			categoriesService,
+			transactionsService,
+			itemsService,
+			subCategoriesService,
+		} = makeServices({ hasRelated: true });
+
+		const useCase = new DeleteCategoryUseCase(
+			categoriesService as any,
+			transactionsService as any,
+			itemsService as any,
+			subCategoriesService as any
+		);
+		const catId = CategoryID.generate();
+		const reassignCategoryId = CategoryID.generate();
+		const reassignSubcategoryId = { value: "sub1" } as any; // Mock SubCategoryID
+
+		await expect(
+			useCase.execute(catId, reassignCategoryId, reassignSubcategoryId)
+		).resolves.toBeUndefined();
+
+		// Should call the new reassignment methods
+		expect(
+			transactionsService.reassignTransactionsCategoryAndSubcategory
+		).toHaveBeenCalledWith(
+			catId,
+			reassignCategoryId,
+			reassignSubcategoryId
+		);
+		expect(
+			itemsService.reassignItemsCategoryAndSubcategory
+		).toHaveBeenCalledWith(
+			catId,
+			reassignCategoryId,
+			reassignSubcategoryId
 		);
 		expect(categoriesService.delete).toHaveBeenCalledWith(catId);
 	});
