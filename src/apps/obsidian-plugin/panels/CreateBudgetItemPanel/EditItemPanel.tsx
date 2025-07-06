@@ -76,6 +76,11 @@ export const EditItemPanel = ({
 		recurrences,
 	} = useCreateRecurrenceForm({ recurrence: item.recurrence });
 
+	const [originalFrequency] = useState(
+		item.recurrence.frequency?.value ?? ""
+	);
+	const [frequencyChanged, setFrequencyChanged] = useState(false);
+
 	const [name, setName] = useState(item.name.value);
 	const [amount, setAmount] = useState(item.fromAmount.value);
 	const [type, setType] = useState(item.operation.type.value);
@@ -117,6 +122,14 @@ export const EditItemPanel = ({
 		item.recurrence,
 	]);
 
+	useEffect(() => {
+		if (frequencyString !== originalFrequency) {
+			setFrequencyChanged(true);
+		} else {
+			setFrequencyChanged(false);
+		}
+	}, [frequencyString, originalFrequency]);
+
 	// Check if save should be disabled
 	const isSaveDisabled =
 		(context === "all-items" &&
@@ -142,7 +155,7 @@ export const EditItemPanel = ({
 		category && item.updateCategory(category.id);
 		subCategory && item.updateSubCategory(subCategory.id);
 
-		// Create new recurrence based on type
+		// Always create a new recurrence based on the latest frequency and type
 		const newRecurrence =
 			recurrenceType === "oneTime"
 				? ItemRecurrence.oneTime(new DateValueObject(date))
@@ -220,6 +233,9 @@ export const EditItemPanel = ({
 		}
 	};
 
+	// Helper to determine if the item is a single recurrence (one-time)
+	const isOneTime = recurrenceType === "oneTime";
+
 	return (
 		<Box
 			sx={{
@@ -246,29 +262,54 @@ export const EditItemPanel = ({
 			</Typography>
 
 			{/* Context Warning */}
-			<Alert
-				severity="warning"
-				sx={{
-					marginBottom: "24px",
-					backgroundColor: "var(--background-warning)",
-					border: "1px solid var(--color-orange)",
-					color: "var(--text-normal)",
-					"& .MuiAlert-icon": {
-						color: "var(--color-orange)",
-					},
-				}}
-			>
-				<strong>⚠️ Full Item Edit</strong>
-				<br />
-				You are editing the entire scheduled item, which will affect all
-				future recurrences. To modify only a specific recurrence
-				instance, use the calendar view instead.
-			</Alert>
+			{!isOneTime && (
+				<Alert
+					severity="warning"
+					sx={{
+						marginBottom: "24px",
+						backgroundColor: "var(--background-warning)",
+						border: "1px solid var(--color-orange)",
+						color: "var(--text-normal)",
+						"& .MuiAlert-icon": {
+							color: "var(--color-orange)",
+						},
+					}}
+				>
+					<strong>⚠️ Full Item Edit</strong>
+					<br />
+					You are editing the entire scheduled item, which will affect
+					all future recurrences. To modify only a specific recurrence
+					instance, use the calendar view instead.
+				</Alert>
+			)}
+
+			{/* Frequency Change Warning */}
+			{frequencyChanged && (
+				<Alert
+					severity="warning"
+					sx={{
+						marginBottom: "24px",
+						backgroundColor: "var(--background-warning)",
+						border: "1px solid var(--color-orange)",
+						color: "var(--text-normal)",
+						"& .MuiAlert-icon": {
+							color: "var(--color-orange)",
+						},
+					}}
+				>
+					<strong>⚠️ Frequency Changed</strong>
+					<br />
+					Changing the frequency will recalculate and update all
+					future schedule dates for this item.
+				</Alert>
+			)}
 
 			{/* Schedule Change Validation Warning */}
 			{context === "all-items" &&
 				scheduleValidation &&
-				scheduleValidation.wouldLoseModifications && (
+				scheduleValidation.wouldLoseModifications &&
+				preserveModifications &&
+				!isOneTime && (
 					<Alert
 						severity="error"
 						sx={{
@@ -299,7 +340,7 @@ export const EditItemPanel = ({
 				)}
 
 			{/* Preserve Modifications Option */}
-			{context === "all-items" && (
+			{context === "all-items" && !isOneTime && (
 				<Box sx={{ marginBottom: "24px" }}>
 					<FormControlLabel
 						control={
@@ -586,6 +627,27 @@ export const EditItemPanel = ({
 					Recurrence Settings
 				</Typography>
 				{RecurrenceForm}
+				{/* Frequency Change Warning - moved below frequency input */}
+				{frequencyChanged && (
+					<Alert
+						severity="warning"
+						sx={{
+							marginTop: "16px",
+							marginBottom: "24px",
+							backgroundColor: "var(--background-warning)",
+							border: "1px solid var(--color-orange)",
+							color: "var(--text-normal)",
+							"& .MuiAlert-icon": {
+								color: "var(--color-orange)",
+							},
+						}}
+					>
+						<strong>⚠️ Frequency Changed</strong>
+						<br />
+						Changing the frequency will recalculate and update all
+						future schedule dates for this item.
+					</Alert>
+				)}
 			</Box>
 
 			{/* Action Buttons */}

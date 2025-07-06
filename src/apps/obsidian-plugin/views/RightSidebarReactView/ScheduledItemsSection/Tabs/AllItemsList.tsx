@@ -74,19 +74,6 @@ export const AllItemsList = ({
 		[displayedItems]
 	);
 
-	// const chartItems = useMemo(() => {
-	// 	return items.filter((item) =>
-	// 		item.recurrence.recurrences.some(
-	// 			(recurrence) => recurrence.state !== ERecurrenceState.DELETED
-	// 		)
-	// 	);
-	// }, [items]);
-
-	// const chartItemsReport = useMemo(
-	// 	() => new ItemsReport(chartItems),
-	// 	[chartItems]
-	// );
-
 	const [showPanel, setShowPanel] = useState<{
 		item: ScheduledItem;
 		action?: "edit" | "record";
