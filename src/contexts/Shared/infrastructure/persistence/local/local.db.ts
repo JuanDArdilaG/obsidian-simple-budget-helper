@@ -133,6 +133,8 @@ export class LocalDB extends DB {
 					this.db,
 					localData
 				);
+				let dataToImport = localData;
+
 				if (conflicts.length > 0) {
 					this.logger.debug("Conflicts detected, resolving...", {
 						conflicts,
@@ -143,10 +145,11 @@ export class LocalDB extends DB {
 							localData
 						);
 					await this.fileManager.saveData(resolvedData);
+					dataToImport = resolvedData;
 				}
 
-				// Import data into IndexedDB
-				await this.importData(localData);
+				// Import data into IndexedDB (prioritizing local file data)
+				await this.importData(dataToImport);
 			}
 		} catch (error) {
 			this.logger.error(error);

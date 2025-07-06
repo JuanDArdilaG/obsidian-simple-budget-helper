@@ -1,7 +1,7 @@
-import { Logger } from "../../logger";
 import { Config } from "contexts/Shared/infrastructure/config/config";
-import { LocalData } from "./local-file-manager";
 import Dexie from "dexie";
+import { Logger } from "../../logger";
+import { LocalData } from "./local-file-manager";
 
 export interface Conflict {
 	tableName: string;
@@ -60,18 +60,20 @@ export class ConflictResolver {
 		const conflicts: Conflict[] = [];
 
 		// Create maps for efficient lookup
-		const indexedDBMap = new Map();
-		const localMap = new Map();
+		const indexedDBMap = new Map<string, unknown>();
+		const localMap = new Map<string, unknown>();
 
-		indexedDBRecords.forEach((record: any) => {
-			if (record.id) {
-				indexedDBMap.set(record.id, record);
+		indexedDBRecords.forEach((record: unknown) => {
+			const typedRecord = record as { id?: string };
+			if (typedRecord.id) {
+				indexedDBMap.set(typedRecord.id, record);
 			}
 		});
 
-		localRecords.forEach((record: any) => {
-			if (record.id) {
-				localMap.set(record.id, record);
+		localRecords.forEach((record: unknown) => {
+			const typedRecord = record as { id?: string };
+			if (typedRecord.id) {
+				localMap.set(typedRecord.id, record);
 			}
 		});
 
@@ -138,19 +140,13 @@ export class ConflictResolver {
 	private async resolveConflict(
 		conflict: Conflict
 	): Promise<ConflictResolution> {
-		// Default resolution strategy based on conflict type
-		let strategy: ConflictResolution["strategy"] = "keep_indexeddb";
+		// Default resolution strategy - prioritize local file data over IndexedDB
+		let strategy: ConflictResolution["strategy"] = "keep_local";
 
 		switch (conflict.type) {
 			case "modification":
-				// For modifications, prefer the most recent data based on timestamp
-				strategy =
-					this.getMostRecentData(
-						conflict.indexedDBData,
-						conflict.localData
-					) === conflict.indexedDBData
-						? "keep_indexeddb"
-						: "keep_local";
+				// For modifications, always prefer local file data
+				strategy = "keep_local";
 				break;
 
 			case "deletion":
@@ -159,8 +155,12 @@ export class ConflictResolver {
 				break;
 
 			case "creation":
-				// For creations, keep the creation (indexedDB data)
-				strategy = "keep_indexeddb";
+				// For creations, prefer local file data (if it exists)
+				// Only keep IndexedDB data if there's no corresponding local data
+				strategy =
+					conflict.localData !== null
+						? "keep_local"
+						: "keep_indexeddb";
 				break;
 		}
 
@@ -186,7 +186,8 @@ export class ConflictResolver {
 		) {
 			// Remove the record (deletion)
 			const index = tableData.findIndex(
-				(record: any) => record.id === resolution.recordId
+				(record: unknown) =>
+					(record as { id?: string }).id === resolution.recordId
 			);
 			if (index !== -1) {
 				tableData.splice(index, 1);
@@ -194,7 +195,8 @@ export class ConflictResolver {
 		} else if (resolution.resolvedData !== null) {
 			// Update or add the record
 			const index = tableData.findIndex(
-				(record: any) => record.id === resolution.recordId
+				(record: unknown) =>
+					(record as { id?: string }).id === resolution.recordId
 			);
 			if (index !== -1) {
 				tableData[index] = resolution.resolvedData;
@@ -206,32 +208,6 @@ export class ConflictResolver {
 		data.data[resolution.tableName] = tableData;
 	}
 
-	private getMostRecentData(
-		indexedDBData: unknown,
-		localData: unknown
-	): unknown {
-		// Simple heuristic: prefer data with more recent timestamp or more complete data
-		if (!indexedDBData) return localData;
-		if (!localData) return indexedDBData;
-
-		const indexedDBRecord = indexedDBData as any;
-		const localRecord = localData as any;
-
-		// Compare timestamps if available
-		if (indexedDBRecord.updatedAt && localRecord.updatedAt) {
-			return new Date(indexedDBRecord.updatedAt) >
-				new Date(localRecord.updatedAt)
-				? indexedDBData
-				: localData;
-		}
-
-		// Fallback: prefer data with more properties (more complete)
-		const indexedDBKeys = Object.keys(indexedDBRecord).length;
-		const localKeys = Object.keys(localRecord).length;
-
-		return indexedDBKeys >= localKeys ? indexedDBData : localData;
-	}
-
 	private getResolvedData(
 		conflict: Conflict,
 		strategy: ConflictResolution["strategy"]
@@ -240,6 +216,10 @@ export class ConflictResolver {
 			case "keep_indexeddb":
 				return conflict.indexedDBData;
 			case "keep_local":
+				// For deletions, we want to return null to indicate the record should be removed
+				if (conflict.type === "deletion") {
+					return null;
+				}
 				return conflict.localData;
 			case "merge":
 				return this.mergeData(
@@ -256,9 +236,11 @@ export class ConflictResolver {
 		if (!localData) return indexedDBData;
 
 		// Simple merge: combine properties, prefer non-null values
-		const merged = { ...(indexedDBData as any) };
+		const merged = { ...(indexedDBData as Record<string, unknown>) };
 
-		for (const [key, value] of Object.entries(localData as any)) {
+		for (const [key, value] of Object.entries(
+			localData as Record<string, unknown>
+		)) {
 			if (value !== null && value !== undefined) {
 				merged[key] = value;
 			}
@@ -279,8 +261,8 @@ export class ConflictResolver {
 		for (const key of keys1) {
 			if (!keys2.includes(key)) return false;
 
-			const val1 = (obj1 as any)[key];
-			const val2 = (obj2 as any)[key];
+			const val1 = (obj1 as Record<string, unknown>)[key];
+			const val2 = (obj2 as Record<string, unknown>)[key];
 
 			if (typeof val1 === "object" && typeof val2 === "object") {
 				if (!this.isEqual(val1, val2)) return false;
