@@ -1,4 +1,7 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
+import {
+	NumberValueObject,
+	PriceValueObject,
+} from "@juandardilag/value-objects";
 import { Chip, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
@@ -32,6 +35,7 @@ export const ResponsiveScheduledItem = ({
 	setSelectedItem,
 	context = "calendar", // "calendar" or "all-items"
 	currentAction,
+	recurrentContextMenu,
 }: {
 	item: ScheduledItem;
 	recurrence: ItemRecurrenceInfo;
@@ -48,13 +52,22 @@ export const ResponsiveScheduledItem = ({
 	>;
 	setSelectedItem: React.Dispatch<
 		React.SetStateAction<
-			| { recurrence: ItemRecurrenceInfo; itemID: ItemID }
+			| {
+					recurrence: ItemRecurrenceInfo;
+					itemID: ItemID;
+					n?: NumberValueObject;
+			  }
 			| ScheduledItem
 			| undefined
 		>
 	>;
 	context?: "calendar" | "all-items";
 	currentAction?: "edit" | "record";
+	recurrentContextMenu?: {
+		recurrence: ItemRecurrenceInfo;
+		itemID: ItemID;
+		n: NumberValueObject;
+	};
 }) => {
 	const theme = useTheme();
 	const isWideScreen = useMediaQuery(theme.breakpoints.up("lg")); // ≥1200px
@@ -247,9 +260,10 @@ export const ResponsiveScheduledItem = ({
 					<div>
 						<BudgetItemsListContextMenu
 							recurrent={
-								context === "calendar"
+								recurrentContextMenu ??
+								(context === "calendar"
 									? { recurrence, itemID: item.id }
-									: item
+									: item)
 							}
 							setAction={setAction}
 							setSelectedItem={setSelectedItem}
@@ -422,9 +436,10 @@ export const ResponsiveScheduledItem = ({
 					<div>
 						<BudgetItemsListContextMenu
 							recurrent={
-								context === "calendar"
+								recurrentContextMenu ??
+								(context === "calendar"
 									? { recurrence, itemID: item.id }
-									: item
+									: item)
 							}
 							setAction={setAction}
 							setSelectedItem={setSelectedItem}
@@ -531,9 +546,10 @@ export const ResponsiveScheduledItem = ({
 						/>
 						<BudgetItemsListContextMenu
 							recurrent={
-								context === "calendar"
+								recurrentContextMenu ??
+								(context === "calendar"
 									? { recurrence, itemID: item.id }
-									: item
+									: item)
 							}
 							setAction={setAction}
 							setSelectedItem={setSelectedItem}

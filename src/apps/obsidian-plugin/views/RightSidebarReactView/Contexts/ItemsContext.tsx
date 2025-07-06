@@ -5,6 +5,7 @@ import { CreateItemUseCase } from "contexts/Items/application/create-item.usecas
 import { CreateProviderUseCase } from "contexts/Items/application/create-provider.usecase";
 import { CreateRegularItemUseCase } from "contexts/Items/application/create-regular-item.usecase";
 import { CreateStoreUseCase } from "contexts/Items/application/create-store.usecase";
+import { DeleteItemRecurrenceUseCase } from "contexts/Items/application/delete-item-recurrence.usecase";
 import { DeleteItemUseCase } from "contexts/Items/application/delete-item.usecase";
 import { GetAllBrandsUseCase } from "contexts/Items/application/get-all-brands.usecase";
 import { GetAllItemsUseCase } from "contexts/Items/application/get-all-items.usecase";
@@ -30,6 +31,7 @@ export type ItemsContextType = {
 		createStore: CreateStoreUseCase;
 		createProvider: CreateProviderUseCase;
 		deleteItem: DeleteItemUseCase;
+		deleteItemRecurrence: DeleteItemRecurrenceUseCase;
 		updateItem: UpdateItemUseCase;
 		updateRegularItem: UpdateRegularItemUseCase;
 		recordItem: RecordItemUseCase;
@@ -65,6 +67,7 @@ export const ItemsContext = createContext<ItemsContextType>({
 		recordItemRecurrence: {} as RecordItemRecurrenceUseCase,
 		getItemsUntilDate: {} as GetItemsUntilDateUseCase,
 		deleteItem: {} as DeleteItemUseCase,
+		deleteItemRecurrence: {} as DeleteItemRecurrenceUseCase,
 		updateItem: {} as UpdateItemUseCase,
 		updateRegularItem: {} as UpdateRegularItemUseCase,
 		modifyNItemRecurrence: {} as ModifyNItemRecurrenceUseCase,
@@ -85,6 +88,9 @@ export const getItemsContextDefault = (
 		"modifyNItemRecurrenceUseCase"
 	);
 	const deleteItem = container.resolve("deleteItemUseCase");
+	const deleteItemRecurrence = container.resolve(
+		"deleteItemRecurrenceUseCase"
+	);
 	const updateItem = container.resolve("updateItemUseCase");
 
 	const { scheduledItems, updateItems } = useItems({
@@ -112,6 +118,7 @@ export const getItemsContextDefault = (
 				"recordItemRecurrenceUseCase"
 			),
 			deleteItem,
+			deleteItemRecurrence,
 			updateItem,
 			updateRegularItem: container.resolve("updateRegularItemUseCase"),
 			modifyNItemRecurrence,

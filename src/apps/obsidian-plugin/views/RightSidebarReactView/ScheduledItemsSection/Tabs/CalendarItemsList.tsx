@@ -29,6 +29,7 @@ import {
 	AccountName,
 	AccountType,
 } from "contexts/Accounts/domain";
+import { Account } from "contexts/Accounts/domain/account.entity";
 import { CategoryID } from "contexts/Categories/domain";
 import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
 import { ItemWithAccumulatedBalance } from "contexts/Items/application/items-with-accumulated-balance.usecase";
@@ -1005,6 +1006,7 @@ export const CalendarItemsList = ({
 											accountTypeLookup={
 												accountTypeLookup
 											}
+											getAccountByID={getAccountByID}
 										/>
 										{item.operation.type.isTransfer() &&
 											toAccountBalance &&
@@ -1044,6 +1046,9 @@ export const CalendarItemsList = ({
 													accountTypeLookup={
 														accountTypeLookup
 													}
+													getAccountByID={
+														getAccountByID
+													}
 												/>
 											)}
 									</div>
@@ -1070,6 +1075,7 @@ const CalendarItemsListItem = ({
 	setAction,
 	updateItems,
 	accountTypeLookup,
+	getAccountByID,
 }: {
 	item: ScheduledItem;
 	n: NumberValueObject;
@@ -1112,6 +1118,7 @@ const CalendarItemsListItem = ({
 	>;
 	updateItems: () => void;
 	accountTypeLookup: (id: AccountID) => AccountType;
+	getAccountByID: (id: AccountID) => Account | undefined;
 }) => {
 	const getItemSplitPrice = (item: ScheduledItem): PriceValueObject => {
 		// If the recurrence has custom splits, use those
@@ -1140,7 +1147,12 @@ const CalendarItemsListItem = ({
 			<ResponsiveScheduledItem
 				item={item}
 				recurrence={recurrence}
-				accountName={accountName}
+				accountName={
+					getAccountByID(
+						recurrence.fromSplits?.[0]?.accountId ??
+							item.fromSplits[0]?.accountId
+					)?.name ?? AccountName.empty()
+				}
 				accountBalance={accountBalance}
 				accountPrevBalance={accountPrevBalance}
 				price={price}
@@ -1151,6 +1163,8 @@ const CalendarItemsListItem = ({
 				setSelectedItem={setSelectedItem}
 				context="calendar"
 				currentAction={showPanel?.action}
+				// Pass n as part of the recurrence object for context menu
+				recurrentContextMenu={{ recurrence, itemID: item.id, n }}
 			/>
 			{showPanel &&
 				showPanel.item.itemID.value === item.id.value &&

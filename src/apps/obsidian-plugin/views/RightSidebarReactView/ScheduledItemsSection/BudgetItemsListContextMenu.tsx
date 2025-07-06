@@ -1,3 +1,4 @@
+import { NumberValueObject } from "@juandardilag/value-objects";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -18,14 +19,22 @@ export const BudgetItemsListContextMenu = ({
 	currentAction,
 }: {
 	recurrent:
-		| { recurrence: ItemRecurrenceInfo; itemID: ItemID }
+		| {
+				recurrence: ItemRecurrenceInfo;
+				itemID: ItemID;
+				n?: NumberValueObject;
+		  }
 		| ScheduledItem;
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
 	setSelectedItem: React.Dispatch<
 		React.SetStateAction<
-			| { recurrence: ItemRecurrenceInfo; itemID: ItemID }
+			| {
+					recurrence: ItemRecurrenceInfo;
+					itemID: ItemID;
+					n?: NumberValueObject;
+			  }
 			| ScheduledItem
 			| undefined
 		>
@@ -34,7 +43,7 @@ export const BudgetItemsListContextMenu = ({
 }) => {
 	const { plugin } = useContext(AppContext);
 	const {
-		useCases: { deleteItem },
+		useCases: { deleteItem, deleteItemRecurrence },
 		updateItems,
 	} = useContext(ItemsContext);
 
@@ -73,7 +82,22 @@ export const BudgetItemsListContextMenu = ({
 	const handleDelete = async () => {
 		new ConfirmationModal(plugin.app, async (confirm) => {
 			if (confirm) {
-				await deleteItem.execute(id);
+				if (
+					recurrent &&
+					typeof recurrent === "object" &&
+					"recurrence" in recurrent &&
+					"itemID" in recurrent
+				) {
+					// Delete a single recurrence
+					const n = recurrent.n ? recurrent.n.value : 0;
+					await deleteItemRecurrence.execute({
+						id: recurrent.itemID,
+						n: new NumberValueObject(n),
+					});
+				} else {
+					// Delete the whole item
+					await deleteItem.execute(id);
+				}
 				updateItems();
 			}
 		}).open();

@@ -22,6 +22,7 @@ import { CreateItemUseCase } from "contexts/Items/application/create-item.usecas
 import { CreateProviderUseCase } from "contexts/Items/application/create-provider.usecase";
 import { CreateRegularItemUseCase } from "contexts/Items/application/create-regular-item.usecase";
 import { CreateStoreUseCase } from "contexts/Items/application/create-store.usecase";
+import { DeleteItemRecurrenceUseCase } from "contexts/Items/application/delete-item-recurrence.usecase";
 import { DeleteItemUseCase } from "contexts/Items/application/delete-item.usecase";
 import { GetAllBrandsUseCase } from "contexts/Items/application/get-all-brands.usecase";
 import { GetAllItemsUseCase } from "contexts/Items/application/get-all-items.usecase";
@@ -103,6 +104,9 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		updateItemUseCase: asClass(UpdateItemUseCase).singleton(),
 		updateRegularItemUseCase: asClass(UpdateRegularItemUseCase).singleton(),
 		deleteItemUseCase: asClass(DeleteItemUseCase).singleton(),
+		deleteItemRecurrenceUseCase: asClass(
+			DeleteItemRecurrenceUseCase
+		).singleton(),
 		getAllUniqueItemsByNameUseCase: asClass(
 			GetAllUniqueItemsByNameUseCase
 		).singleton(),
