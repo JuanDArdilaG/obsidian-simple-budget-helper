@@ -5,8 +5,11 @@ import { ItemOperation } from "contexts/Shared/domain";
 import {
 	PaymentSplit,
 	PaymentSplitPrimitives,
+	TransactionAmount,
 } from "../../Transactions/domain";
+import { ItemBrand } from "./item-brand.valueobject";
 import { ItemDate } from "./item-date.valueobject";
+import { ItemStore } from "./item-store.valueobject";
 
 export enum ERecurrenceState {
 	PENDING = "pending",
@@ -18,9 +21,10 @@ export class ItemRecurrenceInfo {
 	constructor(
 		private _date: ItemDate,
 		private _state: ERecurrenceState,
-		private _price?: ItemPrice,
 		private _fromSplits?: PaymentSplit[],
-		private _toSplits?: PaymentSplit[]
+		private _toSplits?: PaymentSplit[],
+		private _brand?: ItemBrand,
+		private _store?: ItemStore
 	) {}
 
 	get date(): ItemDate {
@@ -39,14 +43,6 @@ export class ItemRecurrenceInfo {
 		this._state = state;
 	}
 
-	get price(): ItemPrice | undefined {
-		return this._price;
-	}
-
-	updatePrice(price: ItemPrice): void {
-		this._price = price;
-	}
-
 	get fromSplits(): PaymentSplit[] | undefined {
 		return this._fromSplits;
 	}
@@ -55,12 +51,42 @@ export class ItemRecurrenceInfo {
 		this._fromSplits = fromSplits;
 	}
 
+	get fromAmount(): TransactionAmount | undefined {
+		return this._fromSplits?.reduce(
+			(sum, split) => split.amount.plus(sum),
+			TransactionAmount.zero()
+		);
+	}
+
+	get toAmount(): TransactionAmount | undefined {
+		return this._toSplits?.reduce(
+			(sum, split) => split.amount.plus(sum),
+			TransactionAmount.zero()
+		);
+	}
+
 	get toSplits(): PaymentSplit[] | undefined {
 		return this._toSplits;
 	}
 
 	updateToSplits(toSplits: PaymentSplit[]): void {
 		this._toSplits = toSplits;
+	}
+
+	get brand(): ItemBrand | undefined {
+		return this._brand;
+	}
+
+	updateBrand(brand: ItemBrand | undefined): void {
+		this._brand = brand;
+	}
+
+	get store(): ItemStore | undefined {
+		return this._store;
+	}
+
+	updateStore(store: ItemStore | undefined): void {
+		this._store = store;
 	}
 
 	getRealPriceForAccount(
@@ -110,25 +136,28 @@ export class ItemRecurrenceInfo {
 		return {
 			date: this._date,
 			state: this._state,
-			amount: this._price?.value,
 			fromSplits: this._fromSplits?.map((split) => split.toPrimitives()),
 			toSplits: this._toSplits?.map((split) => split.toPrimitives()),
+			brand: this._brand?.value,
+			store: this._store?.value,
 		};
 	}
 
 	static fromPrimitives({
 		date,
-		amount,
 		fromSplits,
 		toSplits,
 		state,
+		brand,
+		store,
 	}: ItemRecurrenceInfoPrimitives): ItemRecurrenceInfo {
 		return new ItemRecurrenceInfo(
 			new ItemDate(new Date(date)),
 			state,
-			amount ? new ItemPrice(amount) : undefined,
 			fromSplits?.map((split) => PaymentSplit.fromPrimitives(split)),
-			toSplits?.map((split) => PaymentSplit.fromPrimitives(split))
+			toSplits?.map((split) => PaymentSplit.fromPrimitives(split)),
+			brand ? new ItemBrand(brand) : undefined,
+			store ? new ItemStore(store) : undefined
 		);
 	}
 }
@@ -136,7 +165,8 @@ export class ItemRecurrenceInfo {
 export type ItemRecurrenceInfoPrimitives = {
 	date: Date;
 	state: ERecurrenceState;
-	amount?: number;
 	fromSplits?: PaymentSplitPrimitives[];
 	toSplits?: PaymentSplitPrimitives[];
+	brand?: string;
+	store?: string;
 };

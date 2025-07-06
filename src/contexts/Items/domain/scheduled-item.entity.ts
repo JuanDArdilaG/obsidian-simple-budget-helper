@@ -41,7 +41,7 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 		private _subCategory: SubCategoryID,
 		private _recurrence: ItemRecurrence,
 		updatedAt: DateValueObject,
-		private readonly _info?: ItemProductInfo,
+		private _info?: ItemProductInfo,
 		private _tags?: ItemTags
 	) {
 		super(id, updatedAt);
@@ -324,6 +324,9 @@ export class ScheduledItem extends Entity<ItemID, ScheduledItemPrimitives> {
 	applyModification(modification: ItemRecurrenceInfo): void {
 		modification.fromSplits && this.setFromSplits(modification.fromSplits);
 		modification.toSplits && this.setToSplits(modification.toSplits);
+		modification.brand && this._info?.updateBrand(modification.brand);
+		modification.store && this._info?.updateStore(modification.store);
+
 		this.updateTimestamp();
 	}
 

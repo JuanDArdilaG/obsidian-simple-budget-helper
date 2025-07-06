@@ -8,7 +8,15 @@ export class ItemProductInfo {
 		return this.info.brand;
 	}
 
+	updateBrand(brand: ItemBrand | undefined): void {
+		this.info.brand = brand;
+	}
+
 	get store(): ItemStore | undefined {
 		return this.info.store;
+	}
+
+	updateStore(store: ItemStore | undefined): void {
+		this.info.store = store;
 	}
 }

@@ -5,7 +5,6 @@ import {
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { PaymentSplit } from "../../Transactions/domain/payment-split.valueobject";
 import { ItemDate } from "./item-date.valueobject";
-import { ItemPrice } from "./item-price.valueobject";
 import { ItemRecurrenceFrequency } from "./item-recurrence-frequency.valueobject";
 import {
 	ERecurrenceState,
@@ -253,7 +252,6 @@ export class ItemRecurrence {
 	private preserveModifications(): Map<
 		number,
 		{
-			price?: ItemPrice;
 			fromSplits?: PaymentSplit[];
 			toSplits?: PaymentSplit[];
 			state?: ERecurrenceState;
@@ -262,7 +260,6 @@ export class ItemRecurrence {
 		const modifications = new Map<
 			number,
 			{
-				price?: ItemPrice;
 				fromSplits?: PaymentSplit[];
 				toSplits?: PaymentSplit[];
 				state?: ERecurrenceState;
@@ -271,13 +268,11 @@ export class ItemRecurrence {
 
 		this._recurrences.forEach((recurrence, index) => {
 			const modification: {
-				price?: ItemPrice;
 				fromSplits?: PaymentSplit[];
 				toSplits?: PaymentSplit[];
 				state?: ERecurrenceState;
 			} = {};
 
-			if (recurrence.price) modification.price = recurrence.price;
 			if (recurrence.fromSplits)
 				modification.fromSplits = recurrence.fromSplits;
 			if (recurrence.toSplits)
@@ -301,7 +296,6 @@ export class ItemRecurrence {
 		modifications: Map<
 			number,
 			{
-				price?: ItemPrice;
 				fromSplits?: PaymentSplit[];
 				toSplits?: PaymentSplit[];
 				state?: ERecurrenceState;
@@ -332,9 +326,6 @@ export class ItemRecurrence {
 			if (index < this._recurrences.length) {
 				const recurrence = this._recurrences[index];
 
-				if (modification.price) {
-					recurrence.updatePrice(modification.price);
-				}
 				if (modification.fromSplits) {
 					recurrence.updateFromSplits(modification.fromSplits);
 				}
@@ -365,9 +356,6 @@ export class ItemRecurrence {
 		// Update the recurrence with the new information
 		if (modification.date) {
 			currentRecurrence.updateDate(modification.date);
-		}
-		if (modification.price) {
-			currentRecurrence.updatePrice(modification.price);
 		}
 		if (modification.fromSplits) {
 			currentRecurrence.updateFromSplits(modification.fromSplits);
@@ -501,7 +489,6 @@ export class ItemRecurrence {
 				recurrence: new ItemRecurrenceInfo(
 					recurrence.date,
 					recurrence.state,
-					recurrence.price,
 					recurrence.fromSplits,
 					recurrence.toSplits
 				),
@@ -527,7 +514,6 @@ export class ItemRecurrence {
 			recurrence: new ItemRecurrenceInfo(
 				recurrence.date,
 				recurrence.state,
-				recurrence.price,
 				recurrence.fromSplits,
 				recurrence.toSplits
 			),

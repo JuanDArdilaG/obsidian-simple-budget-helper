@@ -4,7 +4,6 @@ import {
 } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
 import { ItemDate } from "contexts/Items/domain/item-date.valueobject";
-import { ItemPrice } from "contexts/Items/domain/item-price.valueobject";
 import { ItemRecurrenceFrequency } from "contexts/Items/domain/item-recurrence-frequency.valueobject";
 import {
 	ERecurrenceState,
@@ -106,7 +105,6 @@ describe("ItemRecurrence", () => {
 			const modifiedRecurrence = new ItemRecurrenceInfo(
 				new ItemDate(new Date("2024-03-15")), // Different date
 				ERecurrenceState.PENDING,
-				new ItemPrice(150), // Different amount
 				[
 					new PaymentSplit(
 						AccountID.generate(),
@@ -131,7 +129,6 @@ describe("ItemRecurrence", () => {
 			const thirdRecurrence = recurrences.find((r) => r.n.value === 2);
 
 			expect(thirdRecurrence).toBeDefined();
-			expect(thirdRecurrence!.recurrence.price?.value).toBe(150);
 			expect(thirdRecurrence!.recurrence.fromSplits).toBeDefined();
 			expect(thirdRecurrence!.recurrence.toSplits).toBeDefined();
 		});
@@ -263,7 +260,6 @@ describe("ItemRecurrence", () => {
 			const modification = new ItemRecurrenceInfo(
 				new ItemDate(new Date("2024-03-15")),
 				ERecurrenceState.PENDING,
-				new ItemPrice(200),
 				[
 					new PaymentSplit(
 						AccountID.generate(),
@@ -286,9 +282,10 @@ describe("ItemRecurrence", () => {
 			expect(modifiedRecurrence!.recurrence.date.value).toEqual(
 				new Date("2024-03-15")
 			);
-			expect(modifiedRecurrence!.recurrence.price?.value).toBe(200);
 			expect(modifiedRecurrence!.recurrence.fromSplits).toBeDefined();
 			expect(modifiedRecurrence!.recurrence.toSplits).toBeDefined();
+			expect(modifiedRecurrence!.recurrence.fromAmount?.value).toBe(200);
+			expect(modifiedRecurrence!.recurrence.toAmount?.value).toBe(200);
 		});
 
 		it("should handle partial modifications", () => {
@@ -300,7 +297,6 @@ describe("ItemRecurrence", () => {
 			const modification = new ItemRecurrenceInfo(
 				new ItemDate(new Date("2024-03-01")), // Keep original date
 				ERecurrenceState.PENDING,
-				new ItemPrice(300), // Only change price
 				[
 					new PaymentSplit(
 						AccountID.generate(),
@@ -320,7 +316,8 @@ describe("ItemRecurrence", () => {
 			const recurrences = recurrence.getAllRecurrencesWithStates();
 			const modifiedRecurrence = recurrences.find((r) => r.n.value === 2);
 
-			expect(modifiedRecurrence!.recurrence.price?.value).toBe(300);
+			expect(modifiedRecurrence!.recurrence.fromAmount?.value).toBe(300);
+			expect(modifiedRecurrence!.recurrence.toAmount?.value).toBe(300);
 			expect(modifiedRecurrence!.recurrence.fromSplits).toBeDefined();
 			expect(modifiedRecurrence!.recurrence.toSplits).toBeDefined();
 		});
@@ -374,7 +371,6 @@ describe("ItemRecurrence", () => {
 			const modification = new ItemRecurrenceInfo(
 				new ItemDate(new Date("2024-10-15")),
 				ERecurrenceState.PENDING,
-				new ItemPrice(150),
 				[
 					new PaymentSplit(
 						AccountID.generate(),
@@ -413,7 +409,6 @@ describe("ItemRecurrence", () => {
 			const modification = new ItemRecurrenceInfo(
 				new ItemDate(new Date("2024-12-15")),
 				ERecurrenceState.PENDING,
-				new ItemPrice(200),
 				[
 					new PaymentSplit(
 						AccountID.generate(),
@@ -450,7 +445,6 @@ describe("ItemRecurrence", () => {
 			const modification = new ItemRecurrenceInfo(
 				new ItemDate(new Date("2024-02-15")),
 				ERecurrenceState.PENDING,
-				new ItemPrice(150),
 				[
 					new PaymentSplit(
 						AccountID.generate(),
@@ -483,7 +477,6 @@ describe("ItemRecurrence", () => {
 			const modification = new ItemRecurrenceInfo(
 				new ItemDate(new Date("2024-01-15")),
 				ERecurrenceState.PENDING,
-				new ItemPrice(150),
 				[
 					new PaymentSplit(
 						AccountID.generate(),

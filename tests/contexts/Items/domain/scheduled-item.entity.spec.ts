@@ -3,7 +3,6 @@ import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import { ItemDate } from "contexts/Items/domain/item-date.valueobject";
 import { ItemName } from "contexts/Items/domain/item-name.valueobject";
-import { ItemPrice } from "contexts/Items/domain/item-price.valueobject";
 import { ItemRecurrenceFrequency } from "contexts/Items/domain/item-recurrence-frequency.valueobject";
 import {
 	ERecurrenceState,
@@ -39,14 +38,12 @@ describe("ScheduledItem Recurrence Management", () => {
 		// Modify 2nd recurrence
 		const mod = new ItemRecurrenceInfo(
 			new ItemDate(new Date("2024-02-15")),
-			ERecurrenceState.PENDING,
-			new ItemPrice(200)
+			ERecurrenceState.PENDING
 		);
 		item.modifyRecurrence(1, mod);
 		let rec = item
 			.getAllRecurrencesWithStates()
 			.find((r) => r.n.value === 1);
-		expect(rec!.recurrence.price?.value).toBe(200);
 		expect(rec!.recurrence.date.value).toEqual(new Date("2024-02-15"));
 
 		// Complete 3rd recurrence

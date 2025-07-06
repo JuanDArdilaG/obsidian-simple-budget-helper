@@ -156,12 +156,12 @@ export const CalendarItemsTab = () => {
 			<CalendarItemsList
 				key={`refresh-${refreshCounter}`}
 				items={items}
+				updateItems={refreshItems}
 				untilDate={untilDate}
 				selectedItem={selectedItem}
 				setSelectedItem={setSelectedItem}
 				action={action}
 				setAction={setAction}
-				updateItems={refreshItems}
 				filters={filters}
 				setFilters={setFilters}
 				showFilters={showFilters}

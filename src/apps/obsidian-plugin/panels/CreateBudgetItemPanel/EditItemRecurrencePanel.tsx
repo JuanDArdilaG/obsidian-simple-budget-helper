@@ -11,9 +11,11 @@ import { ItemsContext, TransactionsContext } from "apps/obsidian-plugin/views";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts/AccountsContext";
 import { AccountID } from "contexts/Accounts/domain";
 import {
+	ItemBrand,
 	ItemDate,
 	ItemName,
 	ItemRecurrenceInfo,
+	ItemStore,
 	ScheduledItem,
 } from "contexts/Items/domain";
 import { ItemOperation, OperationType } from "contexts/Shared/domain";
@@ -46,11 +48,18 @@ export const EditItemRecurrencePanel = ({
 	// Check if this is a single recurrence item
 	const isSingleRecurrence = item.recurrence.isOneTime();
 
+	// For calendar context, only show modification fields
+	const isCalendarContext = context === "calendar";
+
 	const [name, setName] = useState(item.name.value);
 	const [type, setType] = useState(item.operation.type.value);
 
-	const [brand, setBrand] = useState(item.info?.brand?.value);
-	const [store, setStore] = useState(item.info?.store?.value);
+	const [brand, setBrand] = useState(
+		recurrence.brand?.value ?? item.info?.brand?.value
+	);
+	const [store, setStore] = useState(
+		recurrence.store?.value ?? item.info?.store?.value
+	);
 	const [frequency, setFrequency] = useState(
 		item.recurrence?.frequency?.value
 	);
@@ -64,16 +73,24 @@ export const EditItemRecurrencePanel = ({
 	);
 
 	const [fromSplits, setFromSplits] = useState(
-		item.fromSplits.map((split) => ({
+		recurrence.fromSplits?.map((split) => ({
 			accountId: split.accountId.value,
 			amount: split.amount,
-		}))
+		})) ??
+			item.fromSplits.map((split) => ({
+				accountId: split.accountId.value,
+				amount: split.amount,
+			}))
 	);
 	const [toSplits, setToSplits] = useState(
-		item.toSplits.map((split) => ({
+		recurrence.toSplits?.map((split) => ({
 			accountId: split.accountId.value,
 			amount: split.amount,
-		}))
+		})) ??
+			item.toSplits.map((split) => ({
+				accountId: split.accountId.value,
+				amount: split.amount,
+			}))
 	);
 
 	return (
@@ -121,44 +138,58 @@ export const EditItemRecurrencePanel = ({
 				</div>
 			)}
 
-			<Input
-				id="name"
-				label="Name"
-				value={name}
-				onChange={(name: string) => setName(name)}
-				// error={!validation || validation.name ? undefined : "required"}
-			/>
-			<Select
-				id="type"
-				label="Type"
-				value={type}
-				values={["expense", "income", "transfer"]}
-				onChange={(type) =>
-					setType(type.toLowerCase() as OperationType)
-				}
-			/>
+			{/* Only show non-modification fields when not in calendar context */}
+			{!isCalendarContext && (
+				<>
+					<Input
+						id="name"
+						label="Name"
+						value={name}
+						onChange={(name: string) => setName(name)}
+					/>
+					<Select
+						id="type"
+						label="Type"
+						value={type}
+						values={["expense", "income", "transfer"]}
+						onChange={(type) =>
+							setType(type.toLowerCase() as OperationType)
+						}
+					/>
+					<FormControlLabel
+						control={
+							<Checkbox
+								checked={withUntilDate}
+								onChange={(e) => {
+									const checked = e.target.checked;
+									setUntilDate(
+										checked ? new Date() : undefined
+									);
+									setWithUntilDate(checked);
+								}}
+							/>
+						}
+						label="With Until Date"
+					/>
+					{withUntilDate ? (
+						<DateInput
+							value={untilDate}
+							onChange={setUntilDate}
+							label="Until Date"
+						/>
+					) : undefined}
+					<Input<string>
+						id="frequency"
+						label="Frequency"
+						value={frequency ?? ""}
+						onChange={setFrequency}
+					/>
+				</>
+			)}
+
+			{/* Always show modification fields */}
 			<DateInput value={date} onChange={setDate} label="Date" />
 
-			<FormControlLabel
-				control={
-					<Checkbox
-						checked={withUntilDate}
-						onChange={(e) => {
-							const checked = e.target.checked;
-							setUntilDate(checked ? new Date() : undefined);
-							setWithUntilDate(checked);
-						}}
-					/>
-				}
-				label="With Until Date"
-			/>
-			{withUntilDate ? (
-				<DateInput
-					value={untilDate}
-					onChange={setUntilDate}
-					label="Until Date"
-				/>
-			) : undefined}
 			<SelectWithCreation
 				id="brand"
 				label="Brand"
@@ -173,12 +204,7 @@ export const EditItemRecurrencePanel = ({
 				items={stores.map((s) => s.value)}
 				onChange={setStore}
 			/>
-			<Input<string>
-				id="frequency"
-				label="Frequency"
-				value={frequency ?? ""}
-				onChange={setFrequency}
-			/>
+
 			{/* Splits Editor */}
 			<div>
 				<h4>From Splits</h4>
@@ -195,18 +221,15 @@ export const EditItemRecurrencePanel = ({
 							id={`from-account-${idx}`}
 							label="Account"
 							value={split.accountId}
-							values={accounts.map((acc) => acc.id.value)}
+							values={accounts}
+							getOptionLabel={(acc) => acc.name.value}
+							getOptionValue={(acc) => acc.id.value}
 							onChange={(val) => {
 								const newSplits = [...fromSplits];
 								newSplits[idx].accountId = val;
 								setFromSplits(newSplits);
 							}}
 						/>
-						<span>
-							{accounts.find(
-								(acc) => acc.id.value === split.accountId
-							)?.name.value || ""}
-						</span>
 						<PriceInput
 							id={`from-amount-${idx}`}
 							label="Amount"
@@ -257,18 +280,15 @@ export const EditItemRecurrencePanel = ({
 							id={`to-account-${idx}`}
 							label="Account"
 							value={split.accountId}
-							values={accounts.map((acc) => acc.id.value)}
+							values={accounts}
+							getOptionLabel={(acc) => acc.name.value}
+							getOptionValue={(acc) => acc.id.value}
 							onChange={(val) => {
 								const newSplits = [...toSplits];
 								newSplits[idx].accountId = val;
 								setToSplits(newSplits);
 							}}
 						/>
-						<span>
-							{accounts.find(
-								(acc) => acc.id.value === split.accountId
-							)?.name.value || ""}
-						</span>
 						<PriceInput
 							id={`to-amount-${idx}`}
 							label="Amount"
@@ -331,23 +351,26 @@ export const EditItemRecurrencePanel = ({
 							// Create a copy of the item and update it
 							const updatedItem = item.copy();
 
-							// Update basic properties
-							updatedItem.updateName(new ItemName(name));
-							updatedItem.updateOperation(
-								ItemOperation.fromPrimitives({ type })
-							);
+							// Update basic properties only if not in calendar context
+							if (!isCalendarContext) {
+								updatedItem.updateName(new ItemName(name));
+								updatedItem.updateOperation(
+									ItemOperation.fromPrimitives({ type })
+								);
+							}
 
 							// Update splits
 							updatedItem.setFromSplits(fromSplitObjs);
 							updatedItem.setToSplits(toSplitObjs);
 
-							// Update recurrence with new date
+							// Update recurrence with new date and brand/store
 							const newRecurrence = new ItemRecurrenceInfo(
 								new ItemDate(date),
 								recurrence.state,
-								undefined, // price - not used for splits
 								fromSplitObjs,
-								toSplitObjs
+								toSplitObjs,
+								brand ? new ItemBrand(brand) : undefined,
+								store ? new ItemStore(store) : undefined
 							);
 
 							// Update the recurrence
@@ -385,13 +408,14 @@ export const EditItemRecurrencePanel = ({
 								)
 						);
 
-						// Create the new recurrence info with custom splits
+						// Create the new recurrence info with custom splits and brand/store
 						const newRecurrence = new ItemRecurrenceInfo(
 							new ItemDate(date),
 							recurrence.state,
-							undefined, // price - not used for splits
 							fromSplitObjs,
-							toSplitObjs
+							toSplitObjs,
+							brand ? new ItemBrand(brand) : undefined,
+							store ? new ItemStore(store) : undefined
 						);
 
 						await modifyNItemRecurrence.execute({
