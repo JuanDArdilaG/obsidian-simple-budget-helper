@@ -1,21 +1,25 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
 import CloseIcon from "@mui/icons-material/Close";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import {
 	Box,
 	Button,
 	Checkbox,
-	FormControlLabel,
+	FormControl,
 	FormHelperText,
 	IconButton,
+	InputLabel,
+	MenuItem,
+	Select,
 	Typography,
 } from "@mui/material";
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { PaymentSplitPrimitives } from "contexts/Transactions/domain";
-import { useContext, useMemo } from "react";
+import { useContext, useMemo, useState } from "react";
 import { WithLockField } from "../WithLockField";
 
-interface MultiAccountSelectProps {
+interface MultiSelectDropdownProps {
 	id: string;
 	label: string;
 	placeholder?: string;
@@ -27,34 +31,48 @@ interface MultiAccountSelectProps {
 	setIsLocked?: (value: boolean) => void;
 }
 
-export const MultiAccountSelect = ({
+export const MultiSelectDropdown = ({
 	id,
 	label,
-	placeholder,
+	placeholder = "Select accounts...",
 	selectedAccounts,
 	onChange,
 	totalAmount = 0,
 	error,
 	isLocked,
 	setIsLocked,
-}: MultiAccountSelectProps) => {
+}: MultiSelectDropdownProps) => {
 	const { accounts } = useContext(AccountsContext);
+	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+	const open = Boolean(anchorEl);
 
 	// Memoize for performance
 	const accountList = useMemo(
 		() =>
-			accounts.map((account) => ({
-				id: account.id.value,
-				name: account.name.value,
-				balance:
-					typeof account.balance === "number"
-						? account.balance
-						: account.balance?.value ?? 0,
-			})),
+			accounts
+				.map((account) => ({
+					id: account.id.value,
+					name: account.name.value,
+					balance:
+						typeof account.balance === "number"
+							? account.balance
+							: account.balance?.value ?? 0,
+				}))
+				.sort((a, b) => a.name.localeCompare(b.name)),
 		[accounts]
 	);
 
 	const selectedIds = selectedAccounts.map((split) => split.accountId);
+
+	const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+		if (!isLocked) {
+			setAnchorEl(event.currentTarget);
+		}
+	};
+
+	const handleClose = () => {
+		setAnchorEl(null);
+	};
 
 	const handleAccountToggle = (accountId: string, checked: boolean) => {
 		let newSplits: PaymentSplitPrimitives[];
@@ -110,6 +128,20 @@ export const MultiAccountSelect = ({
 	);
 	const remainingAmount = totalAmount - totalDistributed;
 
+	// Display text for the select input
+	const getDisplayText = () => {
+		if (selectedAccounts.length === 0) {
+			return placeholder;
+		}
+		if (selectedAccounts.length === 1) {
+			const account = accountList.find(
+				(a) => a.id === selectedAccounts[0].accountId
+			);
+			return account?.name || "Selected account";
+		}
+		return `${selectedAccounts.length} accounts selected`;
+	};
+
 	return (
 		<WithLockField
 			isLocked={isLocked}
@@ -117,80 +149,156 @@ export const MultiAccountSelect = ({
 			style={{ width: "100%" }}
 		>
 			<Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-				<Typography
-					variant="body2"
-					sx={{ color: "var(--text-muted)", mb: 1 }}
-				>
-					{label}
-				</Typography>
-				{/* Account selection list */}
-				<Box
-					sx={{
-						display: "flex",
-						flexDirection: "column",
-						gap: 1,
-						mb: 1,
-					}}
-				>
-					{accountList.map((account) => (
-						<FormControlLabel
-							key={account.id}
-							control={
+				{/* Multiselect Dropdown */}
+				<FormControl fullWidth error={!!error}>
+					<InputLabel id={`${id}-label`}>{label}</InputLabel>
+					<Select
+						labelId={`${id}-label`}
+						id={id}
+						value=""
+						onClick={handleClick}
+						onClose={handleClose}
+						open={open}
+						displayEmpty
+						disabled={isLocked}
+						IconComponent={KeyboardArrowDownIcon}
+						renderValue={() => (
+							<Typography
+								variant="body2"
+								sx={{
+									color:
+										selectedAccounts.length === 0
+											? "var(--text-muted)"
+											: "var(--text-normal)",
+								}}
+							>
+								{getDisplayText()}
+							</Typography>
+						)}
+						sx={{
+							"& .MuiSelect-select": {
+								padding: "8px 12px",
+							},
+						}}
+					>
+						{/* Select All Option */}
+						<MenuItem
+							onClick={(e) => {
+								e.stopPropagation();
+								if (
+									selectedAccounts.length ===
+									accountList.length
+								) {
+									// Deselect all
+									onChange([]);
+								} else {
+									// Select all
+									const allSplits = accountList.map(
+										(account) => ({
+											accountId: account.id,
+											amount: 0,
+										})
+									);
+									onChange(allSplits);
+								}
+							}}
+							sx={{
+								borderBottom:
+									"1px solid var(--background-modifier-border)",
+								backgroundColor: "var(--background-secondary)",
+							}}
+						>
+							<Checkbox
+								checked={
+									selectedAccounts.length ===
+										accountList.length &&
+									accountList.length > 0
+								}
+								indeterminate={
+									selectedAccounts.length > 0 &&
+									selectedAccounts.length < accountList.length
+								}
+								sx={{
+									color: "var(--interactive-accent)",
+									"&.Mui-checked": {
+										color: "var(--interactive-accent)",
+									},
+								}}
+							/>
+							<Typography
+								variant="body2"
+								sx={{ fontWeight: 600 }}
+							>
+								{selectedAccounts.length ===
+									accountList.length && accountList.length > 0
+									? "Deselect All"
+									: "Select All"}
+							</Typography>
+						</MenuItem>
+
+						{/* Account Options */}
+						{accountList.map((account) => (
+							<MenuItem
+								key={account.id}
+								onClick={(e) => {
+									e.stopPropagation();
+									handleAccountToggle(
+										account.id,
+										!selectedIds.includes(account.id)
+									);
+								}}
+								sx={{
+									py: 1,
+									px: 2,
+									"&:hover": {
+										backgroundColor:
+											"var(--background-modifier-hover)",
+									},
+								}}
+							>
 								<Checkbox
 									checked={selectedIds.includes(account.id)}
-									onChange={(e) =>
-										handleAccountToggle(
-											account.id,
-											e.target.checked
-										)
-									}
-									disabled={isLocked}
-									inputProps={{
-										"aria-label": `Select account ${account.name}`,
-									}}
 									sx={{
 										color: "var(--interactive-accent)",
-										p: 0,
-										mr: 1,
+										"&.Mui-checked": {
+											color: "var(--interactive-accent)",
+										},
 									}}
 								/>
-							}
-							label={
 								<Box
 									sx={{
 										display: "flex",
-										alignItems: "center",
-										gap: 1,
+										flexDirection: "column",
+										ml: 1,
 									}}
 								>
-									{/* Account icon placeholder removed (icon not present) */}
 									<Typography
 										variant="body2"
-										sx={{
-											color: "var(--text-normal)",
-											minWidth: 80,
-										}}
+										sx={{ fontWeight: 500 }}
 									>
 										{account.name}
 									</Typography>
 									{typeof account.balance === "number" && (
 										<Typography
 											variant="caption"
-											sx={{
-												color: "var(--text-faint)",
-												ml: 1,
-											}}
+											sx={{ color: "var(--text-faint)" }}
 										>
 											Balance: $
 											{Number(account.balance).toFixed(2)}
 										</Typography>
 									)}
 								</Box>
-							}
-							disabled={isLocked}
-						/>
-					))}
-				</Box>
+							</MenuItem>
+						))}
+					</Select>
+					{error && (
+						<FormHelperText
+							sx={{ color: "var(--text-error)", marginLeft: 0 }}
+						>
+							{error}
+						</FormHelperText>
+					)}
+				</FormControl>
 
 				{/* Split Evenly button */}
 				{selectedAccounts.length > 1 && (
@@ -338,14 +446,6 @@ export const MultiAccountSelect = ({
 								: `Remaining: $${remainingAmount.toFixed(2)}`}
 						</Typography>
 					</Box>
-				)}
-
-				{error && (
-					<FormHelperText
-						style={{ color: "var(--text-error)", marginLeft: 0 }}
-					>
-						{error}
-					</FormHelperText>
 				)}
 			</Box>
 		</WithLockField>

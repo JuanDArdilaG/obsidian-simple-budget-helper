@@ -1,6 +1,7 @@
 // created from 'create-ts-index'
 
 export * from "./MultiAccountSelect";
+export * from "./MultiSelectDropdown";
 export * from "./Select";
 export * from "./SelectWithCreation";
 export * from "./useAccountSelect";

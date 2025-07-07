@@ -1,5 +1,5 @@
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
-import { CreateTransactionPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/CreateTransactionPanel";
+import { TransactionPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/TransactionPanel";
 import { Transaction } from "contexts/Transactions/domain";
 import { useContext, useEffect, useState } from "react";
 import { TransactionsContext } from "../Contexts";
@@ -54,7 +54,7 @@ export const AccountingSection = ({
 			isCreating={showCreateForm}
 		>
 			{showCreateForm && (
-				<CreateTransactionPanel
+				<TransactionPanel
 					close={handleCloseForm}
 					onCreate={handleFormSubmit}
 					transaction={editingTransaction}

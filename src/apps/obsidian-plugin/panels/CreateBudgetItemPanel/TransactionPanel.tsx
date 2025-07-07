@@ -5,7 +5,7 @@ import { Transaction } from "contexts/Transactions/domain";
 import { useContext, useEffect, useState } from "react";
 import { TransactionForm } from "./TransactionForm";
 
-export const CreateTransactionPanel = ({
+export const TransactionPanel = ({
 	close,
 	onCreate,
 	transaction,
