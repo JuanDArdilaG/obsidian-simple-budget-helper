@@ -1,4 +1,4 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
+import { DateValueObject, PriceValueObject } from "@juandardilag/value-objects";
 import AddIcon from "@mui/icons-material/Add";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -6,6 +6,8 @@ import {
 	Alert,
 	Box,
 	Button,
+	CircularProgress,
+	Collapse,
 	Dialog,
 	DialogActions,
 	DialogContent,
@@ -23,24 +25,40 @@ import {
 } from "apps/obsidian-plugin/components/Select";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 import {
-	AccountsContext,
 	CategoriesContext,
 	ItemsContext,
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import { AccountID } from "contexts/Accounts/domain";
+import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
 import {
 	Item,
+	ItemBrand,
+	ItemProductInfo,
+	ItemStore,
 	ItemType,
 	ProductItem,
 	ServiceItem,
 } from "contexts/Items/domain";
 import { Brand as BrandEntity } from "contexts/Items/domain/brand.entity";
+import { ItemID } from "contexts/Items/domain/item-id.valueobject";
 import { Provider as ProviderEntity } from "contexts/Items/domain/provider.entity";
 import { Store as StoreEntity } from "contexts/Items/domain/store.entity";
 import { OperationType } from "contexts/Shared/domain";
 import {
+	SubCategory,
+	SubCategoryID,
+	SubCategoryName,
+} from "contexts/Subcategories/domain";
+import {
+	PaymentSplit,
 	PaymentSplitPrimitives,
 	Transaction,
+	TransactionAmount,
+	TransactionDate,
+	TransactionID,
+	TransactionName,
+	TransactionOperation,
 } from "contexts/Transactions/domain";
 import * as math from "mathjs";
 import React, {
@@ -252,31 +270,18 @@ export const TransactionFormImproved = ({
 }>) => {
 	const { logger } = useLogger("TransactionFormImproved");
 	const {
-		updateBrands,
-		updateStores,
-		updateTransactions,
 		useCases: { recordTransaction, updateTransaction },
 	} = useContext(TransactionsContext);
-	const { updateAccounts, accounts } = useContext(AccountsContext);
 	const {
-		useCases: categoryUseCases,
+		useCases: { createCategory, createSubCategory },
 		categories,
 		subCategories,
 		updateCategories,
 		updateSubCategories,
+		updateCategoriesWithSubcategories,
 	} = useContext(CategoriesContext);
 	const {
-		useCases: {
-			createRegularItem,
-			updateRegularItem,
-			createBrand,
-			createStore,
-			createProvider,
-			getAllBrands,
-			getAllStores,
-			getAllProviders,
-		},
-		updateItems,
+		useCases: { getAllBrands, getAllStores, getAllProviders },
 	} = useContext(ItemsContext);
 
 	// State for brands, stores, and providers
@@ -287,6 +292,24 @@ export const TransactionFormImproved = ({
 	// UI state for foldable sections
 	const [showOptionalFields, setShowOptionalFields] = useState(false);
 	const [showBreakdown, setShowBreakdown] = useState(false);
+
+	// Inline category creation state
+	const [showCategoryCreation, setShowCategoryCreation] = useState(false);
+	const [newCategoryName, setNewCategoryName] = useState("");
+	const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+	const [categoryCreationError, setCategoryCreationError] = useState<
+		string | null
+	>(null);
+
+	// Inline subcategory creation state
+	const [showSubcategoryCreation, setShowSubcategoryCreation] =
+		useState(false);
+	const [newSubcategoryName, setNewSubcategoryName] = useState("");
+	const [selectedParentCategory, setSelectedParentCategory] = useState("");
+	const [isCreatingSubcategory, setIsCreatingSubcategory] = useState(false);
+	const [subcategoryCreationError, setSubcategoryCreationError] = useState<
+		string | null
+	>(null);
 
 	// Load brands, stores, and providers
 	useEffect(() => {
@@ -398,6 +421,11 @@ export const TransactionFormImproved = ({
 		initialValue: sharedProperties.date,
 	});
 
+	// Sync date changes with shared properties
+	useEffect(() => {
+		updateSharedProperties({ date });
+	}, [date]);
+
 	// Validation
 	const { validate, getFieldError, clearErrors } =
 		useMultiTransactionValidation(
@@ -473,6 +501,69 @@ export const TransactionFormImproved = ({
 		categories.find((c) => c.name.value === name)?.id;
 	const getSubCategoryIdByName = (name: string) =>
 		subCategories.find((s) => s.name.value === name)?.id;
+
+	// Inline category creation functions
+	const handleCreateCategory = async () => {
+		if (!newCategoryName.trim()) return;
+
+		setIsCreatingCategory(true);
+		setCategoryCreationError(null);
+
+		try {
+			await createCategory.execute(
+				Category.create(new CategoryName(newCategoryName.trim()))
+			);
+			await updateCategories();
+			await updateCategoriesWithSubcategories();
+			setNewCategoryName("");
+			setShowCategoryCreation(false);
+		} catch (error) {
+			setCategoryCreationError(
+				error instanceof Error
+					? error.message
+					: "Failed to create category"
+			);
+		} finally {
+			setIsCreatingCategory(false);
+		}
+	};
+
+	// Inline subcategory creation functions
+	const handleCreateSubcategory = async () => {
+		if (!newSubcategoryName.trim() || !selectedParentCategory) return;
+
+		setIsCreatingSubcategory(true);
+		setSubcategoryCreationError(null);
+
+		try {
+			const parentCategory = categories.find(
+				(c) => c.name.value === selectedParentCategory
+			);
+			if (!parentCategory) {
+				throw new Error("Parent category not found");
+			}
+
+			await createSubCategory.execute(
+				SubCategory.create(
+					parentCategory.id,
+					new SubCategoryName(newSubcategoryName.trim())
+				)
+			);
+			await updateSubCategories();
+			await updateCategoriesWithSubcategories();
+			setNewSubcategoryName("");
+			setSelectedParentCategory("");
+			setShowSubcategoryCreation(false);
+		} catch (error) {
+			setSubcategoryCreationError(
+				error instanceof Error
+					? error.message
+					: "Failed to create subcategory"
+			);
+		} finally {
+			setIsCreatingSubcategory(false);
+		}
+	};
 
 	// Name select handler
 	const handleNameSelect = (itemId: string, displayName: string) => {
@@ -630,10 +721,96 @@ export const TransactionFormImproved = ({
 		setSharedProperties({ ...sharedProperties, ...updates });
 	};
 
-	// Submit handler (simplified for demo)
+	// Submit handler
 	const handleSubmit = async (withClose: boolean) => {
 		if (!validate()) return;
 		try {
+			// Get the first transaction item (assuming single item for now)
+			const firstItem = transactionItems[0];
+			if (!firstItem) {
+				throw new Error("No transaction items found");
+			}
+
+			// Create payment splits from the form data
+			const fromSplits = sharedProperties.fromSplits.map(
+				(split) =>
+					new PaymentSplit(
+						new AccountID(split.accountId),
+						new TransactionAmount(split.amount)
+					)
+			);
+
+			const toSplits = sharedProperties.toSplits.map(
+				(split) =>
+					new PaymentSplit(
+						new AccountID(split.accountId),
+						new TransactionAmount(split.amount)
+					)
+			);
+
+			// Create the transaction
+			const categoryId = getCategoryIdByName(firstItem.category);
+			const subCategoryId = getSubCategoryIdByName(firstItem.subCategory);
+
+			if (!categoryId || !subCategoryId) {
+				throw new Error("Category and subcategory are required");
+			}
+
+			const transactionData = {
+				name: new TransactionName(firstItem.name),
+				operation: new TransactionOperation(sharedProperties.operation),
+				category: new CategoryID(categoryId.value),
+				subCategory: new SubCategoryID(subCategoryId.value),
+				date: new TransactionDate(sharedProperties.date),
+				fromSplits,
+				toSplits,
+				itemId: firstItem.itemId
+					? new ItemID(firstItem.itemId)
+					: undefined,
+				brand: firstItem.brand
+					? new ItemBrand(firstItem.brand)
+					: undefined,
+				store: sharedProperties.store
+					? new ItemStore(sharedProperties.store)
+					: undefined,
+			};
+
+			// Create or update transaction
+			if (transaction) {
+				// Update existing transaction
+				transaction.updateName(transactionData.name);
+				transaction.updateOperation(transactionData.operation);
+				transaction.updateCategory(transactionData.category);
+				transaction.updateSubCategory(transactionData.subCategory);
+				transaction.updateDate(transactionData.date);
+				transaction.setFromSplits(transactionData.fromSplits);
+				transaction.setToSplits(transactionData.toSplits);
+
+				await updateTransaction.execute(transaction);
+			} else {
+				// Create new transaction
+				const newTransaction = new Transaction(
+					TransactionID.generate(),
+					transactionData.fromSplits,
+					transactionData.toSplits,
+					transactionData.name,
+					transactionData.operation,
+					transactionData.category,
+					transactionData.subCategory,
+					transactionData.date,
+					DateValueObject.createNowDate(),
+					transactionData.itemId,
+					transactionData.brand || transactionData.store
+						? new ItemProductInfo({
+								brand: transactionData.brand,
+								store: transactionData.store,
+						  })
+						: undefined
+				);
+
+				await recordTransaction.execute(newTransaction);
+			}
+
 			// Call onSubmit with the withClose parameter
 			await onSubmit(withClose);
 
@@ -932,6 +1109,18 @@ export const TransactionFormImproved = ({
 								slotProps={{ htmlInput: { min: 0, step: 1 } }}
 								variant="outlined"
 								size="small"
+								sx={{
+									color: "var(--text-normal)",
+									"& .MuiInputBase-input": {
+										color: "var(--text-normal)",
+									},
+									"& .MuiInputLabel-root": {
+										color: "var(--text-normal)",
+									},
+									"& .MuiFormHelperText-root": {
+										color: "var(--text-muted)",
+									},
+								}}
 							/>
 
 							{/* Item Type */}
@@ -958,51 +1147,344 @@ export const TransactionFormImproved = ({
 							/>
 
 							{/* Category */}
-							<SelectWithCreation
-								id={`category-${item.id}`}
-								label="Category *"
-								item={item.category || ""}
-								items={categoryOptions.map((opt) => opt.name)}
-								onChange={(categoryName) => {
-									if (
-										categoryName &&
-										categoryOptions.some(
-											(opt) => opt.name === categoryName
+							<Box>
+								<SelectWithCreation
+									id={`category-${item.id}`}
+									label="Category *"
+									item={item.category || ""}
+									items={categoryOptions.map(
+										(opt) => opt.name
+									)}
+									onChange={(categoryName) => {
+										if (
+											categoryName &&
+											categoryOptions.some(
+												(opt) =>
+													opt.name === categoryName
+											)
+										) {
+											updateTransactionItem(item.id, {
+												category: categoryName,
+											});
+										}
+									}}
+									isLocked={false}
+									setIsLocked={() => {}}
+								/>
+								<Button
+									variant="text"
+									size="small"
+									onClick={() =>
+										setShowCategoryCreation(
+											!showCategoryCreation
 										)
-									) {
-										updateTransactionItem(item.id, {
-											category: categoryName,
-										});
 									}
-								}}
-								isLocked={false}
-								setIsLocked={() => {}}
-							/>
+									sx={{
+										p: 0,
+										mt: 0.5,
+										textTransform: "none",
+										color: "var(--text-muted)",
+										fontSize: "0.75rem",
+										"&:hover": {
+											backgroundColor: "transparent",
+										},
+									}}
+								>
+									{showCategoryCreation ? "▼" : "▶"} Create
+									New Category
+								</Button>
+								<Collapse
+									in={showCategoryCreation}
+									timeout="auto"
+								>
+									<Box
+										sx={{
+											mt: 1,
+											p: 2,
+											border: "1px solid var(--background-modifier-border)",
+											borderRadius: 1,
+											backgroundColor:
+												"var(--background-secondary)",
+										}}
+									>
+										{categoryCreationError && (
+											<Alert
+												severity="error"
+												sx={{ mb: 1 }}
+											>
+												{categoryCreationError}
+											</Alert>
+										)}
+										<TextField
+											fullWidth
+											label="New Category Name"
+											placeholder="Enter category name..."
+											value={newCategoryName}
+											onChange={(e) => {
+												setNewCategoryName(
+													e.target.value
+												);
+												if (categoryCreationError)
+													setCategoryCreationError(
+														null
+													);
+											}}
+											size="small"
+											disabled={isCreatingCategory}
+											error={newCategoryName.length > 50}
+											helperText={
+												newCategoryName.length > 50
+													? "Name must be 50 characters or less"
+													: `${newCategoryName.length}/50 characters`
+											}
+											sx={{
+												mb: 1,
+												color: "var(--text-normal)",
+												"& .MuiInputBase-input": {
+													color: "var(--text-normal)",
+												},
+												"& .MuiInputLabel-root": {
+													color: "var(--text-normal)",
+												},
+												"& .MuiFormHelperText-root": {
+													color: "var(--text-muted)",
+												},
+											}}
+										/>
+										<Box sx={{ display: "flex", gap: 1 }}>
+											<Button
+												variant="contained"
+												size="small"
+												onClick={handleCreateCategory}
+												disabled={
+													!newCategoryName.trim() ||
+													newCategoryName.length >
+														50 ||
+													isCreatingCategory
+												}
+												startIcon={
+													isCreatingCategory ? (
+														<CircularProgress
+															size={16}
+															sx={{
+																color: "inherit",
+															}}
+														/>
+													) : (
+														<AddIcon />
+													)
+												}
+												sx={{ flex: 1 }}
+											>
+												{isCreatingCategory
+													? "Creating..."
+													: "Create Category"}
+											</Button>
+											<Button
+												variant="outlined"
+												size="small"
+												onClick={() => {
+													setNewCategoryName("");
+													setCategoryCreationError(
+														null
+													);
+													setShowCategoryCreation(
+														false
+													);
+												}}
+												disabled={isCreatingCategory}
+											>
+												Cancel
+											</Button>
+										</Box>
+									</Box>
+								</Collapse>
+							</Box>
 
 							{/* Subcategory */}
-							<SelectWithCreation
-								id={`subcategory-${item.id}`}
-								label="Subcategory *"
-								item={item.subCategory || ""}
-								items={subCategoryOptions(item.category).map(
-									(opt) => opt.name
-								)}
-								onChange={(subCategoryName) => {
-									if (
-										subCategoryName &&
-										subCategoryOptions(item.category).some(
-											(opt) =>
-												opt.name === subCategoryName
+							<Box>
+								<SelectWithCreation
+									id={`subcategory-${item.id}`}
+									label="Subcategory *"
+									item={item.subCategory || ""}
+									items={subCategoryOptions(
+										item.category
+									).map((opt) => opt.name)}
+									onChange={(subCategoryName) => {
+										if (
+											subCategoryName &&
+											subCategoryOptions(
+												item.category
+											).some(
+												(opt) =>
+													opt.name === subCategoryName
+											)
+										) {
+											updateTransactionItem(item.id, {
+												subCategory: subCategoryName,
+											});
+										}
+									}}
+									isLocked={false}
+									setIsLocked={() => {}}
+								/>
+								<Button
+									variant="text"
+									size="small"
+									onClick={() =>
+										setShowSubcategoryCreation(
+											!showSubcategoryCreation
 										)
-									) {
-										updateTransactionItem(item.id, {
-											subCategory: subCategoryName,
-										});
 									}
-								}}
-								isLocked={false}
-								setIsLocked={() => {}}
-							/>
+									sx={{
+										p: 0,
+										mt: 0.5,
+										textTransform: "none",
+										color: "var(--text-muted)",
+										fontSize: "0.75rem",
+										"&:hover": {
+											backgroundColor: "transparent",
+										},
+									}}
+								>
+									{showSubcategoryCreation ? "▼" : "▶"} Create
+									New Subcategory
+								</Button>
+								<Collapse
+									in={showSubcategoryCreation}
+									timeout="auto"
+								>
+									<Box
+										sx={{
+											mt: 1,
+											p: 2,
+											border: "1px solid var(--background-modifier-border)",
+											borderRadius: 1,
+											backgroundColor:
+												"var(--background-secondary)",
+										}}
+									>
+										{subcategoryCreationError && (
+											<Alert
+												severity="error"
+												sx={{ mb: 1 }}
+											>
+												{subcategoryCreationError}
+											</Alert>
+										)}
+										<Select
+											id="parent-category-select"
+											label="Parent Category *"
+											value={selectedParentCategory}
+											values={categoryOptions.map(
+												(opt) => opt.name
+											)}
+											onChange={(categoryName) => {
+												setSelectedParentCategory(
+													categoryName
+												);
+												if (subcategoryCreationError)
+													setSubcategoryCreationError(
+														null
+													);
+											}}
+											isLocked={false}
+											setIsLocked={() => {}}
+										/>
+										<TextField
+											fullWidth
+											label="New Subcategory Name"
+											placeholder="Enter subcategory name..."
+											value={newSubcategoryName}
+											onChange={(e) => {
+												setNewSubcategoryName(
+													e.target.value
+												);
+												if (subcategoryCreationError)
+													setSubcategoryCreationError(
+														null
+													);
+											}}
+											size="small"
+											disabled={isCreatingSubcategory}
+											error={
+												newSubcategoryName.length > 50
+											}
+											helperText={
+												newSubcategoryName.length > 50
+													? "Name must be 50 characters or less"
+													: `${newSubcategoryName.length}/50 characters`
+											}
+											sx={{
+												mb: 1,
+												mt: 1,
+												color: "var(--text-normal)",
+												"& .MuiInputBase-input": {
+													color: "var(--text-normal)",
+												},
+												"& .MuiInputLabel-root": {
+													color: "var(--text-normal)",
+												},
+												"& .MuiFormHelperText-root": {
+													color: "var(--text-muted)",
+												},
+											}}
+										/>
+										<Box sx={{ display: "flex", gap: 1 }}>
+											<Button
+												variant="contained"
+												size="small"
+												onClick={
+													handleCreateSubcategory
+												}
+												disabled={
+													!newSubcategoryName.trim() ||
+													!selectedParentCategory ||
+													newSubcategoryName.length >
+														50 ||
+													isCreatingSubcategory
+												}
+												startIcon={
+													isCreatingSubcategory ? (
+														<CircularProgress
+															size={16}
+															sx={{
+																color: "inherit",
+															}}
+														/>
+													) : (
+														<AddIcon />
+													)
+												}
+												sx={{ flex: 1 }}
+											>
+												{isCreatingSubcategory
+													? "Creating..."
+													: "Create Subcategory"}
+											</Button>
+											<Button
+												variant="outlined"
+												size="small"
+												onClick={() => {
+													setNewSubcategoryName("");
+													setSelectedParentCategory(
+														""
+													);
+													setSubcategoryCreationError(
+														null
+													);
+													setShowSubcategoryCreation(
+														false
+													);
+												}}
+												disabled={isCreatingSubcategory}
+											>
+												Cancel
+											</Button>
+										</Box>
+									</Box>
+								</Collapse>
+							</Box>
 
 							{/* Brand (for products) */}
 							{item.itemType === ItemType.PRODUCT && (
@@ -1211,21 +1693,24 @@ export const TransactionFormImproved = ({
 					gap: 2,
 				}}
 			>
-				<Button
-					type="button"
-					variant="outlined"
-					onClick={() => handleSubmit(false)}
-					sx={{
-						borderColor: currentColors.primary,
-						color: currentColors.primary,
-						"&:hover": {
+				{/* Show both buttons for new transactions, only Save button for editing */}
+				{!transaction && (
+					<Button
+						type="button"
+						variant="outlined"
+						onClick={() => handleSubmit(false)}
+						sx={{
 							borderColor: currentColors.primary,
-							backgroundColor: currentColors.background,
-						},
-					}}
-				>
-					{transaction ? "Save & Continue" : "Save & Create Another"}
-				</Button>
+							color: currentColors.primary,
+							"&:hover": {
+								borderColor: currentColors.primary,
+								backgroundColor: currentColors.background,
+							},
+						}}
+					>
+						Save & Create Another
+					</Button>
+				)}
 				<Button
 					type="button"
 					variant="contained"
@@ -1238,7 +1723,7 @@ export const TransactionFormImproved = ({
 						},
 					}}
 				>
-					{transaction ? "Save & Finish" : "Save & Finish"}
+					{transaction ? "Save" : "Save & Finish"}
 				</Button>
 			</Box>
 

@@ -43,6 +43,8 @@ export const AccountingSection = ({
 
 	const handleFormSubmit = (shouldClose: boolean = true) => {
 		setSelection([]);
+		// Refresh the transactions list after creating or updating a transaction
+		updateFilteredTransactions();
 		if (shouldClose) {
 			handleCloseForm();
 		}
