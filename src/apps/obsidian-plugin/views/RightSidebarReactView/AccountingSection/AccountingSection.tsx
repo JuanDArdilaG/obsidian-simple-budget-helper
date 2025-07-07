@@ -41,9 +41,11 @@ export const AccountingSection = ({
 		setShowCreateForm(true);
 	};
 
-	const handleFormSubmit = () => {
+	const handleFormSubmit = (shouldClose: boolean = true) => {
 		setSelection([]);
-		handleCloseForm();
+		if (shouldClose) {
+			handleCloseForm();
+		}
 	};
 
 	return (

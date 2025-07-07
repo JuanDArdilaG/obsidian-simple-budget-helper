@@ -11,7 +11,7 @@ export const TransactionPanel = ({
 	transaction,
 }: {
 	close: () => void;
-	onCreate: () => void;
+	onCreate: (withClose: boolean) => void;
 	transaction?: Transaction | null;
 }) => {
 	const { logger } = useLogger("CreateItemPanel");

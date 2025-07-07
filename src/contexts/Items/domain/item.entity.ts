@@ -5,6 +5,7 @@ import { Logger } from "contexts/Shared/infrastructure/logger";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { ItemID } from "./item-id.valueobject";
 import { ItemName } from "./item-name.valueobject";
+import { ItemPrice } from "./item-price.valueobject";
 
 export enum ItemType {
 	PRODUCT = "product",
@@ -20,6 +21,7 @@ export abstract class Item extends Entity<ItemID, ItemPrimitives> {
 		protected _category: CategoryID,
 		protected _subCategory: SubCategoryID,
 		protected _type: ItemType,
+		protected _amount: ItemPrice,
 		updatedAt: DateValueObject
 	) {
 		super(id, updatedAt);
@@ -60,6 +62,15 @@ export abstract class Item extends Entity<ItemID, ItemPrimitives> {
 		return this._type;
 	}
 
+	get amount(): ItemPrice {
+		return this._amount;
+	}
+
+	updateAmount(amount: ItemPrice): void {
+		this._amount = amount;
+		this.updateTimestamp();
+	}
+
 	abstract copy(): Item;
 	abstract toPrimitives(): ItemPrimitives;
 	static fromPrimitives(primitives: ItemPrimitives): Item {
@@ -76,5 +87,6 @@ export type ItemPrimitives = {
 	category: string;
 	subCategory: string;
 	type: ItemType;
+	amount: number;
 	updatedAt: string;
 };

@@ -3,6 +3,7 @@ import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { ItemID } from "./item-id.valueobject";
 import { ItemName } from "./item-name.valueobject";
+import { ItemPrice } from "./item-price.valueobject";
 import { Item, ItemPrimitives, ItemType } from "./item.entity";
 
 export class ServiceItem extends Item {
@@ -11,16 +12,26 @@ export class ServiceItem extends Item {
 		name: ItemName,
 		category: CategoryID,
 		subCategory: SubCategoryID,
+		amount: ItemPrice,
 		updatedAt: DateValueObject,
 		private readonly _providers: ItemID[] = []
 	) {
-		super(id, name, category, subCategory, ItemType.SERVICE, updatedAt);
+		super(
+			id,
+			name,
+			category,
+			subCategory,
+			ItemType.SERVICE,
+			amount,
+			updatedAt
+		);
 	}
 
 	static create(
 		name: ItemName,
 		category: CategoryID,
 		subCategory: SubCategoryID,
+		amount: ItemPrice,
 		providers: ItemID[] = []
 	): ServiceItem {
 		return new ServiceItem(
@@ -28,6 +39,7 @@ export class ServiceItem extends Item {
 			name,
 			category,
 			subCategory,
+			amount,
 			DateValueObject.createNowDate(),
 			providers
 		);
@@ -60,6 +72,7 @@ export class ServiceItem extends Item {
 			this._name,
 			this._category,
 			this._subCategory,
+			this._amount,
 			this._updatedAt,
 			[...this._providers]
 		);
@@ -72,6 +85,7 @@ export class ServiceItem extends Item {
 			category: this._category.value,
 			subCategory: this._subCategory.value,
 			type: this._type,
+			amount: this._amount.value,
 			providers: this._providers.map((p) => p.value),
 			updatedAt: this._updatedAt.toISOString(),
 		};
@@ -83,6 +97,7 @@ export class ServiceItem extends Item {
 			new ItemName(primitives.name),
 			new CategoryID(primitives.category),
 			new SubCategoryID(primitives.subCategory),
+			new ItemPrice(primitives.amount ?? 0),
 			new DateValueObject(new Date(primitives.updatedAt)),
 			primitives.providers.map((id) => new ItemID(id))
 		);
@@ -95,6 +110,7 @@ export class ServiceItem extends Item {
 			category: "",
 			subCategory: "",
 			type: ItemType.SERVICE,
+			amount: 0,
 			providers: [],
 			updatedAt: new Date().toISOString(),
 		};

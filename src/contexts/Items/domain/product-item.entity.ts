@@ -3,6 +3,7 @@ import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { ItemID } from "./item-id.valueobject";
 import { ItemName } from "./item-name.valueobject";
+import { ItemPrice } from "./item-price.valueobject";
 import { Item, ItemPrimitives, ItemType } from "./item.entity";
 
 export class ProductItem extends Item {
@@ -11,17 +12,27 @@ export class ProductItem extends Item {
 		name: ItemName,
 		category: CategoryID,
 		subCategory: SubCategoryID,
+		amount: ItemPrice,
 		updatedAt: DateValueObject,
 		private readonly _brands: ItemID[] = [],
 		private readonly _stores: ItemID[] = []
 	) {
-		super(id, name, category, subCategory, ItemType.PRODUCT, updatedAt);
+		super(
+			id,
+			name,
+			category,
+			subCategory,
+			ItemType.PRODUCT,
+			amount,
+			updatedAt
+		);
 	}
 
 	static create(
 		name: ItemName,
 		category: CategoryID,
 		subCategory: SubCategoryID,
+		amount: ItemPrice,
 		brands: ItemID[] = [],
 		stores: ItemID[] = []
 	): ProductItem {
@@ -30,6 +41,7 @@ export class ProductItem extends Item {
 			name,
 			category,
 			subCategory,
+			amount,
 			DateValueObject.createNowDate(),
 			brands,
 			stores
@@ -80,6 +92,7 @@ export class ProductItem extends Item {
 			this._name,
 			this._category,
 			this._subCategory,
+			this._amount,
 			this._updatedAt,
 			[...this._brands],
 			[...this._stores]
@@ -93,6 +106,7 @@ export class ProductItem extends Item {
 			category: this._category.value,
 			subCategory: this._subCategory.value,
 			type: this._type,
+			amount: this._amount.value,
 			brands: this._brands.map((b) => b.value),
 			stores: this._stores.map((s) => s.value),
 			updatedAt: this._updatedAt.toISOString(),
@@ -105,6 +119,7 @@ export class ProductItem extends Item {
 			new ItemName(primitives.name),
 			new CategoryID(primitives.category),
 			new SubCategoryID(primitives.subCategory),
+			new ItemPrice(primitives.amount ?? 0),
 			new DateValueObject(new Date(primitives.updatedAt)),
 			primitives.brands.map((id) => new ItemID(id)),
 			primitives.stores.map((id) => new ItemID(id))
@@ -118,6 +133,7 @@ export class ProductItem extends Item {
 			category: "",
 			subCategory: "",
 			type: ItemType.PRODUCT,
+			amount: 0,
 			brands: [],
 			stores: [],
 			updatedAt: new Date().toISOString(),

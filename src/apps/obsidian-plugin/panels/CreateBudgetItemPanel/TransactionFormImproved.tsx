@@ -247,7 +247,7 @@ export const TransactionFormImproved = ({
 }: PropsWithChildren<{
 	items: Item[];
 	close: () => void;
-	onSubmit: () => void;
+	onSubmit: (withClose: boolean) => void;
 	transaction?: Transaction;
 }>) => {
 	const { logger } = useLogger("TransactionFormImproved");
@@ -480,6 +480,7 @@ export const TransactionFormImproved = ({
 		if (match) {
 			updateTransactionItem(itemId, {
 				name: match.name.value,
+				amount: match.amount.value,
 				category:
 					categories.find((c) => c.id.value === match.category.value)
 						?.name.value || "",
@@ -633,12 +634,13 @@ export const TransactionFormImproved = ({
 	const handleSubmit = async (withClose: boolean) => {
 		if (!validate()) return;
 		try {
-			// Implementation would go here - simplified for demo
-			await onSubmit();
+			// Call onSubmit with the withClose parameter
+			await onSubmit(withClose);
+
 			if (withClose) {
 				close();
 			} else {
-				// Reset form for creating another transaction while preserving certain fields
+				// For "Save & Create Another", reset the form
 				resetFormForNewTransaction();
 			}
 		} catch (error) {
@@ -1210,6 +1212,7 @@ export const TransactionFormImproved = ({
 				}}
 			>
 				<Button
+					type="button"
 					variant="outlined"
 					onClick={() => handleSubmit(false)}
 					sx={{
@@ -1224,6 +1227,7 @@ export const TransactionFormImproved = ({
 					{transaction ? "Save & Continue" : "Save & Create Another"}
 				</Button>
 				<Button
+					type="button"
 					variant="contained"
 					onClick={() => handleSubmit(true)}
 					sx={{

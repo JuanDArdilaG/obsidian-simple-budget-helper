@@ -13,7 +13,7 @@ export const TransactionForm = ({
 }: PropsWithChildren<{
 	items: Item[];
 	close: () => void;
-	onSubmit: () => void;
+	onSubmit: (withClose: boolean) => void;
 	transaction?: Transaction;
 }>) => {
 	return (
