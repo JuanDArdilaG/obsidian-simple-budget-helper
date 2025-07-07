@@ -477,6 +477,21 @@ export const TransactionFormImproved = ({
 		clearErrors();
 	};
 
+	// Helper to proportionally distribute splits for each item
+	const getProportionalSplits = (
+		splits: PaymentSplitPrimitives[],
+		itemAmount: number,
+		totalAmount: number
+	) => {
+		if (totalAmount === 0) return [];
+		return splits.map((split) => ({
+			accountId: split.accountId,
+			amount: Number(
+				((split.amount * itemAmount) / totalAmount).toFixed(2)
+			),
+		}));
+	};
+
 	// Category/Subcategory options
 	const categoryOptions = categories
 		.map((cat) => ({ id: cat.id.value, name: cat.name.value }))
@@ -725,59 +740,62 @@ export const TransactionFormImproved = ({
 	const handleSubmit = async (withClose: boolean) => {
 		if (!validate()) return;
 		try {
-			// Get the first transaction item (assuming single item for now)
-			const firstItem = transactionItems[0];
-			if (!firstItem) {
-				throw new Error("No transaction items found");
-			}
-
-			// Create payment splits from the form data
-			const fromSplits = sharedProperties.fromSplits.map(
-				(split) =>
-					new PaymentSplit(
-						new AccountID(split.accountId),
-						new TransactionAmount(split.amount)
-					)
+			const totalAmount = transactionItems.reduce(
+				(sum, item) => sum + item.amount * item.quantity,
+				0
 			);
 
-			const toSplits = sharedProperties.toSplits.map(
-				(split) =>
-					new PaymentSplit(
-						new AccountID(split.accountId),
-						new TransactionAmount(split.amount)
-					)
-			);
-
-			// Create the transaction
-			const categoryId = getCategoryIdByName(firstItem.category);
-			const subCategoryId = getSubCategoryIdByName(firstItem.subCategory);
-
-			if (!categoryId || !subCategoryId) {
-				throw new Error("Category and subcategory are required");
-			}
-
-			const transactionData = {
-				name: new TransactionName(firstItem.name),
-				operation: new TransactionOperation(sharedProperties.operation),
-				category: new CategoryID(categoryId.value),
-				subCategory: new SubCategoryID(subCategoryId.value),
-				date: new TransactionDate(sharedProperties.date),
-				fromSplits,
-				toSplits,
-				itemId: firstItem.itemId
-					? new ItemID(firstItem.itemId)
-					: undefined,
-				brand: firstItem.brand
-					? new ItemBrand(firstItem.brand)
-					: undefined,
-				store: sharedProperties.store
-					? new ItemStore(sharedProperties.store)
-					: undefined,
-			};
-
-			// Create or update transaction
+			// For edit mode, keep old logic (single transaction)
 			if (transaction) {
-				// Update existing transaction
+				const firstItem = transactionItems[0];
+				if (!firstItem) throw new Error("No transaction items found");
+
+				const fromSplits = sharedProperties.fromSplits.map(
+					(split) =>
+						new PaymentSplit(
+							new AccountID(split.accountId),
+							new TransactionAmount(split.amount)
+						)
+				);
+				const toSplits = sharedProperties.toSplits.map(
+					(split) =>
+						new PaymentSplit(
+							new AccountID(split.accountId),
+							new TransactionAmount(split.amount)
+						)
+				);
+				const categoryId = getCategoryIdByName(firstItem.category);
+				const subCategoryId = getSubCategoryIdByName(
+					firstItem.subCategory
+				);
+				if (!categoryId || !subCategoryId) {
+					throw new Error("Category and subcategory are required");
+				}
+				const transactionData = {
+					name: new TransactionName(firstItem.name),
+					operation: new TransactionOperation(
+						sharedProperties.operation
+					),
+					category: new CategoryID(categoryId.value),
+					subCategory: new SubCategoryID(subCategoryId.value),
+					date: new TransactionDate(sharedProperties.date),
+					fromSplits,
+					toSplits,
+					itemId: firstItem.itemId
+						? new ItemID(firstItem.itemId)
+						: undefined,
+					brand: firstItem.brand
+						? new ItemBrand(firstItem.brand)
+						: undefined,
+					store: sharedProperties.store
+						? new ItemProductInfo({
+								brand: firstItem.brand
+									? new ItemBrand(firstItem.brand)
+									: undefined,
+								store: new ItemStore(sharedProperties.store),
+						  })
+						: undefined,
+				};
 				transaction.updateName(transactionData.name);
 				transaction.updateOperation(transactionData.operation);
 				transaction.updateCategory(transactionData.category);
@@ -785,35 +803,72 @@ export const TransactionFormImproved = ({
 				transaction.updateDate(transactionData.date);
 				transaction.setFromSplits(transactionData.fromSplits);
 				transaction.setToSplits(transactionData.toSplits);
-
 				await updateTransaction.execute(transaction);
 			} else {
-				// Create new transaction
-				const newTransaction = new Transaction(
-					TransactionID.generate(),
-					transactionData.fromSplits,
-					transactionData.toSplits,
-					transactionData.name,
-					transactionData.operation,
-					transactionData.category,
-					transactionData.subCategory,
-					transactionData.date,
-					DateValueObject.createNowDate(),
-					transactionData.itemId,
-					transactionData.brand || transactionData.store
-						? new ItemProductInfo({
-								brand: transactionData.brand,
-								store: transactionData.store,
-						  })
-						: undefined
-				);
-
-				await recordTransaction.execute(newTransaction);
+				// Create a transaction for each item
+				for (const item of transactionItems) {
+					const categoryId = getCategoryIdByName(item.category);
+					const subCategoryId = getSubCategoryIdByName(
+						item.subCategory
+					);
+					if (!categoryId || !subCategoryId) {
+						throw new Error(
+							"Category and subcategory are required"
+						);
+					}
+					const itemTotal = item.amount * item.quantity;
+					const fromSplits = getProportionalSplits(
+						sharedProperties.fromSplits,
+						itemTotal,
+						totalAmount
+					).map(
+						(split) =>
+							new PaymentSplit(
+								new AccountID(split.accountId),
+								new TransactionAmount(split.amount)
+							)
+					);
+					const toSplits =
+						sharedProperties.operation === "transfer"
+							? getProportionalSplits(
+									sharedProperties.toSplits,
+									itemTotal,
+									totalAmount
+							  ).map(
+									(split) =>
+										new PaymentSplit(
+											new AccountID(split.accountId),
+											new TransactionAmount(split.amount)
+										)
+							  )
+							: [];
+					const newTransaction = new Transaction(
+						TransactionID.generate(),
+						fromSplits,
+						toSplits,
+						new TransactionName(item.name),
+						new TransactionOperation(sharedProperties.operation),
+						new CategoryID(categoryId.value),
+						new SubCategoryID(subCategoryId.value),
+						new TransactionDate(sharedProperties.date),
+						DateValueObject.createNowDate(),
+						item.itemId ? new ItemID(item.itemId) : undefined,
+						sharedProperties.store || item.brand
+							? new ItemProductInfo({
+									brand: item.brand
+										? new ItemBrand(item.brand)
+										: undefined,
+									store: sharedProperties.store
+										? new ItemStore(sharedProperties.store)
+										: undefined,
+							  })
+							: undefined
+					);
+					await recordTransaction.execute(newTransaction);
+				}
 			}
-
 			// Call onSubmit with the withClose parameter
 			await onSubmit(withClose);
-
 			if (withClose) {
 				close();
 			} else {
