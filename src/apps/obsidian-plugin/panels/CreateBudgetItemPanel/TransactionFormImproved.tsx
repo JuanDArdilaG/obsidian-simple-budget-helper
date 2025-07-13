@@ -335,31 +335,36 @@ export const TransactionFormImproved = ({
 		string | null
 	>(null);
 
+	const [updateData, setUpdateData] = useState(true);
+
 	// Load brands, stores, and providers
 	useEffect(() => {
-		const loadData = async () => {
-			try {
-				const [brandsResult, storesResult, providersResult] =
-					await Promise.all([
-						getAllBrands.execute(),
-						getAllStores.execute(),
-						getAllProviders.execute(),
-					]);
-				setBrands(brandsResult.brands);
-				setStores(storesResult.stores);
-				setProviders(providersResult.providers);
-			} catch (error) {
-				logger.error(
-					error instanceof Error
-						? error
-						: new Error(
-								"Error loading brands, stores, and providers"
-						  )
-				);
-			}
-		};
-		loadData();
-	}, [getAllBrands, getAllStores, getAllProviders, logger]);
+		if (updateData) {
+			const loadData = async () => {
+				try {
+					const [brandsResult, storesResult, providersResult] =
+						await Promise.all([
+							getAllBrands.execute(),
+							getAllStores.execute(),
+							getAllProviders.execute(),
+						]);
+					setBrands(brandsResult.brands);
+					setStores(storesResult.stores);
+					setProviders(providersResult.providers);
+				} catch (error) {
+					logger.error(
+						error instanceof Error
+							? error
+							: new Error(
+									"Error loading brands, stores, and providers"
+							  )
+					);
+				}
+			};
+			loadData();
+			setUpdateData(false);
+		}
+	}, [getAllBrands, getAllStores, getAllProviders, logger, updateData]);
 
 	// Helper to extract primitives from Transaction for editing
 	const getInitialTransactionItems = async () => {
@@ -779,6 +784,10 @@ export const TransactionFormImproved = ({
 				0
 			);
 
+			const allBrands = [...brands];
+			const allStores = [...stores];
+			const allProviders = [...providers];
+
 			// For edit mode, keep old logic (single transaction)
 			if (transaction) {
 				const firstItem = transactionItems[0];
@@ -881,7 +890,7 @@ export const TransactionFormImproved = ({
 					});
 					if (!item.item || item.item instanceof ProductItem) {
 						if (item.brand) {
-							brand = brands.find(
+							brand = allBrands.find(
 								(b) => b.name.value === item.brand
 							);
 							if (!brand) {
@@ -889,11 +898,12 @@ export const TransactionFormImproved = ({
 									new StringValueObject(item.brand)
 								);
 								await createBrand.execute(brand);
+								allBrands.push(brand);
 							}
 							logger.debug("brand", { brand });
 						}
 						if (sharedProperties.store) {
-							store = stores.find(
+							store = allStores.find(
 								(s) => s.name.value === sharedProperties.store
 							);
 							if (!store) {
@@ -903,6 +913,7 @@ export const TransactionFormImproved = ({
 									)
 								);
 								await createStore.execute(newStore);
+								allStores.push(newStore);
 							}
 							logger.debug("store", { store });
 						}
@@ -911,7 +922,7 @@ export const TransactionFormImproved = ({
 					let provider: Provider | undefined = undefined;
 					if (!item.item || item.item instanceof ServiceItem) {
 						if (item.provider) {
-							provider = providers.find(
+							provider = allProviders.find(
 								(p) => p.name.value === item.provider
 							);
 							if (!provider) {
@@ -919,6 +930,7 @@ export const TransactionFormImproved = ({
 									new StringValueObject(item.provider)
 								);
 								await createProvider.execute(newProvider);
+								allProviders.push(newProvider);
 							}
 							logger.debug("provider", { provider });
 						}
@@ -999,6 +1011,7 @@ export const TransactionFormImproved = ({
 			}
 
 			onSubmit(withClose);
+			setUpdateData(true);
 			if (withClose) {
 				close();
 			} else {
