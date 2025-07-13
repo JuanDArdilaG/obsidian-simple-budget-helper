@@ -2,7 +2,6 @@ import {
 	ERecurrenceState,
 	ItemBrand,
 	ItemDate,
-	ItemPrice,
 	ItemRecurrenceInfo,
 	ItemStore,
 } from "contexts/Items/domain";
@@ -122,11 +121,8 @@ describe("getRealPriceForAccount", () => {
 		const result = item.recurrence.recurrences[0].getRealPriceForAccount(
 			ItemOperation.expense(),
 			account,
-			new ItemPrice(
-				-item.fromSplits.reduce((sum, s) => sum + s.amount.value, 0)
-			),
-			item.fromSplits[0]?.accountId,
-			item.toSplits[0]?.accountId
+			item.fromSplits,
+			item.toSplits
 		);
 
 		expect(result.value).toBe(-200);

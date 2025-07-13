@@ -59,9 +59,8 @@ export const AccountsList = () => {
 		const impact = recurrence.getRealPriceForAccount(
 			originalItem.operation,
 			account,
-			originalItem.fromAmount,
-			originalItem.fromSplits[0]?.accountId,
-			originalItem.toSplits[0]?.accountId
+			originalItem.fromSplits,
+			originalItem.toSplits
 		);
 
 		return impact;
