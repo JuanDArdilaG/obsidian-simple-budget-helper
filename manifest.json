@@ -1,7 +1,7 @@
 {
 	"id": "simple-budget-helper",
 	"name": "Simple Budget Helper",
-	"version": "0.13.2",
+	"version": "0.13.3",
 	"minAppVersion": "0.15.0",
 	"description": "A simple budget helper.",
 	"author": "Juan D. Ardila G.",
