@@ -55,7 +55,7 @@ export type DisplayableTransactionWithAccumulatedBalance =
 const ITEMS_PER_PAGE = 20;
 const INITIAL_ITEMS = 10;
 const BASE_ITEM_HEIGHT = 60; // Base height for date header
-const TRANSACTION_HEIGHT = 95; // Height per transaction
+const TRANSACTION_HEIGHT = 100; // Height per transaction
 const MOBILE_TRANSACTION_HEIGHT = 130; // Increased height for mobile to accommodate action buttons
 
 export function AccountingList({
