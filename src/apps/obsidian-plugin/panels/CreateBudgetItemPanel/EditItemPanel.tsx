@@ -46,7 +46,7 @@ export const EditItemPanel = ({
 	context?: "calendar" | "all-items";
 }) => {
 	const {
-		useCases: { updateItem },
+		useCases: { updateScheduledItem: updateItem },
 		updateItems,
 	} = useContext(ItemsContext);
 	const { brands, stores } = useContext(TransactionsContext);

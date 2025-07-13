@@ -3,7 +3,6 @@ import {
 	InvalidArgumentError,
 	NumberValueObject,
 } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import {
 	ERecurrenceState,
 	IScheduledItemsRepository,
@@ -15,7 +14,6 @@ import { CommandUseCase } from "../../Shared/domain/command-use-case.interface";
 import { Logger } from "../../Shared/infrastructure/logger";
 import { ITransactionsService } from "../domain";
 import { PaymentSplit } from "../domain/payment-split.valueobject";
-import { TransactionAmount } from "../domain/transaction-amount.valueobject";
 import { TransactionDate } from "../domain/transaction-date.valueobject";
 import { Transaction } from "../domain/transaction.entity";
 
@@ -23,9 +21,6 @@ export type RecordItemRecurrenceUseCaseInput = {
 	itemID: ItemID;
 	n: NumberValueObject;
 	date?: TransactionDate;
-	amount?: TransactionAmount;
-	account?: AccountID;
-	toAccount?: AccountID;
 	permanentChanges?: boolean;
 	fromSplits?: PaymentSplit[];
 	toSplits?: PaymentSplit[];
@@ -44,9 +39,6 @@ export class RecordItemRecurrenceUseCase
 		itemID,
 		n,
 		date,
-		amount,
-		account,
-		toAccount,
 		permanentChanges,
 		fromSplits,
 		toSplits,
@@ -54,9 +46,6 @@ export class RecordItemRecurrenceUseCase
 		this.#logger.debug("attributes", {
 			itemID,
 			date,
-			amount,
-			account,
-			toAccount,
 			n,
 			permanentChanges,
 			fromSplits,
@@ -86,26 +75,14 @@ export class RecordItemRecurrenceUseCase
 		let newToSplits = transaction.toSplits;
 
 		// Handle multiple splits if provided
-		if (fromSplits && fromSplits.length > 0) {
+		if (fromSplits) {
 			newFromSplits = fromSplits;
 			shouldUpdateSplits = true;
-		} else if (amount || account) {
-			// Fallback to single split logic for backward compatibility
-			if (account && amount) {
-				newFromSplits = [new PaymentSplit(account, amount)];
-				shouldUpdateSplits = true;
-			}
 		}
 
-		if (toSplits && toSplits.length > 0) {
+		if (toSplits) {
 			newToSplits = toSplits;
 			shouldUpdateSplits = true;
-		} else if (amount || toAccount) {
-			// Fallback to single split logic for backward compatibility
-			if (toAccount && amount) {
-				newToSplits = [new PaymentSplit(toAccount, amount)];
-				shouldUpdateSplits = true;
-			}
 		}
 
 		if (shouldUpdateSplits) {

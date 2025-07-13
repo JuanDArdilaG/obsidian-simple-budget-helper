@@ -16,7 +16,7 @@ import {
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { PaymentSplitPrimitives } from "contexts/Transactions/domain";
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { WithLockField } from "../WithLockField";
 
 interface MultiSelectDropdownProps {
@@ -112,6 +112,11 @@ export const MultiSelectDropdown = ({
 		}));
 		onChange(newSplits);
 	};
+
+	useEffect(() => {
+		if (selectedAccounts.length === 1)
+			handleMax(selectedAccounts[0].accountId);
+	}, [selectedAccounts]);
 
 	const handleMax = (accountId: string) => {
 		const newSplits = selectedAccounts.map((split) =>

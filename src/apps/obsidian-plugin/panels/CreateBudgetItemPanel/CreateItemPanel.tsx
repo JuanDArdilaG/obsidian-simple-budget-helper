@@ -16,7 +16,7 @@ export const CreateItemPanel = ({ close }: { close: () => void }) => {
 	const {
 		scheduledItems,
 		updateItems,
-		useCases: { createItem },
+		useCases: { createScheduledItem: createItem },
 	} = useContext(ItemsContext);
 
 	const [showErrors, setShowErrors] = useState(false);

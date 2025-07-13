@@ -1,4 +1,8 @@
-import { DateValueObject, PriceValueObject } from "@juandardilag/value-objects";
+import {
+	DateValueObject,
+	PriceValueObject,
+	StringValueObject,
+} from "@juandardilag/value-objects";
 import AddIcon from "@mui/icons-material/Add";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -34,16 +38,27 @@ import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
 import {
 	Item,
 	ItemBrand,
+	ItemID,
+	ItemName,
+	ItemPrice,
 	ItemProductInfo,
 	ItemStore,
 	ItemType,
 	ProductItem,
 	ServiceItem,
 } from "contexts/Items/domain";
-import { Brand as BrandEntity } from "contexts/Items/domain/brand.entity";
-import { ItemID } from "contexts/Items/domain/item-id.valueobject";
-import { Provider as ProviderEntity } from "contexts/Items/domain/provider.entity";
-import { Store as StoreEntity } from "contexts/Items/domain/store.entity";
+import {
+	Brand,
+	Brand as BrandEntity,
+} from "contexts/Items/domain/brand.entity";
+import {
+	Provider,
+	Provider as ProviderEntity,
+} from "contexts/Items/domain/provider.entity";
+import {
+	Store,
+	Store as StoreEntity,
+} from "contexts/Items/domain/store.entity";
 import { OperationType } from "contexts/Shared/domain";
 import {
 	SubCategory,
@@ -101,7 +116,7 @@ interface TransactionItem {
 	itemType: ItemType;
 	brand: string;
 	provider: string;
-	itemId?: string;
+	item?: Item;
 }
 
 // Validation interface
@@ -281,7 +296,17 @@ export const TransactionFormImproved = ({
 		updateCategoriesWithSubcategories,
 	} = useContext(CategoriesContext);
 	const {
-		useCases: { getAllBrands, getAllStores, getAllProviders },
+		useCases: {
+			getAllBrands,
+			createBrand,
+			getAllStores,
+			createStore,
+			getAllProviders,
+			createProvider,
+			getRegularItemById,
+			createRegularItem,
+			updateRegularItem,
+		},
 	} = useContext(ItemsContext);
 
 	// State for brands, stores, and providers
@@ -290,7 +315,6 @@ export const TransactionFormImproved = ({
 	const [providers, setProviders] = useState<ProviderEntity[]>([]);
 
 	// UI state for foldable sections
-	const [showOptionalFields, setShowOptionalFields] = useState(false);
 	const [showBreakdown, setShowBreakdown] = useState(false);
 
 	// Inline category creation state
@@ -338,7 +362,7 @@ export const TransactionFormImproved = ({
 	}, [getAllBrands, getAllStores, getAllProviders, logger]);
 
 	// Helper to extract primitives from Transaction for editing
-	const getInitialTransactionItems = () => {
+	const getInitialTransactionItems = async () => {
 		if (!transaction) {
 			return [
 				{
@@ -372,7 +396,9 @@ export const TransactionFormImproved = ({
 						?.type || ItemType.PRODUCT,
 				brand: transaction.brand?.value || "",
 				provider: "",
-				itemId: transaction.itemID?.value,
+				itemId: transaction.itemID
+					? await getRegularItemById.execute(transaction.itemID)
+					: undefined,
 			},
 		];
 	};
@@ -405,8 +431,13 @@ export const TransactionFormImproved = ({
 
 	// State
 	const [transactionItems, setTransactionItems] = useState<TransactionItem[]>(
-		getInitialTransactionItems()
+		[]
 	);
+	useEffect(() => {
+		getInitialTransactionItems().then((items) => {
+			setTransactionItems(items);
+		});
+	}, []);
 	const [sharedProperties, setSharedProperties] = useState(
 		getInitialSharedProperties()
 	);
@@ -528,8 +559,8 @@ export const TransactionFormImproved = ({
 			await createCategory.execute(
 				Category.create(new CategoryName(newCategoryName.trim()))
 			);
-			await updateCategories();
-			await updateCategoriesWithSubcategories();
+			updateCategories();
+			updateCategoriesWithSubcategories();
 			setNewCategoryName("");
 			setShowCategoryCreation(false);
 		} catch (error) {
@@ -564,8 +595,8 @@ export const TransactionFormImproved = ({
 					new SubCategoryName(newSubcategoryName.trim())
 				)
 			);
-			await updateSubCategories();
-			await updateCategoriesWithSubcategories();
+			updateSubCategories();
+			updateCategoriesWithSubcategories();
 			setNewSubcategoryName("");
 			setSelectedParentCategory("");
 			setShowSubcategoryCreation(false);
@@ -595,10 +626,13 @@ export const TransactionFormImproved = ({
 						(s) => s.id.value === match.subCategory.value
 					)?.name.value || "",
 				itemType: match.type,
-				itemId: match.id.value,
+				item: match,
 			});
 		} else {
-			updateTransactionItem(itemId, { name: displayName });
+			updateTransactionItem(itemId, {
+				name: displayName,
+				item: undefined,
+			});
 		}
 	};
 
@@ -781,9 +815,7 @@ export const TransactionFormImproved = ({
 					date: new TransactionDate(sharedProperties.date),
 					fromSplits,
 					toSplits,
-					itemId: firstItem.itemId
-						? new ItemID(firstItem.itemId)
-						: undefined,
+					itemId: firstItem.item ? firstItem.item.id : undefined,
 					brand: firstItem.brand
 						? new ItemBrand(firstItem.brand)
 						: undefined,
@@ -816,10 +848,9 @@ export const TransactionFormImproved = ({
 							"Category and subcategory are required"
 						);
 					}
-					const itemTotal = item.amount * item.quantity;
 					const fromSplits = getProportionalSplits(
 						sharedProperties.fromSplits,
-						itemTotal,
+						item.amount,
 						totalAmount
 					).map(
 						(split) =>
@@ -832,7 +863,7 @@ export const TransactionFormImproved = ({
 						sharedProperties.operation === "transfer"
 							? getProportionalSplits(
 									sharedProperties.toSplits,
-									itemTotal,
+									item.amount,
 									totalAmount
 							  ).map(
 									(split) =>
@@ -842,37 +873,135 @@ export const TransactionFormImproved = ({
 										)
 							  )
 							: [];
-					const newTransaction = new Transaction(
-						TransactionID.generate(),
-						fromSplits,
-						toSplits,
-						new TransactionName(item.name),
-						new TransactionOperation(sharedProperties.operation),
-						new CategoryID(categoryId.value),
-						new SubCategoryID(subCategoryId.value),
-						new TransactionDate(sharedProperties.date),
-						DateValueObject.createNowDate(),
-						item.itemId ? new ItemID(item.itemId) : undefined,
-						sharedProperties.store || item.brand
-							? new ItemProductInfo({
-									brand: item.brand
-										? new ItemBrand(item.brand)
-										: undefined,
-									store: sharedProperties.store
-										? new ItemStore(sharedProperties.store)
-										: undefined,
-							  })
-							: undefined
-					);
-					await recordTransaction.execute(newTransaction);
+					let brand: Brand | undefined = undefined;
+					let store: Store | undefined = undefined;
+					logger.debug("item instance of", {
+						product: item.item instanceof ProductItem,
+						service: item.item instanceof ServiceItem,
+					});
+					if (!item.item || item.item instanceof ProductItem) {
+						if (item.brand) {
+							brand = brands.find(
+								(b) => b.name.value === item.brand
+							);
+							if (!brand) {
+								brand = Brand.create(
+									new StringValueObject(item.brand)
+								);
+								await createBrand.execute(brand);
+							}
+							logger.debug("brand", { brand });
+						}
+						if (sharedProperties.store) {
+							store = stores.find(
+								(s) => s.name.value === sharedProperties.store
+							);
+							if (!store) {
+								const newStore = Store.create(
+									new StringValueObject(
+										sharedProperties.store
+									)
+								);
+								await createStore.execute(newStore);
+							}
+							logger.debug("store", { store });
+						}
+					}
+
+					let provider: Provider | undefined = undefined;
+					if (!item.item || item.item instanceof ServiceItem) {
+						if (item.provider) {
+							provider = providers.find(
+								(p) => p.name.value === item.provider
+							);
+							if (!provider) {
+								const newProvider = Provider.create(
+									new StringValueObject(item.provider)
+								);
+								await createProvider.execute(newProvider);
+							}
+							logger.debug("provider", { provider });
+						}
+					}
+
+					let regularItemId: ItemID | undefined = undefined;
+
+					if (item.item) {
+						const itemCopy = item.item.copy();
+						itemCopy.updateAmount(new ItemPrice(item.amount));
+						itemCopy.updateCategory(categoryId);
+						itemCopy.updateSubCategory(subCategoryId);
+
+						if (itemCopy instanceof ProductItem) {
+							brand && itemCopy.addBrand(brand.id);
+							store && itemCopy.addStore(store.id);
+						}
+						if (itemCopy instanceof ServiceItem) {
+							provider && itemCopy.addProvider(provider.id);
+						}
+
+						regularItemId = itemCopy.id;
+
+						await updateRegularItem.execute(itemCopy);
+					} else {
+						const regularItem =
+							item.itemType === ItemType.PRODUCT
+								? ProductItem.create(
+										new ItemName(item.name),
+										categoryId,
+										subCategoryId,
+										new ItemPrice(item.amount),
+										brand ? [brand.id] : [],
+										store ? [store.id] : []
+								  )
+								: ServiceItem.create(
+										new ItemName(item.name),
+										categoryId,
+										subCategoryId,
+										new ItemPrice(item.amount),
+										provider ? [provider.id] : []
+								  );
+						await createRegularItem.execute(regularItem);
+
+						regularItemId = regularItem.id;
+					}
+
+					for (let i = 1; i <= item.quantity; i++)
+						await recordTransaction.execute(
+							new Transaction(
+								TransactionID.generate(),
+								fromSplits,
+								toSplits,
+								new TransactionName(item.name),
+								new TransactionOperation(
+									sharedProperties.operation
+								),
+								new CategoryID(categoryId.value),
+								new SubCategoryID(subCategoryId.value),
+								new TransactionDate(sharedProperties.date),
+								DateValueObject.createNowDate(),
+								regularItemId,
+								sharedProperties.store || item.brand
+									? new ItemProductInfo({
+											brand: item.brand
+												? new ItemBrand(item.brand)
+												: undefined,
+											store: sharedProperties.store
+												? new ItemStore(
+														sharedProperties.store
+												  )
+												: undefined,
+									  })
+									: undefined
+							)
+						);
 				}
 			}
-			// Call onSubmit with the withClose parameter
-			await onSubmit(withClose);
+
+			onSubmit(withClose);
 			if (withClose) {
 				close();
 			} else {
-				// For "Save & Create Another", reset the form
 				resetFormForNewTransaction();
 			}
 		} catch (error) {
@@ -996,40 +1125,15 @@ export const TransactionFormImproved = ({
 
 				{/* Optional Fields Section */}
 				<Box sx={{ mb: 2 }}>
-					<Button
-						variant="text"
-						onClick={() =>
-							setShowOptionalFields(!showOptionalFields)
-						}
-						sx={{
-							p: 0,
-							textTransform: "none",
-							color: "var(--text-muted)",
-							"&:hover": { backgroundColor: "transparent" },
-						}}
-					>
-						<Typography variant="body2">
-							{showOptionalFields ? "▼" : "▶"} Optional Details
-						</Typography>
-					</Button>
-					<Box
-						sx={{
-							display: showOptionalFields ? "block" : "none",
-							mt: 1,
-						}}
-					>
-						<SelectWithCreation
-							id="store"
-							label="Store"
-							item={sharedProperties.store}
-							items={storeOptions}
-							onChange={(store) =>
-								updateSharedProperties({ store })
-							}
-							isLocked={false}
-							setIsLocked={() => {}}
-						/>
-					</Box>
+					<SelectWithCreation
+						id="store"
+						label="Store (optional)"
+						item={sharedProperties.store}
+						items={storeOptions}
+						onChange={(store) => updateSharedProperties({ store })}
+						isLocked={false}
+						setIsLocked={() => {}}
+					/>
 				</Box>
 			</Box>
 

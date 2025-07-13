@@ -381,9 +381,6 @@ export function AccountingList({
 												}
 												selection={selection}
 												setSelection={setSelection}
-												updateTransactions={
-													updateFilteredTransactions
-												}
 											/>
 										</ListItem>
 									);

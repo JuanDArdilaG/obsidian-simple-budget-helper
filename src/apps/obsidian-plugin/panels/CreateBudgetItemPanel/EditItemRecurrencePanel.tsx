@@ -40,7 +40,7 @@ export const EditItemRecurrencePanel = ({
 	updateItems?: () => void;
 }) => {
 	const {
-		useCases: { modifyNItemRecurrence, updateItem },
+		useCases: { modifyNItemRecurrence, updateScheduledItem: updateItem },
 	} = useContext(ItemsContext);
 	const { brands, stores } = useContext(TransactionsContext);
 	const { accounts } = useContext(AccountsContext);

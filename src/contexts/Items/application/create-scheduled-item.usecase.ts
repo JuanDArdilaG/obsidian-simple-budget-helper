@@ -2,17 +2,17 @@ import { Logger } from "../../Shared/infrastructure/logger";
 import { ScheduledItem } from "../domain";
 import { IScheduledItemsRepository } from "../domain/item-repository.interface";
 
-const logger = new Logger("UpdateItemUseCase");
+const logger = new Logger("CreateItemUseCase");
 
-export type UpdateItemUseCaseInput = ScheduledItem;
+export type CreateItemUseCaseInput = ScheduledItem;
 
-export class UpdateItemUseCase {
+export class CreateScheduledItemUseCase {
 	constructor(
 		private readonly _scheduledItemsRepository: IScheduledItemsRepository
 	) {}
 
-	async execute(item: UpdateItemUseCaseInput): Promise<void> {
-		logger.debug("item to update", {
+	async execute(item: CreateItemUseCaseInput): Promise<void> {
+		logger.debug("item to persist", {
 			item: item.toPrimitives(),
 		});
 

@@ -1,19 +1,19 @@
-import { App, Plugin, PluginManifest } from "obsidian";
-import { SettingTab } from "./SettingTab";
-import { buildContainer } from "contexts/Shared/infrastructure/di/container";
-import { Logger } from "../../contexts/Shared/infrastructure/logger";
+import { UUIDValueObject } from "@juandardilag/value-objects";
 import {
-	RightSidebarReactViewRoot,
 	JsonViewerViewRoot,
+	RightSidebarReactViewRoot,
 } from "apps/obsidian-plugin/views";
-import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
-import { views } from "./config";
-import { LeftMenuItems } from "./ribbonIcon";
-import { SimpleBudgetHelperSettings, DEFAULT_SETTINGS } from "./PluginSettings";
 import { AwilixContainer } from "awilix";
 import { GetAllItemsUseCase } from "contexts/Items/application/get-all-items.usecase";
-import { UpdateItemUseCase } from "contexts/Items/application/update-item.usecase";
-import { UUIDValueObject } from "@juandardilag/value-objects";
+import { UpdateScheduledItemUseCase } from "contexts/Items/application/update-scheduled-item.usecase";
+import { buildContainer } from "contexts/Shared/infrastructure/di/container";
+import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
+import { App, Plugin, PluginManifest } from "obsidian";
+import { Logger } from "../../contexts/Shared/infrastructure/logger";
+import { views } from "./config";
+import { DEFAULT_SETTINGS, SimpleBudgetHelperSettings } from "./PluginSettings";
+import { LeftMenuItems } from "./ribbonIcon";
+import { SettingTab } from "./SettingTab";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
@@ -55,7 +55,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 			.execute();
 		console.log({ items });
 		const updateItemUseCase =
-			container.resolve<UpdateItemUseCase>("updateItemUseCase");
+			container.resolve<UpdateScheduledItemUseCase>("updateItemUseCase");
 		await Promise.all(
 			items.map(async (item) => {
 				item.recurrence.createRecurrences();

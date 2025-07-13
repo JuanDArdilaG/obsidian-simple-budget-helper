@@ -41,12 +41,21 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	 * Validates that transfer operations have a toSplits array
 	 */
 	private validateTransferOperation(): void {
-		if (this._operation.isTransfer() && this._toSplits.length === 0) {
-			throw new InvalidArgumentError(
-				"Transaction",
-				"toSplits",
-				"Transfer operations must have a toSplits array"
-			);
+		if (this._operation.isTransfer()) {
+			if (this._fromSplits.length === 0 || this._toSplits.length === 0) {
+				throw new InvalidArgumentError(
+					"Transaction",
+					"toSplits",
+					"Transfer operations must have a toSplits array"
+				);
+			}
+			if (!this.fromAmount.equalTo(this.toAmount)) {
+				throw new InvalidArgumentError(
+					"Transaction",
+					`from amount: ${this.fromAmount}. to amount: ${this.toAmount}`,
+					"From amount and to amount should be the same"
+				);
+			}
 		}
 	}
 

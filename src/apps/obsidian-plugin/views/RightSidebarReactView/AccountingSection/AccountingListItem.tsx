@@ -16,7 +16,6 @@ interface AccountingListItemProps {
 	selection: Transaction[];
 	setSelection: React.Dispatch<React.SetStateAction<Transaction[]>>;
 	onEditTransaction: (transaction: Transaction) => void;
-	updateTransactions: () => void;
 }
 
 export const AccountingListItem = ({
@@ -24,7 +23,6 @@ export const AccountingListItem = ({
 	selection,
 	setSelection,
 	onEditTransaction,
-	updateTransactions,
 }: Readonly<AccountingListItemProps>) => {
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -258,6 +256,14 @@ export const AccountingListItem = ({
 									}}
 								>
 									{display.transactionName}
+								</Typography>
+								<Typography
+									variant="caption"
+									style={{ color: "var(--text-muted)" }}
+								>
+									<b>Brand: </b>
+									{transaction.brand ?? ""} <b>Store: </b>
+									{transaction.store ?? ""}
 								</Typography>
 								<div>
 									<Typography

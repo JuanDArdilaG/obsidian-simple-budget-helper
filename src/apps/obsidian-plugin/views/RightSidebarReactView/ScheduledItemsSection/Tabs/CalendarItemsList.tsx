@@ -1147,12 +1147,7 @@ const CalendarItemsListItem = ({
 			<ResponsiveScheduledItem
 				item={item}
 				recurrence={recurrence}
-				accountName={
-					getAccountByID(
-						recurrence.fromSplits?.[0]?.accountId ??
-							item.fromSplits[0]?.accountId
-					)?.name ?? AccountName.empty()
-				}
+				accountName={accountName}
 				accountBalance={accountBalance}
 				accountPrevBalance={accountPrevBalance}
 				price={price}
@@ -1163,7 +1158,6 @@ const CalendarItemsListItem = ({
 				setSelectedItem={setSelectedItem}
 				context="calendar"
 				currentAction={showPanel?.action}
-				// Pass n as part of the recurrence object for context menu
 				recurrentContextMenu={{ recurrence, itemID: item.id, n }}
 			/>
 			{showPanel &&

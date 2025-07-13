@@ -1,6 +1,5 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
-import { Account, AccountID } from "contexts/Accounts/domain";
-import { ItemPrice } from "contexts/Items/domain";
+import { Account } from "contexts/Accounts/domain";
 import { ItemOperation } from "contexts/Shared/domain";
 import {
 	PaymentSplit,
@@ -92,33 +91,26 @@ export class ItemRecurrenceInfo {
 	getRealPriceForAccount(
 		operation: ItemOperation,
 		account: Account,
-		thisPrice: ItemPrice,
-		thisAccount: AccountID,
-		thisToAccount?: AccountID
+		itemFromSplits: PaymentSplit[],
+		itemToSplits?: PaymentSplit[]
 	): PriceValueObject {
 		let multiplier = 1;
-		let amount = 0;
-		if (this._fromSplits && this._fromSplits.length > 0) {
-			// Use the sum of recurrence.fromSplits
-			amount = this._fromSplits.reduce(
-				(sum, split) => sum + split.amount.value,
-				0
-			);
-		} else {
-			// Fallback to the main item's fromAmount
-			amount = thisPrice.toNumber();
-		}
+		const amount = (this._fromSplits ?? itemFromSplits).reduce(
+			(sum, split) => sum + split.amount.value,
+			0
+		);
+
 		if (operation.type.isTransfer()) {
 			// Check if account is in fromSplits (negative multiplier)
-			const fromSplit = this._fromSplits?.find((split) =>
-				split.accountId.equalTo(account.id)
+			const fromSplit = (this._fromSplits ?? itemFromSplits).find(
+				(split) => split.accountId.equalTo(account.id)
 			);
 			if (fromSplit) {
 				multiplier = -1;
 			} else {
 				// Check if account is in toSplits (positive multiplier)
-				const toSplit = this._toSplits?.find((split) =>
-					split.accountId.equalTo(account.id)
+				const toSplit = (this._toSplits ?? itemToSplits)?.find(
+					(split) => split.accountId.equalTo(account.id)
 				);
 				if (toSplit) {
 					multiplier = 1;

@@ -18,9 +18,9 @@ import { GetAllCategoriesWithSubCategoriesUseCase } from "contexts/Categories/ap
 import { GetAllCategoriesUseCase } from "contexts/Categories/application/get-all-categories.usecase";
 import { CategoriesLocalRepository } from "contexts/Categories/infrastructure/persistence/local/categories-local.repository";
 import { CreateBrandUseCase } from "contexts/Items/application/create-brand.usecase";
-import { CreateItemUseCase } from "contexts/Items/application/create-item.usecase";
 import { CreateProviderUseCase } from "contexts/Items/application/create-provider.usecase";
 import { CreateRegularItemUseCase } from "contexts/Items/application/create-regular-item.usecase";
+import { CreateScheduledItemUseCase } from "contexts/Items/application/create-scheduled-item.usecase";
 import { CreateStoreUseCase } from "contexts/Items/application/create-store.usecase";
 import { DeleteItemRecurrenceUseCase } from "contexts/Items/application/delete-item-recurrence.usecase";
 import { DeleteItemUseCase } from "contexts/Items/application/delete-item.usecase";
@@ -34,8 +34,8 @@ import { GetItemsUntilDateUseCase } from "contexts/Items/application/get-items-u
 import { ItemsWithAccumulatedBalanceUseCase } from "contexts/Items/application/items-with-accumulated-balance.usecase";
 import { ItemsService } from "contexts/Items/application/items.service";
 import { ModifyNItemRecurrenceUseCase } from "contexts/Items/application/modify-n-item-recurrence.usecase";
-import { UpdateItemUseCase } from "contexts/Items/application/update-item.usecase";
 import { UpdateRegularItemUseCase } from "contexts/Items/application/update-regular-item.usecase";
+import { UpdateScheduledItemUseCase } from "contexts/Items/application/update-scheduled-item.usecase";
 import { BrandsLocalRepository } from "contexts/Items/infrastructure/persistence/local/brands-local.repository";
 import { ItemsLocalRepository } from "contexts/Items/infrastructure/persistence/local/items-local.repository";
 import { ProvidersLocalRepository } from "contexts/Items/infrastructure/persistence/local/providers-local.repository";
@@ -63,6 +63,7 @@ import { RecordTransactionUseCase } from "contexts/Transactions/application/reco
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 import { UpdateTransactionUseCase } from "contexts/Transactions/application/update-transaction.usecase";
 import { TransactionsLocalRepository } from "contexts/Transactions/infrastructure/persistence/local/transactions-local.repository";
+import { GetRegularItemByIdUseCase } from "../../../Items/application/get-regular-item-by-id.usecase";
 import { Logger } from "../logger";
 
 const container = createContainer({
@@ -92,16 +93,19 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 			.singleton()
 			.inject(() => ({ _db: localDB })),
 		_itemsService: asClass(ItemsService).singleton(),
-		createItemUseCase: asClass(CreateItemUseCase).singleton(),
+		createItemUseCase: asClass(CreateScheduledItemUseCase).singleton(),
 		createRegularItemUseCase: asClass(CreateRegularItemUseCase).singleton(),
 		createBrandUseCase: asClass(CreateBrandUseCase).singleton(),
 		createStoreUseCase: asClass(CreateStoreUseCase).singleton(),
 		createProviderUseCase: asClass(CreateProviderUseCase).singleton(),
 		getAllItemsUseCase: asClass(GetAllItemsUseCase).singleton(),
+		getRegularItemByIdUseCase: asClass(
+			GetRegularItemByIdUseCase
+		).singleton(),
 		getAllBrandsUseCase: asClass(GetAllBrandsUseCase).singleton(),
 		getAllStoresUseCase: asClass(GetAllStoresUseCase).singleton(),
 		getAllProvidersUseCase: asClass(GetAllProvidersUseCase).singleton(),
-		updateItemUseCase: asClass(UpdateItemUseCase).singleton(),
+		updateItemUseCase: asClass(UpdateScheduledItemUseCase).singleton(),
 		updateRegularItemUseCase: asClass(UpdateRegularItemUseCase).singleton(),
 		deleteItemUseCase: asClass(DeleteItemUseCase).singleton(),
 		deleteItemRecurrenceUseCase: asClass(

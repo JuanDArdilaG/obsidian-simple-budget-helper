@@ -5,6 +5,7 @@ import {
 import { AccountID } from "contexts/Accounts/domain";
 import {
 	IScheduledItemsRepository,
+	ItemID,
 	ItemPrice,
 	ScheduledItem,
 } from "contexts/Items/domain";
@@ -65,13 +66,12 @@ describe("RecordItemRecurrenceUseCase", () => {
 
 		it("should throw EntityNotFoundError for non-existent item", async () => {
 			// Arrange
-			const nonExistentItemID = "non-existent-id";
 			const n = new NumberValueObject(0);
 
 			// Act & Assert
 			await expect(
 				useCase.execute({
-					itemID: { value: nonExistentItemID } as any,
+					itemID: ItemID.generate(),
 					n,
 				})
 			).rejects.toThrow(EntityNotFoundError);
@@ -125,8 +125,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 			await useCase.execute({
 				itemID: item.id,
 				n,
-				account: newAccount,
-				amount: newAmount,
+				fromSplits: [new PaymentSplit(newAccount, newAmount)],
 			});
 
 			// Assert
@@ -161,14 +160,14 @@ describe("RecordItemRecurrenceUseCase", () => {
 			const item = transferItems[0];
 			const n = new NumberValueObject(0);
 			const newToAccount = AccountID.generate();
-			const newAmount = new TransactionAmount(200);
 
 			// Act
 			await useCase.execute({
 				itemID: item.id,
 				n,
-				toAccount: newToAccount,
-				amount: newAmount,
+				toSplits: [
+					new PaymentSplit(newToAccount, new TransactionAmount(100)),
+				],
 			});
 
 			// Assert
@@ -177,7 +176,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 			expect(recordedTransaction.toSplits[0].accountId.value).toBe(
 				newToAccount.value
 			);
-			expect(recordedTransaction.toSplits[0].amount.value).toBe(200);
+			expect(recordedTransaction.toSplits[0].amount.value).toBe(100);
 		});
 	});
 
@@ -278,8 +277,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 			await useCase.execute({
 				itemID: item.id,
 				n,
-				account: newAccount,
-				amount: newAmount,
+				fromSplits: [new PaymentSplit(newAccount, newAmount)],
 				permanentChanges: true,
 			});
 
@@ -311,8 +309,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 			await useCase.execute({
 				itemID: item.id,
 				n,
-				account: newAccount,
-				amount: newAmount,
+				fromSplits: [new PaymentSplit(newAccount, newAmount)],
 				permanentChanges: false,
 			});
 
@@ -376,8 +373,6 @@ describe("RecordItemRecurrenceUseCase", () => {
 			await useCase.execute({
 				itemID: item.id,
 				n,
-				account: newAccount,
-				toAccount: newToAccount,
 				fromSplits: [
 					new PaymentSplit(newAccount, new TransactionAmount(100)),
 				],
@@ -508,84 +503,6 @@ describe("RecordItemRecurrenceUseCase", () => {
 			expect(
 				recordedTransaction.date.value.toISOString().split("T")[0]
 			).toBe("2024-01-15");
-		});
-	});
-
-	describe("backward compatibility", () => {
-		it("should work with single split parameters (backward compatibility)", async () => {
-			// Arrange
-			const item = testItems[0];
-			const n = new NumberValueObject(0);
-			const newAccount = AccountID.generate();
-			const newAmount = new TransactionAmount(150);
-
-			// Act
-			await useCase.execute({
-				itemID: item.id,
-				n,
-				account: newAccount,
-				amount: newAmount,
-				permanentChanges: true,
-			});
-
-			// Assert
-			expect(mockTransactionsService.transactions).toHaveLength(1);
-			const recordedTransaction = mockTransactionsService.transactions[0];
-			expect(recordedTransaction.fromSplits).toHaveLength(1);
-			expect(recordedTransaction.fromSplits[0].accountId.value).toBe(
-				newAccount.value
-			);
-			expect(recordedTransaction.fromSplits[0].amount.value).toBe(150);
-
-			// Check that the scheduled item was updated
-			expect(item.fromSplits).toHaveLength(1);
-			expect(item.fromSplits[0].accountId.value).toBe(newAccount.value);
-			expect(item.fromSplits[0].amount.value).toBe(150);
-		});
-
-		it("should prioritize multiple splits over single split parameters", async () => {
-			// Arrange
-			const item = testItems[0];
-			const n = new NumberValueObject(0);
-			const singleAccount = AccountID.generate();
-			const singleAmount = new TransactionAmount(200);
-			const multipleAccount1 = AccountID.generate();
-			const multipleAccount2 = AccountID.generate();
-			const fromSplits = [
-				new PaymentSplit(multipleAccount1, new TransactionAmount(60)),
-				new PaymentSplit(multipleAccount2, new TransactionAmount(40)),
-			];
-
-			// Act
-			await useCase.execute({
-				itemID: item.id,
-				n,
-				account: singleAccount,
-				amount: singleAmount,
-				fromSplits,
-				permanentChanges: true,
-			});
-
-			// Assert
-			// Should use multiple splits, not single parameters
-			expect(mockTransactionsService.transactions).toHaveLength(1);
-			const recordedTransaction = mockTransactionsService.transactions[0];
-			expect(recordedTransaction.fromSplits).toHaveLength(2);
-			expect(recordedTransaction.fromSplits[0].accountId.value).toBe(
-				multipleAccount1.value
-			);
-			expect(recordedTransaction.fromSplits[0].amount.value).toBe(60);
-			expect(recordedTransaction.fromSplits[1].accountId.value).toBe(
-				multipleAccount2.value
-			);
-			expect(recordedTransaction.fromSplits[1].amount.value).toBe(40);
-
-			// Check that the scheduled item was updated with multiple splits
-			expect(item.fromSplits).toHaveLength(2);
-			expect(item.fromSplits[0].accountId.value).toBe(
-				multipleAccount1.value
-			);
-			expect(item.fromSplits[0].amount.value).toBe(60);
 		});
 	});
 

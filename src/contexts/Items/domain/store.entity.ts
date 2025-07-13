@@ -1,21 +1,23 @@
-import { DateValueObject } from "@juandardilag/value-objects";
+import {
+	DateValueObject,
+	StringValueObject,
+} from "@juandardilag/value-objects";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { ItemID } from "./item-id.valueobject";
-import { ItemName } from "./item-name.valueobject";
 
 export class Store extends Entity<ItemID, StorePrimitives> {
 	readonly _ = new Logger("Store");
 
 	constructor(
 		id: ItemID,
-		private _name: ItemName,
+		private _name: StringValueObject,
 		updatedAt: DateValueObject
 	) {
 		super(id, updatedAt);
 	}
 
-	static create(name: ItemName): Store {
+	static create(name: StringValueObject): Store {
 		return new Store(
 			ItemID.generate(),
 			name,
@@ -23,11 +25,11 @@ export class Store extends Entity<ItemID, StorePrimitives> {
 		);
 	}
 
-	get name(): ItemName {
+	get name(): StringValueObject {
 		return this._name;
 	}
 
-	updateName(name: ItemName): void {
+	updateName(name: StringValueObject): void {
 		this._name = name;
 		this.updateTimestamp();
 	}
@@ -47,7 +49,7 @@ export class Store extends Entity<ItemID, StorePrimitives> {
 	static fromPrimitives(primitives: StorePrimitives): Store {
 		return new Store(
 			new ItemID(primitives.id),
-			new ItemName(primitives.name),
+			new StringValueObject(primitives.name),
 			new DateValueObject(new Date(primitives.updatedAt))
 		);
 	}

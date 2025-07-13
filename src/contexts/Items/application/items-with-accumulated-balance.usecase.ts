@@ -179,9 +179,8 @@ export class ItemsWithAccumulatedBalanceUseCase
 		const recurrenceAmount = recurrence.getRealPriceForAccount(
 			item.operation,
 			account,
-			item.fromAmount,
-			item.fromSplits[0]?.accountId,
-			item.toSplits[0]?.accountId
+			item.fromSplits,
+			item.toSplits
 		);
 		accountBalance = accountBalance.plus(recurrenceAmount);
 
@@ -190,9 +189,8 @@ export class ItemsWithAccumulatedBalanceUseCase
 				recurrence.getRealPriceForAccount(
 					item.operation,
 					toAccount,
-					item.toAmount,
-					item.fromSplits[0]?.accountId,
-					item.toSplits[0]?.accountId
+					item.fromSplits,
+					item.toSplits
 				)
 			);
 
