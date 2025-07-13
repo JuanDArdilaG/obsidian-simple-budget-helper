@@ -257,14 +257,37 @@ export const AccountingListItem = ({
 								>
 									{display.transactionName}
 								</Typography>
-								<Typography
-									variant="caption"
-									style={{ color: "var(--text-muted)" }}
-								>
-									<b>Brand: </b>
-									{transaction.brand ?? ""} <b>Store: </b>
-									{transaction.store ?? ""}
-								</Typography>
+								{(transaction.store || transaction.brand) && (
+									<Typography
+										variant="caption"
+										style={{
+											color: "var(--text-muted)",
+										}}
+									>
+										{transaction.brand && (
+											<Typography
+												variant="caption"
+												style={{
+													color: "var(--text-muted)",
+												}}
+											>
+												<b>Brand: </b>
+												{transaction.brand}{" "}
+											</Typography>
+										)}
+										{transaction.store && (
+											<Typography
+												variant="caption"
+												style={{
+													color: "var(--text-muted)",
+												}}
+											>
+												<b>Store: </b>
+												{transaction.store}
+											</Typography>
+										)}
+									</Typography>
+								)}
 								<div>
 									<Typography
 										variant="caption"
