@@ -108,7 +108,7 @@ bump type="patch":
     echo "✅ Version bumped to $new_version in manifest.json"
 
 alias de := deploy
-deploy type="patch": test build (bump type)
+deploy type="patch": test build check-git (bump type)
     #!/usr/bin/env bash
     # Get the new version from manifest.json
     new_version=$(node -p "require('./manifest.json').version")
@@ -125,3 +125,24 @@ deploy type="patch": test build (bump type)
     git push origin $new_version
     
     echo "✅ Deployed version $new_version successfully!"
+
+check-git:
+    #!/usr/bin/env bash
+    echo "🔍 Checking git status..."
+    # Check for unstaged changes
+    if ! git diff --quiet; then
+        echo "There are unstaged changes"
+        exit 1
+    fi
+
+    # Check for staged changes
+    if ! git diff --cached --quiet; then
+        echo "There are staged changes"
+        exit 1
+    fi
+
+    # Check for untracked files
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "There are untracked files or changes"
+        exit 1
+    fi
