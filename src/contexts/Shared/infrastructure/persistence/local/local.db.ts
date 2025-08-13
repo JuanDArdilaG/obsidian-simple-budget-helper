@@ -66,26 +66,6 @@ export class LocalDB extends DB {
 		}
 	}
 
-	// Start periodic auto-sync every 30 seconds
-	public startAutoSync(): number {
-		// Clear existing global interval if any
-		if (globalAutoSyncInterval) {
-			window.clearInterval(globalAutoSyncInterval);
-		}
-
-		globalAutoSyncInterval = window.setInterval(async () => {
-			try {
-				await this.saveToLocalFiles();
-				this.logger.debug("Periodic auto-sync completed");
-			} catch (error) {
-				this.logger.error(error);
-			}
-		}, 30000); // 30 seconds
-
-		this.logger.debug("Auto-sync interval started");
-		return globalAutoSyncInterval;
-	}
-
 	// Start periodic backup creation every 10 minutes
 	public startPeriodicBackups(): number {
 		// Clear existing global interval if any

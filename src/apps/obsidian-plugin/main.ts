@@ -94,8 +94,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		this.addSettingTab(new SettingTab(this.app, this));
 		LeftMenuItems.RightSidebarPanel(this);
 
-		this.logger.debug("Starting intervals");
-		this.registerInterval(this.db.startAutoSync());
+		this.logger.debug("Starting periodic backups");
 		this.registerInterval(this.db.startPeriodicBackups());
 		this.logger.debug("Plugin onload completed");
 
