@@ -54,12 +54,9 @@ export class BackupManager {
 			// Export database to blob
 			const blob = await exportDB(db);
 
-			// Convert blob to base64 string using browser-compatible method
-			const arrayBuffer = await blob.arrayBuffer();
-			const uint8Array = new Uint8Array(arrayBuffer);
-
-			// Use js-base64's built-in Uint8Array support
-			const base64Data = Base64.fromUint8Array(uint8Array);
+			// Convert blob to base64 string
+			const blobText = await blob.text();
+			const base64Data = btoa(blobText);
 
 			// Create backup metadata
 			const backupData = {
@@ -122,11 +119,14 @@ export class BackupManager {
 			if (Array.isArray(backupData.data)) {
 				// Old format: array of numbers
 				const uint8Array = new Uint8Array(backupData.data);
-				blob = new Blob([uint8Array]);
+				blob = new Blob([uint8Array.buffer]);
 			} else if (typeof backupData.data === "string") {
 				// New format: base64 string using browser-compatible method
-				const uint8Array = Base64.toUint8Array(backupData.data);
-				blob = new Blob([uint8Array]);
+				const base64Decoded = Base64.atob(backupData.data);
+				const uint8Array = Uint8Array.from(base64Decoded, (c) =>
+					c.charCodeAt(0)
+				);
+				blob = new Blob([uint8Array.buffer]);
 			} else {
 				throw new Error("Unsupported backup data format");
 			}
