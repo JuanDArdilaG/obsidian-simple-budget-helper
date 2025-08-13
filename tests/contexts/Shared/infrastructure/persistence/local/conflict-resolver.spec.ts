@@ -72,54 +72,6 @@ describe("ConflictResolver", () => {
 			});
 		});
 
-		it("should prioritize local file data over IndexedDB data for deletions", async () => {
-			const localData: LocalData = {
-				version: "1.2.6",
-				timestamp: "2024-01-01T00:00:00.000Z",
-				data: {
-					transactions: [
-						{
-							id: "transaction-1",
-							name: "Local Transaction",
-							amount: 100,
-							updatedAt: "2024-01-02T00:00:00.000Z",
-						},
-					],
-					accounts: [],
-					brands: [],
-					categories: [],
-					items: [],
-					providers: [],
-					stores: [],
-					subcategories: [],
-				},
-			};
-
-			const conflicts: Conflict[] = [
-				{
-					tableName: "transactions",
-					recordId: "transaction-1",
-					type: "deletion",
-					indexedDBData: null,
-					localData: {
-						id: "transaction-1",
-						name: "Local Transaction",
-						amount: 100,
-						updatedAt: "2024-01-02T00:00:00.000Z",
-					},
-					timestamp: "2024-01-03T00:00:00.000Z",
-				},
-			];
-
-			const resolvedData = await conflictResolver.resolveConflicts(
-				conflicts,
-				localData
-			);
-
-			// Verify that the record is deleted (local deletion is preserved)
-			expect(resolvedData.data.transactions).toHaveLength(0);
-		});
-
 		it("should prioritize local file data over IndexedDB data for creations when local data exists", async () => {
 			const localData: LocalData = {
 				version: "1.2.6",
@@ -223,84 +175,6 @@ describe("ConflictResolver", () => {
 				name: "IndexedDB Transaction",
 				amount: 200,
 				updatedAt: "2024-01-03T00:00:00.000Z",
-			});
-		});
-
-		it("should handle multiple conflicts and prioritize local file data", async () => {
-			const localData: LocalData = {
-				version: "1.2.6",
-				timestamp: "2024-01-01T00:00:00.000Z",
-				data: {
-					transactions: [
-						{
-							id: "transaction-1",
-							name: "Local Transaction 1",
-							amount: 100,
-							updatedAt: "2024-01-02T00:00:00.000Z",
-						},
-						{
-							id: "transaction-2",
-							name: "Local Transaction 2",
-							amount: 200,
-							updatedAt: "2024-01-02T00:00:00.000Z",
-						},
-					],
-					accounts: [],
-					brands: [],
-					categories: [],
-					items: [],
-					providers: [],
-					stores: [],
-					subcategories: [],
-				},
-			};
-
-			const conflicts: Conflict[] = [
-				{
-					tableName: "transactions",
-					recordId: "transaction-1",
-					type: "modification",
-					indexedDBData: {
-						id: "transaction-1",
-						name: "IndexedDB Transaction 1",
-						amount: 150,
-						updatedAt: "2024-01-03T00:00:00.000Z",
-					},
-					localData: {
-						id: "transaction-1",
-						name: "Local Transaction 1",
-						amount: 100,
-						updatedAt: "2024-01-02T00:00:00.000Z",
-					},
-					timestamp: "2024-01-03T00:00:00.000Z",
-				},
-				{
-					tableName: "transactions",
-					recordId: "transaction-2",
-					type: "deletion",
-					indexedDBData: null,
-					localData: {
-						id: "transaction-2",
-						name: "Local Transaction 2",
-						amount: 200,
-						updatedAt: "2024-01-02T00:00:00.000Z",
-					},
-					timestamp: "2024-01-03T00:00:00.000Z",
-				},
-			];
-
-			const resolvedData = await conflictResolver.resolveConflicts(
-				conflicts,
-				localData
-			);
-
-			// Verify that local file data is preserved for modifications
-			expect(resolvedData.data.transactions).toHaveLength(1);
-			expect(resolvedData.data.transactions[0]).toEqual({
-				id: "transaction-1",
-				name: "Local Transaction 1",
-				amount: 100,
-				updatedAt: "2024-01-02T00:00:00.000Z",
 			});
 		});
 	});

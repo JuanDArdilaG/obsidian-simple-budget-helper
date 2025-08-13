@@ -216,10 +216,6 @@ export class ConflictResolver {
 			case "keep_indexeddb":
 				return conflict.indexedDBData;
 			case "keep_local":
-				// For deletions, we want to return null to indicate the record should be removed
-				if (conflict.type === "deletion") {
-					return null;
-				}
 				return conflict.localData;
 			case "merge":
 				return this.mergeData(
@@ -227,7 +223,7 @@ export class ConflictResolver {
 					conflict.localData
 				);
 			default:
-				return conflict.indexedDBData;
+				return conflict.localData;
 		}
 	}
 

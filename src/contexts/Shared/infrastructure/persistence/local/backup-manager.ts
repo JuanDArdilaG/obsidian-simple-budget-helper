@@ -154,35 +154,43 @@ export class BackupManager {
 			await this.init();
 
 			const files = await this.app.vault.adapter.list(this.backupFolder);
-			const backups: BackupInfo[] = [];
 
-			for (const file of files.files) {
-				if (file.endsWith(".json")) {
-					try {
-						const fileContent = await this.app.vault.adapter.read(
-							file
-						);
-						const backupData = JSON.parse(fileContent);
-
-						if (backupData.metadata) {
-							const stat = await this.app.vault.adapter.stat(
-								file
-							);
-							backups.push({
-								name: backupData.metadata.name,
-								path: file,
-								size: stat?.size ?? 0,
-								createdAt: new Date(
-									backupData.metadata.createdAt
+			const filesContent = (
+				await Promise.all(
+					files.files
+						.filter((file) => file.endsWith(".json"))
+						.map(async (file) => {
+							return {
+								fileContent: await this.app.vault.adapter.read(
+									file
 								),
-								description: backupData.metadata.description,
-							});
-						}
-					} catch (error) {
-						this.logger.error(error);
-					}
-				}
-			}
+								file,
+							};
+						})
+				)
+			).map(({ fileContent, file }) => ({
+				fileContent: JSON.parse(fileContent),
+				file,
+			}));
+
+			const backups: BackupInfo[] = (
+				await Promise.all(
+					filesContent.map(({ file }) => {
+						return this.app.vault.adapter.stat(file);
+					})
+				)
+			).map((stat, index) => {
+				return {
+					name: filesContent[index].fileContent.metadata.name,
+					path: filesContent[index].file,
+					size: stat?.size ?? 0,
+					createdAt: new Date(
+						filesContent[index].fileContent.metadata.createdAt
+					),
+					description:
+						filesContent[index].fileContent.metadata.description,
+				};
+			});
 
 			// Sort by creation date (newest first)
 			backups.sort(
