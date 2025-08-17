@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Add search input component to accounting list.
 
+### Changed
+
+-   Transfer transactions doesn't require quantity, type, brand, nor store.
+
 ## [0.13.11] - 2025-08-14
 
 ### Changed
