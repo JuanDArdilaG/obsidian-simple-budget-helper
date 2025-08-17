@@ -78,6 +78,7 @@ import {
 import * as math from "mathjs";
 import React, {
 	PropsWithChildren,
+	useCallback,
 	useContext,
 	useEffect,
 	useState,
@@ -457,11 +458,6 @@ export const TransactionFormImproved = ({
 		initialValue: sharedProperties.date,
 	});
 
-	// Sync date changes with shared properties
-	useEffect(() => {
-		updateSharedProperties({ date });
-	}, [date]);
-
 	// Validation
 	const { validate, getFieldError, clearErrors } =
 		useMultiTransactionValidation(
@@ -483,7 +479,6 @@ export const TransactionFormImproved = ({
 		// Preserve date, operation type, and store
 		const preservedDate = date;
 		const preservedOperation = sharedProperties.operation;
-		const preservedStore = sharedProperties.store;
 
 		// Reset transaction items to a single empty item
 		setTransactionItems([
@@ -506,7 +501,7 @@ export const TransactionFormImproved = ({
 			operation: preservedOperation,
 			fromSplits: [],
 			toSplits: [],
-			store: preservedStore,
+			store: "",
 		});
 
 		// Clear validation errors
@@ -769,11 +764,17 @@ export const TransactionFormImproved = ({
 		);
 	};
 
-	const updateSharedProperties = (
-		updates: Partial<typeof sharedProperties>
-	) => {
-		setSharedProperties({ ...sharedProperties, ...updates });
-	};
+	const updateSharedProperties = useCallback(
+		(updates: Partial<typeof sharedProperties>) => {
+			setSharedProperties((prev) => ({ ...prev, ...updates }));
+		},
+		[]
+	);
+
+	// Sync date changes with shared properties
+	useEffect(() => {
+		updateSharedProperties({ date });
+	}, [date, updateSharedProperties]);
 
 	// Submit handler
 	const handleSubmit = async (withClose: boolean) => {
@@ -957,7 +958,8 @@ export const TransactionFormImproved = ({
 						await updateRegularItem.execute(itemCopy);
 					} else {
 						const regularItem =
-							item.itemType === ItemType.PRODUCT
+							item.itemType === ItemType.PRODUCT ||
+							sharedProperties.operation === "transfer"
 								? ProductItem.create(
 										new ItemName(item.name),
 										categoryId,
@@ -1135,19 +1137,6 @@ export const TransactionFormImproved = ({
 						</Typography>
 					)}
 				</Box>
-
-				{/* Optional Fields Section */}
-				<Box sx={{ mb: 2 }}>
-					<SelectWithCreation
-						id="store"
-						label="Store (optional)"
-						item={sharedProperties.store}
-						items={storeOptions}
-						onChange={(store) => updateSharedProperties({ store })}
-						isLocked={false}
-						setIsLocked={() => {}}
-					/>
-				</Box>
 			</Box>
 
 			{/* Transaction Items Section */}
@@ -1267,56 +1256,68 @@ export const TransactionFormImproved = ({
 							</Box>
 
 							{/* Quantity */}
-							<TextField
-								id={`quantity-${item.id}`}
-								label="Quantity *"
-								type="number"
-								value={item.quantity}
-								onChange={(e) => {
-									const value = parseInt(e.target.value) ?? 0;
-									updateTransactionItem(item.id, {
-										quantity: value,
-									});
-								}}
-								slotProps={{ htmlInput: { min: 0, step: 1 } }}
-								variant="outlined"
-								size="small"
-								sx={{
-									color: "var(--text-normal)",
-									"& .MuiInputBase-input": {
-										color: "var(--text-normal)",
-									},
-									"& .MuiInputLabel-root": {
-										color: "var(--text-normal)",
-									},
-									"& .MuiFormHelperText-root": {
-										color: "var(--text-muted)",
-									},
-								}}
-							/>
+							{sharedProperties.operation !== "transfer" && (
+								<>
+									<TextField
+										id={`quantity-${item.id}`}
+										label="Quantity *"
+										type="number"
+										value={item.quantity}
+										onChange={(e) => {
+											const value =
+												parseInt(e.target.value) ?? 0;
+											updateTransactionItem(item.id, {
+												quantity: value,
+											});
+										}}
+										slotProps={{
+											htmlInput: { min: 0, step: 1 },
+										}}
+										variant="outlined"
+										size="small"
+										sx={{
+											color: "var(--text-normal)",
+											"& .MuiInputBase-input": {
+												color: "var(--text-normal)",
+											},
+											"& .MuiInputLabel-root": {
+												color: "var(--text-normal)",
+											},
+											"& .MuiFormHelperText-root": {
+												color: "var(--text-muted)",
+											},
+										}}
+									/>
 
-							{/* Item Type */}
-							<Select
-								id={`itemType-${item.id}`}
-								label="Item Type"
-								value={item.itemType}
-								values={[ItemType.PRODUCT, ItemType.SERVICE]}
-								onChange={(itemType) => {
-									updateTransactionItem(item.id, {
-										itemType: itemType as ItemType,
-										brand:
-											itemType === ItemType.PRODUCT
-												? item.brand
-												: "",
-										provider:
-											itemType === ItemType.SERVICE
-												? item.provider
-												: "",
-									});
-								}}
-								isLocked={false}
-								setIsLocked={() => {}}
-							/>
+									{/* Item Type */}
+									<Select
+										id={`itemType-${item.id}`}
+										label="Item Type"
+										value={item.itemType}
+										values={[
+											ItemType.PRODUCT,
+											ItemType.SERVICE,
+										]}
+										onChange={(itemType) => {
+											updateTransactionItem(item.id, {
+												itemType: itemType as ItemType,
+												brand:
+													itemType ===
+													ItemType.PRODUCT
+														? item.brand
+														: "",
+												provider:
+													itemType ===
+													ItemType.SERVICE
+														? item.provider
+														: "",
+											});
+										}}
+										isLocked={false}
+										setIsLocked={() => {}}
+									/>
+								</>
+							)}
 
 							{/* Category */}
 							<Box>
@@ -1659,38 +1660,44 @@ export const TransactionFormImproved = ({
 							</Box>
 
 							{/* Brand (for products) */}
-							{item.itemType === ItemType.PRODUCT && (
-								<SelectWithCreation
-									id={`brand-${item.id}`}
-									label="Brand (optional)"
-									item={item.brand || ""}
-									items={getBrandOptionsForItem(item.name)}
-									onChange={(brand) =>
-										updateTransactionItem(item.id, {
-											brand,
-										})
-									}
-									isLocked={false}
-									setIsLocked={() => {}}
-								/>
-							)}
+							{item.itemType === ItemType.PRODUCT &&
+								sharedProperties.operation !== "transfer" && (
+									<SelectWithCreation
+										id={`brand-${item.id}`}
+										label="Brand (optional)"
+										item={item.brand || ""}
+										items={getBrandOptionsForItem(
+											item.name
+										)}
+										onChange={(brand) =>
+											updateTransactionItem(item.id, {
+												brand,
+											})
+										}
+										isLocked={false}
+										setIsLocked={() => {}}
+									/>
+								)}
 
 							{/* Provider (for services) */}
-							{item.itemType === ItemType.SERVICE && (
-								<SelectWithCreation
-									id={`provider-${item.id}`}
-									label="Provider (optional)"
-									item={item.provider || ""}
-									items={getProviderOptionsForItem(item.name)}
-									onChange={(provider) =>
-										updateTransactionItem(item.id, {
-											provider,
-										})
-									}
-									isLocked={false}
-									setIsLocked={() => {}}
-								/>
-							)}
+							{item.itemType === ItemType.SERVICE &&
+								sharedProperties.operation !== "transfer" && (
+									<SelectWithCreation
+										id={`provider-${item.id}`}
+										label="Provider (optional)"
+										item={item.provider || ""}
+										items={getProviderOptionsForItem(
+											item.name
+										)}
+										onChange={(provider) =>
+											updateTransactionItem(item.id, {
+												provider,
+											})
+										}
+										isLocked={false}
+										setIsLocked={() => {}}
+									/>
+								)}
 						</Box>
 					</Box>
 				))}
@@ -1779,6 +1786,19 @@ export const TransactionFormImproved = ({
 					</Box>
 				</Box>
 			</Box>
+			{sharedProperties.operation !== "transfer" && (
+				<Box sx={{ mb: 2 }}>
+					<SelectWithCreation
+						id="store"
+						label="Store (optional)"
+						item={sharedProperties.store}
+						items={storeOptions}
+						onChange={(store) => updateSharedProperties({ store })}
+						isLocked={false}
+						setIsLocked={() => {}}
+					/>
+				</Box>
+			)}
 
 			{/* Account Selection Section */}
 			<Box sx={{ mb: 3 }}>

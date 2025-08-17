@@ -16,7 +16,7 @@ import {
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { PaymentSplitPrimitives } from "contexts/Transactions/domain";
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { WithLockField } from "../WithLockField";
 
 interface MultiSelectDropdownProps {
@@ -113,19 +113,27 @@ export const MultiSelectDropdown = ({
 		onChange(newSplits);
 	};
 
-	useEffect(() => {
-		if (selectedAccounts.length === 1)
-			handleMax(selectedAccounts[0].accountId);
-	}, [selectedAccounts]);
+	const handleMax = useCallback(
+		(accountId: string) => {
+			const newSplits = selectedAccounts.map((split) =>
+				split.accountId === accountId
+					? { ...split, amount: totalAmount }
+					: split
+			);
+			onChange(newSplits);
+		},
+		[selectedAccounts, totalAmount, onChange]
+	);
 
-	const handleMax = (accountId: string) => {
-		const newSplits = selectedAccounts.map((split) =>
-			split.accountId === accountId
-				? { ...split, amount: totalAmount }
-				: split
-		);
-		onChange(newSplits);
-	};
+	useEffect(() => {
+		if (selectedAccounts.length === 1) {
+			const singleAccount = selectedAccounts[0];
+			// Only set to max if the amount is not already set to totalAmount
+			if (singleAccount.amount !== totalAmount) {
+				handleMax(singleAccount.accountId);
+			}
+		}
+	}, [selectedAccounts, handleMax, totalAmount]);
 
 	const totalDistributed = selectedAccounts.reduce(
 		(sum, split) => sum + split.amount,
