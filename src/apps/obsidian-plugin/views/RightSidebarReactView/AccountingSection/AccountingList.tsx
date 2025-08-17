@@ -8,7 +8,7 @@ import {
 	useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { PerformanceMonitor } from "apps/obsidian-plugin/components/PerformanceMonitor";
+import { SearchInput } from "apps/obsidian-plugin/components/Search";
 import { useAccountSelect } from "apps/obsidian-plugin/components/Select/useAccountSelect";
 import { useCategorySelect } from "apps/obsidian-plugin/components/Select/useCategorySelect";
 import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/useSubCategorySelect";
@@ -20,7 +20,10 @@ import {
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { CategoryID } from "contexts/Categories/domain";
-import { TransactionWithAccumulatedBalance } from "contexts/Reports/domain";
+import {
+	TransactionWithAccumulatedBalance,
+	TransactionsReport,
+} from "contexts/Reports/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { Transaction } from "contexts/Transactions/domain";
 import {
@@ -82,9 +85,8 @@ export function AccountingList({
 	const { getCategoryByID, getSubCategoryByID } =
 		useContext(CategoriesContext);
 
-	// Performance tracking
-	const [renderTime, setRenderTime] = useState<number>(0);
-	const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
+	// Search state
+	const [searchTerm, setSearchTerm] = useState<string>("");
 
 	// Virtual list ref for resetting cache
 	const virtualListRef = useRef<VirtualList>(null);
@@ -128,8 +130,57 @@ export function AccountingList({
 		setFilters([account?.id, category?.id, subCategory?.id]);
 	}, [account, category, subCategory, setFilters]);
 
+	// Apply search filter to the already filtered transactions
+	const searchFilteredTransactions = useMemo(() => {
+		if (!searchTerm.trim()) {
+			return filteredTransactionsReport.transactions;
+		}
+
+		const searchLower = searchTerm.toLowerCase();
+		return filteredTransactionsReport.transactions.filter((transaction) => {
+			// Search in transaction name
+			if (
+				transaction.name.toString().toLowerCase().includes(searchLower)
+			) {
+				return true;
+			}
+
+			// Search in account names
+			const fromAccounts = transaction.fromSplits
+				.map((s) => getAccountByID(s.accountId)?.name.value || "")
+				.join(", ");
+			const toAccounts = transaction.toSplits
+				.map((s) => getAccountByID(s.accountId)?.name.value || "")
+				.join(", ");
+			const accountNames =
+				fromAccounts + (toAccounts ? " -> " + toAccounts : "");
+			if (accountNames.toLowerCase().includes(searchLower)) {
+				return true;
+			}
+
+			// Search in category name
+			const category = getCategoryByID(transaction.category);
+			if (category?.name.toString().toLowerCase().includes(searchLower)) {
+				return true;
+			}
+
+			// Search in subcategory name
+			const subCategory = getSubCategoryByID(transaction.subCategory);
+			if (subCategory?.name.value.toLowerCase().includes(searchLower)) {
+				return true;
+			}
+
+			return false;
+		});
+	}, [
+		searchTerm,
+		filteredTransactionsReport.transactions,
+		getAccountByID,
+		getCategoryByID,
+		getSubCategoryByID,
+	]);
+
 	const withAccumulatedBalanceTransactionsGrouped = useMemo(() => {
-		const startTime = performance.now();
 		const res: [
 			date: string,
 			DisplayableTransactionWithAccumulatedBalance[]
@@ -142,7 +193,11 @@ export function AccountingList({
 				: text;
 		};
 
-		filteredTransactionsReport
+		// Create a new TransactionsReport with search filtered transactions
+		const searchFilteredReport = new TransactionsReport(
+			searchFilteredTransactions
+		);
+		searchFilteredReport
 			.withAccumulatedBalance()
 			.forEach((withBalanceTransaction) => {
 				const { transaction } = withBalanceTransaction;
@@ -272,11 +327,8 @@ export function AccountingList({
 					lastGroup[1].push(displayableTransaction);
 				}
 			});
-		const endTime = performance.now();
-		setRenderTime(endTime - startTime);
 		logger.debug("withAccumulatedBalanceTransactionsGrouped", {
 			res,
-			renderTime: endTime - startTime,
 		});
 		return res;
 	}, [
@@ -285,6 +337,7 @@ export function AccountingList({
 		getCategoryByID,
 		getSubCategoryByID,
 		logger,
+		searchFilteredTransactions,
 	]);
 
 	// Use lazy loading hook
@@ -451,28 +504,29 @@ export function AccountingList({
 			}}
 		>
 			<Box sx={{ p: 1, borderBottom: 1, borderColor: "divider" }}>
-				<button onClick={() => setShowPerformanceMonitor((s) => !s)}>
-					Toggle performance
-				</button>
-				{showPerformanceMonitor && (
-					<PerformanceMonitor
-						renderTime={renderTime}
-						itemCount={
-							withAccumulatedBalanceTransactionsGrouped.length
-						}
-						visibleItems={visibleItems}
-					/>
-				)}
 				<div
 					style={{
 						display: "flex",
-						flexDirection: "row",
+						flexDirection: "column",
 						gap: "8px",
 					}}
 				>
-					{AccountSelect}
-					{CategorySelect}
-					{SubCategorySelect}
+					<SearchInput
+						placeholder="Search transactions, accounts, categories..."
+						onSearch={setSearchTerm}
+						style={{ marginBottom: "8px" }}
+					/>
+					<div
+						style={{
+							display: "flex",
+							flexDirection: "row",
+							gap: "8px",
+						}}
+					>
+						{AccountSelect}
+						{CategorySelect}
+						{SubCategorySelect}
+					</div>
 				</div>
 			</Box>
 
