@@ -615,6 +615,12 @@ export const TransactionFormImproved = ({
 	const handleNameSelect = (itemId: string, displayName: string) => {
 		const match = items.find((item) => item.name.value === displayName);
 		if (match) {
+			const itemBrands = match instanceof ProductItem ? match.brands : [];
+			const brandName =
+				itemBrands.length > 0
+					? brands.find((b) => b.id.value === itemBrands[0].value)
+							?.name.value
+					: "";
 			updateTransactionItem(itemId, {
 				name: match.name.value,
 				amount: match.amount.value,
@@ -627,6 +633,7 @@ export const TransactionFormImproved = ({
 					)?.name.value || "",
 				itemType: match.type,
 				item: match,
+				brand: brandName,
 			});
 		} else {
 			updateTransactionItem(itemId, {
