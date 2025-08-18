@@ -272,9 +272,16 @@ export const AccountingListItem = ({
 									}}
 								>
 									<b>Brand: </b>
-									{transaction.brand ?? "No Brand"}{" "}
+									{transaction.brand ?? "-"}
+								</Typography>
+								<Typography
+									variant="caption"
+									style={{
+										color: "var(--text-muted)",
+									}}
+								>
 									<b>Store: </b>
-									{transaction.store ?? "No Store"}
+									{transaction.store ?? "-"}
 								</Typography>
 								<div>
 									<Typography
