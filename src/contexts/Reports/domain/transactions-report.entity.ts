@@ -13,8 +13,11 @@ export type GroupByYearMonthDay = {
 
 export type TransactionWithAccumulatedBalance = {
 	transaction: Transaction;
-	balance: ReportBalance;
-	prevBalance: ReportBalance;
+	accounts: {
+		id: AccountID;
+		balance: ReportBalance;
+		prevBalance: ReportBalance;
+	}[];
 };
 
 export class TransactionsReport {
@@ -111,41 +114,50 @@ export class TransactionsReport {
 
 				// For transfer transactions, create separate entries for from and to accounts
 				if (transaction.operation.isTransfer()) {
-					// Handle from accounts (negative amounts)
-					for (const fromSplit of transaction.fromSplits) {
-						const accountID = fromSplit.accountId.value;
-						if (!accumulated[accountID])
-							accumulated[accountID] = ReportBalance.zero();
-						const prevBalance = accumulated[accountID];
-						accumulated[accountID] = accumulated[accountID].plus(
-							transaction.getRealAmountForAccount(
-								fromSplit.accountId
-							)
-						);
-						transactions.push({
-							transaction,
-							balance: accumulated[accountID],
-							prevBalance,
-						});
-					}
+					transactions.push({
+						transaction,
+						accounts: transaction.fromSplits.map((split) => {
+							const accountID = split.accountId.value;
+							if (!accumulated[accountID])
+								accumulated[accountID] = ReportBalance.zero();
+							const prevBalance = accumulated[accountID];
+							accumulated[accountID] = accumulated[
+								accountID
+							].plus(
+								transaction.getRealAmountForAccount(
+									split.accountId
+								)
+							);
+							return {
+								id: split.accountId,
+								balance: accumulated[split.accountId.value],
+								prevBalance,
+							};
+						}),
+					});
 
 					// Handle to accounts (positive amounts)
-					for (const toSplit of transaction.toSplits) {
-						const accountID = toSplit.accountId.value;
-						if (!accumulated[accountID])
-							accumulated[accountID] = ReportBalance.zero();
-						const prevBalance = accumulated[accountID];
-						accumulated[accountID] = accumulated[accountID].plus(
-							transaction.getRealAmountForAccount(
-								toSplit.accountId
-							)
-						);
-						transactions.push({
-							transaction,
-							balance: accumulated[accountID],
-							prevBalance,
-						});
-					}
+					transactions.push({
+						transaction,
+						accounts: transaction.toSplits.map((toSplit) => {
+							const accountID = toSplit.accountId.value;
+							if (!accumulated[accountID])
+								accumulated[accountID] = ReportBalance.zero();
+							const prevBalance = accumulated[accountID];
+							accumulated[accountID] = accumulated[
+								accountID
+							].plus(
+								transaction.getRealAmountForAccount(
+									toSplit.accountId
+								)
+							);
+							return {
+								id: toSplit.accountId,
+								balance: accumulated[accountID],
+								prevBalance,
+							};
+						}),
+					});
 				} else {
 					// For non-transfer transactions, use the original logic
 					const allAccountIDs = [
@@ -153,21 +165,26 @@ export class TransactionsReport {
 						...transaction.toSplits.map((s) => s.accountId.value),
 					];
 					const uniqueAccountIDs = Array.from(new Set(allAccountIDs));
-					for (const accountID of uniqueAccountIDs) {
-						if (!accumulated[accountID])
-							accumulated[accountID] = ReportBalance.zero();
-						const prevBalance = accumulated[accountID];
-						accumulated[accountID] = accumulated[accountID].plus(
-							transaction.getRealAmountForAccount(
-								new AccountID(accountID)
-							)
-						);
-						transactions.push({
-							transaction,
-							balance: accumulated[accountID],
-							prevBalance,
-						});
-					}
+					transactions.push({
+						transaction,
+						accounts: uniqueAccountIDs.map((accountId) => {
+							if (!accumulated[accountId])
+								accumulated[accountId] = ReportBalance.zero();
+							const prevBalance = accumulated[accountId];
+							accumulated[accountId] = accumulated[
+								accountId
+							].plus(
+								transaction.getRealAmountForAccount(
+									new AccountID(accountId)
+								)
+							);
+							return {
+								id: new AccountID(accountId),
+								balance: accumulated[accountId],
+								prevBalance,
+							};
+						}),
+					});
 				}
 
 				return transactions;

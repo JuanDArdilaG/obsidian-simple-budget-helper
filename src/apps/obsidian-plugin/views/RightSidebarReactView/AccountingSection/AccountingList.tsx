@@ -41,16 +41,18 @@ import { AccountingListItem } from "./AccountingListItem";
 export type DisplayableTransactionWithAccumulatedBalance =
 	TransactionWithAccumulatedBalance & {
 		display: {
-			accountName: string;
+			accounts: {
+				name: string;
+				truncatedName: string;
+				realAmount: PriceValueObject;
+			}[];
 			categoryName: string;
 			subCategoryName: string;
-			realAmount: PriceValueObject | null;
 			formattedTime: string;
 			transactionName: string;
 			truncatedTransactionName: string;
 			truncatedCategoryName: string;
 			truncatedSubCategoryName: string;
-			truncatedAccountName: string;
 		};
 	};
 
@@ -200,86 +202,7 @@ export function AccountingList({
 		searchFilteredReport
 			.withAccumulatedBalance()
 			.forEach((withBalanceTransaction) => {
-				const { transaction } = withBalanceTransaction;
-
-				// For transfer transactions, we need to determine which account this entry represents
-				let accountName: string;
-				let realAmount: PriceValueObject | null;
-
-				if (transaction.operation.isTransfer()) {
-					// For transfers, determine if this is a "from" or "to" entry based on the balance change
-					const balanceChange =
-						withBalanceTransaction.balance.toNumber() -
-						withBalanceTransaction.prevBalance.toNumber();
-
-					// Find the account that matches this balance change
-					const fromAccount = transaction.fromSplits.find((split) => {
-						const accountAmount = transaction
-							.getRealAmountForAccount(split.accountId)
-							.toNumber();
-						return Math.abs(accountAmount - balanceChange) < 0.01; // Small tolerance for floating point
-					});
-
-					const toAccount = transaction.toSplits.find((split) => {
-						const accountAmount = transaction
-							.getRealAmountForAccount(split.accountId)
-							.toNumber();
-						return Math.abs(accountAmount - balanceChange) < 0.01; // Small tolerance for floating point
-					});
-
-					if (fromAccount) {
-						// This is a "from" entry (negative amount)
-						accountName =
-							getAccountByID(fromAccount.accountId)?.name.value ||
-							"";
-						realAmount = transaction.getRealAmountForAccount(
-							fromAccount.accountId
-						);
-					} else if (toAccount) {
-						// This is a "to" entry (positive amount)
-						accountName =
-							getAccountByID(toAccount.accountId)?.name.value ||
-							"";
-						realAmount = transaction.getRealAmountForAccount(
-							toAccount.accountId
-						);
-					} else {
-						// Fallback to original logic
-						const fromAccounts = transaction.fromSplits
-							.map(
-								(s) =>
-									getAccountByID(s.accountId)?.name.value ||
-									""
-							)
-							.join(", ");
-						const toAccounts = transaction.toSplits
-							.map(
-								(s) =>
-									getAccountByID(s.accountId)?.name.value ||
-									""
-							)
-							.join(", ");
-						accountName =
-							fromAccounts +
-							(toAccounts ? " -> " + toAccounts : "");
-						realAmount = transaction.fromAmount;
-					}
-				} else {
-					// For non-transfer transactions, use the original logic
-					const fromAccounts = transaction.fromSplits
-						.map(
-							(s) => getAccountByID(s.accountId)?.name.value || ""
-						)
-						.join(", ");
-					const toAccounts = transaction.toSplits
-						.map(
-							(s) => getAccountByID(s.accountId)?.name.value || ""
-						)
-						.join(", ");
-					realAmount = transaction.fromAmount;
-					accountName =
-						fromAccounts + (toAccounts ? " -> " + toAccounts : "");
-				}
+				const { transaction, accounts } = withBalanceTransaction;
 
 				const category = getCategoryByID(transaction.category);
 				const subCategory = getSubCategoryByID(transaction.subCategory);
@@ -298,10 +221,20 @@ export function AccountingList({
 					{
 						...withBalanceTransaction,
 						display: {
-							accountName,
+							accounts: accounts.map(({ id }) => {
+								const name =
+									getAccountByID(id)?.name.value ?? "";
+								return {
+									name,
+									truncatedName: truncateText(name, 15),
+									realAmount:
+										transaction.fromSplits.find((split) =>
+											split.accountId.equalTo(id)
+										)?.amount || PriceValueObject.zero(),
+								};
+							}),
 							categoryName,
 							subCategoryName,
-							realAmount,
 							formattedTime,
 							transactionName,
 							truncatedTransactionName: truncateText(
@@ -316,7 +249,6 @@ export function AccountingList({
 								subCategoryName,
 								15
 							),
-							truncatedAccountName: truncateText(accountName, 15),
 						},
 					};
 
@@ -399,15 +331,13 @@ export function AccountingList({
 									if (isTransfer) {
 										// For transfers, include account info to make keys unique
 										const accountName =
-											transactionWithBalance.display
-												.accountName;
-										const amount =
-											transactionWithBalance.display.realAmount?.toNumber() ||
-											0;
-										uniqueKey = `${transactionWithBalance.transaction.id.toString()}-${accountName}-${amount}-${index}`;
+											transactionWithBalance.display.accounts.join(
+												";"
+											);
+										uniqueKey = `${transactionWithBalance.transaction.id.toString()}-${accountName}-${index}`;
 									} else {
 										// For non-transfers, use the original key logic
-										uniqueKey = `${transactionWithBalance.transaction.id.toString()}-${transactionWithBalance.transaction.date.getTime()}-${index}`;
+										uniqueKey = `${transactionWithBalance.transaction.id.toString()}-${index}`;
 									}
 
 									return (

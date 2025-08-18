@@ -19,7 +19,7 @@ interface AccountingListItemProps {
 }
 
 export const AccountingListItem = ({
-	transactionWithBalance: { transaction, balance, prevBalance, display },
+	transactionWithBalance: { transaction, accounts, display },
 	selection,
 	setSelection,
 	onEditTransaction,
@@ -87,7 +87,7 @@ export const AccountingListItem = ({
 		});
 	}, [isSelected, setSelection, transaction]);
 
-	if (!display.accountName) return <></>;
+	if (!display.accounts.length) return <></>;
 
 	return (
 		<>
@@ -131,12 +131,12 @@ export const AccountingListItem = ({
 								>
 									{display.truncatedTransactionName}
 								</Typography>
-								{display.realAmount && (
+								{display.accounts.map((accountInfo) => (
 									<PriceLabel
-										price={display.realAmount}
+										price={accountInfo.realAmount}
 										operation={transaction.operation}
 									/>
-								)}
+								))}
 							</div>
 
 							{/* Second Row: Category and Account */}
@@ -156,24 +156,25 @@ export const AccountingListItem = ({
 									{display.subCategoryName &&
 										` • ${display.truncatedSubCategoryName}`}
 								</Typography>
-								<span
-									style={{
-										fontSize: "12px",
-										color: "var(--text-muted)",
-									}}
-								>
-									{isTransfer &&
-									display.realAmount?.toNumber() &&
-									display.realAmount.toNumber() < 0
-										? "← "
-										: ""}
-									{isTransfer &&
-									display.realAmount?.toNumber() &&
-									display.realAmount.toNumber() > 0
-										? "→ "
-										: ""}
-									{display.truncatedAccountName}
-								</span>
+								{isTransfer &&
+									display.accounts.map((accountInfo) => (
+										<span
+											style={{
+												fontSize: "12px",
+												color: "var(--text-muted)",
+											}}
+										>
+											{accountInfo.realAmount.toNumber() <
+											0
+												? "← "
+												: ""}
+											{accountInfo.realAmount.toNumber() >
+											0
+												? "→ "
+												: ""}
+											{accountInfo.truncatedName}
+										</span>
+									))}
 							</div>
 
 							{/* Third Row: Balance and Time */}
@@ -185,15 +186,22 @@ export const AccountingListItem = ({
 									marginBottom: "8px",
 								}}
 							>
-								<div
-									style={{
-										fontSize: "11px",
-										color: "var(--text-muted)",
-									}}
-								>
-									<PriceLabel price={prevBalance} /> →{" "}
-									<PriceLabel price={balance} />
-								</div>
+								{accounts.map((accountBalance) => (
+									<div
+										style={{
+											fontSize: "11px",
+											color: "var(--text-muted)",
+										}}
+									>
+										<PriceLabel
+											price={accountBalance.prevBalance}
+										/>{" "}
+										→{" "}
+										<PriceLabel
+											price={accountBalance.balance}
+										/>
+									</div>
+								))}
 								<span
 									style={{
 										fontSize: "11px",
@@ -290,48 +298,60 @@ export const AccountingListItem = ({
 									gap: "4px",
 								}}
 							>
-								<div
-									style={{
-										display: "flex",
-										gap: "8px",
-										alignItems: "center",
-										flexWrap: "wrap",
-									}}
-								>
-									<span
-										style={{
-											fontSize: "12px",
-											color: "var(--text-muted)",
-										}}
-									>
-										{isTransfer &&
-										display.realAmount?.toNumber() &&
-										display.realAmount.toNumber() < 0
-											? "← "
-											: ""}
-										{isTransfer &&
-										display.realAmount?.toNumber() &&
-										display.realAmount.toNumber() > 0
-											? "→ "
-											: ""}
-										{display.accountName.toString() ?? ""}
-									</span>
-									{display.realAmount && (
-										<PriceLabel
-											price={display.realAmount}
-											operation={transaction.operation}
-										/>
-									)}
-								</div>
-								<div
-									style={{
-										fontSize: "11px",
-										color: "var(--text-muted)",
-									}}
-								>
-									<PriceLabel price={prevBalance} /> →{" "}
-									<PriceLabel price={balance} />
-								</div>
+								{display.accounts.map((accountInfo, index) => (
+									<>
+										<div
+											style={{
+												display: "flex",
+												gap: "8px",
+												alignItems: "center",
+												flexWrap: "wrap",
+											}}
+										>
+											<span
+												style={{
+													fontSize: "12px",
+													color: "var(--text-muted)",
+												}}
+											>
+												{isTransfer &&
+												accountInfo.realAmount.toNumber() <
+													0
+													? "← "
+													: ""}
+												{isTransfer &&
+												accountInfo.realAmount.toNumber() >
+													0
+													? "→ "
+													: ""}
+												{accountInfo.name.toString() ??
+													""}
+											</span>
+											<PriceLabel
+												price={accountInfo.realAmount}
+												operation={
+													transaction.operation
+												}
+											/>
+										</div>
+										<div
+											style={{
+												fontSize: "11px",
+												color: "var(--text-muted)",
+											}}
+										>
+											<PriceLabel
+												price={
+													accounts[index].prevBalance
+												}
+											/>{" "}
+											→{" "}
+											<PriceLabel
+												price={accounts[index].balance}
+											/>
+										</div>
+									</>
+								))}
 							</div>
 							<Box sx={{ display: "flex", gap: "4px" }}>
 								<IconButton onClick={handleEdit} size="small">
