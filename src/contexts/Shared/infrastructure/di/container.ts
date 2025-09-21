@@ -6,10 +6,14 @@ import {
 } from "awilix";
 
 import { AccountsService } from "contexts/Accounts/application/accounts.service";
+import { AccountsIntegrityService } from "contexts/Accounts/application/accounts-integrity.service";
+import { CalculateAccountIntegrityUseCase } from "contexts/Accounts/application/calculate-account-integrity.usecase";
+import { CalculateAllAccountsIntegrityUseCase } from "contexts/Accounts/application/calculate-all-accounts-integrity.usecase";
 import { CreateAccountUseCase } from "contexts/Accounts/application/create-account.usecase";
 import { DeleteAccountUseCase } from "contexts/Accounts/application/delete-account.usecase";
 import { GetAllAccountNamesUseCase } from "contexts/Accounts/application/get-all-account-names.usecase";
 import { GetAllAccountsUseCase } from "contexts/Accounts/application/get-all-accounts.usecase";
+import { ResolveAccountDiscrepancyUseCase } from "contexts/Accounts/application/resolve-account-discrepancy.usecase";
 import { AccountsLocalRepository } from "contexts/Accounts/infrastructure/persistence/local/accounts-local.repository";
 import { CategoriesService } from "contexts/Categories/application/categories.service";
 import { CreateCategoryUseCase } from "contexts/Categories/application/create-category.usecase";
@@ -132,12 +136,16 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 			.singleton()
 			.inject(() => ({ _db: localDB })),
 		_accountsService: asClass(AccountsService).singleton(),
+		_accountsIntegrityService: asClass(AccountsIntegrityService).singleton(),
 		createAccountUseCase: asClass(CreateAccountUseCase).singleton(),
 		deleteAccountUseCase: asClass(DeleteAccountUseCase).singleton(),
 		getAllAccountNamesUseCase: asClass(
 			GetAllAccountNamesUseCase
 		).singleton(),
 		getAllAccountsUseCase: asClass(GetAllAccountsUseCase).singleton(),
+		calculateAccountIntegrityUseCase: asClass(CalculateAccountIntegrityUseCase).singleton(),
+		calculateAllAccountsIntegrityUseCase: asClass(CalculateAllAccountsIntegrityUseCase).singleton(),
+		resolveAccountDiscrepancyUseCase: asClass(ResolveAccountDiscrepancyUseCase).singleton(),
 	});
 
 	// TRANSACTIONS

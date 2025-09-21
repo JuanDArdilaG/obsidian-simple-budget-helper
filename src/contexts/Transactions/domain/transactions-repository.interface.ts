@@ -12,4 +12,5 @@ export interface ITransactionsRepository
 	findAllUniqueItemBrands(): Promise<ItemBrand[]>;
 	findAllUniqueItemStores(): Promise<ItemStore[]>;
 	hasTransactionsForAccount(accountId: AccountID): Promise<boolean>;
+	findByAccountId(accountId: AccountID): Promise<Transaction[]>;
 }

@@ -18,6 +18,7 @@ describe("GetAllTransactionsUseCase", () => {
 		mockRepository = {
 			findByCriteria: vi.fn(),
 			findById: vi.fn(),
+			findByAccountId: vi.fn(),
 			findAll: vi.fn(),
 			persist: vi.fn(),
 			deleteById: vi.fn(),

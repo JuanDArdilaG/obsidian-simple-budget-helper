@@ -12,6 +12,10 @@ export class TransactionsRepositoryMock
 	extends RepositoryMock<TransactionID, Transaction, TransactionPrimitives>
 	implements ITransactionsRepository
 {
+	findByAccountId(accountId: AccountID): Promise<Transaction[]> {
+		throw new Error("Method not implemented.");
+	}
+
 	async findAllUniqueItemBrands(): Promise<ItemBrand[]> {
 		return [];
 	}

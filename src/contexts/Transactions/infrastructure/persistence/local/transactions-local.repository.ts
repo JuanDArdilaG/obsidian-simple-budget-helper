@@ -65,6 +65,25 @@ export class TransactionsLocalRepository
 		});
 	}
 
+	async findByAccountId(accountId: AccountID): Promise<Transaction[]> {
+		const allRecords = await this.findAll();
+
+		return allRecords.filter((transaction) => {
+			const primitives = transaction.toPrimitives();
+			// Check if the account is involved in any splits
+			return (
+				(primitives.fromSplits?.some(
+					(split) => split.accountId === accountId.value
+				) ??
+					false) ||
+				(primitives.toSplits?.some(
+					(split) => split.accountId === accountId.value
+				) ??
+					false)
+			);
+		});
+	}
+
 	protected mapToDomain(record: TransactionPrimitives): Transaction {
 		return Transaction.fromPrimitives(record);
 	}
