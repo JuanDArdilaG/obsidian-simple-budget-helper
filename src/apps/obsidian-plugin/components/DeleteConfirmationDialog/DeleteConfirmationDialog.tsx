@@ -83,19 +83,10 @@ export const DeleteConfirmationDialog = ({
 
 	const handleConfirm = () => {
 		if (showReassignSection) {
-			if (itemType === "category") {
-				// For category deletion, require both category and subcategory
-				onConfirm({
-					categoryId: selectedCategoryId,
-					subcategoryId: selectedSubcategoryId,
-				});
-			} else {
-				// For subcategory deletion, only require subcategory
-				onConfirm({
-					categoryId: selectedCategoryId,
-					subcategoryId: selectedSubcategoryId,
-				});
-			}
+			onConfirm({
+				categoryId: selectedCategoryId,
+				subcategoryId: selectedSubcategoryId,
+			});
 		} else {
 			onConfirm();
 		}

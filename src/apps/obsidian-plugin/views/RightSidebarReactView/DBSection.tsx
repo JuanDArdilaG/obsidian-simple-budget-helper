@@ -1,7 +1,7 @@
 import { Button } from "@mui/material";
+import { Notice } from "obsidian";
 import { useContext } from "react";
 import { AppContext } from "./Contexts";
-import { Notice } from "obsidian";
 
 export const DBSection = () => {
 	const { plugin } = useContext(AppContext);
@@ -10,7 +10,7 @@ export const DBSection = () => {
 			<Button
 				onClick={async () => {
 					await plugin.exportDBBackup();
-					new Notice("Backup exported");
+					const _ = new Notice("Backup exported");
 				}}
 			>
 				Export Backup
@@ -18,7 +18,7 @@ export const DBSection = () => {
 			<Button
 				onClick={async () => {
 					await plugin.importDBBackup();
-					new Notice("Backup imported");
+					const _ = new Notice("Backup imported");
 				}}
 			>
 				Import Backup

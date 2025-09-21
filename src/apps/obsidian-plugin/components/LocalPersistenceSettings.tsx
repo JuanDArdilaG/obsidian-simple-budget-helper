@@ -1,43 +1,43 @@
-import React, { useState, useEffect } from "react";
 import {
+	Backup as BackupIcon,
+	CleaningServices as CleanupIcon,
+	Delete as DeleteIcon,
+	Download as DownloadIcon,
+	Info as InfoIcon,
+	Restore as RestoreIcon,
+	Storage as StorageIcon,
+	Sync as SyncIcon,
+	Upload as UploadIcon,
+	Warning as WarningIcon,
+} from "@mui/icons-material";
+import {
+	Alert,
 	Box,
 	Button,
 	Card,
 	CardContent,
-	Typography,
-	List,
-	ListItem,
-	ListItemText,
-	ListItemSecondaryAction,
-	IconButton,
-	Dialog,
-	DialogTitle,
-	DialogContent,
-	DialogActions,
-	TextField,
-	Alert,
 	Chip,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
 	Divider,
 	FormControl,
+	IconButton,
 	InputLabel,
-	Select,
+	List,
+	ListItem,
+	ListItemSecondaryAction,
+	ListItemText,
 	MenuItem,
+	Select,
+	TextField,
+	Typography,
 } from "@mui/material";
-import {
-	Backup as BackupIcon,
-	Restore as RestoreIcon,
-	Delete as DeleteIcon,
-	Sync as SyncIcon,
-	Info as InfoIcon,
-	Warning as WarningIcon,
-	Upload as UploadIcon,
-	Download as DownloadIcon,
-	Storage as StorageIcon,
-	CleaningServices as CleanupIcon,
-} from "@mui/icons-material";
 import { BackupInfo } from "contexts/Shared/infrastructure/persistence/local/backup-manager";
-import SimpleBudgetHelperPlugin from "../main";
 import { Notice } from "obsidian";
+import React, { useEffect, useState } from "react";
+import SimpleBudgetHelperPlugin from "../main";
 
 interface LocalPersistenceSettingsProps {
 	plugin: SimpleBudgetHelperPlugin; // Obsidian plugin instance
@@ -212,7 +212,7 @@ export const LocalPersistenceSettings: React.FC<
 			setExportBackupDialog(false);
 			setExportBackupName("");
 			await loadBackups();
-			new Notice("Backup exported");
+			const _ = new Notice("Backup exported");
 		} catch (err) {
 			setError("Failed to export database backup");
 			console.error("Failed to export database backup:", err);
@@ -237,7 +237,7 @@ export const LocalPersistenceSettings: React.FC<
 			setImportBackupDialog(false);
 			setSelectedImportBackup("");
 			await loadDataInfo();
-			new Notice("Backup imported");
+			const _ = new Notice("Backup imported");
 		} catch (err) {
 			setError("Failed to import database backup");
 			console.error("Failed to import database backup:", err);

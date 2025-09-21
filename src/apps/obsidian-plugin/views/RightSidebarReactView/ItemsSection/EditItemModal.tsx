@@ -92,23 +92,24 @@ export const EditItemModal = ({
 							fontSize: 14,
 						}}
 					>
+						<input
+							type="text"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							style={{
+								width: "100%",
+								padding: "8px 12px",
+								borderRadius: 4,
+								border: "1px solid var(--color-gray-light, #555)",
+								background:
+									"var(--color-background-primary, #333)",
+								color: "var(--color-text, #fff)",
+								fontSize: 14,
+							}}
+							placeholder="Item name"
+						/>
 						Name
 					</label>
-					<input
-						type="text"
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						style={{
-							width: "100%",
-							padding: "8px 12px",
-							borderRadius: 4,
-							border: "1px solid var(--color-gray-light, #555)",
-							background: "var(--color-background-primary, #333)",
-							color: "var(--color-text, #fff)",
-							fontSize: 14,
-						}}
-						placeholder="Item name"
-					/>
 				</div>
 
 				<div style={{ marginBottom: 16 }}>{CategorySelect}</div>
