@@ -1,16 +1,26 @@
-import { PluginSettingTab, App, Setting, Modal, Notice } from "obsidian";
-import SimpleBudgetHelperPlugin from "./main";
+import { PriceValueObject } from "@juandardilag/value-objects";
 import { CalculateAllAccountsIntegrityUseCase } from "contexts/Accounts/application/calculate-all-accounts-integrity.usecase";
 import { ResolveAccountDiscrepancyUseCase } from "contexts/Accounts/application/resolve-account-discrepancy.usecase";
+import { App, Modal, Notice, PluginSettingTab, Setting } from "obsidian";
+import { GetAllAccountsUseCase } from "../../contexts/Accounts/application/get-all-accounts.usecase";
+import { Account, IntegrityCheckReport } from "../../contexts/Accounts/domain";
+import SimpleBudgetHelperPlugin from "./main";
 
 class IntegrityReportModal extends Modal {
-	report: any;
+	report: IntegrityCheckReport;
 	plugin: SimpleBudgetHelperPlugin;
+	allAccounts: Account[];
 
-	constructor(app: App, plugin: SimpleBudgetHelperPlugin, report: any) {
+	constructor(
+		app: App,
+		plugin: SimpleBudgetHelperPlugin,
+		report: IntegrityCheckReport,
+		allAccounts: Account[]
+	) {
 		super(app);
 		this.report = report;
 		this.plugin = plugin;
+		this.allAccounts = allAccounts;
 	}
 
 	onOpen() {
@@ -22,49 +32,99 @@ class IntegrityReportModal extends Modal {
 		contentEl.createEl("h2", { text: "Account Integrity Report" });
 
 		// Create a summary section
-		const summaryEl = contentEl.createEl("div", { cls: "integrity-summary" });
-		summaryEl.createEl("p", { text: `Total accounts checked: ${reportPrimitives.totalAccountsChecked}` });
-		summaryEl.createEl("p", { text: `Accounts with discrepancies: ${reportPrimitives.totalDiscrepancies}` });
-		summaryEl.createEl("p", { text: `Execution date: ${new Date(reportPrimitives.executionDate).toLocaleString()}` });
+		const summaryEl = contentEl.createEl("div", {
+			cls: "integrity-summary",
+		});
+		summaryEl.createEl("p", {
+			text: `Total accounts checked: ${reportPrimitives.totalAccountsChecked}`,
+		});
+		summaryEl.createEl("p", {
+			text: `Accounts with discrepancies: ${reportPrimitives.totalDiscrepancies}`,
+		});
+		summaryEl.createEl("p", {
+			text: `Execution date: ${new Date(
+				reportPrimitives.executionDate
+			).toLocaleString()}`,
+		});
 
 		if (reportPrimitives.hasDiscrepancies) {
 			const discrepanciesEl = contentEl.createEl("div");
-			discrepanciesEl.createEl("h4", { text: "Accounts with Discrepancies", cls: "integrity-error" });
+			discrepanciesEl.createEl("h4", {
+				text: "Accounts with Discrepancies",
+				cls: "integrity-error",
+			});
 
 			reportPrimitives.results
-				.filter((result: any) => !result.hasIntegrity)
-				.forEach((result: any) => {
-					const accountEl = discrepanciesEl.createEl("div", { cls: "integrity-account-item" });
-					accountEl.createEl("p", { text: `Account: ${result.accountId}` });
-					accountEl.createEl("p", { text: `Expected Balance: ${result.expectedBalance}` });
-					accountEl.createEl("p", { text: `Actual Balance: ${result.actualBalance}` });
-					accountEl.createEl("p", { text: `Discrepancy: ${result.discrepancy}`, cls: "integrity-discrepancy" });
+				.filter((result) => !result.hasIntegrity)
+				.forEach((result) => {
+					const accountEl = discrepanciesEl.createEl("div", {
+						cls: "integrity-account-item",
+					});
+					accountEl.createEl("p", {
+						text: `Account: ${
+							this.allAccounts.find(
+								(account) =>
+									account.id.value === result.accountId
+							)?.name || result.accountId
+						}`,
+					});
+					accountEl.createEl("p", {
+						text: `Expected Balance: ${new PriceValueObject(
+							result.expectedBalance
+						)}`,
+					});
+					accountEl.createEl("p", {
+						text: `Actual Balance: ${new PriceValueObject(
+							result.actualBalance
+						)}`,
+					});
+					accountEl.createEl("p", {
+						text: `Discrepancy: ${new PriceValueObject(
+							result.discrepancy
+						)}`,
+						cls: "integrity-discrepancy",
+					});
 
-					const resolveButton = accountEl.createEl("button", { text: "Resolve Discrepancy" });
+					const resolveButton = accountEl.createEl("button", {
+						text: "Resolve Discrepancy",
+					});
 					resolveButton.onclick = async () => {
 						resolveButton.disabled = true;
 						resolveButton.textContent = "Resolving...";
 
 						try {
-							const resolveUseCase = this.plugin.container.resolve<ResolveAccountDiscrepancyUseCase>("resolveAccountDiscrepancyUseCase");
+							const resolveUseCase =
+								this.plugin.container.resolve<ResolveAccountDiscrepancyUseCase>(
+									"resolveAccountDiscrepancyUseCase"
+								);
 							await resolveUseCase.execute(result.accountId);
 
-							accountEl.style.backgroundColor = "var(--background-modifier-success)";
+							accountEl.style.backgroundColor =
+								"var(--background-modifier-success)";
 							resolveButton.textContent = "Resolved ✓";
 							resolveButton.disabled = true;
 							new Notice("Discrepancy resolved successfully!");
 						} catch (error) {
-							console.error("Failed to resolve discrepancy:", error);
+							console.error(
+								"Failed to resolve discrepancy:",
+								error
+							);
 							resolveButton.textContent = "Failed to resolve";
-							resolveButton.style.backgroundColor = "var(--background-modifier-error)";
-							new Notice("Failed to resolve discrepancy: " + (error instanceof Error ? error.message : String(error)));
+							resolveButton.style.backgroundColor =
+								"var(--background-modifier-error)";
+							new Notice(
+								"Failed to resolve discrepancy: " +
+									(error instanceof Error
+										? error.message
+										: String(error))
+							);
 						}
 					};
 				});
 		} else {
-			contentEl.createEl("p", { 
+			contentEl.createEl("p", {
 				text: "✅ All accounts have integrity! No discrepancies found.",
-				cls: "integrity-success"
+				cls: "integrity-success",
 			});
 		}
 
@@ -146,32 +206,51 @@ export class SettingTab extends PluginSettingTab {
 
 		// Accounts Integrity Section
 		containerEl.createEl("h3", { text: "Account Integrity" });
-		
+
 		new Setting(containerEl)
 			.setName("Run Account Integrity Check")
-			.setDesc("Check all accounts for balance discrepancies based on transaction history")
+			.setDesc(
+				"Check all accounts for balance discrepancies based on transaction history"
+			)
 			.addButton((button) =>
-				button
-					.setButtonText("Run Check")
-					.onClick(async () => {
-						button.setDisabled(true);
-						button.setButtonText("Running...");
-						
-						try {
-							const integrityUseCase = this.plugin.container.resolve<CalculateAllAccountsIntegrityUseCase>("calculateAllAccountsIntegrityUseCase");
-							const report = await integrityUseCase.execute();
-							
-							// Show results in a modal
-							const modal = new IntegrityReportModal(this.app, this.plugin, report);
-							modal.open();
-						} catch (error) {
-							console.error("Failed to run integrity check:", error);
-							new Notice("Integrity check failed: " + (error instanceof Error ? error.message : String(error)));
-						} finally {
-							button.setDisabled(false);
-							button.setButtonText("Run Check");
-						}
-					})
+				button.setButtonText("Run Check").onClick(async () => {
+					button.setDisabled(true);
+					button.setButtonText("Running...");
+
+					try {
+						const integrityUseCase =
+							this.plugin.container.resolve<CalculateAllAccountsIntegrityUseCase>(
+								"calculateAllAccountsIntegrityUseCase"
+							);
+						const getAllAccountsUseCase =
+							this.plugin.container.resolve<GetAllAccountsUseCase>(
+								"getAllAccountsUseCase"
+							);
+						const report = await integrityUseCase.execute();
+						const allAccounts =
+							await getAllAccountsUseCase.execute();
+
+						// Show results in a modal
+						const modal = new IntegrityReportModal(
+							this.app,
+							this.plugin,
+							report,
+							allAccounts
+						);
+						modal.open();
+					} catch (error) {
+						console.error("Failed to run integrity check:", error);
+						new Notice(
+							"Integrity check failed: " +
+								(error instanceof Error
+									? error.message
+									: String(error))
+						);
+					} finally {
+						button.setDisabled(false);
+						button.setButtonText("Run Check");
+					}
+				})
 			);
 	}
 }
