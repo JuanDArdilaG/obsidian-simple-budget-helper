@@ -445,8 +445,8 @@ export const AllItemsList = ({
 	const handleChartClick = (data: {
 		activePayload?: Array<{ payload: MonthlyData }>;
 	}) => {
-		if (data && data.activePayload && data.activePayload[0]) {
-			const monthData = data.activePayload[0].payload as MonthlyData;
+		if (data?.activePayload?.[0]) {
+			const monthData = data.activePayload[0].payload;
 			setSelectedMonthData(monthData);
 		}
 	};
