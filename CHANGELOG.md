@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2025-09-21
+
+### Added
+
+-   Introduced a new feature for automatic account balance adjustments using integrity checks: [Link to Feature Documentation](./docs/ACCOUNTS_INTEGRITY_CALCULATION.md).
+
 ## [0.13.14] - 2025-08-18
 
 ### Fixed

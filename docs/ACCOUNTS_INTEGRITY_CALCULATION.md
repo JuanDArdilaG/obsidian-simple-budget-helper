@@ -14,6 +14,8 @@ The integrity calculation process involves the following steps:
 4. **Discrepancy Identification**: Identify and report any discrepancies found during the comparison.
 5. **Resolution Tool**: Provide the possibility to resolve discrepancies through an automatic adjustment.
 
+To use the feature, users can find it in the "Account Integrity" section in the plugin settings to trigger the integrity calculation process and get the summary of findings, along with options to resolve any discrepancies.
+
 ## Integrity Calculation Steps
 
 ### 1. Retrieve Transactions
