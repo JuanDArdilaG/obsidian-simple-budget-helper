@@ -384,6 +384,36 @@ export const TransactionFormImproved = ({
 				},
 			];
 		}
+
+		// Find the item associated with this transaction
+		let associatedItem: Item | undefined;
+		let itemType = ItemType.PRODUCT; // Default for scheduled items
+
+		if (transaction.itemID) {
+			// First check if it's in the scheduled items (from items prop)
+			const scheduledItem = items.find(
+				(i) => i.id.value === transaction.itemID?.value
+			);
+
+			if (scheduledItem) {
+				// For scheduled items, we can't get the regular Item, but we can determine type
+				// Scheduled items default to PRODUCT type
+				itemType = ItemType.PRODUCT;
+			} else {
+				// If not found in scheduled items, try to get it as a regular item
+				try {
+					associatedItem = await getRegularItemById.execute(
+						transaction.itemID
+					);
+					itemType = associatedItem?.type || ItemType.PRODUCT;
+				} catch (error) {
+					logger.debug("Could not find item with ID", {
+						itemId: transaction.itemID.value,
+					});
+				}
+			}
+		}
+
 		return [
 			{
 				id: "1",
@@ -397,14 +427,10 @@ export const TransactionFormImproved = ({
 					subCategories.find((s) =>
 						s.id.equalTo(transaction.subCategory)
 					)?.name.value || "",
-				itemType:
-					items.find((i) => i.id.value === transaction.itemID?.value)
-						?.type || ItemType.PRODUCT,
+				itemType: itemType,
 				brand: transaction.brand?.value || "",
 				provider: "",
-				itemId: transaction.itemID
-					? await getRegularItemById.execute(transaction.itemID)
-					: undefined,
+				item: associatedItem,
 			},
 		];
 	};
@@ -443,10 +469,15 @@ export const TransactionFormImproved = ({
 		getInitialTransactionItems().then((items) => {
 			setTransactionItems(items);
 		});
-	}, []);
+	}, [transaction, categories, subCategories, items, getRegularItemById]);
 	const [sharedProperties, setSharedProperties] = useState(
 		getInitialSharedProperties()
 	);
+
+	// Update shared properties when transaction changes
+	useEffect(() => {
+		setSharedProperties(getInitialSharedProperties());
+	}, [transaction]);
 	const [calculatorModalOpen, setCalculatorModalOpen] = useState(false);
 	const [calculatorExpression, setCalculatorExpression] = useState("");
 	const [calculatorError, setCalculatorError] = useState("");
