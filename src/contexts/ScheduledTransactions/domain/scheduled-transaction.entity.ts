@@ -185,7 +185,7 @@ export class ScheduledTransaction extends Entity<
 			RecurrencePattern.fromPrimitives({
 				startDate: new Date(itemV1.recurrence.startDate),
 				type: RecurrenceType.INFINITE,
-				frequency: itemV1.recurrence.frequency?.value,
+				frequency: itemV1.recurrence.frequency?.value ?? "1mo",
 			}),
 			NumberValueObject.zero(),
 			itemV1.info?.store,
