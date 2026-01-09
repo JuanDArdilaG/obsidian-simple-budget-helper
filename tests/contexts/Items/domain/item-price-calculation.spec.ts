@@ -1,5 +1,5 @@
+import { PriceValueObject } from "@juandardilag/value-objects";
 import { AccountID, AccountType } from "contexts/Accounts/domain";
-import { ItemPrice } from "contexts/Items/domain";
 import { ItemOperation } from "contexts/Shared/domain";
 import { describe, expect, it } from "vitest";
 import { buildTestItems } from "./buildTestItems";
@@ -9,7 +9,7 @@ describe("Item Price Calculations", () => {
 		it("should return positive price for income operations", () => {
 			const items = buildTestItems([
 				{
-					price: new ItemPrice(100),
+					price: new PriceValueObject(100),
 					operation: ItemOperation.income(),
 					account: AccountID.generate(),
 					toAccount: AccountID.generate(),
@@ -23,7 +23,7 @@ describe("Item Price Calculations", () => {
 		it("should return negative price for expense operations", () => {
 			const items = buildTestItems([
 				{
-					price: new ItemPrice(100),
+					price: new PriceValueObject(100),
 					operation: ItemOperation.expense(),
 					account: AccountID.generate(),
 					toAccount: AccountID.generate(),
@@ -37,7 +37,7 @@ describe("Item Price Calculations", () => {
 		it("should return zero for transfer operations", () => {
 			const items = buildTestItems([
 				{
-					price: new ItemPrice(100),
+					price: new PriceValueObject(100),
 					operation: ItemOperation.transfer(),
 					account: AccountID.generate(),
 					toAccount: AccountID.generate(),
@@ -61,7 +61,7 @@ describe("Item Price Calculations", () => {
 			it("should return realPrice for one-time income items", () => {
 				const items = buildTestItems([
 					{
-						price: new ItemPrice(100),
+						price: new PriceValueObject(100),
 						operation: ItemOperation.income(),
 						account: AccountID.generate(),
 						toAccount: AccountID.generate(),
@@ -78,7 +78,7 @@ describe("Item Price Calculations", () => {
 			it("should return realPrice for one-time expense items", () => {
 				const items = buildTestItems([
 					{
-						price: new ItemPrice(100),
+						price: new PriceValueObject(100),
 						operation: ItemOperation.expense(),
 						account: AccountID.generate(),
 						toAccount: AccountID.generate(),
@@ -95,7 +95,7 @@ describe("Item Price Calculations", () => {
 			it("should return zero for one-time transfer items with same account types", () => {
 				const items = buildTestItems([
 					{
-						price: new ItemPrice(100),
+						price: new PriceValueObject(100),
 						operation: ItemOperation.transfer(),
 						account: AccountID.generate(),
 						toAccount: AccountID.generate(),
@@ -115,7 +115,7 @@ describe("Item Price Calculations", () => {
 			it("should calculate monthly price for recurring income items", () => {
 				const items = buildTestItems([
 					{
-						price: new ItemPrice(100),
+						price: new PriceValueObject(100),
 						operation: ItemOperation.income(),
 						recurrence: { frequency: "1w" },
 						account: AccountID.generate(),
@@ -134,7 +134,7 @@ describe("Item Price Calculations", () => {
 			it("should calculate monthly price for recurring expense items", () => {
 				const items = buildTestItems([
 					{
-						price: new ItemPrice(100),
+						price: new PriceValueObject(100),
 						operation: ItemOperation.expense(),
 						recurrence: { frequency: "1w" },
 						account: AccountID.generate(),
@@ -153,7 +153,7 @@ describe("Item Price Calculations", () => {
 			it("should calculate monthly price for recurring transfer items with same account types", () => {
 				const items = buildTestItems([
 					{
-						price: new ItemPrice(100),
+						price: new PriceValueObject(100),
 						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1w" },
 						account: AccountID.generate(),
@@ -173,7 +173,7 @@ describe("Item Price Calculations", () => {
 			it("should calculate monthly price for monthly recurring transfer items with same account types", () => {
 				const items = buildTestItems([
 					{
-						price: new ItemPrice(100),
+						price: new PriceValueObject(100),
 						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1mo" },
 						account: AccountID.generate(),
@@ -193,7 +193,7 @@ describe("Item Price Calculations", () => {
 			it("should calculate monthly price for daily recurring transfer items with same account types", () => {
 				const items = buildTestItems([
 					{
-						price: new ItemPrice(10),
+						price: new PriceValueObject(10),
 						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1d" },
 						account: AccountID.generate(),
@@ -217,7 +217,7 @@ describe("Item Price Calculations", () => {
 				const toAccount = AccountID.generate();
 				const items = buildTestItems([
 					{
-						price: new ItemPrice(100),
+						price: new PriceValueObject(100),
 						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1mo" },
 						account: fromAccount,
@@ -248,7 +248,7 @@ describe("Item Price Calculations", () => {
 				const toAccount = AccountID.generate();
 				const items = buildTestItems([
 					{
-						price: new ItemPrice(100),
+						price: new PriceValueObject(100),
 						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1mo" },
 						account: fromAccount,

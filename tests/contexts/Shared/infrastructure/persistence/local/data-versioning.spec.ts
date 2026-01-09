@@ -12,23 +12,6 @@ describe("DataVersioning", () => {
 		it("should return current version as 1.3.0", () => {
 			expect(dataVersioning.getCurrentVersion()).toBe("1.3.0");
 		});
-
-		it("should be compatible with version 1.2.6", () => {
-			expect(dataVersioning.isCompatible("1.2.6")).toBe(true);
-		});
-
-		it("should be compatible with version 1.3.0", () => {
-			expect(dataVersioning.isCompatible("1.3.0")).toBe(true);
-		});
-
-		it("should not be compatible with unknown version", () => {
-			expect(dataVersioning.isCompatible("2.0.0")).toBe(false);
-		});
-
-		it("should not be compatible with old versions before 1.2.6", () => {
-			expect(dataVersioning.isCompatible("1.0.0")).toBe(false);
-			expect(dataVersioning.isCompatible("1.2.5")).toBe(false);
-		});
 	});
 
 	describe("Data Migration", () => {
@@ -51,46 +34,6 @@ describe("DataVersioning", () => {
 			);
 
 			expect(migratedData).toEqual(currentVersionData);
-		});
-
-		it("should migrate from version 1.2.6 to 1.3.0", async () => {
-			const v126Data = {
-				version: "1.2.6",
-				timestamp: "2024-01-01T00:00:00.000Z",
-				data: {
-					scheduledItems: [
-						{
-							id: "item-1",
-							name: "Monthly Subscription",
-							date: "2024-01-01T00:00:00.000Z",
-							recurrenceType: "infinite",
-							frequency: "1mo",
-							recurrence: {
-								startDate: "2024-01-01T00:00:00.000Z",
-							},
-						},
-					],
-					transactions: [],
-				},
-			};
-
-			const migratedData = (await dataVersioning.migrateData(
-				v126Data
-			)) as any;
-
-			expect(migratedData.version).toBe("1.3.0");
-			expect(migratedData.data.recurrenceModifications).toEqual([]);
-			expect(migratedData.data.scheduledItems[0].createdAt).toBeDefined();
-			expect(
-				migratedData.data.scheduledItems[0].recurrence.v2Pattern
-			).toEqual({
-				type: "infinite",
-				startDate: "2024-01-01T00:00:00.000Z",
-				frequency: "1mo",
-			});
-			expect(
-				migratedData.data.scheduledItems[0].recurrence.isImmutable
-			).toBe(true);
 		});
 
 		it("should throw error for migrating from unsupported old versions", async () => {

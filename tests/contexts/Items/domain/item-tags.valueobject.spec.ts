@@ -1,6 +1,8 @@
-import { ItemTag } from "contexts/Items/domain/item-tag.valueobject";
-import { ItemTags } from "contexts/Items/domain/item-tags.valueobject";
 import { describe, expect, it } from "vitest";
+import {
+	ItemTag,
+	ItemTags,
+} from "../../../../src/contexts/ScheduledTransactions/domain";
 
 describe("ItemTags", () => {
 	describe("constructor and validation", () => {

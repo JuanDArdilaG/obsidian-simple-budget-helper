@@ -1,5 +1,5 @@
-import { ItemRecurrenceFrequency } from "contexts/Items/domain";
 import { describe, expect, it } from "vitest";
+import { ItemRecurrenceFrequency } from "../../../../src/contexts/ScheduledTransactions/domain";
 
 describe("ItemRecurrenceFrequency", () => {
 	describe("toObject", () => {

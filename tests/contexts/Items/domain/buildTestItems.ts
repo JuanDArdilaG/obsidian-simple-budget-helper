@@ -1,19 +1,23 @@
-import { DateValueObject } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain";
-import { CategoryID } from "contexts/Categories/domain";
 import {
-	ItemName,
-	ItemPrice,
-	ItemRecurrenceFrequency,
-	ScheduledItem,
-} from "contexts/Items/domain";
+	DateValueObject,
+	PriceValueObject,
+	StringValueObject,
+} from "@juandardilag/value-objects";
+import { AccountID } from "contexts/Accounts/domain";
+import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
 import { ItemOperation } from "contexts/Shared/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
+import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
+import {
+	ItemRecurrenceFrequency,
+	ScheduledTransaction,
+	ScheduledTransactionDate,
+} from "../../../../src/contexts/ScheduledTransactions/domain";
+import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
 
 type ItemConfig = {
-	price?: ItemPrice;
+	price?: PriceValueObject;
 	account?: AccountID;
 	toAccount?: AccountID;
 	operation?: ItemOperation;
@@ -33,28 +37,34 @@ function makeSplits(account?: AccountID, amount: number = 100): PaymentSplit[] {
 
 export const buildTestItems = (
 	config: ItemConfig[] | number
-): ScheduledItem[] => {
-	let items: ScheduledItem[] = [];
+): ScheduledTransaction[] => {
+	let items: ScheduledTransaction[] = [];
 	if (typeof config === "number") {
 		for (let i = 0; i < config; i++) {
 			const fromSplits = makeSplits(AccountID.generate(), 100);
 			const toSplits: PaymentSplit[] = [];
-			const item = ScheduledItem.oneTime(
-				DateValueObject.createNowDate(),
-				new ItemName("test"),
+			const item = ScheduledTransaction.createOneTime(
+				new StringValueObject("test"),
+				ScheduledTransactionDate.createNowDate(),
 				fromSplits,
 				toSplits,
 				ItemOperation.expense(),
-				CategoryID.generate(),
-				SubCategoryID.generate()
+				new TransactionCategory(
+					Category.create(new CategoryName("Test")),
+					SubCategory.create(
+						CategoryID.generate(),
+						new SubCategoryName("Test")
+					)
+				)
 			);
 			items.push(item);
 		}
 	} else {
 		items = config.map(
 			({ price, operation, recurrence, account, toAccount }) => {
-				const startDate =
-					recurrence?.startDate ?? DateValueObject.createNowDate();
+				const startDate = recurrence?.startDate
+					? new ScheduledTransactionDate(recurrence.startDate)
+					: ScheduledTransactionDate.createNowDate();
 				const absPrice = price ? Math.abs(price.value) : 100;
 
 				// Determine the accounts to use for splits
@@ -74,25 +84,35 @@ export const buildTestItems = (
 						? makeSplits(AccountID.generate(), absPrice)
 						: toSplits;
 
-				let item = ScheduledItem.oneTime(
+				let item = ScheduledTransaction.createOneTime(
+					new StringValueObject("test"),
 					startDate,
-					new ItemName("test"),
 					fromSplits,
 					finalToSplits,
 					operation ?? ItemOperation.expense(),
-					CategoryID.generate(),
-					SubCategoryID.generate()
+					new TransactionCategory(
+						Category.create(new CategoryName("Test")),
+						SubCategory.create(
+							CategoryID.generate(),
+							new SubCategoryName("Test")
+						)
+					)
 				);
 				if (recurrence?.frequency) {
-					item = ScheduledItem.infinite(
+					item = ScheduledTransaction.createInfinite(
+						new StringValueObject("test"),
 						startDate,
-						new ItemName("test"),
+						new ItemRecurrenceFrequency(recurrence.frequency),
 						fromSplits,
 						finalToSplits,
 						operation ?? ItemOperation.expense(),
-						CategoryID.generate(),
-						SubCategoryID.generate(),
-						new ItemRecurrenceFrequency(recurrence.frequency)
+						new TransactionCategory(
+							Category.create(new CategoryName("Test")),
+							SubCategory.create(
+								CategoryID.generate(),
+								new SubCategoryName("Test")
+							)
+						)
 					);
 					if (recurrence.untilDate) {
 						const adjustedUntilDate =
@@ -105,16 +125,21 @@ export const buildTestItems = (
 								  ) // Add 1 day
 								: recurrence.untilDate;
 
-						item = ScheduledItem.untilDate(
-							new ItemName("test"),
+						item = ScheduledTransaction.createWithEndDate(
+							new StringValueObject("test"),
+							startDate,
+							new ItemRecurrenceFrequency(recurrence.frequency),
+							adjustedUntilDate,
 							fromSplits,
 							finalToSplits,
 							operation ?? ItemOperation.expense(),
-							CategoryID.generate(),
-							SubCategoryID.generate(),
-							new ItemRecurrenceFrequency(recurrence.frequency),
-							startDate,
-							adjustedUntilDate
+							new TransactionCategory(
+								Category.create(new CategoryName("Test")),
+								SubCategory.create(
+									CategoryID.generate(),
+									new SubCategoryName("Test")
+								)
+							)
 						);
 					}
 				}

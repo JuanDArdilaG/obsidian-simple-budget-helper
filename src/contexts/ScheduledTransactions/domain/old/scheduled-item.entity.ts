@@ -1,6 +1,5 @@
 import {
 	DateValueObject,
-	NumberValueObject,
 	PriceValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
@@ -374,35 +373,6 @@ export class ScheduledItem extends Entity<Nanoid, ScheduledItemPrimitives> {
 
 		this._recurrence.completeRecurrence(index);
 		this.updateTimestamp();
-	}
-
-	/**
-	 * Records a future recurrence in advance
-	 */
-	recordFutureRecurrence(index: number): void {
-		if (!this._recurrence) {
-			throw new InvalidArgumentError(
-				"ScheduledItem",
-				"recurrence",
-				"Item doesn't have recurrence"
-			);
-		}
-
-		this._recurrence.recordFutureRecurrence(index);
-		this.updateTimestamp();
-	}
-
-	/**
-	 * Gets all recurrences with their states for display/management
-	 */
-	getAllRecurrencesWithStates(): {
-		recurrence: ItemRecurrenceInfo;
-		n: NumberValueObject;
-	}[] {
-		if (!this._recurrence) {
-			return [];
-		}
-		return this._recurrence.getAllRecurrencesWithStates();
 	}
 
 	/**

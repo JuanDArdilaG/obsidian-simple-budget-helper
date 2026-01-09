@@ -23,6 +23,7 @@ import {
 	TransactionCategoryPrimitives,
 } from "../../Transactions/domain/transaction-category.vo";
 import { ItemRecurrenceFrequency } from "./item-recurrence-frequency.valueobject";
+import { ItemTag } from "./item-tag.valueobject";
 import { ItemTags } from "./item-tags.valueobject";
 import { ScheduledItem } from "./old/scheduled-item.entity";
 import {
@@ -335,6 +336,31 @@ export class ScheduledTransaction extends Entity<
 	updateTags(tags: ItemTags): void {
 		this._tags = tags;
 		this.updateTimestamp();
+	}
+
+	addTag(tag: ItemTag): void {
+		if (!this._tags) {
+			this._tags = ItemTags.empty();
+		}
+		this._tags = this._tags.add(tag);
+		this.updateTimestamp();
+	}
+
+	/**
+	 * Remove a tag from the item
+	 */
+	removeTag(tag: ItemTag): void {
+		if (!this._tags) return;
+		this._tags = this._tags.remove(tag);
+		this.updateTimestamp();
+	}
+
+	/**
+	 * Check if the item has a specific tag
+	 */
+	hasTag(tag: ItemTag): boolean {
+		if (!this._tags) return false;
+		return this._tags.has(tag);
 	}
 
 	clearTags(): void {

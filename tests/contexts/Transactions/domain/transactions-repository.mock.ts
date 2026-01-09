@@ -1,5 +1,5 @@
+import { StringValueObject } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
-import { ItemBrand } from "contexts/Items/domain";
 import {
 	ITransactionsRepository,
 	Transaction,
@@ -16,11 +16,7 @@ export class TransactionsRepositoryMock
 		throw new Error("Method not implemented.");
 	}
 
-	async findAllUniqueItemBrands(): Promise<ItemBrand[]> {
-		return [];
-	}
-
-	async findAllUniqueItemStores(): Promise<ItemBrand[]> {
+	async findAllUniqueItemStores(): Promise<StringValueObject[]> {
 		return [];
 	}
 

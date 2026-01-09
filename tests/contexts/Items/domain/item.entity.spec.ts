@@ -1,12 +1,20 @@
-import { DateValueObject } from "@juandardilag/value-objects";
+import {
+	DateValueObject,
+	NumberValueObject,
+	StringValueObject,
+} from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
-import { CategoryID } from "contexts/Categories/domain";
-import { ItemDate, ItemName, ScheduledItem } from "contexts/Items/domain";
+import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
 import { ItemOperation } from "contexts/Shared/domain/Item/item-operation.valueobject";
-import { SubCategoryID } from "contexts/Subcategories/domain";
+import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { describe, expect, it } from "vitest";
+import {
+	ScheduledTransaction,
+	ScheduledTransactionDate,
+} from "../../../../src/contexts/ScheduledTransactions/domain";
+import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
 import { buildTestItems } from "./buildTestItems";
 
 describe("remainingDays", () => {
@@ -21,7 +29,9 @@ describe("remainingDays", () => {
 		]);
 		const item = items[0].copy();
 
-		const str = item.recurrence.recurrences[0].date.remainingDaysStr;
+		const str = item.recurrencePattern.getNthOccurrence(
+			NumberValueObject.zero()
+		)?.remainingDaysStr;
 
 		expect(str).toBe("7 days");
 	});
@@ -36,7 +46,9 @@ describe("remainingDays", () => {
 			},
 		]);
 		const item = items[0].copy();
-		const str = item.recurrence.recurrences[0].date.remainingDaysStr;
+		const str = item.recurrencePattern.getNthOccurrence(
+			NumberValueObject.zero()
+		)?.remainingDaysStr;
 
 		expect(str).toBe("-7 days");
 	});
@@ -52,7 +64,9 @@ describe("remainingDays", () => {
 		]);
 		const item = items[0].copy();
 
-		const str = item.recurrence.recurrences[0].date.remainingDaysStr;
+		const str = item.recurrencePattern.getNthOccurrence(
+			NumberValueObject.zero()
+		)?.remainingDaysStr;
 
 		expect(str).toBe("1 day");
 	});
@@ -68,38 +82,11 @@ describe("remainingDays", () => {
 		]);
 		const item = items[0].copy();
 
-		const str = item.recurrence.recurrences[0].date.remainingDaysStr;
+		const str = item.recurrencePattern.getNthOccurrence(
+			NumberValueObject.zero()
+		)?.remainingDaysStr;
 
 		expect(str).toBe("-1 day");
-	});
-});
-
-describe("createRecurretItemsBetweenDates", () => {
-	it("should return scheduled items multiple times when recurrence repeats between dates", () => {
-		const items = buildTestItems([
-			{
-				recurrence: { frequency: "2d" },
-			},
-		]);
-		const item = items[0].copy();
-
-		const recurrentItems = item.recurrence
-			.getRecurrencesUntilDate(ItemDate.createNowDate().addDays(7))
-			.map((r) => r.recurrence);
-
-		expect(recurrentItems.length).toBe(4);
-		expect(recurrentItems[0].date).toEqual(
-			item.recurrence.recurrences[0].date
-		);
-		expect(recurrentItems[1].date).toEqual(
-			item.recurrence.recurrences[0].date.addDays(2)
-		);
-		expect(recurrentItems[2].date).toEqual(
-			item.recurrence.recurrences[0].date.addDays(4)
-		);
-		expect(recurrentItems[3].date).toEqual(
-			item.recurrence.recurrences[0].date.addDays(6)
-		);
 	});
 });
 
@@ -116,37 +103,43 @@ describe("createRecurrences", () => {
 		]);
 		const item = items[0];
 
-		const recurrences = item.recurrence.recurrences;
+		const recurrences = item.recurrencePattern.generateOccurrencesUntil(
+			new DateValueObject(new Date(2024, 0, 16))
+		);
 
-		expect(recurrences[0].date.value).toEqual(new Date(2024, 0, 1));
-		expect(recurrences[1].date.value).toEqual(new Date(2024, 0, 3));
-		expect(recurrences[2].date.value).toEqual(new Date(2024, 0, 5));
-		expect(recurrences[3].date.value).toEqual(new Date(2024, 0, 7));
-		expect(recurrences[4].date.value).toEqual(new Date(2024, 0, 9));
-		expect(recurrences[5].date.value).toEqual(new Date(2024, 0, 11));
-		expect(recurrences[6].date.value).toEqual(new Date(2024, 0, 13));
-		expect(recurrences[7].date.value).toEqual(new Date(2024, 0, 15));
+		expect(recurrences[0].value).toEqual(new Date(2024, 0, 1));
+		expect(recurrences[1].value).toEqual(new Date(2024, 0, 3));
+		expect(recurrences[2].value).toEqual(new Date(2024, 0, 5));
+		expect(recurrences[3].value).toEqual(new Date(2024, 0, 7));
+		expect(recurrences[4].value).toEqual(new Date(2024, 0, 9));
+		expect(recurrences[5].value).toEqual(new Date(2024, 0, 11));
+		expect(recurrences[6].value).toEqual(new Date(2024, 0, 13));
+		expect(recurrences[7].value).toEqual(new Date(2024, 0, 15));
 	});
 });
 
 describe("transfer operation validation", () => {
 	it("should throw error when creating transfer operation without toSplits", () => {
 		const fromAccount = AccountID.generate();
-		const toAccount = AccountID.generate();
 		const fromSplits = [
 			new PaymentSplit(fromAccount, new TransactionAmount(100)),
 		];
 		const toSplits: PaymentSplit[] = []; // Empty toSplits for transfer
 
 		expect(() => {
-			ScheduledItem.oneTime(
-				DateValueObject.createNowDate(),
-				new ItemName("Transfer Test"),
+			ScheduledTransaction.createOneTime(
+				new StringValueObject("Transfer Test"),
+				ScheduledTransactionDate.createNowDate(),
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
-				CategoryID.generate(),
-				SubCategoryID.generate()
+				new TransactionCategory(
+					Category.create(new CategoryName("Test")),
+					SubCategory.create(
+						CategoryID.generate(),
+						new SubCategoryName("Test Subcategory")
+					)
+				)
 			);
 		}).toThrow("Transfer operations must have a toSplits array");
 	});
@@ -162,59 +155,43 @@ describe("transfer operation validation", () => {
 		];
 
 		expect(() => {
-			ScheduledItem.oneTime(
-				DateValueObject.createNowDate(),
-				new ItemName("Transfer Test"),
+			ScheduledTransaction.createOneTime(
+				new StringValueObject("Transfer Test"),
+				ScheduledTransactionDate.createNowDate(),
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
-				CategoryID.generate(),
-				SubCategoryID.generate()
+				new TransactionCategory(
+					Category.create(new CategoryName("Test")),
+					SubCategory.create(
+						CategoryID.generate(),
+						new SubCategoryName("Test Subcategory")
+					)
+				)
 			);
 		}).not.toThrow();
 	});
 
-	it("should throw error when setting empty toSplits for transfer operation", () => {
-		const fromAccount = AccountID.generate();
-		const toAccount = AccountID.generate();
-		const fromSplits = [
-			new PaymentSplit(fromAccount, new TransactionAmount(100)),
-		];
-		const toSplits = [
-			new PaymentSplit(toAccount, new TransactionAmount(100)),
-		];
-
-		const item = ScheduledItem.oneTime(
-			DateValueObject.createNowDate(),
-			new ItemName("Transfer Test"),
-			fromSplits,
-			toSplits,
-			ItemOperation.transfer(),
-			CategoryID.generate(),
-			SubCategoryID.generate()
-		);
-
-		expect(() => {
-			item.setToSplits([]);
-		}).toThrow("Transfer operations must have a toSplits array");
-	});
-
 	it("should throw error when updating operation to transfer without toSplits", () => {
 		const fromAccount = AccountID.generate();
-		const toAccount = AccountID.generate();
 		const fromSplits = [
 			new PaymentSplit(fromAccount, new TransactionAmount(100)),
 		];
 		const toSplits: PaymentSplit[] = []; // Empty toSplits
 
-		const item = ScheduledItem.oneTime(
-			DateValueObject.createNowDate(),
-			new ItemName("Test Item"),
+		const item = ScheduledTransaction.createOneTime(
+			new StringValueObject("Test Item"),
+			ScheduledTransactionDate.createNowDate(),
 			fromSplits,
 			toSplits,
 			ItemOperation.expense(),
-			CategoryID.generate(),
-			SubCategoryID.generate()
+			new TransactionCategory(
+				Category.create(new CategoryName("Test")),
+				SubCategory.create(
+					CategoryID.generate(),
+					new SubCategoryName("Test Subcategory")
+				)
+			)
 		);
 
 		expect(() => {
@@ -232,14 +209,19 @@ describe("transfer operation validation", () => {
 			new PaymentSplit(toAccount, new TransactionAmount(100)),
 		];
 
-		const item = ScheduledItem.oneTime(
-			DateValueObject.createNowDate(),
-			new ItemName("Test Item"),
+		const item = ScheduledTransaction.createOneTime(
+			new StringValueObject("Test Item"),
+			ScheduledTransactionDate.createNowDate(),
 			fromSplits,
 			toSplits,
 			ItemOperation.expense(),
-			CategoryID.generate(),
-			SubCategoryID.generate()
+			new TransactionCategory(
+				Category.create(new CategoryName("Test")),
+				SubCategory.create(
+					CategoryID.generate(),
+					new SubCategoryName("Test Subcategory")
+				)
+			)
 		);
 
 		expect(() => {

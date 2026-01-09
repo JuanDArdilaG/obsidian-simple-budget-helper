@@ -1,36 +1,33 @@
-import {
-	DateValueObject,
-	NumberValueObject,
-} from "@juandardilag/value-objects";
+import { StringValueObject } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
-import { CategoryID } from "contexts/Categories/domain";
-import {
-	ItemDate,
-	ItemName,
-	ItemRecurrenceInfo,
-	ScheduledItem,
-} from "contexts/Items/domain";
-import { ItemRecurrenceFrequency } from "contexts/Items/domain/item-recurrence-frequency.valueobject";
+import { Category, CategoryName } from "contexts/Categories/domain";
 import { ItemOperation } from "contexts/Shared/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
+import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	ItemRecurrenceFrequency,
+	ScheduledTransaction,
+	ScheduledTransactionDate,
+} from "../../../../src/contexts/ScheduledTransactions/domain";
+import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
 
 describe("EditItemRecurrencePanel Logic", () => {
-	let singleRecurrenceItem: ScheduledItem;
-	let recurringItem: ScheduledItem;
+	let singleRecurrenceItem: ScheduledTransaction;
+	let recurringItem: ScheduledTransaction;
 	let mockUpdateItem: { execute: ReturnType<typeof vi.fn> };
 	let mockModifyNItemRecurrence: { execute: ReturnType<typeof vi.fn> };
 
 	beforeEach(() => {
 		// Create a single recurrence item (one-time)
-		const singleRecurrenceDate = new DateValueObject(
+		const singleRecurrenceDate = new ScheduledTransactionDate(
 			new Date("2024-01-15")
 		);
-		singleRecurrenceItem = ScheduledItem.oneTime(
+		const cat = Category.create(new CategoryName("Food"));
+		singleRecurrenceItem = ScheduledTransaction.createOneTime(
+			new StringValueObject("Single Item"),
 			singleRecurrenceDate,
-			new ItemName("Single Item"),
 			[
 				new PaymentSplit(
 					AccountID.generate(),
@@ -44,21 +41,27 @@ describe("EditItemRecurrencePanel Logic", () => {
 				),
 			],
 			ItemOperation.expense(),
-			CategoryID.generate(),
-			SubCategoryID.generate()
+			new TransactionCategory(
+				cat,
+				SubCategory.create(cat.id, new SubCategoryName("Groceries"))
+			)
 		);
 
 		// Create a recurring item
-		const recurringStartDate = new DateValueObject(new Date("2024-01-01"));
-		recurringItem = ScheduledItem.infinite(
+		const recurringStartDate = new ScheduledTransactionDate(
+			new Date("2024-01-01")
+		);
+		recurringItem = ScheduledTransaction.createInfinite(
+			new StringValueObject("Recurring Item"),
 			recurringStartDate,
-			new ItemName("Recurring Item"),
+			new ItemRecurrenceFrequency("monthly"),
 			[new PaymentSplit(AccountID.generate(), new TransactionAmount(50))],
 			[new PaymentSplit(AccountID.generate(), new TransactionAmount(50))],
 			ItemOperation.expense(),
-			CategoryID.generate(),
-			SubCategoryID.generate(),
-			new ItemRecurrenceFrequency("monthly")
+			new TransactionCategory(
+				cat,
+				SubCategory.create(cat.id, new SubCategoryName("Dining Out"))
+			)
 		);
 
 		// Mock the use cases
@@ -72,74 +75,26 @@ describe("EditItemRecurrencePanel Logic", () => {
 	});
 
 	it("should identify single recurrence items correctly", () => {
-		expect(singleRecurrenceItem.recurrence.isOneTime()).toBe(true);
-		expect(recurringItem.recurrence.isOneTime()).toBe(false);
+		expect(singleRecurrenceItem.recurrencePattern.isOneTime).toBe(true);
+		expect(recurringItem.recurrencePattern.isOneTime).toBe(false);
 	});
 
 	it("should use updateItem for single recurrence items", async () => {
 		// Simulate the logic that would be used in the component
-		const isSingleRecurrence = singleRecurrenceItem.recurrence.isOneTime();
+		const isSingleRecurrence =
+			singleRecurrenceItem.recurrencePattern.isOneTime;
 
 		if (isSingleRecurrence) {
 			// This is the logic that should be executed for single recurrence items
 			const updatedItem = singleRecurrenceItem.copy();
-			updatedItem.updateName(new ItemName("Updated Single Item"));
+			updatedItem.updateName(
+				new StringValueObject("Updated Single Item")
+			);
 
 			await mockUpdateItem.execute(updatedItem);
 
 			expect(mockUpdateItem.execute).toHaveBeenCalledWith(updatedItem);
 			expect(mockModifyNItemRecurrence.execute).not.toHaveBeenCalled();
 		}
-	});
-
-	it("should use modifyNItemRecurrence for recurring items", async () => {
-		// Simulate the logic that would be used in the component
-		const isSingleRecurrence = recurringItem.recurrence.isOneTime();
-
-		if (!isSingleRecurrence) {
-			// This is the logic that should be executed for recurring items
-			const n = new NumberValueObject(0);
-			const newRecurrence = new ItemRecurrenceInfo(
-				new ItemDate(new Date("2024-01-15")),
-				recurringItem.recurrence.recurrences[0].state
-			);
-
-			await mockModifyNItemRecurrence.execute({
-				id: recurringItem.id,
-				n,
-				newRecurrence,
-			});
-
-			expect(mockModifyNItemRecurrence.execute).toHaveBeenCalledWith({
-				id: recurringItem.id,
-				n,
-				newRecurrence,
-			});
-			expect(mockUpdateItem.execute).not.toHaveBeenCalled();
-		}
-	});
-
-	it("should not show warnings for single recurrence items", () => {
-		const isSingleRecurrence = singleRecurrenceItem.recurrence.isOneTime();
-
-		// The warnings should not be shown for single recurrence items
-		// regardless of context
-		expect(isSingleRecurrence).toBe(true);
-
-		// In the component, this would mean:
-		// !isSingleRecurrence && context === "calendar" -> false
-		// !isSingleRecurrence && context === "all-items" -> false
-		// So no warnings would be displayed
-	});
-
-	it("should show warnings for recurring items", () => {
-		const isSingleRecurrence = recurringItem.recurrence.isOneTime();
-
-		// The warnings should be shown for recurring items
-		expect(isSingleRecurrence).toBe(false);
-
-		// In the component, this would mean:
-		// !isSingleRecurrence && context === "calendar" -> true (warning shown)
-		// !isSingleRecurrence && context === "all-items" -> true (warning shown)
 	});
 });

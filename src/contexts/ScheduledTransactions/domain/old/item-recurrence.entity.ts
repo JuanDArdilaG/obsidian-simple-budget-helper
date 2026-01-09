@@ -399,21 +399,6 @@ export class ItemRecurrence {
 	}
 
 	/**
-	 * Records a future recurrence in advance
-	 */
-	recordFutureRecurrence(index: number): void {
-		if (index < 0 || index >= this._recurrences.length) {
-			throw new Error(
-				`Invalid recurrence index: ${index}. Valid range: 0-${
-					this._recurrences.length - 1
-				}`
-			);
-		}
-
-		this._recurrences[index].updateState(ERecurrenceState.COMPLETED);
-	}
-
-	/**
 	 * Gets the count of active (non-deleted) recurrences
 	 */
 	get activeRecurrenceCount(): number {
@@ -501,24 +486,6 @@ export class ItemRecurrence {
 			);
 
 		return filteredRecurrences;
-	}
-
-	/**
-	 * Gets all recurrences with their states for display/management
-	 */
-	getAllRecurrencesWithStates(): {
-		recurrence: ItemRecurrenceInfo;
-		n: NumberValueObject;
-	}[] {
-		return this._recurrences.map((recurrence, i) => ({
-			recurrence: new ItemRecurrenceInfo(
-				recurrence.date,
-				recurrence.state,
-				recurrence.fromSplits,
-				recurrence.toSplits
-			),
-			n: new NumberValueObject(i),
-		}));
 	}
 
 	isOneTime(): boolean {

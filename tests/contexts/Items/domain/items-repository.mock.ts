@@ -1,29 +1,31 @@
 import { CategoryID } from "contexts/Categories/domain";
-import {
-	IScheduledItemsRepository,
-	ItemBrand,
-	ItemID,
-	ItemStore,
-	ScheduledItem,
-	ScheduledItemPrimitives,
-} from "contexts/Items/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
+import {
+	IScheduledTransactionsRepository,
+	ScheduledTransaction,
+	ScheduledTransactionPrimitives,
+} from "../../../../src/contexts/ScheduledTransactions/domain";
+import { Nanoid } from "../../../../src/contexts/Shared/domain";
+import { Store } from "../../../../src/contexts/Stores/domain";
 import { RepositoryMock } from "../../Shared/domain/repository.mock";
 
 export class ItemsRepositoryMock
-	extends RepositoryMock<ItemID, ScheduledItem, ScheduledItemPrimitives>
-	implements IScheduledItemsRepository
+	extends RepositoryMock<
+		Nanoid,
+		ScheduledTransaction,
+		ScheduledTransactionPrimitives
+	>
+	implements IScheduledTransactionsRepository
 {
-	findAllUniqueItemBrands(): Promise<ItemBrand[]> {
+	findAllUniqueItemStores(): Promise<Store[]> {
 		throw new Error("Method not implemented.");
 	}
-	findAllUniqueItemStores(): Promise<ItemStore[]> {
+	findByCategory(category: CategoryID): Promise<ScheduledTransaction[]> {
 		throw new Error("Method not implemented.");
 	}
-	findByCategory(category: CategoryID): Promise<ScheduledItem[]> {
-		throw new Error("Method not implemented.");
-	}
-	findBySubCategory(subCategory: SubCategoryID): Promise<ScheduledItem[]> {
+	findBySubCategory(
+		subCategory: SubCategoryID
+	): Promise<ScheduledTransaction[]> {
 		throw new Error("Method not implemented.");
 	}
 }

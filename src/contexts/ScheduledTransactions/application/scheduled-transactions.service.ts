@@ -2,6 +2,7 @@ import { NumberValueObject } from "@juandardilag/value-objects";
 import { Category, CategoryID } from "contexts/Categories/domain";
 import { Service } from "contexts/Shared/application/service.abstract";
 import { SubCategory, SubCategoryID } from "contexts/Subcategories/domain";
+import { IAccountsService } from "../../Accounts/domain";
 import { Nanoid } from "../../Shared/domain";
 import {
 	IRecurrenceModificationsRepository,
@@ -22,7 +23,8 @@ export class ScheduledTransactionsService
 {
 	constructor(
 		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository,
-		private readonly _recurrenceModificationsRepository: IRecurrenceModificationsRepository
+		private readonly _recurrenceModificationsRepository: IRecurrenceModificationsRepository,
+		private readonly _accountsService: IAccountsService
 	) {
 		super("ScheduledTransaction", _scheduledTransactionsRepository);
 	}
@@ -119,10 +121,31 @@ export class ScheduledTransactionsService
 	}
 
 	async getMonthlyPriceEstimate(id: Nanoid): Promise<NumberValueObject> {
-		const item = await this.getByID(id);
-		const frequencyFactor = item.getMonthlyFrequencyFactor();
-		const totalAmount = item.fromAmount.value + item.toAmount.value;
+		const scheduledTransaction = await this.getByID(id);
+		const fromAccount = await this._accountsService.getByID(
+			scheduledTransaction.fromSplits[0].accountId
+		);
+		const toAccount =
+			scheduledTransaction.toSplits.length > 0
+				? await this._accountsService.getByID(
+						scheduledTransaction.toSplits[0].accountId
+				  )
+				: null;
+		if (toAccount && toAccount.type.equalTo(fromAccount.type)) {
+			return new NumberValueObject(0);
+		}
+		const frequencyFactor =
+			scheduledTransaction.getMonthlyFrequencyFactor();
 
-		return new NumberValueObject(totalAmount * frequencyFactor.value);
+		const absValue = new NumberValueObject(
+			scheduledTransaction.fromAmount.value * frequencyFactor.value
+		);
+		if (
+			(toAccount && toAccount.type.isLiability()) ||
+			scheduledTransaction.operation.type.isExpense()
+		) {
+			return absValue.times(new NumberValueObject(-1));
+		}
+		return absValue;
 	}
 }

@@ -1,21 +1,29 @@
-import { DateValueObject } from "@juandardilag/value-objects";
+import { StringValueObject } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
-import { CategoryID } from "contexts/Categories/domain";
-import { ItemName } from "contexts/Items/domain/item-name.valueobject";
-import { ItemRecurrenceFrequency } from "contexts/Items/domain/item-recurrence-frequency.valueobject";
-import { ItemTag } from "contexts/Items/domain/item-tag.valueobject";
-import { ItemTags } from "contexts/Items/domain/item-tags.valueobject";
-import { ScheduledItem } from "contexts/Items/domain/scheduled-item.entity";
-import { ItemOperation } from "contexts/Shared/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
+import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
+import { ItemOperation, Nanoid } from "contexts/Shared/domain";
+import {
+	SubCategory,
+	SubCategoryID,
+	SubCategoryName,
+} from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { describe, expect, it } from "vitest";
-import { ItemID } from "../../../../src/contexts/Items/domain";
+import {
+	ItemRecurrenceFrequency,
+	ItemTag,
+	ItemTags,
+	RecurrenceType,
+	ScheduledTransaction,
+	ScheduledTransactionDate,
+	ScheduledTransactionPrimitives,
+} from "../../../../src/contexts/ScheduledTransactions/domain";
+import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
 
-describe("ScheduledItem Tags", () => {
+describe("ScheduledTransaction Tags", () => {
 	const createTestItem = (tags: ItemTags = ItemTags.empty()) => {
-		const startDate = new DateValueObject(new Date(2024, 0, 1));
+		const startDate = new ScheduledTransactionDate(new Date(2024, 0, 1));
 		const frequency = new ItemRecurrenceFrequency("monthly");
 		const accountId = AccountID.generate();
 		const fromSplits = [
@@ -23,15 +31,21 @@ describe("ScheduledItem Tags", () => {
 		];
 		const toSplits: PaymentSplit[] = [];
 
-		return ScheduledItem.infinite(
+		return ScheduledTransaction.createInfinite(
+			new StringValueObject("Test Item"),
 			startDate,
-			new ItemName("Test Item"),
+			frequency,
 			fromSplits,
 			toSplits,
 			ItemOperation.income(),
-			CategoryID.generate(),
-			SubCategoryID.generate(),
-			frequency,
+			new TransactionCategory(
+				Category.create(new CategoryName("Test")),
+				SubCategory.create(
+					CategoryID.generate(),
+					new SubCategoryName("Test Subcategory")
+				)
+			),
+			undefined,
 			tags
 		);
 	};
@@ -88,7 +102,7 @@ describe("ScheduledItem Tags", () => {
 			const item = createTestItem();
 			const newTags = ItemTags.fromStrings(["new", "tags"]);
 
-			item.setTags(newTags);
+			item.updateTags(newTags);
 
 			expect(item.tags?.count).toBe(2);
 			expect(item.tags?.has(new ItemTag("new"))).toBe(true);
@@ -113,45 +127,45 @@ describe("ScheduledItem Tags", () => {
 
 			const primitives = item.toPrimitives();
 
-			expect(primitives.tags).toEqual({
-				"0": "work",
-				"1": "important",
-				"2": "urgent",
-			});
+			expect(primitives.tags).toEqual(["work", "important", "urgent"]);
 		});
 
 		it("should deserialize tags correctly", () => {
-			const tagsRecord = {
-				"0": "work",
-				"1": "important",
-				"2": "urgent",
-			};
+			const tags = ["work", "important", "urgent"];
 
-			const primitives = {
-				id: ItemID.generate().value,
+			const primitives: ScheduledTransactionPrimitives = {
+				id: Nanoid.generate().value,
 				name: "Test Item",
 				fromSplits: [],
 				toSplits: [],
 				operation: {
 					type: "income" as const,
-					account: AccountID.generate().value,
-					toAccount: undefined,
 				},
-				category: CategoryID.generate().value,
-				subCategory: SubCategoryID.generate().value,
-				brand: "",
+				category: {
+					category: {
+						id: CategoryID.generate().value,
+						name: "Test",
+						updatedAt: new Date().toISOString(),
+					},
+					subCategory: {
+						id: SubCategoryID.generate().value,
+						name: "Test Subcategory",
+						category: CategoryID.generate().value,
+						updatedAt: new Date().toISOString(),
+					},
+				},
 				store: "",
-				recurrence: {
+				recurrencePattern: {
+					type: RecurrenceType.ONE_TIME,
 					startDate: new Date(2024, 0, 1),
-					recurrences: [],
 					frequency: undefined,
-					untilDate: undefined,
 				},
 				updatedAt: new Date().toISOString(),
-				tags: tagsRecord,
+				tags: tags,
+				nextOccurrenceIndex: 0,
 			};
 
-			const item = ScheduledItem.fromPrimitives(primitives);
+			const item = ScheduledTransaction.fromPrimitives(primitives);
 
 			expect(item.tags?.count).toBe(3);
 			expect(item.tags?.has(new ItemTag("work"))).toBe(true);
@@ -164,35 +178,42 @@ describe("ScheduledItem Tags", () => {
 
 			const primitives = item.toPrimitives();
 
-			expect(primitives.tags).toEqual({});
+			expect(primitives.tags).toEqual([]);
 		});
 
 		it("should handle empty tags in deserialization", () => {
-			const primitives = {
-				id: ItemID.generate().value,
+			const primitives: ScheduledTransactionPrimitives = {
+				id: Nanoid.generate().value,
 				name: "Test Item",
 				fromSplits: [],
 				toSplits: [],
 				operation: {
 					type: "income" as const,
-					account: AccountID.generate().value,
-					toAccount: undefined,
 				},
-				category: CategoryID.generate().value,
-				subCategory: SubCategoryID.generate().value,
-				brand: "",
+				category: {
+					category: {
+						id: CategoryID.generate().value,
+						name: "Test",
+						updatedAt: new Date().toISOString(),
+					},
+					subCategory: {
+						id: SubCategoryID.generate().value,
+						name: "Test Subcategory",
+						category: CategoryID.generate().value,
+						updatedAt: new Date().toISOString(),
+					},
+				},
 				store: "",
-				recurrence: {
+				recurrencePattern: {
+					type: RecurrenceType.ONE_TIME,
 					startDate: new Date(2024, 0, 1),
-					recurrences: [],
-					frequency: undefined,
-					untilDate: undefined,
 				},
 				updatedAt: new Date().toISOString(),
-				tags: {},
+				tags: [],
+				nextOccurrenceIndex: 0,
 			};
 
-			const item = ScheduledItem.fromPrimitives(primitives);
+			const item = ScheduledTransaction.fromPrimitives(primitives);
 
 			expect(item.tags?.isEmpty).toBe(true);
 		});
