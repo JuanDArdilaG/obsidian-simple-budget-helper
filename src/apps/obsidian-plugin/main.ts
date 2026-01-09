@@ -133,7 +133,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		// Initialize local database
 		await this.db.init(this.settings.dbId);
 
-		// await this.migrateScheduledTransactionsFromV1toV2();
+		await this.migrateScheduledTransactionsFromV1toV2();
 
 		const statusBarItem = this.addStatusBarItem();
 		this.registerView(
