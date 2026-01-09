@@ -6,10 +6,10 @@ import {
 	CategoriesContext,
 	getAppContextDefault,
 	getCategoriesContextDefault,
-	getItemsContextDefault,
 	getTransactionsContextValues,
 	ScheduledTransactionsContext,
 	TransactionsContext,
+	useItemsContextDefault,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { AwilixContainer } from "awilix";
 import { PropsWithChildren } from "react";
@@ -33,7 +33,7 @@ export const AppProviders = ({
 				value={getAppContextDefault(container, plugin)}
 			>
 				<ScheduledTransactionsContext.Provider
-					value={getItemsContextDefault(container)}
+					value={useItemsContextDefault(container)}
 				>
 					<AccountsContext.Provider
 						value={getAccountsContextValues(container)}

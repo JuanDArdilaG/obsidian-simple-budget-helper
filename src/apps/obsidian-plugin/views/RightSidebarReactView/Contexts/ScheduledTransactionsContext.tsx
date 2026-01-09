@@ -53,7 +53,7 @@ export const ScheduledTransactionsContext =
 		updateScheduledTransactions: () => {},
 	});
 
-export const getItemsContextDefault = (
+export const useItemsContextDefault = (
 	container: AwilixContainer
 ): ScheduledTransactionsContextType => {
 	const getAllScheduledTransactionsUseCase = container.resolve(

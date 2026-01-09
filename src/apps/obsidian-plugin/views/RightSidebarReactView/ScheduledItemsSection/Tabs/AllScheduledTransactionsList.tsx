@@ -253,11 +253,11 @@ export const AllScheduledTransactionsList = ({
 		// Filter transfer items that are finite recurrent and Asset to Liability
 		const finiteAssetToLiabilityTransfers = transferItems.filter(
 			(item: ScheduledTransaction) => {
-				const isFinite = finiteItems.some(
+				const checkIfIsFinite = finiteItems.some(
 					(finiteItem: ScheduledTransaction) =>
 						finiteItem.id.equalTo(item.id)
 				);
-				if (!isFinite) return false;
+				if (!checkIfIsFinite) return false;
 
 				const account = getAccountByID(item.fromSplits[0]?.accountId);
 				const toAccount = getAccountByID(item.toSplits[0]?.accountId);

@@ -23,10 +23,11 @@ export class NextPendingOccurrenceUseCase
 				scheduledTransactionID
 			);
 
-		const nextOccurrence = this._scheduledTransactionsService.getOccurrence(
-			scheduledTransactionID,
-			scheduledTransaction.nextOccurrenceIndex
-		);
+		const nextOccurrence =
+			await this._scheduledTransactionsService.getOccurrence(
+				scheduledTransactionID,
+				scheduledTransaction.nextOccurrenceIndex
+			);
 
 		if (!nextOccurrence) {
 			this.#logger.debug(
