@@ -108,7 +108,7 @@ bump type="patch":
     echo "✅ Version bumped to $new_version in manifest.json"
 
 alias de := deploy
-deploy type="patch": build check-git (bump type)
+deploy type="patch": check-git build test (bump type)
     #!/usr/bin/env bash
     # Get the new version from manifest.json
     new_version=$(node -p "require('./manifest.json').version")
