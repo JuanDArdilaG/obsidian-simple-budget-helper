@@ -1,6 +1,6 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
-import { DeleteItemRecurrenceUseCase } from "contexts/Items/application/delete-item-recurrence.usecase";
 import { ItemID } from "contexts/Items/domain";
+import { DeleteItemRecurrenceUseCase } from "contexts/ScheduledTransactions/application/delete-scheduled-transaction-recurrence.usecase";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("DeleteItemRecurrenceUseCase", () => {

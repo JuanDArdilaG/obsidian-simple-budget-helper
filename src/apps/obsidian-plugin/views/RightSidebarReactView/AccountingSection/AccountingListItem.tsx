@@ -271,15 +271,6 @@ export const AccountingListItem = ({
 										color: "var(--text-muted)",
 									}}
 								>
-									<b>Brand: </b>
-									{transaction.brand ?? "-"}
-								</Typography>
-								<Typography
-									variant="caption"
-									style={{
-										color: "var(--text-muted)",
-									}}
-								>
 									<b>Store: </b>
 									{transaction.store ?? "-"}
 								</Typography>

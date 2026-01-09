@@ -1,7 +1,7 @@
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
-import { IScheduledItemsRepository } from "contexts/Items/domain";
-import { ItemID } from "contexts/Items/domain/item-id.valueobject";
 import { EntityNotFoundError } from "contexts/Shared/domain/errors/not-found.error";
+import { IScheduledTransactionsService } from "../../ScheduledTransactions/domain";
+import { Nanoid } from "../../Shared/domain";
 import { CommandUseCase } from "../../Shared/domain/command-use-case.interface";
 import { Logger } from "../../Shared/infrastructure/logger";
 import { ITransactionsService } from "../domain";
@@ -10,8 +10,8 @@ import { TransactionAmount } from "../domain/transaction-amount.valueobject";
 import { TransactionDate } from "../domain/transaction-date.valueobject";
 import { Transaction } from "../domain/transaction.entity";
 
-export type RecordItemUseCaseInput = {
-	itemID: ItemID;
+export type RecordScheduledItemUseCaseInput = {
+	id: Nanoid;
 	date?: TransactionDate;
 	amount?: TransactionAmount;
 	account?: AccountID;
@@ -20,43 +20,32 @@ export type RecordItemUseCaseInput = {
 };
 
 export class RecordItemUseCase
-	implements CommandUseCase<RecordItemUseCaseInput>
+	implements CommandUseCase<RecordScheduledItemUseCaseInput>
 {
 	readonly #logger = new Logger("RecordItemUseCase");
 	constructor(
 		private readonly _transactionsService: ITransactionsService,
-		private readonly _scheduledItemsRepository: IScheduledItemsRepository
+		private readonly _scheduledTransactionsService: IScheduledTransactionsService
 	) {}
 
 	async execute({
-		itemID,
+		id,
 		date,
 		amount,
 		account,
 		toAccount,
-	}: RecordItemUseCaseInput): Promise<void> {
+	}: RecordScheduledItemUseCaseInput): Promise<void> {
 		this.#logger.debug("attributes", {
-			itemID,
+			id,
 			date,
 			amount,
 			account,
 			toAccount,
 		});
-		const item = await this._scheduledItemsRepository.findById(itemID);
-		if (!item) throw new EntityNotFoundError("ScheduledItem", itemID);
+		const item = await this._scheduledTransactionsService.getByID(id);
+		if (!item) throw new EntityNotFoundError("ScheduledTransaction", id);
 
-		// if (item.recurrence) {
-		// 	const prev = item.date.copy();
-		// 	item.advanceDateToNextDate();
-
-		// 	this.#logger.debug("calculating next date", {
-		// 		frequency: item.recurrence.frequency,
-		// 		prev: prev,
-		// 		next: item.date,
-		// 	});
-		// }
-
-		const transaction = Transaction.fromScheduledItem(
+		const transaction = Transaction.fromScheduledTransaction(
 			item,
 			date ?? TransactionDate.createNowDate()
 		);
@@ -82,7 +71,7 @@ export class RecordItemUseCase
 
 		this.#logger.debug("transaction after update", { transaction });
 
-		await this._scheduledItemsRepository.persist(item);
+		await this._scheduledTransactionsService.update(item);
 		await this._transactionsService.record(transaction);
 	}
 }

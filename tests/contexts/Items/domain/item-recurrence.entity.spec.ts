@@ -3,13 +3,13 @@ import {
 	NumberValueObject,
 } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
-import { ItemDate } from "contexts/Items/domain/item-date.valueobject";
 import { ItemRecurrenceFrequency } from "contexts/Items/domain/item-recurrence-frequency.valueobject";
 import {
 	ERecurrenceState,
 	ItemRecurrenceInfo,
 } from "contexts/Items/domain/item-recurrence-modification.valueobject";
 import { ItemRecurrence } from "contexts/Items/domain/item-recurrence.entity";
+import { ItemDate } from "contexts/ScheduledTransactions/domain/scheduled-transaction-date.vo";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { describe, expect, it } from "vitest";

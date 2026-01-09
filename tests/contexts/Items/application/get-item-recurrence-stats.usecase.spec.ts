@@ -1,5 +1,5 @@
-import { GetItemRecurrenceStatsUseCase } from "contexts/Items/application/get-item-recurrence-stats.usecase";
 import { ItemID } from "contexts/Items/domain";
+import { GetItemRecurrenceStatsUseCase } from "contexts/ScheduledTransactions/application/get-item-recurrence-stats.usecase";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("GetItemRecurrenceStatsUseCase", () => {

@@ -1,26 +1,26 @@
-import {
-	ERecurrenceState,
-	ItemBrand,
-	ItemDate,
-	ItemRecurrenceInfo,
-	ItemStore,
-} from "contexts/Items/domain";
 import { ItemOperation } from "contexts/Shared/domain";
 import { describe, expect, it } from "vitest";
+import { ScheduledTransactionDate } from "../../../../src/contexts/Items/domain";
+import {
+	ItemRecurrenceInfo,
+	RecurrenceModificationState,
+} from "../../../../src/contexts/ScheduledTransactions/domain";
 import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 import { buildTestItems } from "./buildTestItems";
 
 describe("updateState", () => {
 	it("should updates state", () => {
 		const itemRecurrenceModification = new ItemRecurrenceInfo(
-			ItemDate.createNowDate(),
-			ERecurrenceState.PENDING
+			ScheduledTransactionDate.createNowDate(),
+			RecurrenceModificationState.PENDING
 		);
 
-		itemRecurrenceModification.updateState(ERecurrenceState.COMPLETED);
+		itemRecurrenceModification.updateState(
+			RecurrenceModificationState.COMPLETED
+		);
 
 		expect(itemRecurrenceModification.state).toBe(
-			ERecurrenceState.COMPLETED
+			RecurrenceModificationState.COMPLETED
 		);
 	});
 });
@@ -31,8 +31,8 @@ describe("brand and store", () => {
 		const store = new ItemStore("Test Store");
 
 		const itemRecurrenceModification = new ItemRecurrenceInfo(
-			ItemDate.createNowDate(),
-			ERecurrenceState.PENDING,
+			Sched.createNowDate(),
+			RecurrenceModificationState.PENDING,
 			undefined,
 			undefined,
 			brand,
@@ -45,8 +45,8 @@ describe("brand and store", () => {
 
 	it("should update brand and store", () => {
 		const itemRecurrenceModification = new ItemRecurrenceInfo(
-			ItemDate.createNowDate(),
-			ERecurrenceState.PENDING
+			Sched.createNowDate(),
+			RecurrenceModificationState.PENDING
 		);
 
 		const newBrand = new ItemBrand("New Brand");
@@ -61,8 +61,8 @@ describe("brand and store", () => {
 
 	it("should handle undefined brand and store", () => {
 		const itemRecurrenceModification = new ItemRecurrenceInfo(
-			ItemDate.createNowDate(),
-			ERecurrenceState.PENDING
+			Sched.createNowDate(),
+			RecurrenceModificationState.PENDING
 		);
 
 		itemRecurrenceModification.updateBrand(undefined);
@@ -79,8 +79,8 @@ describe("toPrimitives and fromPrimitives", () => {
 		const store = new ItemStore("Test Store");
 
 		const original = new ItemRecurrenceInfo(
-			ItemDate.createNowDate(),
-			ERecurrenceState.PENDING,
+			Sched.createNowDate(),
+			RecurrenceModificationState.PENDING,
 			undefined,
 			undefined,
 			brand,
@@ -92,7 +92,7 @@ describe("toPrimitives and fromPrimitives", () => {
 
 		expect(restored.brand?.value).toBe("Test Brand");
 		expect(restored.store?.value).toBe("Test Store");
-		expect(restored.state).toBe(ERecurrenceState.PENDING);
+		expect(restored.state).toBe(RecurrenceModificationState.PENDING);
 	});
 });
 
@@ -101,20 +101,9 @@ describe("getRealPriceForAccount", () => {
 		const account = buildTestAccounts(1)[0];
 		const item = buildTestItems([
 			{
+				price: new ItemPrice(216),
 				operation: ItemOperation.expense(),
 				account: account.id,
-				modifications: [
-					{
-						date: ItemDate.createNowDate(),
-						state: ERecurrenceState.PENDING,
-						fromSplits: [
-							{
-								accountId: account.id.value,
-								amount: 200,
-							},
-						],
-					},
-				],
 			},
 		])[0];
 
@@ -125,6 +114,6 @@ describe("getRealPriceForAccount", () => {
 			item.toSplits
 		);
 
-		expect(result.value).toBe(-200);
+		expect(result.value).toBe(-216);
 	});
 });

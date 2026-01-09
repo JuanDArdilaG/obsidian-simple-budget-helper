@@ -16,7 +16,7 @@ describe("transfer operation validation", () => {
 		const toSplits: PaymentSplit[] = []; // Empty toSplits for transfer
 
 		expect(() => {
-			Transaction.createWithoutItem(
+			Transaction.create(
 				fromSplits,
 				toSplits,
 				new TransactionName("Transfer Test"),
@@ -38,7 +38,7 @@ describe("transfer operation validation", () => {
 		];
 
 		expect(() => {
-			Transaction.createWithoutItem(
+			Transaction.create(
 				fromSplits,
 				toSplits,
 				new TransactionName("Transfer Test"),
@@ -59,7 +59,7 @@ describe("transfer operation validation", () => {
 			new PaymentSplit(toAccount, new TransactionAmount(100)),
 		];
 
-		const transaction = Transaction.createWithoutItem(
+		const transaction = Transaction.create(
 			fromSplits,
 			toSplits,
 			new TransactionName("Transfer Test"),
@@ -80,7 +80,7 @@ describe("transfer operation validation", () => {
 		];
 		const toSplits: PaymentSplit[] = []; // Empty toSplits
 
-		const transaction = Transaction.createWithoutItem(
+		const transaction = Transaction.create(
 			fromSplits,
 			toSplits,
 			new TransactionName("Test Transaction"),
@@ -104,7 +104,7 @@ describe("transfer operation validation", () => {
 			new PaymentSplit(toAccount, new TransactionAmount(100)),
 		];
 
-		const transaction = Transaction.createWithoutItem(
+		const transaction = Transaction.create(
 			fromSplits,
 			toSplits,
 			new TransactionName("Test Transaction"),
@@ -127,7 +127,7 @@ describe("getRealAmountForAccount", () => {
 		];
 		const toSplits: PaymentSplit[] = [];
 
-		const transaction = Transaction.createWithoutItem(
+		const transaction = Transaction.create(
 			fromSplits,
 			toSplits,
 			new TransactionName("Income Transaction"),
@@ -148,7 +148,7 @@ describe("getRealAmountForAccount", () => {
 		];
 		const toSplits: PaymentSplit[] = [];
 
-		const transaction = Transaction.createWithoutItem(
+		const transaction = Transaction.create(
 			fromSplits,
 			toSplits,
 			new TransactionName("Expense Transaction"),
@@ -172,7 +172,7 @@ describe("getRealAmountForAccount", () => {
 			new PaymentSplit(toAccount, new TransactionAmount(100)),
 		];
 
-		const transaction = Transaction.createWithoutItem(
+		const transaction = Transaction.create(
 			fromSplits,
 			toSplits,
 			new TransactionName("Transfer Transaction"),

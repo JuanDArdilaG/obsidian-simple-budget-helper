@@ -1,19 +1,19 @@
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
 import {
 	AppContext,
-	ItemsContext,
 	CategoriesContext,
+	getAppContextDefault,
 	getCategoriesContextDefault,
 	getItemsContextDefault,
-	getAppContextDefault,
-	TransactionsContext,
 	getTransactionsContextValues,
+	ScheduledTransactionsContext,
+	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { PropsWithChildren } from "react";
 import { AwilixContainer } from "awilix";
+import { PropsWithChildren } from "react";
 import { AccountsContext, getAccountsContextValues } from "./AccountsContext";
-import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
 import {
 	getItemReportContextValues,
 	ItemReportContext,
@@ -32,7 +32,7 @@ export const AppProviders = ({
 			<AppContext.Provider
 				value={getAppContextDefault(container, plugin)}
 			>
-				<ItemsContext.Provider
+				<ScheduledTransactionsContext.Provider
 					value={getItemsContextDefault(container)}
 				>
 					<AccountsContext.Provider
@@ -54,7 +54,7 @@ export const AppProviders = ({
 							</TransactionsContext.Provider>
 						</CategoriesContext.Provider>
 					</AccountsContext.Provider>
-				</ItemsContext.Provider>
+				</ScheduledTransactionsContext.Provider>
 			</AppContext.Provider>
 		</LocalizationProvider>
 	);

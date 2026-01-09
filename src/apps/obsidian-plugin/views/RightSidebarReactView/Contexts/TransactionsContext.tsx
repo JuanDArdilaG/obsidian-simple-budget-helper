@@ -1,21 +1,20 @@
-import { createContext, useMemo } from "react";
-import { AwilixContainer } from "awilix";
+import { StringValueObject } from "@juandardilag/value-objects";
 import { useTransactions } from "apps/obsidian-plugin/hooks";
+import { AwilixContainer } from "awilix";
 import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
+import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
 import { TransactionsReport } from "contexts/Reports/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { AdjustAccountUseCase } from "contexts/Transactions/application/adjust-account.usecase";
 import { DeleteTransactionUseCase } from "contexts/Transactions/application/delete-transaction.usecase";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
+import { GetAllUniqueItemStoresUseCase } from "contexts/Transactions/application/get-all-unique-item-stores.usecase";
+import { GetAllUniqueTransactionsByNameUseCase } from "contexts/Transactions/application/get-all-unique-transactions.usecase";
 import { RecordTransactionUseCase } from "contexts/Transactions/application/record-transaction.usecase";
 import { UpdateTransactionUseCase } from "contexts/Transactions/application/update-transaction.usecase";
 import { Transaction } from "contexts/Transactions/domain";
-import { GetAllUniqueTransactionsByNameUseCase } from "contexts/Transactions/application/get-all-unique-transactions.usecase";
-import { GetAllUniqueItemBrandsUseCase } from "contexts/Transactions/application/get-all-unique-item-brands.usecase";
-import { GetAllUniqueItemStoresUseCase } from "contexts/Transactions/application/get-all-unique-item-stores.usecase";
-import { ItemBrand, ItemStore } from "contexts/Items/domain";
-import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
+import { createContext, useMemo } from "react";
 
 export type TransactionsContextType = {
 	useCases: {
@@ -24,7 +23,6 @@ export type TransactionsContextType = {
 		updateTransaction: UpdateTransactionUseCase;
 		getAllTransactions: GetAllTransactionsUseCase;
 		getAllUniqueTransactionsByNameUseCase: GetAllUniqueTransactionsByNameUseCase;
-		getAllUniqueItemBrands: GetAllUniqueItemBrandsUseCase;
 		getAllUniqueItemStores: GetAllUniqueItemStoresUseCase;
 		adjustAccount: AdjustAccountUseCase;
 		groupByCategoryWithAccumulatedBalance: GroupByCategoryWithAccumulatedBalanceUseCase;
@@ -44,9 +42,7 @@ export type TransactionsContextType = {
 	>;
 	filteredTransactionsReport: TransactionsReport;
 	updateFilteredTransactions: () => void;
-	brands: ItemBrand[];
-	updateBrands: () => void;
-	stores: ItemStore[];
+	stores: StringValueObject[];
 	updateStores: () => void;
 };
 
@@ -58,7 +54,6 @@ export const TransactionsContext = createContext<TransactionsContextType>({
 		getAllTransactions: {} as GetAllTransactionsUseCase,
 		getAllUniqueTransactionsByNameUseCase:
 			{} as GetAllUniqueTransactionsByNameUseCase,
-		getAllUniqueItemBrands: {} as GetAllUniqueItemBrandsUseCase,
 		getAllUniqueItemStores: {} as GetAllUniqueItemStoresUseCase,
 		adjustAccount: {} as AdjustAccountUseCase,
 		groupByCategoryWithAccumulatedBalance:
@@ -71,8 +66,6 @@ export const TransactionsContext = createContext<TransactionsContextType>({
 	setFilters: () => {},
 	filteredTransactionsReport: {} as TransactionsReport,
 	updateFilteredTransactions: () => {},
-	brands: [],
-	updateBrands: () => {},
 	stores: [],
 	updateStores: () => {},
 });
@@ -97,10 +90,6 @@ export const getTransactionsContextValues = (
 		"updateTransactionUseCase"
 	);
 
-	const getAllUniqueItemBrands = container.resolve(
-		"getAllUniqueItemBrandsUseCase"
-	);
-
 	const getAllUniqueItemStores = container.resolve(
 		"getAllUniqueItemStoresUseCase"
 	);
@@ -111,13 +100,10 @@ export const getTransactionsContextValues = (
 		filteredTransactions,
 		setFilters,
 		updateFilteredTransactions,
-		brands,
-		updateBrands,
 		stores,
 		updateStores,
 	} = useTransactions({
 		getAllTransactions,
-		getAllUniqueItemBrands,
 		getAllUniqueItemStores,
 	});
 
@@ -139,7 +125,6 @@ export const getTransactionsContextValues = (
 			adjustAccount,
 			getAllTransactions,
 			getAllUniqueTransactionsByNameUseCase,
-			getAllUniqueItemBrands,
 			getAllUniqueItemStores,
 			groupByCategoryWithAccumulatedBalance: container.resolve(
 				"groupByCategoryWithAccumulatedBalanceUseCase"
@@ -152,8 +137,6 @@ export const getTransactionsContextValues = (
 		setFilters,
 		filteredTransactionsReport,
 		updateFilteredTransactions,
-		brands,
-		updateBrands,
 		stores,
 		updateStores,
 	};

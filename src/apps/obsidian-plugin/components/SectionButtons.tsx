@@ -1,8 +1,8 @@
 import {
+	BetweenHorizontalStart,
 	CalendarSync,
 	Landmark,
 	ListCollapse,
-	Package,
 	Settings,
 } from "lucide-react";
 import { JSX } from "react";
@@ -13,7 +13,6 @@ export type MainSidebarSections =
 	| "accounting"
 	| "accounts"
 	| "categories"
-	| "items"
 	| "localPersistence";
 
 export const SectionButtons = ({
@@ -52,15 +51,6 @@ export const SectionButtons = ({
 				onClick={() => handleSectionClick("accounting")}
 			/>
 			<SectionButton
-				type="items"
-				label="Items"
-				icon={
-					<Package size={16} style={{ color: "var(--color-cyan)" }} />
-				}
-				selected={selected}
-				onClick={() => handleSectionClick("items")}
-			/>
-			<SectionButton
 				type="scheduledItems"
 				label="Scheduled"
 				icon={
@@ -88,7 +78,7 @@ export const SectionButtons = ({
 				type="categories"
 				label="Categories"
 				icon={
-					<Landmark
+					<BetweenHorizontalStart
 						size={16}
 						style={{ color: "var(--color-cyan)" }}
 					/>

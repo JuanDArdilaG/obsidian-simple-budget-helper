@@ -1,14 +1,14 @@
-import { ItemsWithAccumulatedBalanceUseCase } from "contexts/Items/application/items-with-accumulated-balance.usecase";
-import { describe, it, expect } from "vitest";
-import { ItemsServiceMock } from "./items-service.mock";
-import { AccountsServiceMock } from "../../Accounts/application/accounts-service.mock";
-import { GetItemsUntilDateUseCase } from "contexts/Items/application/get-items-until-date.usecase";
-import { buildTestItems } from "../domain/buildTestItems";
 import { DateValueObject } from "@juandardilag/value-objects";
+import { describe, expect, it } from "vitest";
+import { GetScheduledTransactionsUntilDateUseCase } from "../../../../src/contexts/ScheduledTransactions/application/get-items-until-date.usecase";
+import { ScheduledTransactionsWithAccumulatedBalanceUseCase } from "../../../../src/contexts/ScheduledTransactions/application/items-with-accumulated-balance.usecase";
+import { AccountsServiceMock } from "../../Accounts/application/accounts-service.mock";
 import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
+import { buildTestItems } from "../domain/buildTestItems";
+import { ItemsServiceMock } from "./items-service.mock";
 
 describe("execute", () => {
-	it("should accmulate balance for two items correctly", async () => {
+	it("should accumulate balance for two items correctly", async () => {
 		const accounts = buildTestAccounts(1);
 		const items = buildTestItems([
 			{
@@ -20,9 +20,9 @@ describe("execute", () => {
 		]);
 		const itemsService = new ItemsServiceMock(items);
 		const accountsService = new AccountsServiceMock(accounts);
-		const useCase = new ItemsWithAccumulatedBalanceUseCase(
+		const useCase = new ScheduledTransactionsWithAccumulatedBalanceUseCase(
 			accountsService,
-			new GetItemsUntilDateUseCase(itemsService)
+			new GetScheduledTransactionsUntilDateUseCase(itemsService)
 		);
 
 		const itemsWithBalance = await useCase.execute(

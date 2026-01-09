@@ -1,12 +1,7 @@
 import { DateValueObject } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
-import {
-	ERecurrenceState,
-	ItemDate,
-	ItemName,
-	ScheduledItem,
-} from "contexts/Items/domain";
+import { ItemDate, ItemName, ScheduledItem } from "contexts/Items/domain";
 import { ItemOperation } from "contexts/Shared/domain/Item/item-operation.valueobject";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
@@ -131,36 +126,6 @@ describe("createRecurrences", () => {
 		expect(recurrences[5].date.value).toEqual(new Date(2024, 0, 11));
 		expect(recurrences[6].date.value).toEqual(new Date(2024, 0, 13));
 		expect(recurrences[7].date.value).toEqual(new Date(2024, 0, 15));
-	});
-});
-
-describe("createItemsUntilDate", () => {
-	it("should returns the recurrences correctly when a modification is before the item date", async () => {
-		const items = buildTestItems([
-			{
-				recurrence: {
-					frequency: "2d",
-					startDate: new DateValueObject(new Date(2024, 0, 15)),
-					untilDate: new DateValueObject(new Date(2024, 1, 1)),
-				},
-				modifications: [
-					{
-						date: new DateValueObject(new Date(2024, 0, 2)),
-						state: ERecurrenceState.PENDING,
-					},
-				],
-			},
-		]);
-		const item = items[0];
-
-		const recurrences = item.recurrence.getRecurrencesUntilDate(
-			new DateValueObject(new Date(2024, 0, 5))
-		);
-
-		expect(recurrences).toHaveLength(1);
-		expect(recurrences[0].recurrence.date.value).toEqual(
-			new Date(2024, 0, 2)
-		);
 	});
 });
 

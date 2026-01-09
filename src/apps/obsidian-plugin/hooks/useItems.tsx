@@ -1,32 +1,34 @@
-import { GetAllItemsUseCase } from "contexts/Items/application/get-all-items.usecase";
-import { ScheduledItem } from "contexts/Items/domain";
 import { useEffect, useState } from "react";
+import { GetAllScheduledTransactionsUseCase } from "../../../contexts/ScheduledTransactions/application/get-all-scheduled-transactions";
+import { ScheduledTransaction } from "../../../contexts/ScheduledTransactions/domain";
 import { useLogger } from "./useLogger";
 
-export const useItems = ({
-	getAllItems,
+export const useScheduledTransactions = ({
+	getAllScheduledTransactionsUseCase,
 }: {
-	getAllItems: GetAllItemsUseCase;
+	getAllScheduledTransactionsUseCase: GetAllScheduledTransactionsUseCase;
 }) => {
 	const { logger } = useLogger("useItems");
 
-	const [items, setItems] = useState<ScheduledItem[]>([]);
-	const [updateItems, setUpdateItems] = useState(true);
+	const [items, setItems] = useState<ScheduledTransaction[]>([]);
+	const [updateScheduledTransactions, setUpdateItems] = useState(true);
 
 	useEffect(() => {
-		if (updateItems) {
+		if (updateScheduledTransactions) {
 			setUpdateItems(false);
-			getAllItems.execute().then(({ items }) => {
-				logger.debug("updating scheduled items", {
-					items,
+			getAllScheduledTransactionsUseCase
+				.execute()
+				.then((scheduledTransactions) => {
+					logger.debug("updating scheduled items", {
+						items: scheduledTransactions,
+					});
+					setItems(scheduledTransactions);
 				});
-				setItems(items);
-			});
 		}
-	}, [updateItems]);
+	}, [updateScheduledTransactions]);
 
 	return {
 		scheduledItems: items,
-		updateItems: () => setUpdateItems(true),
+		updateScheduledTransactions: () => setUpdateItems(true),
 	};
 };

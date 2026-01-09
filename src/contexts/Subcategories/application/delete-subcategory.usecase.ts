@@ -1,5 +1,5 @@
-import { ItemsService } from "contexts/Items/application/items.service";
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
+import { ScheduledTransactionsService } from "../../ScheduledTransactions/application/scheduled-transactions.service";
 import { SubCategoryID } from "../domain";
 import { SubCategoriesService } from "./subcategories.service";
 
@@ -7,7 +7,7 @@ export class DeleteSubCategoryUseCase {
 	constructor(
 		private readonly subCategoriesService: SubCategoriesService,
 		private readonly transactionsService: TransactionsService,
-		private readonly itemsService: ItemsService
+		private readonly itemsService: ScheduledTransactionsService
 	) {}
 
 	async execute(
@@ -36,9 +36,15 @@ export class DeleteSubCategoryUseCase {
 				subCategoryId,
 				reassignToSubCategoryId
 			);
-			await this.itemsService.reassignItemsSubCategory(
-				subCategoryId,
+			const subCategory = await this.subCategoriesService.getByID(
+				subCategoryId
+			);
+			const subCategoryTo = await this.subCategoriesService.getByID(
 				reassignToSubCategoryId
+			);
+			await this.itemsService.reassignItemsSubCategory(
+				subCategory,
+				subCategoryTo
 			);
 		}
 

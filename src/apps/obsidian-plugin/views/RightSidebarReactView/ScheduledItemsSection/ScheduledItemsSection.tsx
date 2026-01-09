@@ -1,18 +1,20 @@
+import { CreateScheduledTransactionPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel";
 import { useContext, useEffect, useState } from "react";
-import { AllItemsTab } from "./Tabs/AllItemsTab";
-import { CalendarItemsTab } from "./Tabs/CalendarItemsTab";
+import { AppContext, ScheduledTransactionsContext } from "../Contexts";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
-import { AppContext, ItemsContext } from "../Contexts";
 import {
-	ScheduledItemsSectionSelection,
 	ScheduledItemsSectionButtons,
+	ScheduledItemsSectionSelection,
 } from "./ScheduledItemsSectionButtons";
 import { PerCategoryItemsTab } from "./Tabs";
-import { CreateItemPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel";
+import { AllScheduledTransactionsTab } from "./Tabs/AllScheduledTransactionsTab";
+import { CalendarItemsTab } from "./Tabs/CalendarItemsTab";
 
 export const ScheduledItemsSection = () => {
 	const { plugin } = useContext(AppContext);
-	const { updateItems } = useContext(ItemsContext);
+	const { updateScheduledTransactions } = useContext(
+		ScheduledTransactionsContext
+	);
 	const [sectionSelection, setSectionSelection] =
 		useState<ScheduledItemsSectionSelection>(
 			plugin.settings.lastTab.scheduled
@@ -30,11 +32,13 @@ export const ScheduledItemsSection = () => {
 		<RightSidebarReactTab
 			title="Scheduled Items"
 			handleCreate={async () => setShowCreateForm(!showCreateForm)}
-			handleRefresh={async () => updateItems()}
+			handleRefresh={async () => updateScheduledTransactions()}
 			isCreating={showCreateForm}
 		>
 			{showCreateForm && (
-				<CreateItemPanel close={() => setShowCreateForm(false)} />
+				<CreateScheduledTransactionPanel
+					close={() => setShowCreateForm(false)}
+				/>
 			)}
 			<ScheduledItemsSectionButtons
 				selected={sectionSelection}
@@ -42,7 +46,7 @@ export const ScheduledItemsSection = () => {
 			/>
 
 			{sectionSelection === "calendar" && <CalendarItemsTab />}
-			{sectionSelection === "list" && <AllItemsTab />}
+			{sectionSelection === "list" && <AllScheduledTransactionsTab />}
 			{sectionSelection === "perCategory" && <PerCategoryItemsTab />}
 		</RightSidebarReactTab>
 	);

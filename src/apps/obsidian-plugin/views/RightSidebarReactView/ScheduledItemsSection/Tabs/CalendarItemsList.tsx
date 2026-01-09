@@ -1,8 +1,4 @@
-import {
-	DateValueObject,
-	NumberValueObject,
-	PriceValueObject,
-} from "@juandardilag/value-objects";
+import { DateValueObject } from "@juandardilag/value-objects";
 import {
 	Box,
 	Button,
@@ -29,25 +25,18 @@ import {
 	AccountName,
 	AccountType,
 } from "contexts/Accounts/domain";
-import { Account } from "contexts/Accounts/domain/account.entity";
 import { CategoryID } from "contexts/Categories/domain";
-import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
-import { ItemWithAccumulatedBalance } from "contexts/Items/application/items-with-accumulated-balance.usecase";
-import {
-	ItemID,
-	ItemRecurrenceInfo,
-	ScheduledItem,
-} from "contexts/Items/domain";
 import { AccountsReport } from "contexts/Reports/domain";
-import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { useContext, useEffect, useMemo, useState } from "react";
+import { ItemWithAccumulatedBalance } from "../../../../../../contexts/ScheduledTransactions/application/items-with-accumulated-balance.usecase";
+import { ItemRecurrenceInfo } from "../../../../../../contexts/ScheduledTransactions/domain";
+import { Nanoid } from "../../../../../../contexts/Shared/domain";
 import {
 	AccountsContext,
 	CategoriesContext,
-	ItemsContext,
+	ScheduledTransactionsContext,
 } from "../../Contexts";
-import { ItemReportContext } from "../../Contexts/ItemReportContext";
 
 // Filter types
 interface FilterState {
@@ -64,38 +53,28 @@ interface FilterState {
 }
 
 export const CalendarItemsList = ({
-	items,
 	untilDate,
 	selectedItem,
 	setSelectedItem,
-	action,
-	setAction,
-	updateItems,
 	filters,
 	setFilters,
 	showFilters,
 	setShowFilters,
 }: {
-	items: GetItemsUntilDateUseCaseOutput;
 	untilDate: Date;
 	selectedItem?: {
 		recurrence: ItemRecurrenceInfo;
-		itemID: ItemID;
+		scheduleTransactionId: Nanoid;
 	};
 	setSelectedItem: React.Dispatch<
 		React.SetStateAction<
 			| {
 					recurrence: ItemRecurrenceInfo;
-					itemID: ItemID;
+					scheduleTransactionId: Nanoid;
 			  }
 			| undefined
 		>
 	>;
-	action?: "edit" | "record";
-	setAction: React.Dispatch<
-		React.SetStateAction<"edit" | "record" | undefined>
-	>;
-	updateItems: () => void;
 	filters: FilterState;
 	setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
 	showFilters: boolean;
@@ -106,25 +85,33 @@ export const CalendarItemsList = ({
 	const { categories, subCategories } = useContext(CategoriesContext);
 	const report = useMemo(() => new AccountsReport(accounts), [accounts]);
 	const totalAssets = useMemo(() => report.getTotalForAssets(), [report]);
+	const [refreshItems, setRefreshItems] = useState(true);
 
 	const {
 		useCases: { itemsWithAccumulatedBalanceUseCase },
-	} = useContext(ItemsContext);
-	const {
-		useCases: { getTotal },
-	} = useContext(ItemReportContext);
+	} = useContext(ScheduledTransactionsContext);
 
 	const [showPanel, setShowPanel] = useState<{
 		item: {
 			recurrence: ItemRecurrenceInfo;
-			itemID: ItemID;
+			scheduleTransactionId: Nanoid;
 		};
 		action?: "edit" | "record";
 	}>();
 
+	const [action, setAction] = useState<"edit" | "record">();
+
 	const [itemsWithAccountsBalance, setItemsWithAccountsBalance] = useState<
 		ItemWithAccumulatedBalance[]
 	>([]);
+
+	useEffect(() => {
+		if (!refreshItems) return;
+		setRefreshItems(false);
+		itemsWithAccumulatedBalanceUseCase
+			.execute(new DateValueObject(untilDate))
+			.then((items) => setItemsWithAccountsBalance(items));
+	}, [untilDate, refreshItems]);
 
 	useEffect(() => {
 		itemsWithAccumulatedBalanceUseCase
@@ -134,11 +121,11 @@ export const CalendarItemsList = ({
 
 	// Filter the items based on current filters
 	const filteredItems = useMemo(() => {
-		return itemsWithAccountsBalance.filter(({ item, recurrence }) => {
+		return itemsWithAccountsBalance.filter(({ recurrence }) => {
 			// Text search
 			if (
 				filters.searchText &&
-				!item.name.value
+				!recurrence.name.value
 					.toLowerCase()
 					.includes(filters.searchText.toLowerCase())
 			) {
@@ -148,7 +135,9 @@ export const CalendarItemsList = ({
 			// Category filter
 			if (
 				filters.selectedCategory &&
-				!item.category.equalTo(filters.selectedCategory)
+				!recurrence.category.category.id.equalTo(
+					filters.selectedCategory
+				)
 			) {
 				return false;
 			}
@@ -156,17 +145,19 @@ export const CalendarItemsList = ({
 			// Subcategory filter
 			if (
 				filters.selectedSubCategory &&
-				!item.subCategory.equalTo(filters.selectedSubCategory)
+				!recurrence.category.subCategory.id.equalTo(
+					filters.selectedSubCategory
+				)
 			) {
 				return false;
 			}
 
 			// Account filter
 			if (filters.selectedAccount) {
-				const hasFromAccount = item.fromSplits.some((split) =>
+				const hasFromAccount = recurrence.fromSplits.some((split) =>
 					split.accountId.equalTo(filters.selectedAccount!)
 				);
-				const hasToAccount = item.toSplits.some((split) =>
+				const hasToAccount = recurrence.toSplits.some((split) =>
 					split.accountId.equalTo(filters.selectedAccount!)
 				);
 				if (!hasFromAccount && !hasToAccount) {
@@ -176,7 +167,7 @@ export const CalendarItemsList = ({
 
 			// Operation type filter
 			if (filters.selectedOperationType !== "all") {
-				const operationType = item.operation.type.value;
+				const operationType = recurrence.operation.type.value;
 				if (operationType !== filters.selectedOperationType) {
 					return false;
 				}
@@ -184,7 +175,7 @@ export const CalendarItemsList = ({
 
 			// Tags filter
 			if (filters.selectedTags.length > 0) {
-				const itemTags = item.tags?.toArray() ?? [];
+				const itemTags = recurrence.tags?.toArray() ?? [];
 				const hasSelectedTag = filters.selectedTags.some(
 					(selectedTag) => itemTags.includes(selectedTag)
 				);
@@ -196,8 +187,8 @@ export const CalendarItemsList = ({
 			// Price range filter - use the same logic as getItemSplitPrice
 			const accountId =
 				recurrence.fromSplits?.[0]?.accountId ??
-				item.fromSplits[0]?.accountId;
-			const split = item.fromSplits.find(
+				recurrence.fromSplits[0]?.accountId;
+			const split = recurrence.fromSplits.find(
 				(split) => split.accountId.value === accountId.value
 			);
 			const itemPrice = split ? Math.abs(split.amount.value) : 0;
@@ -220,52 +211,39 @@ export const CalendarItemsList = ({
 	}, [itemsWithAccountsBalance, filters]);
 
 	// Create a filtered report based on the filtered items
-	const filteredItemsReport = useMemo(() => {
-		const filteredModifiedItems = filteredItems
-			.map(({ recurrence, item }) => {
-				// Instead of mutating the original item, create a clone/copy and apply modification
-				const itemCopy = item.copy
-					? item.copy()
-					: Object.create(
-							Object.getPrototypeOf(item),
-							Object.getOwnPropertyDescriptors(item)
-					  );
-				if (itemCopy.applyModification) {
-					itemCopy.applyModification(recurrence);
-				}
-				return itemCopy;
-			})
-			.filter((item) => !!item);
-		logger.logger.debug("filteredModifiedItems", { filteredModifiedItems });
-		return new ItemsReport(filteredModifiedItems);
-	}, [filteredItems]);
+	// const filteredItemsReport = useMemo(() => {
+	// 	logger.logger.debug("filteredItems", { filteredItems });
+	// 	return new ItemsReport(
+	// 		filteredItems.map(({ recurrence }) => recurrence)
+	// 	);
+	// }, [filteredItems]);
 
-	const [total, setTotal] = useState(NumberValueObject.zero());
-	useEffect(() => {
-		getTotal.execute({ report: filteredItemsReport }).then(setTotal);
-	}, [getTotal, filteredItemsReport]);
+	// const [total, setTotal] = useState(NumberValueObject.zero());
+	// useEffect(() => {
+	// 	getTotal.execute({ report: filteredItemsReport }).then(setTotal);
+	// }, [getTotal, filteredItemsReport]);
 
-	const [totalExpenses, setTotalExpenses] = useState(
-		NumberValueObject.zero()
-	);
-	useEffect(() => {
-		getTotal
-			.execute({ report: filteredItemsReport, type: "expenses" })
-			.then(setTotalExpenses);
-	}, [getTotal, filteredItemsReport]);
+	// const [totalExpenses, setTotalExpenses] = useState(
+	// 	NumberValueObject.zero()
+	// );
+	// useEffect(() => {
+	// 	getTotal
+	// 		.execute({ report: filteredItemsReport, type: "expenses" })
+	// 		.then(setTotalExpenses);
+	// }, [getTotal, filteredItemsReport]);
 
-	const [totalIncomes, setTotalIncomes] = useState(NumberValueObject.zero());
-	useEffect(() => {
-		getTotal
-			.execute({ report: filteredItemsReport, type: "incomes" })
-			.then(setTotalIncomes);
-	}, [getTotal, filteredItemsReport]);
+	// const [totalIncomes, setTotalIncomes] = useState(NumberValueObject.zero());
+	// useEffect(() => {
+	// 	getTotal
+	// 		.execute({ report: filteredItemsReport, type: "incomes" })
+	// 		.then(setTotalIncomes);
+	// }, [getTotal, filteredItemsReport]);
 
 	// Get all available tags from items
 	const availableTags = useMemo(() => {
 		const tagSet = new Set<string>();
-		itemsWithAccountsBalance.forEach(({ item }) => {
-			item.tags?.toArray().forEach((tag) => tagSet.add(tag));
+		itemsWithAccountsBalance.forEach(({ recurrence }) => {
+			recurrence.tags?.toArray().forEach((tag) => tagSet.add(tag));
 		});
 		return Array.from(tagSet).sort();
 	}, [itemsWithAccountsBalance]);
@@ -371,7 +349,7 @@ export const CalendarItemsList = ({
 							</span>
 						)}
 					</div>
-					<div
+					{/*<div
 						style={{
 							display: "flex",
 							justifyContent: "space-between",
@@ -446,7 +424,7 @@ export const CalendarItemsList = ({
 						>
 							{total.toString()}
 						</span>
-					</div>
+					</div> */}
 				</div>
 
 				{/* Current Financial Position */}
@@ -480,7 +458,7 @@ export const CalendarItemsList = ({
 							{totalAssets.toString()}
 						</span>
 					</div>
-					<div
+					{/* <div
 						style={{
 							display: "flex",
 							justifyContent: "space-between",
@@ -505,7 +483,7 @@ export const CalendarItemsList = ({
 						>
 							{totalAssets.plus(total).toString()}
 						</span>
-					</div>
+					</div> */}
 				</div>
 			</div>
 
@@ -908,8 +886,6 @@ export const CalendarItemsList = ({
 					(
 						groups,
 						{
-							item,
-							n,
 							recurrence,
 							accountBalance,
 							accountPrevBalance,
@@ -931,8 +907,6 @@ export const CalendarItemsList = ({
 							groups[monthKey] = [];
 						}
 						groups[monthKey].push({
-							item,
-							n,
 							recurrence,
 							accountBalance,
 							accountPrevBalance,
@@ -945,8 +919,6 @@ export const CalendarItemsList = ({
 					{} as Record<
 						string,
 						Array<{
-							item: ScheduledItem;
-							n: NumberValueObject;
 							recurrence: ItemRecurrenceInfo;
 							accountBalance: AccountBalance;
 							accountPrevBalance: AccountBalance;
@@ -971,8 +943,6 @@ export const CalendarItemsList = ({
 							</ListSubheader>
 							{monthItems.map(
 								({
-									item,
-									n,
 									recurrence,
 									accountBalance,
 									accountPrevBalance,
@@ -980,17 +950,23 @@ export const CalendarItemsList = ({
 									toAccountPrevBalance,
 									index,
 								}) => (
-									<div key={item.id.value + index}>
+									<div
+										key={
+											recurrence.date.value.getTime() +
+											index
+										}
+									>
 										<CalendarItemsListItem
-											key={item.id.value + index}
-											item={item}
-											n={n}
+											key={
+												recurrence.date.value.getTime() +
+												index
+											}
 											recurrence={recurrence}
 											accountName={
 												getAccountByID(
 													recurrence.fromSplits?.[0]
 														?.accountId ??
-														item.fromSplits[0]
+														recurrence.fromSplits[0]
 															?.accountId
 												)?.name ?? AccountName.empty()
 											}
@@ -1002,30 +978,32 @@ export const CalendarItemsList = ({
 											setShowPanel={setShowPanel}
 											setSelectedItem={setSelectedItem}
 											setAction={setAction}
-											updateItems={updateItems}
 											accountTypeLookup={
 												accountTypeLookup
 											}
-											getAccountByID={getAccountByID}
+											updateItems={() =>
+												setRefreshItems(true)
+											}
 										/>
-										{item.operation.type.isTransfer() &&
+										{recurrence.operation.type.isTransfer() &&
 											toAccountBalance &&
 											toAccountPrevBalance && (
 												<CalendarItemsListItem
 													key={
-														item.id.value +
+														recurrence
+															.scheduledTransactionId
+															.value +
 														index +
 														"-transfer"
 													}
-													item={item}
-													n={n}
 													recurrence={recurrence}
 													accountName={
 														getAccountByID(
 															recurrence
 																.toSplits?.[0]
 																?.accountId ??
-																item.toSplits[0]
+																recurrence
+																	.toSplits[0]
 																	?.accountId
 														)?.name ??
 														AccountName.empty()
@@ -1042,12 +1020,11 @@ export const CalendarItemsList = ({
 														setSelectedItem
 													}
 													setAction={setAction}
-													updateItems={updateItems}
 													accountTypeLookup={
 														accountTypeLookup
 													}
-													getAccountByID={
-														getAccountByID
+													updateItems={() =>
+														setRefreshItems(true)
 													}
 												/>
 											)}
@@ -1063,8 +1040,6 @@ export const CalendarItemsList = ({
 };
 
 const CalendarItemsListItem = ({
-	item,
-	n,
 	recurrence,
 	accountName,
 	accountBalance,
@@ -1073,12 +1048,10 @@ const CalendarItemsListItem = ({
 	setShowPanel,
 	setSelectedItem,
 	setAction,
-	updateItems,
 	accountTypeLookup,
-	getAccountByID,
+	updateItems,
 }: {
-	item: ScheduledItem;
-	n: NumberValueObject;
+	updateItems: () => void;
 	recurrence: ItemRecurrenceInfo;
 	accountName: AccountName;
 	accountBalance: AccountBalance;
@@ -1087,7 +1060,7 @@ const CalendarItemsListItem = ({
 		| {
 				item: {
 					recurrence: ItemRecurrenceInfo;
-					itemID: ItemID;
+					scheduleTransactionId: Nanoid;
 				};
 				action?: "edit" | "record";
 		  }
@@ -1097,7 +1070,7 @@ const CalendarItemsListItem = ({
 			| {
 					item: {
 						recurrence: ItemRecurrenceInfo;
-						itemID: ItemID;
+						scheduleTransactionId: Nanoid;
 					};
 					action?: "edit" | "record";
 			  }
@@ -1108,7 +1081,7 @@ const CalendarItemsListItem = ({
 		React.SetStateAction<
 			| {
 					recurrence: ItemRecurrenceInfo;
-					itemID: ItemID;
+					scheduleTransactionId: Nanoid;
 			  }
 			| undefined
 		>
@@ -1116,41 +1089,51 @@ const CalendarItemsListItem = ({
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
-	updateItems: () => void;
 	accountTypeLookup: (id: AccountID) => AccountType;
-	getAccountByID: (id: AccountID) => Account | undefined;
 }) => {
-	const getItemSplitPrice = (item: ScheduledItem): PriceValueObject => {
-		// If the recurrence has custom splits, use those
-		if (recurrence.fromSplits && recurrence.fromSplits.length > 0) {
-			const totalAmount = recurrence.fromSplits.reduce(
-				(sum, split) => sum + split.amount.value,
-				0
-			);
-			return new PriceValueObject(totalAmount);
-		}
-		return item.fromAmount;
-	};
-
-	const price = getItemSplitPrice(item);
-
+	const {
+		scheduledItems,
+		useCases: { deleteItemRecurrence },
+	} = useContext(ScheduledTransactionsContext);
 	// Check if this item is currently selected for recording
-	const isSelectedForRecord =
-		showPanel?.action === "record" &&
-		showPanel.item.itemID.value === item.id.value &&
-		showPanel.item.recurrence.date.value.getTime() ===
-			recurrence.date.value.getTime();
+	const isSelectedForRecord = useMemo(() => {
+		if (!showPanel) return false;
+		console.log("Checking selection for record:", {
+			showPanel,
+			recurrence,
+		});
+		return (
+			showPanel?.action === "record" &&
+			showPanel.item.recurrence.scheduledTransactionId.equalTo(
+				recurrence.scheduledTransactionId
+			) &&
+			showPanel.item.recurrence.date.value.getTime() ===
+				recurrence.date.value.getTime()
+		);
+	}, [showPanel, recurrence]);
+
+	const scheduledTransaction = useMemo(
+		() =>
+			scheduledItems.find((item) =>
+				item.id.equalTo(recurrence.scheduledTransactionId)
+			),
+		[scheduledItems, recurrence]
+	);
+
+	if (!scheduledTransaction) {
+		return null;
+	}
 
 	// Reusable responsive scheduled item component
 	return (
 		<>
 			<ResponsiveScheduledItem
-				item={item}
+				scheduleTransaction={scheduledTransaction}
 				recurrence={recurrence}
 				accountName={accountName}
 				accountBalance={accountBalance}
 				accountPrevBalance={accountPrevBalance}
-				price={price}
+				price={recurrence.fromAmount}
 				isSelected={isSelectedForRecord}
 				accountTypeLookup={accountTypeLookup}
 				remainingDays={recurrence.date.getRemainingDays() ?? 0}
@@ -1158,36 +1141,47 @@ const CalendarItemsListItem = ({
 				setSelectedItem={setSelectedItem}
 				context="calendar"
 				currentAction={showPanel?.action}
-				recurrentContextMenu={{ recurrence, itemID: item.id, n }}
+				recurrentContextMenu={{
+					recurrence,
+					scheduleTransactionId: scheduledTransaction.id,
+				}}
+				handleDelete={async () => {
+					console.log("Deleting recurrence:", {
+						scheduledTransaction,
+						recurrence,
+						n: recurrence.occurrenceIndex,
+					});
+					await deleteItemRecurrence.execute({
+						id: scheduledTransaction.id,
+						n: recurrence.occurrenceIndex,
+					});
+					updateItems();
+				}}
 			/>
 			{showPanel &&
-				showPanel.item.itemID.value === item.id.value &&
+				showPanel.item.scheduleTransactionId.equalTo(
+					scheduledTransaction.id
+				) &&
 				showPanel.item.recurrence.date.value.getTime() ===
 					recurrence.date.value.getTime() && (
 					<>
 						{showPanel.action === "edit" && (
 							<EditItemRecurrencePanel
-								item={item}
+								scheduledTransaction={scheduledTransaction}
 								recurrence={{
 									recurrence: showPanel.item.recurrence,
-									n: n,
 								}}
 								onClose={() => {
 									setShowPanel(undefined);
 									setSelectedItem(undefined);
 									setAction(undefined);
 								}}
-								context="calendar"
 								updateItems={updateItems}
 							/>
 						)}
 						{showPanel.action === "record" && (
 							<RecordItemPanel
-								item={item}
-								recurrence={{
-									recurrence: showPanel.item.recurrence,
-									n: n,
-								}}
+								recurrence={showPanel.item.recurrence}
 								onClose={() => {
 									setShowPanel(undefined);
 									setSelectedItem(undefined);

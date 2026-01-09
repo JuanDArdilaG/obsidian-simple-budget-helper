@@ -3,8 +3,8 @@ import {
 	NumberValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
-import { Entity, EntityComposedValue } from "../domain/entity.abstract";
 import { IDValueObject } from "../domain";
+import { Entity, EntityComposedValue } from "../domain/entity.abstract";
 
 type LoggerBodyValues =
 	| StringValueObject
@@ -63,9 +63,10 @@ export class Logger {
 		});
 	}
 
-	error(e: Error) {
+	error(message: string, e: Error) {
 		console.error({
 			_title: `${this._name}: ${e.message}`,
+			message,
 			...this.#mapBody({ stack: e.stack, name: e.name }),
 		});
 	}

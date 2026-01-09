@@ -1,10 +1,10 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
 import { ItemsService } from "contexts/Items/application/items.service";
-import { ModifyNItemRecurrenceUseCase } from "contexts/Items/application/modify-n-item-recurrence.usecase";
 import { ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
-import { ItemDate } from "contexts/Items/domain/item-date.valueobject";
 import { ERecurrenceState } from "contexts/Items/domain/item-recurrence-modification.valueobject";
+import { ModifyNItemRecurrenceUseCase } from "contexts/ScheduledTransactions/application/modify-n-item-recurrence.usecase";
+import { ItemDate } from "contexts/ScheduledTransactions/domain/scheduled-transaction-date.vo";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { beforeEach, describe, expect, it, vi } from "vitest";

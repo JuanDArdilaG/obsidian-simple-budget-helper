@@ -1,12 +1,12 @@
 import { Account, AccountID, IAccountsService } from "contexts/Accounts/domain";
-import { ScheduledItem } from "contexts/Items/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
+import { ScheduledTransaction } from "../../ScheduledTransactions/domain";
 import { ReportBalance } from "../domain";
-import { ItemsReport } from "../domain/items-report.entity";
 import { IReportsService } from "../domain/reports-service.interface";
+import { ItemsReport } from "../domain/scheduled-transactions-report.entity";
 
-type ItemsWithAccounts = {
-	item: ScheduledItem;
+type ScheduledTransactionsWithAccounts = {
+	scheduledTransaction: ScheduledTransaction;
 	account: Account;
 	toAccount?: Account;
 };
@@ -18,50 +18,52 @@ export class ReportsService implements IReportsService {
 	/**
 	 * Retrieve and map accounts to items
 	 * @param {ItemsReport} report
-	 * @returns {ItemsWithAccounts[]} an array containing the items with its corresponding account and toAccount (if applies)
+	 * @returns {ScheduledTransactionsWithAccounts[]} an array containing the items with its corresponding account and toAccount (if applies)
 	 */
 	async #addAccountsToItems(
 		report: ItemsReport
-	): Promise<ItemsWithAccounts[]> {
+	): Promise<ScheduledTransactionsWithAccounts[]> {
 		return await Promise.all(
-			report.items.map(async (item) => {
+			report.items.map(async (scheduledTransaction) => {
 				const account = await this._accountsService.getByID(
-					item.fromSplits[0]?.accountId
+					scheduledTransaction.fromSplits[0]?.accountId
 				);
 				const toAccount =
-					item.toSplits[0]?.accountId &&
+					scheduledTransaction.toSplits[0]?.accountId &&
 					(await this._accountsService.getByID(
-						item.toSplits[0]?.accountId
+						scheduledTransaction.toSplits[0]?.accountId
 					));
-				return { item, account, toAccount };
+				return { scheduledTransaction, account, toAccount };
 			})
 		);
 	}
 
 	#filterItemsByType(
-		items: ItemsWithAccounts[],
+		items: ScheduledTransactionsWithAccounts[],
 		type?: "expenses" | "incomes"
-	): ItemsWithAccounts[] {
+	): ScheduledTransactionsWithAccounts[] {
 		if (!type) return items;
-		return items.filter(({ item, account, toAccount }) => {
-			if (
-				type === "expenses" &&
-				(item.operation.type.isExpense() ||
-					(item.operation.type.isTransfer() &&
-						account.type.isAsset() &&
-						toAccount?.type.isLiability()))
-			)
-				return true;
-			if (
-				type === "incomes" &&
-				(item.operation.type.isIncome() ||
-					(item.operation.type.isTransfer() &&
-						account.type.isLiability() &&
-						toAccount?.type.isAsset()))
-			)
-				return true;
-			return false;
-		});
+		return items.filter(
+			({ scheduledTransaction: item, account, toAccount }) => {
+				if (
+					type === "expenses" &&
+					(item.operation.type.isExpense() ||
+						(item.operation.type.isTransfer() &&
+							account.type.isAsset() &&
+							toAccount?.type.isLiability()))
+				)
+					return true;
+				if (
+					type === "incomes" &&
+					(item.operation.type.isIncome() ||
+						(item.operation.type.isTransfer() &&
+							account.type.isLiability() &&
+							toAccount?.type.isAsset()))
+				)
+					return true;
+				return false;
+			}
+		);
 	}
 
 	async getTotal(
@@ -78,7 +80,11 @@ export class ReportsService implements IReportsService {
 		this.#logger.debug("items", { items });
 
 		let total = ReportBalance.zero();
-		for (const { item, account, toAccount } of items) {
+		for (const {
+			scheduledTransaction: item,
+			account,
+			toAccount,
+		} of items) {
 			if (item.operation.type.isIncome()) {
 				total = total.plus(item.fromAmount);
 			} else if (item.operation.type.isExpense()) {
@@ -112,7 +118,11 @@ export class ReportsService implements IReportsService {
 		);
 
 		let total = ReportBalance.zero();
-		for (const { item, account, toAccount } of items) {
+		for (const {
+			scheduledTransaction: item,
+			account,
+			toAccount,
+		} of items) {
 			// Create account type lookup function
 			const accountTypeLookup = (id: AccountID) => {
 				if (id.value === account.id.value) return account.type;

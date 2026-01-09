@@ -2,10 +2,10 @@ import { Nanoid } from "contexts/Shared/domain/value-objects/id/nanoid.valueobje
 
 export class SubCategoryID extends Nanoid {
 	constructor(value: string) {
-		super("SubCategory ID", value);
+		super(value);
 	}
 
 	static generate(): SubCategoryID {
-		return Nanoid.generate("SubCategory ID");
+		return Nanoid.generate();
 	}
 }

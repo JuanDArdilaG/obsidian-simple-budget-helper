@@ -12,16 +12,15 @@ import {
 	AccountName,
 	AccountType,
 } from "contexts/Accounts/domain";
-import {
-	ItemID,
-	ItemRecurrenceInfo,
-	ScheduledItem,
-} from "contexts/Items/domain";
 import { Forward } from "lucide-react";
+import {
+	ItemRecurrenceInfo,
+	ScheduledTransaction,
+} from "../../../contexts/ScheduledTransactions/domain";
+import { Nanoid } from "../../../contexts/Shared/domain";
 
-// Reusable responsive scheduled item component
 export const ResponsiveScheduledItem = ({
-	item,
+	scheduleTransaction,
 	recurrence,
 	accountName,
 	accountBalance,
@@ -36,8 +35,10 @@ export const ResponsiveScheduledItem = ({
 	context = "calendar", // "calendar" or "all-items"
 	currentAction,
 	recurrentContextMenu,
+	handleDelete,
 }: {
-	item: ScheduledItem;
+	handleDelete?: () => Promise<void>;
+	scheduleTransaction: ScheduledTransaction;
 	recurrence: ItemRecurrenceInfo;
 	accountName: AccountName;
 	accountBalance?: AccountBalance;
@@ -54,10 +55,10 @@ export const ResponsiveScheduledItem = ({
 		React.SetStateAction<
 			| {
 					recurrence: ItemRecurrenceInfo;
-					itemID: ItemID;
+					scheduleTransactionId: Nanoid;
 					n?: NumberValueObject;
 			  }
-			| ScheduledItem
+			| ScheduledTransaction
 			| undefined
 		>
 	>;
@@ -65,8 +66,7 @@ export const ResponsiveScheduledItem = ({
 	currentAction?: "edit" | "record";
 	recurrentContextMenu?: {
 		recurrence: ItemRecurrenceInfo;
-		itemID: ItemID;
-		n: NumberValueObject;
+		scheduleTransactionId: Nanoid;
 	};
 }) => {
 	const theme = useTheme();
@@ -74,10 +74,11 @@ export const ResponsiveScheduledItem = ({
 	const isMediumScreen = useMediaQuery(theme.breakpoints.up("md")); // ≥900px
 
 	// --- AllItemsList style ---
-	const totalRecurrences = item.recurrence?.totalRecurrences ?? 1;
-	const frequency = item.recurrence?.frequency;
+	const totalRecurrences =
+		scheduleTransaction.recurrencePattern.totalOccurrences;
+	const frequency = scheduleTransaction.recurrencePattern.frequency;
 	const prettyDate = recurrence.date.toPrettyFormatDate();
-	const itemTags = item.tags?.toArray() ?? [];
+	const itemTags = scheduleTransaction.tags?.toArray() ?? [];
 
 	// Use provided remainingDays or calculate it
 	const daysRemaining =
@@ -116,7 +117,7 @@ export const ResponsiveScheduledItem = ({
 					{/* Item Name and Details */}
 					<div>
 						<div style={{ fontWeight: "500", marginBottom: "4px" }}>
-							{item.name.toString()}
+							{scheduleTransaction.name.toString()}
 						</div>
 						<div
 							style={{
@@ -188,7 +189,7 @@ export const ResponsiveScheduledItem = ({
 						>
 							<PriceLabel
 								price={price}
-								operation={item.operation.type}
+								operation={scheduleTransaction.operation.type}
 							/>
 							<Forward
 								size={16}
@@ -247,7 +248,7 @@ export const ResponsiveScheduledItem = ({
 								}}
 							>
 								Per Month ≈{" "}
-								{item
+								{scheduleTransaction
 									.getPricePerMonthWithAccountTypes(
 										accountTypeLookup
 									)
@@ -259,11 +260,14 @@ export const ResponsiveScheduledItem = ({
 					{/* Actions */}
 					<div>
 						<BudgetItemsListContextMenu
+							handleDelete={handleDelete}
 							recurrent={
 								recurrentContextMenu ??
 								(context === "calendar"
-									? { recurrence, itemID: item.id }
-									: item)
+									? {
+											recurrence,
+									  }
+									: scheduleTransaction)
 							}
 							setAction={setAction}
 							setSelectedItem={setSelectedItem}
@@ -304,7 +308,7 @@ export const ResponsiveScheduledItem = ({
 					{/* Left Column - Item Name and Details */}
 					<div>
 						<div style={{ fontWeight: "500", marginBottom: "4px" }}>
-							{item.name.toString()}
+							{scheduleTransaction.name.toString()}
 						</div>
 						<div
 							style={{
@@ -384,7 +388,7 @@ export const ResponsiveScheduledItem = ({
 						>
 							<PriceLabel
 								price={price}
-								operation={item.operation.type}
+								operation={scheduleTransaction.operation.type}
 							/>
 							<Forward
 								size={14}
@@ -423,7 +427,7 @@ export const ResponsiveScheduledItem = ({
 								}}
 							>
 								Per Month ≈{" "}
-								{item
+								{scheduleTransaction
 									.getPricePerMonthWithAccountTypes(
 										accountTypeLookup
 									)
@@ -438,12 +442,15 @@ export const ResponsiveScheduledItem = ({
 							recurrent={
 								recurrentContextMenu ??
 								(context === "calendar"
-									? { recurrence, itemID: item.id }
-									: item)
+									? {
+											recurrence,
+									  }
+									: scheduleTransaction)
 							}
 							setAction={setAction}
 							setSelectedItem={setSelectedItem}
 							currentAction={currentAction}
+							handleDelete={handleDelete}
 						/>
 					</div>
 				</div>
@@ -468,7 +475,7 @@ export const ResponsiveScheduledItem = ({
 		>
 			<div className="two-columns-list">
 				<span>
-					{item.name.toString()}
+					{scheduleTransaction.name.toString()}
 					{frequency && (
 						<span
 							className="light-text"
@@ -535,7 +542,7 @@ export const ResponsiveScheduledItem = ({
 					>
 						<PriceLabel
 							price={price}
-							operation={item.operation.type}
+							operation={scheduleTransaction.operation.type}
 						/>
 						<Forward
 							style={{
@@ -545,11 +552,14 @@ export const ResponsiveScheduledItem = ({
 							size={19}
 						/>
 						<BudgetItemsListContextMenu
+							handleDelete={handleDelete}
 							recurrent={
 								recurrentContextMenu ??
 								(context === "calendar"
-									? { recurrence, itemID: item.id }
-									: item)
+									? {
+											recurrence,
+									  }
+									: scheduleTransaction)
 							}
 							setAction={setAction}
 							setSelectedItem={setSelectedItem}
@@ -578,7 +588,7 @@ export const ResponsiveScheduledItem = ({
 								}}
 							>
 								Per Month ≈{" "}
-								{item
+								{scheduleTransaction
 									.getPricePerMonthWithAccountTypes(
 										accountTypeLookup
 									)

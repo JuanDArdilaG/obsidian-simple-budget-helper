@@ -1,9 +1,9 @@
-import { ItemsService } from "contexts/Items/application/items.service";
 import {
 	ISubCategoriesService,
 	SubCategoryID,
 } from "contexts/Subcategories/domain";
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
+import { ScheduledTransactionsService } from "../../ScheduledTransactions/application/scheduled-transactions.service";
 import { CategoryID } from "../domain";
 import { CategoriesService } from "./categories.service";
 
@@ -26,7 +26,7 @@ export class DeleteCategoryUseCase {
 	constructor(
 		private readonly categoriesService: CategoriesService,
 		private readonly transactionsService: TransactionsService,
-		private readonly itemsService: ItemsService,
+		private readonly scheduledTransactionsService: ScheduledTransactionsService,
 		private readonly subCategoriesService: ISubCategoriesService
 	) {}
 
@@ -37,9 +37,10 @@ export class DeleteCategoryUseCase {
 			await this.transactionsService.hasTransactionsByCategory(
 				categoryId
 			);
-		const hasRelatedItems = await this.itemsService.hasItemsByCategory(
-			categoryId
-		);
+		const hasRelatedScheduledTransactions =
+			await this.scheduledTransactionsService.hasItemsByCategory(
+				categoryId
+			);
 
 		// Get all subcategories for this category
 		const subcategories = await this.subCategoriesService.getAll();
@@ -64,9 +65,10 @@ export class DeleteCategoryUseCase {
 				await this.transactionsService.hasTransactionsBySubCategory(
 					subcategory.id
 				);
-			const subHasItems = await this.itemsService.hasItemsBySubCategory(
-				subcategory.id
-			);
+			const subHasItems =
+				await this.scheduledTransactionsService.hasItemsBySubCategory(
+					subcategory.id
+				);
 
 			if (subHasTransactions) {
 				const transactions =
@@ -81,9 +83,10 @@ export class DeleteCategoryUseCase {
 			}
 
 			if (subHasItems) {
-				const items = await this.itemsService.getBySubCategory(
-					subcategory.id
-				);
+				const items =
+					await this.scheduledTransactionsService.getBySubCategory(
+						subcategory.id
+					);
 				subcategoriesWithItems.push({
 					id: subcategory.id.value,
 					name: subcategory.name.toString(),
@@ -95,13 +98,13 @@ export class DeleteCategoryUseCase {
 		// If there are any related transactions or items, return the error details
 		if (
 			hasRelatedTransactions ||
-			hasRelatedItems ||
+			hasRelatedScheduledTransactions ||
 			subcategoriesWithTransactions.length > 0 ||
 			subcategoriesWithItems.length > 0
 		) {
 			return {
 				hasRelatedTransactions,
-				hasRelatedItems,
+				hasRelatedItems: hasRelatedScheduledTransactions,
 				subcategoriesWithTransactions,
 				subcategoriesWithItems,
 			};
@@ -166,6 +169,10 @@ export class DeleteCategoryUseCase {
 
 		// Reassign related transactions and items if a target category is provided
 		if (reassignToCategoryId) {
+			const category = await this.categoriesService.getByID(categoryId);
+			const categoryTo = await this.categoriesService.getByID(
+				reassignToCategoryId
+			);
 			if (reassignToSubcategoryId) {
 				// Reassign to both category and subcategory
 				await this.transactionsService.reassignTransactionsCategoryAndSubcategory(
@@ -173,10 +180,13 @@ export class DeleteCategoryUseCase {
 					reassignToCategoryId,
 					reassignToSubcategoryId
 				);
-				await this.itemsService.reassignItemsCategoryAndSubcategory(
-					categoryId,
-					reassignToCategoryId,
+				const subcategoryTo = await this.subCategoriesService.getByID(
 					reassignToSubcategoryId
+				);
+				await this.scheduledTransactionsService.reassignItemsCategoryAndSubcategory(
+					category,
+					categoryTo,
+					subcategoryTo
 				);
 			} else {
 				// Reassign only to category
@@ -184,9 +194,9 @@ export class DeleteCategoryUseCase {
 					categoryId,
 					reassignToCategoryId
 				);
-				await this.itemsService.reassignItemsCategory(
-					categoryId,
-					reassignToCategoryId
+				await this.scheduledTransactionsService.reassignItemsCategory(
+					category,
+					categoryTo
 				);
 			}
 		}

@@ -1,13 +1,9 @@
-import { DateValueObject } from "@juandardilag/value-objects";
+import {
+	DateValueObject,
+	StringValueObject,
+} from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { CategoryID } from "contexts/Categories/domain";
-import {
-	ItemBrand,
-	ItemProductInfo,
-	ItemStore,
-	ItemType,
-} from "contexts/Items/domain";
-import { ItemID } from "contexts/Items/domain/item-id.valueobject";
 import { OperationType } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import {
@@ -30,10 +26,6 @@ export interface TransactionItemInput {
 	quantity: number;
 	category: string;
 	subCategory: string;
-	itemType: ItemType;
-	brand: string;
-	provider: string;
-	itemId?: string;
 }
 
 export interface SharedPropertiesInput {
@@ -115,16 +107,8 @@ export function createTransactionsForItems({
 			new SubCategoryID(subCategoryId.value),
 			new TransactionDate(sharedProperties.date),
 			DateValueObject.createNowDate(),
-			item.itemId ? new ItemID(item.itemId) : undefined,
-			sharedProperties.store || item.brand
-				? new ItemProductInfo({
-						brand: item.brand
-							? new ItemBrand(item.brand)
-							: undefined,
-						store: sharedProperties.store
-							? new ItemStore(sharedProperties.store)
-							: undefined,
-				  })
+			sharedProperties.store
+				? new StringValueObject(sharedProperties.store)
 				: undefined
 		);
 	});

@@ -1,7 +1,6 @@
 import { DateValueObject } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
-import { ItemDate } from "contexts/Items/domain/item-date.valueobject";
 import { ItemName } from "contexts/Items/domain/item-name.valueobject";
 import { ItemRecurrenceFrequency } from "contexts/Items/domain/item-recurrence-frequency.valueobject";
 import {
@@ -9,6 +8,7 @@ import {
 	ItemRecurrenceInfo,
 } from "contexts/Items/domain/item-recurrence-modification.valueobject";
 import { ScheduledItem } from "contexts/Items/domain/scheduled-item.entity";
+import { ItemDate } from "contexts/ScheduledTransactions/domain/scheduled-transaction-date.vo";
 import { ItemOperation } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";

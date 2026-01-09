@@ -1,6 +1,6 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
-import { CompleteItemRecurrenceUseCase } from "contexts/Items/application/complete-item-recurrence.usecase";
 import { ItemID } from "contexts/Items/domain";
+import { CompleteItemRecurrenceUseCase } from "contexts/ScheduledTransactions/application/complete-item-recurrence.usecase";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("CompleteItemRecurrenceUseCase", () => {
@@ -15,7 +15,7 @@ describe("CompleteItemRecurrenceUseCase", () => {
 	it("should call itemsService.completeRecurrence with correct parameters", async () => {
 		const itemId = ItemID.generate();
 		const n = new NumberValueObject(3);
-		await useCase.execute({ id: itemId, n });
+		await useCase.execute({ recurrenceId: itemId, n });
 		expect(itemsService.completeRecurrence).toHaveBeenCalledWith(itemId, n);
 	});
 });

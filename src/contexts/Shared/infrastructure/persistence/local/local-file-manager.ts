@@ -1,6 +1,6 @@
+import { Config } from "contexts/Shared/infrastructure/config/config";
 import { App, normalizePath } from "obsidian";
 import { Logger } from "../../logger";
-import { Config } from "contexts/Shared/infrastructure/config/config";
 
 export interface LocalData {
 	version: string;
@@ -38,7 +38,7 @@ export class LocalFileManager {
 				});
 			}
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error ensuring data folder", error);
 			throw error;
 		}
 	}
@@ -47,7 +47,7 @@ export class LocalFileManager {
 		try {
 			return await this.app.vault.adapter.exists(this.dataFile);
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error checking local data existence", error);
 			return false;
 		}
 	}
@@ -72,7 +72,7 @@ export class LocalFileManager {
 
 			return data;
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error loading local data", error);
 			throw error;
 		}
 	}
@@ -96,7 +96,7 @@ export class LocalFileManager {
 				timestamp: data.timestamp,
 			});
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error saving local data", error);
 			throw error;
 		}
 	}
@@ -110,7 +110,7 @@ export class LocalFileManager {
 				});
 			}
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error deleting local data", error);
 			throw error;
 		}
 	}
@@ -133,7 +133,7 @@ export class LocalFileManager {
 				lastModified: stat?.mtime ? new Date(stat.mtime) : undefined,
 			};
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error getting local data info", error);
 			return { exists: false };
 		}
 	}

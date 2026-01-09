@@ -11,10 +11,11 @@ import {
 import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
 import { CreateAccountPanel } from "apps/obsidian-plugin/panels/CreateAccountPanel";
 import { Account } from "contexts/Accounts/domain";
-import { ItemWithAccumulatedBalance } from "contexts/Items/application/items-with-accumulated-balance.usecase";
 import { AccountsReport } from "contexts/Reports/domain/accounts-report.entity";
 import React, { useContext, useEffect, useMemo, useState } from "react";
-import { AccountsContext, ItemsContext } from "../Contexts";
+import { ItemWithAccumulatedBalance } from "../../../../../contexts/ScheduledTransactions/application/items-with-accumulated-balance.usecase";
+import { ItemRecurrenceInfo } from "../../../../../contexts/ScheduledTransactions/domain";
+import { AccountsContext, ScheduledTransactionsContext } from "../Contexts";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
 import { AccountsListItem } from "./AccountsListItem";
 
@@ -22,7 +23,7 @@ export const AccountsList = () => {
 	const { accounts, updateAccounts } = useContext(AccountsContext);
 	const {
 		useCases: { itemsWithAccumulatedBalanceUseCase },
-	} = useContext(ItemsContext);
+	} = useContext(ScheduledTransactionsContext);
 	const [showCreateForm, setShowCreateForm] = useState(false);
 
 	const [showProjectedBalances, setShowProjectedBalances] = useState(false);
@@ -50,17 +51,15 @@ export const AccountsList = () => {
 
 	// Helper function to calculate the impact of a transaction on a specific account
 	const calculateTransactionImpact = (
-		item: ItemWithAccumulatedBalance,
+		recurrence: ItemRecurrenceInfo,
 		account: Account
 	) => {
-		const { recurrence, item: originalItem } = item;
-
 		// Get the real price for this account from the recurrence
 		const impact = recurrence.getRealPriceForAccount(
-			originalItem.operation,
+			recurrence.operation,
 			account,
-			originalItem.fromSplits,
-			originalItem.toSplits
+			recurrence.fromSplits,
+			recurrence.toSplits
 		);
 
 		return impact;
@@ -75,17 +74,16 @@ export const AccountsList = () => {
 				.then((result: ItemWithAccumulatedBalance[]) => {
 					console.log("Projected balances result:", {
 						totalItems: result.length,
-						items: result.map((item) => ({
-							itemName: item.item.name.toString(),
-							date: item.recurrence.date.toString(),
-							state: item.recurrence.state,
-							accountBalance:
-								item.accountBalance.value.toString(),
-							account: item.recurrence.fromSplits?.[0]?.accountId,
+						items: result.map(({ recurrence, accountBalance }) => ({
+							itemName: recurrence.name.toString(),
+							date: recurrence.date.toString(),
+							state: recurrence.state,
+							accountBalance: accountBalance.value.toString(),
+							account: recurrence.fromSplits?.[0]?.accountId,
 							itemOperationAccount:
-								item.item.fromSplits[0]?.accountId,
+								recurrence.fromSplits[0]?.accountId,
 							itemOperationToAccount:
-								item.item.toSplits[0]?.accountId,
+								recurrence.toSplits[0]?.accountId,
 						})),
 					});
 					setItemsWithAccountsBalance(result);
@@ -117,15 +115,17 @@ export const AccountsList = () => {
 
 			// Find all items that affect this account
 			const accountItems = itemsWithAccountsBalance.filter(
-				({ recurrence, item }: ItemWithAccumulatedBalance) => {
+				({ recurrence }: ItemWithAccumulatedBalance) => {
 					// Check if this account is involved in the transaction
 					const isMainAccount =
 						recurrence.fromSplits?.[0]?.accountId?.equalTo(
 							account.id
-						) || item.fromSplits[0]?.accountId?.equalTo(account.id);
-					const isToAccount = item.toSplits[0]?.accountId?.equalTo(
-						account.id
-					);
+						) ||
+						recurrence.fromSplits[0]?.accountId?.equalTo(
+							account.id
+						);
+					const isToAccount =
+						recurrence.toSplits[0]?.accountId?.equalTo(account.id);
 
 					return isMainAccount || isToAccount;
 				}
@@ -134,23 +134,23 @@ export const AccountsList = () => {
 			console.log(`Account ${account.name.toString()}:`, {
 				originalBalance: account.balance.value.toString(),
 				accountItemsCount: accountItems.length,
-				accountItems: accountItems.map((itemWithBalance) => ({
-					itemName: itemWithBalance.item.name.toString(),
-					accountBalance:
-						itemWithBalance.accountBalance.value.toString(),
-					date: itemWithBalance.recurrence.date.toString(),
-					isMainAccount:
-						itemWithBalance.recurrence.fromSplits?.[0]?.accountId?.equalTo(
-							account.id
-						) ||
-						itemWithBalance.item.fromSplits[0]?.accountId?.equalTo(
+				accountItems: accountItems.map(
+					({ recurrence, accountBalance }) => ({
+						itemName: recurrence.name.toString(),
+						accountBalance: accountBalance.value.toString(),
+						date: recurrence.date.toString(),
+						isMainAccount:
+							recurrence.fromSplits?.[0]?.accountId?.equalTo(
+								account.id
+							) ||
+							recurrence.fromSplits[0]?.accountId?.equalTo(
+								account.id
+							),
+						isToAccount: recurrence.toSplits[0]?.accountId?.equalTo(
 							account.id
 						),
-					isToAccount:
-						itemWithBalance.item.toSplits[0]?.accountId?.equalTo(
-							account.id
-						),
-				})),
+					})
+				),
 			});
 
 			// Calculate the projected balance by processing transactions chronologically
@@ -163,14 +163,17 @@ export const AccountsList = () => {
 				);
 
 				// Process each transaction chronologically
-				for (const item of sortedItems) {
+				for (const { recurrence } of sortedItems) {
 					// Calculate the impact of this transaction on the account
-					const impact = calculateTransactionImpact(item, account);
+					const impact = calculateTransactionImpact(
+						recurrence,
+						account
+					);
 					const previousBalance = projectedBalance;
 					projectedBalance = projectedBalance.plus(impact);
 
 					console.log(
-						`Transaction ${item.item.name.toString()} on ${item.recurrence.date.toString()}:`,
+						`Transaction ${recurrence.name.toString()} on ${recurrence.date.toString()}:`,
 						{
 							previousBalance: previousBalance.value.toString(),
 							impact: impact.value.toString(),

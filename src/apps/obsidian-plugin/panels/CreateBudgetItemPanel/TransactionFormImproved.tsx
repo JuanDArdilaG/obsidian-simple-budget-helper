@@ -29,36 +29,13 @@ import {
 } from "apps/obsidian-plugin/components/Select";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 import {
+	AccountsContext,
 	CategoriesContext,
-	ItemsContext,
+	ScheduledTransactionsContext,
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { AccountID } from "contexts/Accounts/domain";
 import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
-import {
-	Item,
-	ItemBrand,
-	ItemID,
-	ItemName,
-	ItemPrice,
-	ItemProductInfo,
-	ItemStore,
-	ItemType,
-	ProductItem,
-	ServiceItem,
-} from "contexts/Items/domain";
-import {
-	Brand,
-	Brand as BrandEntity,
-} from "contexts/Items/domain/brand.entity";
-import {
-	Provider,
-	Provider as ProviderEntity,
-} from "contexts/Items/domain/provider.entity";
-import {
-	Store,
-	Store as StoreEntity,
-} from "contexts/Items/domain/store.entity";
 import { OperationType } from "contexts/Shared/domain";
 import {
 	SubCategory,
@@ -83,6 +60,7 @@ import React, {
 	useEffect,
 	useState,
 } from "react";
+import { Store } from "../../../../contexts/Stores/domain";
 
 // Transaction type colors
 const TRANSACTION_TYPE_COLORS = {
@@ -114,10 +92,6 @@ interface TransactionItem {
 	quantity: number;
 	category: string;
 	subCategory: string;
-	itemType: ItemType;
-	brand: string;
-	provider: string;
-	item?: Item;
 }
 
 // Validation interface
@@ -195,18 +169,6 @@ const useMultiTransactionValidation = (
 					}: Quantity must be a whole number`;
 					break;
 				}
-				if (item.brand && item.brand.length > 50) {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Brand name must be less than 50 characters`;
-					break;
-				}
-				if (item.provider && item.provider.length > 50) {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Provider name must be less than 50 characters`;
-					break;
-				}
 			}
 		}
 
@@ -273,13 +235,11 @@ const useMultiTransactionValidation = (
 
 // Main component
 export const TransactionFormImproved = ({
-	items,
 	close,
 	onSubmit,
 	transaction,
 	children,
 }: PropsWithChildren<{
-	items: Item[];
 	close: () => void;
 	onSubmit: (withClose: boolean) => void;
 	transaction?: Transaction;
@@ -287,6 +247,7 @@ export const TransactionFormImproved = ({
 	const { logger } = useLogger("TransactionFormImproved");
 	const {
 		useCases: { recordTransaction, updateTransaction },
+		transactions,
 	} = useContext(TransactionsContext);
 	const {
 		useCases: { createCategory, createSubCategory },
@@ -297,23 +258,12 @@ export const TransactionFormImproved = ({
 		updateCategoriesWithSubcategories,
 	} = useContext(CategoriesContext);
 	const {
-		useCases: {
-			getAllBrands,
-			createBrand,
-			getAllStores,
-			createStore,
-			getAllProviders,
-			createProvider,
-			getRegularItemById,
-			createRegularItem,
-			updateRegularItem,
-		},
-	} = useContext(ItemsContext);
+		useCases: { getAllStores, createStore },
+	} = useContext(ScheduledTransactionsContext);
+	const { updateAccounts } = useContext(AccountsContext);
 
 	// State for brands, stores, and providers
-	const [brands, setBrands] = useState<BrandEntity[]>([]);
-	const [stores, setStores] = useState<StoreEntity[]>([]);
-	const [providers, setProviders] = useState<ProviderEntity[]>([]);
+	const [stores, setStores] = useState<Store[]>([]);
 
 	// UI state for foldable sections
 	const [showBreakdown, setShowBreakdown] = useState(false);
@@ -343,17 +293,11 @@ export const TransactionFormImproved = ({
 		if (updateData) {
 			const loadData = async () => {
 				try {
-					const [brandsResult, storesResult, providersResult] =
-						await Promise.all([
-							getAllBrands.execute(),
-							getAllStores.execute(),
-							getAllProviders.execute(),
-						]);
-					setBrands(brandsResult.brands);
-					setStores(storesResult.stores);
-					setProviders(providersResult.providers);
+					const { stores } = await getAllStores.execute();
+					setStores(stores);
 				} catch (error) {
 					logger.error(
+						"Error loading brands, stores, and providers",
 						error instanceof Error
 							? error
 							: new Error(
@@ -365,7 +309,7 @@ export const TransactionFormImproved = ({
 			loadData();
 			setUpdateData(false);
 		}
-	}, [getAllBrands, getAllStores, getAllProviders, logger, updateData]);
+	}, [getAllStores, logger, updateData]);
 
 	// Helper to extract primitives from Transaction for editing
 	const getInitialTransactionItems = async () => {
@@ -378,40 +322,8 @@ export const TransactionFormImproved = ({
 					quantity: 1,
 					category: "",
 					subCategory: "",
-					itemType: ItemType.PRODUCT,
-					brand: "",
-					provider: "",
 				},
 			];
-		}
-
-		// Find the item associated with this transaction
-		let associatedItem: Item | undefined;
-		let itemType = ItemType.PRODUCT; // Default for scheduled items
-
-		if (transaction.itemID) {
-			// First check if it's in the scheduled items (from items prop)
-			const scheduledItem = items.find(
-				(i) => i.id.value === transaction.itemID?.value
-			);
-
-			if (scheduledItem) {
-				// For scheduled items, we can't get the regular Item, but we can determine type
-				// Scheduled items default to PRODUCT type
-				itemType = ItemType.PRODUCT;
-			} else {
-				// If not found in scheduled items, try to get it as a regular item
-				try {
-					associatedItem = await getRegularItemById.execute(
-						transaction.itemID
-					);
-					itemType = associatedItem?.type || ItemType.PRODUCT;
-				} catch (error) {
-					logger.debug("Could not find item with ID", {
-						itemId: transaction.itemID.value,
-					});
-				}
-			}
 		}
 
 		return [
@@ -427,10 +339,6 @@ export const TransactionFormImproved = ({
 					subCategories.find((s) =>
 						s.id.equalTo(transaction.subCategory)
 					)?.name.value || "",
-				itemType: itemType,
-				brand: transaction.brand?.value || "",
-				provider: "",
-				item: associatedItem,
 			},
 		];
 	};
@@ -469,7 +377,7 @@ export const TransactionFormImproved = ({
 		getInitialTransactionItems().then((items) => {
 			setTransactionItems(items);
 		});
-	}, [transaction, categories, subCategories, items, getRegularItemById]);
+	}, [transaction, categories, subCategories]);
 	const [sharedProperties, setSharedProperties] = useState(
 		getInitialSharedProperties()
 	);
@@ -520,9 +428,6 @@ export const TransactionFormImproved = ({
 				quantity: 1,
 				category: "",
 				subCategory: "",
-				itemType: ItemType.PRODUCT,
-				brand: "",
-				provider: "",
 			},
 		]);
 
@@ -643,18 +548,14 @@ export const TransactionFormImproved = ({
 	};
 
 	// Name select handler
-	const handleNameSelect = (itemId: string, displayName: string) => {
-		const match = items.find((item) => item.name.value === displayName);
+	const handleNameSelect = (transactionId: string, displayName: string) => {
+		const match = transactions.find(
+			(transaction) => transaction.name.value === displayName
+		);
 		if (match) {
-			const itemBrands = match instanceof ProductItem ? match.brands : [];
-			const brandName =
-				itemBrands.length > 0
-					? brands.find((b) => b.id.value === itemBrands[0].value)
-							?.name.value
-					: "";
-			updateTransactionItem(itemId, {
+			updateTransactionItem(transactionId, {
 				name: match.name.value,
-				amount: match.amount.value,
+				amount: match.fromAmount.price,
 				category:
 					categories.find((c) => c.id.value === match.category.value)
 						?.name.value || "",
@@ -662,14 +563,10 @@ export const TransactionFormImproved = ({
 					subCategories.find(
 						(s) => s.id.value === match.subCategory.value
 					)?.name.value || "",
-				itemType: match.type,
-				item: match,
-				brand: brandName,
 			});
 		} else {
-			updateTransactionItem(itemId, {
+			updateTransactionItem(transactionId, {
 				name: displayName,
-				item: undefined,
 			});
 		}
 	};
@@ -684,53 +581,10 @@ export const TransactionFormImproved = ({
 				)
 		)
 	);
-	const brandOptions = Array.from(
-		new Set(
-			[
-				...brands.map((brand) => brand.name.value),
-				...transactionItems.map((t) => t.brand),
-			].filter(
-				(t): t is string => typeof t === "string" && t.trim() !== ""
-			)
-		)
-	);
-	const providerOptions = Array.from(
-		new Set(
-			[
-				...providers.map((provider) => provider.name.value),
-				...transactionItems.map((t) => t.provider),
-			].filter(
-				(t): t is string => typeof t === "string" && t.trim() !== ""
-			)
-		)
-	);
+
 	const nameOptions = Array.from(
-		new Set(items.map((item) => item.name.value))
+		new Set(transactions.map((transaction) => transaction.name.value))
 	);
-
-	const getBrandOptionsForItem = (itemName?: string) => {
-		const item = items.find((i) => i.name.value === itemName);
-		if (!item || !(item instanceof ProductItem)) return brandOptions;
-		const brandsList = item.brands
-			.map((brandId) => brands.find((b) => b.id.value === brandId.value))
-			.filter((brand): brand is BrandEntity => !!brand)
-			.map((brand) => brand.name.value)
-			.filter((name) => !!name && name.trim() !== "");
-		return brandsList;
-	};
-
-	const getProviderOptionsForItem = (itemName?: string) => {
-		const item = items.find((i) => i.name.value === itemName);
-		if (!item || !(item instanceof ServiceItem)) return providerOptions;
-		const providersList = item.providers
-			.map((providerId) =>
-				providers.find((p) => p.id.value === providerId.value)
-			)
-			.filter((provider): provider is ProviderEntity => !!provider)
-			.map((provider) => provider.name.value)
-			.filter((name) => !!name && name.trim() !== "");
-		return providersList;
-	};
 
 	// Calculator functions
 	const openCalculator = (itemId: string, currentAmount: number) => {
@@ -775,9 +629,6 @@ export const TransactionFormImproved = ({
 			quantity: 1,
 			category: "",
 			subCategory: "",
-			itemType: ItemType.PRODUCT,
-			brand: "",
-			provider: "",
 		};
 		setTransactionItems([...transactionItems, newItem]);
 	};
@@ -823,9 +674,7 @@ export const TransactionFormImproved = ({
 				0
 			);
 
-			const allBrands = [...brands];
 			const allStores = [...stores];
-			const allProviders = [...providers];
 
 			// For edit mode, keep old logic (single transaction)
 			if (transaction) {
@@ -863,18 +712,7 @@ export const TransactionFormImproved = ({
 					date: new TransactionDate(sharedProperties.date),
 					fromSplits,
 					toSplits,
-					itemId: firstItem.item ? firstItem.item.id : undefined,
-					brand: firstItem.brand
-						? new ItemBrand(firstItem.brand)
-						: undefined,
-					store: sharedProperties.store
-						? new ItemProductInfo({
-								brand: firstItem.brand
-									? new ItemBrand(firstItem.brand)
-									: undefined,
-								store: new ItemStore(sharedProperties.store),
-						  })
-						: undefined,
+					store: sharedProperties.store,
 				};
 				transaction.updateName(transactionData.name);
 				transaction.updateOperation(transactionData.operation);
@@ -921,101 +759,19 @@ export const TransactionFormImproved = ({
 										)
 							  )
 							: [];
-					let brand: Brand | undefined = undefined;
 					let store: Store | undefined = undefined;
-					logger.debug("item instance of", {
-						product: item.item instanceof ProductItem,
-						service: item.item instanceof ServiceItem,
-					});
-					if (!item.item || item.item instanceof ProductItem) {
-						if (item.brand) {
-							brand = allBrands.find(
-								(b) => b.name.value === item.brand
+					if (sharedProperties.store) {
+						store = allStores.find(
+							(s) => s.name.value === sharedProperties.store
+						);
+						if (!store) {
+							const newStore = Store.create(
+								new StringValueObject(sharedProperties.store)
 							);
-							if (!brand) {
-								brand = Brand.create(
-									new StringValueObject(item.brand)
-								);
-								await createBrand.execute(brand);
-								allBrands.push(brand);
-							}
-							logger.debug("brand", { brand });
+							await createStore.execute(newStore);
+							allStores.push(newStore);
 						}
-						if (sharedProperties.store) {
-							store = allStores.find(
-								(s) => s.name.value === sharedProperties.store
-							);
-							if (!store) {
-								const newStore = Store.create(
-									new StringValueObject(
-										sharedProperties.store
-									)
-								);
-								await createStore.execute(newStore);
-								allStores.push(newStore);
-							}
-							logger.debug("store", { store });
-						}
-					}
-
-					let provider: Provider | undefined = undefined;
-					if (!item.item || item.item instanceof ServiceItem) {
-						if (item.provider) {
-							provider = allProviders.find(
-								(p) => p.name.value === item.provider
-							);
-							if (!provider) {
-								const newProvider = Provider.create(
-									new StringValueObject(item.provider)
-								);
-								await createProvider.execute(newProvider);
-								allProviders.push(newProvider);
-							}
-							logger.debug("provider", { provider });
-						}
-					}
-
-					let regularItemId: ItemID | undefined = undefined;
-
-					if (item.item) {
-						const itemCopy = item.item.copy();
-						itemCopy.updateAmount(new ItemPrice(item.amount));
-						itemCopy.updateCategory(categoryId);
-						itemCopy.updateSubCategory(subCategoryId);
-
-						if (itemCopy instanceof ProductItem) {
-							brand && itemCopy.addBrand(brand.id);
-							store && itemCopy.addStore(store.id);
-						}
-						if (itemCopy instanceof ServiceItem) {
-							provider && itemCopy.addProvider(provider.id);
-						}
-
-						regularItemId = itemCopy.id;
-
-						await updateRegularItem.execute(itemCopy);
-					} else {
-						const regularItem =
-							item.itemType === ItemType.PRODUCT ||
-							sharedProperties.operation === "transfer"
-								? ProductItem.create(
-										new ItemName(item.name),
-										categoryId,
-										subCategoryId,
-										new ItemPrice(item.amount),
-										brand ? [brand.id] : [],
-										store ? [store.id] : []
-								  )
-								: ServiceItem.create(
-										new ItemName(item.name),
-										categoryId,
-										subCategoryId,
-										new ItemPrice(item.amount),
-										provider ? [provider.id] : []
-								  );
-						await createRegularItem.execute(regularItem);
-
-						regularItemId = regularItem.id;
+						logger.debug("store", { store });
 					}
 
 					for (let i = 1; i <= item.quantity; i++)
@@ -1032,18 +788,10 @@ export const TransactionFormImproved = ({
 								new SubCategoryID(subCategoryId.value),
 								new TransactionDate(sharedProperties.date),
 								DateValueObject.createNowDate(),
-								regularItemId,
-								sharedProperties.store || item.brand
-									? new ItemProductInfo({
-											brand: item.brand
-												? new ItemBrand(item.brand)
-												: undefined,
-											store: sharedProperties.store
-												? new ItemStore(
-														sharedProperties.store
-												  )
-												: undefined,
-									  })
+								sharedProperties.store
+									? new StringValueObject(
+											sharedProperties.store
+									  )
 									: undefined
 							)
 						);
@@ -1052,6 +800,7 @@ export const TransactionFormImproved = ({
 
 			onSubmit(withClose);
 			setUpdateData(true);
+			updateAccounts();
 			if (withClose) {
 				close();
 			} else {
@@ -1059,6 +808,7 @@ export const TransactionFormImproved = ({
 			}
 		} catch (error) {
 			logger.error(
+				"Error saving transaction",
 				error instanceof Error
 					? error
 					: new Error("Error saving transaction")
@@ -1325,34 +1075,6 @@ export const TransactionFormImproved = ({
 												color: "var(--text-muted)",
 											},
 										}}
-									/>
-
-									{/* Item Type */}
-									<Select
-										id={`itemType-${item.id}`}
-										label="Item Type"
-										value={item.itemType}
-										values={[
-											ItemType.PRODUCT,
-											ItemType.SERVICE,
-										]}
-										onChange={(itemType) => {
-											updateTransactionItem(item.id, {
-												itemType: itemType as ItemType,
-												brand:
-													itemType ===
-													ItemType.PRODUCT
-														? item.brand
-														: "",
-												provider:
-													itemType ===
-													ItemType.SERVICE
-														? item.provider
-														: "",
-											});
-										}}
-										isLocked={false}
-										setIsLocked={() => {}}
 									/>
 								</>
 							)}
@@ -1696,46 +1418,6 @@ export const TransactionFormImproved = ({
 									</Box>
 								</Collapse>
 							</Box>
-
-							{/* Brand (for products) */}
-							{item.itemType === ItemType.PRODUCT &&
-								sharedProperties.operation !== "transfer" && (
-									<SelectWithCreation
-										id={`brand-${item.id}`}
-										label="Brand (optional)"
-										item={item.brand || ""}
-										items={getBrandOptionsForItem(
-											item.name
-										)}
-										onChange={(brand) =>
-											updateTransactionItem(item.id, {
-												brand,
-											})
-										}
-										isLocked={false}
-										setIsLocked={() => {}}
-									/>
-								)}
-
-							{/* Provider (for services) */}
-							{item.itemType === ItemType.SERVICE &&
-								sharedProperties.operation !== "transfer" && (
-									<SelectWithCreation
-										id={`provider-${item.id}`}
-										label="Provider (optional)"
-										item={item.provider || ""}
-										items={getProviderOptionsForItem(
-											item.name
-										)}
-										onChange={(provider) =>
-											updateTransactionItem(item.id, {
-												provider,
-											})
-										}
-										isLocked={false}
-										setIsLocked={() => {}}
-									/>
-								)}
 						</Box>
 					</Box>
 				))}

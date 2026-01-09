@@ -1,8 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: true
----
-Prefer reusable code over code duplication.
-Keep the solution simple (KISS).
-Avoid files over 400 lines; try to break them when that happens.

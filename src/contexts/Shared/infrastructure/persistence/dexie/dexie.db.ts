@@ -1,13 +1,16 @@
-import Dexie from "dexie";
-import dexieCloud from "dexie-cloud-addon";
-import { DB } from "../db";
-import { Config } from "contexts/Shared/infrastructure/config/config";
 import { Account } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
+import { Config } from "contexts/Shared/infrastructure/config/config";
 import { SubCategory } from "contexts/Subcategories/domain";
 import { Transaction } from "contexts/Transactions/domain";
-import { Item } from "contexts/Items/domain";
+import Dexie from "dexie";
+import dexieCloud from "dexie-cloud-addon";
+import {
+	RecurrenceModification,
+	ScheduledTransaction,
+} from "../../../../ScheduledTransactions/domain";
 import { Logger } from "../../logger";
+import { DB } from "../db";
 
 export class DexieDB extends DB {
 	db: Dexie;
@@ -50,7 +53,7 @@ export class DexieDB extends DB {
 			this.logger.debug("pulling sync");
 			this.db.cloud.sync({ wait: false, purpose: "pull" });
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("DexieDB initialization error", error);
 		}
 
 		// const blob = await exportDB(oldDb);
@@ -72,14 +75,17 @@ export class DexieDB extends DB {
 			[Config.categoriesTableName]: Object.keys(
 				Category.emptyPrimitives()
 			).join(", "),
-			[Config.itemsTableName]: Object.keys(Item.emptyPrimitives()).join(
-				", "
-			),
 			[Config.subCategoriesTableName]: Object.keys(
 				SubCategory.emptyPrimitives()
 			).join(", "),
 			[Config.transactionsTableName]: Object.keys(
 				Transaction.emptyPrimitives()
+			).join(", "),
+			[Config.scheduledTransactionsTableName]: Object.keys(
+				ScheduledTransaction.emptyPrimitives()
+			).join(", "),
+			[Config.scheduledTransactionsModificationsTableName]: Object.keys(
+				RecurrenceModification.emptyPrimitives()
 			).join(", "),
 		});
 	}

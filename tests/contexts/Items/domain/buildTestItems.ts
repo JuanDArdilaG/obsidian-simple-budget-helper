@@ -2,13 +2,9 @@ import { DateValueObject } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import {
-	ERecurrenceState,
-	ItemDate,
 	ItemName,
 	ItemPrice,
 	ItemRecurrenceFrequency,
-	ItemRecurrenceInfo,
-	ItemRecurrenceInfoPrimitives,
 	ScheduledItem,
 } from "contexts/Items/domain";
 import { ItemOperation } from "contexts/Shared/domain";
@@ -26,7 +22,6 @@ type ItemConfig = {
 		startDate?: DateValueObject;
 		untilDate?: DateValueObject;
 	};
-	modifications?: Partial<ItemRecurrenceInfoPrimitives>[];
 };
 
 // Helper to create splits for test items
@@ -53,24 +48,11 @@ export const buildTestItems = (
 				CategoryID.generate(),
 				SubCategoryID.generate()
 			);
-			item.recurrence.updateRecurrences([
-				new ItemRecurrenceInfo(
-					ItemDate.createNowDate(),
-					ERecurrenceState.PENDING
-				),
-			]);
 			items.push(item);
 		}
 	} else {
 		items = config.map(
-			({
-				price,
-				operation,
-				recurrence,
-				modifications,
-				account,
-				toAccount,
-			}) => {
+			({ price, operation, recurrence, account, toAccount }) => {
 				const startDate =
 					recurrence?.startDate ?? DateValueObject.createNowDate();
 				const absPrice = price ? Math.abs(price.value) : 100;
@@ -113,6 +95,16 @@ export const buildTestItems = (
 						new ItemRecurrenceFrequency(recurrence.frequency)
 					);
 					if (recurrence.untilDate) {
+						const adjustedUntilDate =
+							recurrence.untilDate.value <= startDate.value
+								? new DateValueObject(
+										new Date(
+											startDate.value.getTime() +
+												24 * 60 * 60 * 1000
+										)
+								  ) // Add 1 day
+								: recurrence.untilDate;
+
 						item = ScheduledItem.untilDate(
 							new ItemName("test"),
 							fromSplits,
@@ -122,21 +114,10 @@ export const buildTestItems = (
 							SubCategoryID.generate(),
 							new ItemRecurrenceFrequency(recurrence.frequency),
 							startDate,
-							recurrence.untilDate
+							adjustedUntilDate
 						);
 					}
 				}
-
-				if (modifications)
-					item.recurrence.updateRecurrences(
-						modifications.map((r) =>
-							ItemRecurrenceInfo.fromPrimitives({
-								date: new Date(),
-								state: ERecurrenceState.PENDING,
-								...r,
-							})
-						)
-					);
 
 				return item;
 			}

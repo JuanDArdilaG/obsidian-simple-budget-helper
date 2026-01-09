@@ -160,7 +160,7 @@ export class TransactionsService implements ITransactionsService {
 			new PaymentSplit(accountID, amountDifference.abs()),
 		];
 
-		const transaction = Transaction.createWithoutItem(
+		const transaction = Transaction.create(
 			fromSplits,
 			[],
 			new TransactionName(`Adjustment for ${account.name}`),

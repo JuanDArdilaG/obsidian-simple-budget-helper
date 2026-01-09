@@ -8,36 +8,22 @@ import {
 } from "@mui/material";
 import { DateInput } from "apps/obsidian-plugin/components/Input/DateInput";
 import { Input } from "apps/obsidian-plugin/components/Input/Input";
-import { ItemRecurrence, ItemRecurrenceFrequency } from "contexts/Items/domain";
 import { useEffect, useState } from "react";
+import { ItemRecurrenceFrequency } from "../../../../contexts/ScheduledTransactions/domain";
 
 type FrequencyType = "daily" | "weekly" | "monthly" | "yearly" | "other";
 
 export const useCreateRecurrenceForm = ({
-	recurrence,
 	showErrors,
 }: {
-	recurrence?: ItemRecurrence;
 	showErrors?: boolean;
 }) => {
-	const [type, setType] = useState(
-		recurrence?.untilDate ? "byDate" : "byTotal"
-	);
-	const [frequencyString, setFrequencyString] = useState(
-		recurrence?.frequency?.value ?? ""
-	);
-	const [untilDate, setUntilDate] = useState<Date>(
-		recurrence?.untilDate?.value ?? new Date()
-	);
+	const [type, setType] = useState<"byDate" | "byTotal">("byDate");
+	const [frequencyString, setFrequencyString] = useState("");
+	const [untilDate, setUntilDate] = useState<Date>(new Date());
 	const [recurrenceType, setRecurrencesType] = useState<
 		"oneTime" | "infinite" | "other"
-	>(
-		recurrence?.totalRecurrences === -1
-			? "infinite"
-			: recurrence?.totalRecurrences === 1
-			? "oneTime"
-			: "other"
-	);
+	>("infinite");
 	const [recurrences, setRecurrences] = useState(0);
 	const [frequencyType, setFrequencyType] = useState<FrequencyType>("other");
 

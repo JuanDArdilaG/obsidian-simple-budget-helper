@@ -74,6 +74,7 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 				results.push(result);
 			} catch (error) {
 				this._logger.error(
+					"Failed to calculate integrity for account",
 					error instanceof Error
 						? error
 						: new Error(
@@ -132,6 +133,7 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 			return true;
 		} catch (error) {
 			this._logger.error(
+				"Failed to resolve discrepancy for account",
 				error instanceof Error
 					? error
 					: new Error(

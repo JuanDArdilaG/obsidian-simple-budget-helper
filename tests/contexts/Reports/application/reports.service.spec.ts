@@ -4,7 +4,7 @@ import { CategoryID } from "contexts/Categories/domain";
 import { ItemName, ScheduledItem } from "contexts/Items/domain";
 import { ItemRecurrenceFrequency } from "contexts/Items/domain/item-recurrence-frequency.valueobject";
 import { ReportsService } from "contexts/Reports/application/reports.service";
-import { ItemsReport } from "contexts/Reports/domain/items-report.entity";
+import { ItemsReport } from "contexts/Reports/domain/scheduled-transactions-report.entity";
 import { ItemOperation } from "contexts/Shared/domain/Item/item-operation.valueobject";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";

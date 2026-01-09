@@ -1,7 +1,7 @@
 // created from 'create-ts-index'
 
-export * from "./AllItemsList";
-export * from "./AllItemsTab";
+export * from "./AllScheduledTransactionsList";
+export * from "./AllScheduledTransactionsTab";
 export * from "./CalendarItemsList";
 export * from "./CalendarItemsTab";
 export * from "./PerCategoryScheduledItemsTab";

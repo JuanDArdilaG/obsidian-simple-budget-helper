@@ -1,17 +1,15 @@
+import { StringValueObject } from "@juandardilag/value-objects";
 import { QueryUseCase } from "contexts/Shared/domain/query-use-case.interface";
-import { ItemStore } from "contexts/Items/domain";
 import { ITransactionsRepository } from "../domain";
 
-export type GetAllUniqueItemStoresUseCaseOutput = ItemStore[];
-
 export class GetAllUniqueItemStoresUseCase
-	implements QueryUseCase<void, GetAllUniqueItemStoresUseCaseOutput>
+	implements QueryUseCase<void, StringValueObject[]>
 {
 	constructor(
 		private readonly _transactionsRepository: ITransactionsRepository
 	) {}
 
-	async execute(): Promise<GetAllUniqueItemStoresUseCaseOutput> {
+	async execute(): Promise<StringValueObject[]> {
 		return await this._transactionsRepository.findAllUniqueItemStores();
 	}
 }

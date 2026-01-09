@@ -1,52 +1,99 @@
 import {
+	DateValueObject,
 	InvalidArgumentError,
 	NumberValueObject,
+	StringValueObject,
 } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
+import { CategoryID } from "contexts/Categories/domain";
 import {
-	IScheduledItemsRepository,
 	ItemID,
-	ItemPrice,
-	ScheduledItem,
+	ItemName,
+	ItemRecurrenceFrequency,
 } from "contexts/Items/domain";
 import { ItemOperation } from "contexts/Shared/domain";
 import { EntityNotFoundError } from "contexts/Shared/domain/errors/not-found.error";
+import { SubCategoryID } from "contexts/Subcategories/domain";
 import { RecordItemRecurrenceUseCase } from "contexts/Transactions/application/record-item-recurrence.usecase";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { TransactionDate } from "contexts/Transactions/domain/transaction-date.valueobject";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { buildTestItems } from "../../Items/domain/buildTestItems";
-import { ItemsRepositoryMock } from "../../Items/domain/items-repository.mock";
+import { ScheduledItemV2 } from "../../../../src/contexts/Items/domain/v2/scheduled-item-v2.entity";
+import { IScheduledItemsV2Service } from "../../../../src/contexts/Items/domain/v2/services.interface";
 import { TransactionsServiceMock } from "../domain/transactions-service.mock";
 
 describe("RecordItemRecurrenceUseCase", () => {
 	let useCase: RecordItemRecurrenceUseCase;
 	let mockTransactionsService: TransactionsServiceMock;
-	let mockScheduledItemsRepository: IScheduledItemsRepository;
-	let testItems: ScheduledItem[];
+	let mockScheduledItemsV2Service: IScheduledItemsV2Service;
+	let testItemsV2: ScheduledItemV2[];
 
 	beforeEach(() => {
 		mockTransactionsService = new TransactionsServiceMock([]);
 		const account1 = AccountID.generate();
-		testItems = buildTestItems([
-			{
-				price: new ItemPrice(100),
-				operation: ItemOperation.expense(),
-				account: account1,
-			},
-		]);
-		mockScheduledItemsRepository = new ItemsRepositoryMock(testItems);
+
+		// Create test items using ScheduledItemV2
+		const fromSplits = [
+			new PaymentSplit(account1, new TransactionAmount(100)),
+		];
+		const toSplits: PaymentSplit[] = [];
+
+		const testItem = ScheduledItemV2.createInfinite(
+			new ItemName("Test Item"),
+			DateValueObject.createNowDate(),
+			new ItemRecurrenceFrequency("monthly"),
+			fromSplits,
+			toSplits,
+			ItemOperation.expense(),
+			CategoryID.generate(),
+			SubCategoryID.generate()
+		);
+
+		testItemsV2 = [testItem];
+
+		// Create mock for IScheduledItemsV2Service
+		mockScheduledItemsV2Service = {
+			exists: vi.fn(),
+			create: vi.fn(),
+			getByID: vi.fn().mockImplementation(async (id: ItemID) => {
+				const found = testItemsV2.find(
+					(item) => item.id.value === id.value
+				);
+				if (!found) {
+					throw new EntityNotFoundError(
+						"ScheduledItemV2",
+						new StringValueObject(id.value)
+					);
+				}
+				return found;
+			}),
+			getByCriteria: vi.fn(),
+			getAll: vi.fn().mockResolvedValue(testItemsV2),
+			update: vi.fn().mockResolvedValue(undefined),
+			delete: vi.fn(),
+			getByCategory: vi.fn(),
+			getBySubCategory: vi.fn(),
+			hasItemsByCategory: vi.fn(),
+			hasItemsBySubCategory: vi.fn(),
+			reassignItemsCategory: vi.fn(),
+			reassignItemsSubCategory: vi.fn(),
+			reassignItemsCategoryAndSubcategory: vi.fn(),
+			updateRecurrencePattern: vi.fn(),
+			getOccurrence: vi.fn(),
+			getMonthlyPriceEstimate: vi.fn(),
+		} as IScheduledItemsV2Service;
+
 		useCase = new RecordItemRecurrenceUseCase(
 			mockTransactionsService,
-			mockScheduledItemsRepository
+			mockScheduledItemsV2Service
 		);
 	});
 
 	describe("basic recording functionality", () => {
 		it("should record a transaction for a scheduled item", async () => {
 			// Arrange
-			const item = testItems[0];
+			const item = testItemsV2[0];
 			const n = new NumberValueObject(0);
 
 			// Act
@@ -59,8 +106,8 @@ describe("RecordItemRecurrenceUseCase", () => {
 			expect(mockTransactionsService.transactions).toHaveLength(1);
 			const recordedTransaction = mockTransactionsService.transactions[0];
 			expect(recordedTransaction.fromAmount.value).toBe(100);
-			expect(item.recurrence.recurrences[0].state.toString()).toBe(
-				"completed"
+			expect(mockScheduledItemsV2Service.update).toHaveBeenCalledWith(
+				item
 			);
 		});
 
@@ -79,18 +126,26 @@ describe("RecordItemRecurrenceUseCase", () => {
 
 		it("should throw InvalidArgumentError for item without recurrence", async () => {
 			// Arrange
-			// Create a new item without recurrence by mocking the repository to return an item without recurrence
-			const itemWithoutRecurrence = buildTestItems([
-				{
-					price: new ItemPrice(100),
-					operation: ItemOperation.expense(),
-				},
-			])[0];
+			// Create a new item without recurrence
+			const itemWithoutRecurrence = ScheduledItemV2.createOneTime(
+				new ItemName("Test Item"),
+				DateValueObject.createNowDate(),
+				[
+					new PaymentSplit(
+						AccountID.generate(),
+						new TransactionAmount(100)
+					),
+				],
+				[],
+				ItemOperation.expense(),
+				CategoryID.generate(),
+				SubCategoryID.generate()
+			);
 
-			// Mock the repository to return an item without recurrence
-			const mockRepositoryWithoutRecurrence = {
-				...mockScheduledItemsRepository,
-				findById: vi.fn().mockResolvedValue({
+			// Mock the service to return an item without recurrence pattern
+			const mockServiceWithoutRecurrence: IScheduledItemsV2Service = {
+				...mockScheduledItemsV2Service,
+				getByID: vi.fn().mockResolvedValue({
 					...itemWithoutRecurrence,
 					recurrence: undefined,
 				}),
@@ -98,7 +153,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 
 			const useCaseWithoutRecurrence = new RecordItemRecurrenceUseCase(
 				mockTransactionsService,
-				mockRepositoryWithoutRecurrence
+				mockServiceWithoutRecurrence
 			);
 
 			const n = new NumberValueObject(0);
@@ -116,7 +171,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 	describe("single split modifications", () => {
 		it("should update transaction with new account and amount", async () => {
 			// Arrange
-			const item = testItems[0];
+			const item = testItemsV2[0];
 			const n = new NumberValueObject(0);
 			const newAccount = AccountID.generate();
 			const newAmount = new TransactionAmount(150);
@@ -141,28 +196,46 @@ describe("RecordItemRecurrenceUseCase", () => {
 			// Arrange
 			const account1 = AccountID.generate();
 			const account2 = AccountID.generate();
-			const transferItems = buildTestItems([
-				{
-					price: new ItemPrice(100),
-					operation: ItemOperation.transfer(),
-					account: account1,
-					toAccount: account2,
-				},
-			]);
-			mockScheduledItemsRepository = new ItemsRepositoryMock(
-				transferItems
-			);
-			useCase = new RecordItemRecurrenceUseCase(
-				mockTransactionsService,
-				mockScheduledItemsRepository
+			const transferItem = ScheduledItemV2.createInfinite(
+				new ItemName("Transfer Item"),
+				DateValueObject.createNowDate(),
+				new ItemRecurrenceFrequency("monthly"),
+				[new PaymentSplit(account1, new TransactionAmount(100))],
+				[new PaymentSplit(account2, new TransactionAmount(100))],
+				ItemOperation.transfer(),
+				CategoryID.generate(),
+				SubCategoryID.generate()
 			);
 
-			const item = transferItems[0];
+			// Update test items and mock
+			const transferItems = [transferItem];
+			const mockServiceForTransfer: IScheduledItemsV2Service = {
+				...mockScheduledItemsV2Service,
+				getByID: vi.fn().mockImplementation(async (id: ItemID) => {
+					const found = transferItems.find(
+						(item) => item.id.value === id.value
+					);
+					if (!found) {
+						throw new EntityNotFoundError(
+							"ScheduledItemV2",
+							new StringValueObject(id.value)
+						);
+					}
+					return found;
+				}),
+			};
+
+			const useCaseForTransfer = new RecordItemRecurrenceUseCase(
+				mockTransactionsService,
+				mockServiceForTransfer
+			);
+
+			const item = transferItem;
 			const n = new NumberValueObject(0);
 			const newToAccount = AccountID.generate();
 
 			// Act
-			await useCase.execute({
+			await useCaseForTransfer.execute({
 				itemID: item.id,
 				n,
 				toSplits: [
@@ -183,7 +256,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 	describe("multiple splits support", () => {
 		it("should handle multiple fromSplits", async () => {
 			// Arrange
-			const item = testItems[0];
+			const item = testItemsV2[0];
 			const n = new NumberValueObject(0);
 			const account1 = AccountID.generate();
 			const account2 = AccountID.generate();
@@ -217,23 +290,40 @@ describe("RecordItemRecurrenceUseCase", () => {
 			// Arrange
 			const account1 = AccountID.generate();
 			const account2 = AccountID.generate();
-			const transferItems = buildTestItems([
-				{
-					price: new ItemPrice(100),
-					operation: ItemOperation.transfer(),
-					account: account1,
-					toAccount: account2,
-				},
-			]);
-			mockScheduledItemsRepository = new ItemsRepositoryMock(
-				transferItems
-			);
-			useCase = new RecordItemRecurrenceUseCase(
-				mockTransactionsService,
-				mockScheduledItemsRepository
+			const transferItem = ScheduledItemV2.createInfinite(
+				new ItemName("Transfer Item"),
+				DateValueObject.createNowDate(),
+				new ItemRecurrenceFrequency("monthly"),
+				[new PaymentSplit(account1, new TransactionAmount(100))],
+				[new PaymentSplit(account2, new TransactionAmount(100))],
+				ItemOperation.transfer(),
+				CategoryID.generate(),
+				SubCategoryID.generate()
 			);
 
-			const item = transferItems[0];
+			const transferItems = [transferItem];
+			const mockServiceForTransfer: IScheduledItemsV2Service = {
+				...mockScheduledItemsV2Service,
+				getByID: vi.fn().mockImplementation(async (id: ItemID) => {
+					const found = transferItems.find(
+						(item) => item.id.value === id.value
+					);
+					if (!found) {
+						throw new EntityNotFoundError(
+							"ScheduledItemV2",
+							new StringValueObject(id.value)
+						);
+					}
+					return found;
+				}),
+			};
+
+			const useCaseForTransfer = new RecordItemRecurrenceUseCase(
+				mockTransactionsService,
+				mockServiceForTransfer
+			);
+
+			const item = transferItem;
 			const n = new NumberValueObject(0);
 			const toAccount1 = AccountID.generate();
 			const toAccount2 = AccountID.generate();
@@ -243,7 +333,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 			];
 
 			// Act
-			await useCase.execute({
+			await useCaseForTransfer.execute({
 				itemID: item.id,
 				n,
 				toSplits,
@@ -264,252 +354,10 @@ describe("RecordItemRecurrenceUseCase", () => {
 		});
 	});
 
-	describe("permanent changes functionality", () => {
-		it("should update scheduled item splits when permanentChanges is true", async () => {
-			// Arrange
-			const item = testItems[0];
-			const n = new NumberValueObject(0);
-			const newAccount = AccountID.generate();
-			const newAmount = new TransactionAmount(150);
-			const originalFromSplits = [...item.fromSplits];
-
-			// Act
-			await useCase.execute({
-				itemID: item.id,
-				n,
-				fromSplits: [new PaymentSplit(newAccount, newAmount)],
-				permanentChanges: true,
-			});
-
-			// Assert
-			// Check that the scheduled item was updated
-			expect(item.fromSplits).toHaveLength(1);
-			expect(item.fromSplits[0].accountId.value).toBe(newAccount.value);
-			expect(item.fromSplits[0].amount.value).toBe(150);
-			expect(item.fromSplits).not.toEqual(originalFromSplits);
-
-			// Check that the transaction was recorded with new values
-			expect(mockTransactionsService.transactions).toHaveLength(1);
-			const recordedTransaction = mockTransactionsService.transactions[0];
-			expect(recordedTransaction.fromSplits[0].accountId.value).toBe(
-				newAccount.value
-			);
-			expect(recordedTransaction.fromSplits[0].amount.value).toBe(150);
-		});
-
-		it("should NOT update scheduled item when permanentChanges is false", async () => {
-			// Arrange
-			const item = testItems[0];
-			const n = new NumberValueObject(0);
-			const newAccount = AccountID.generate();
-			const newAmount = new TransactionAmount(150);
-			const originalFromSplits = [...item.fromSplits];
-
-			// Act
-			await useCase.execute({
-				itemID: item.id,
-				n,
-				fromSplits: [new PaymentSplit(newAccount, newAmount)],
-				permanentChanges: false,
-			});
-
-			// Assert
-			// Check that the scheduled item was NOT updated
-			expect(item.fromSplits).toEqual(originalFromSplits);
-
-			// Check that the transaction was recorded with new values
-			expect(mockTransactionsService.transactions).toHaveLength(1);
-			const recordedTransaction = mockTransactionsService.transactions[0];
-			expect(recordedTransaction.fromSplits[0].accountId.value).toBe(
-				newAccount.value
-			);
-			expect(recordedTransaction.fromSplits[0].amount.value).toBe(150);
-		});
-
-		it("should update scheduled item with multiple splits when permanentChanges is true", async () => {
-			// Arrange
-			const item = testItems[0];
-			const n = new NumberValueObject(0);
-			const account1 = AccountID.generate();
-			const account2 = AccountID.generate();
-			const fromSplits = [
-				new PaymentSplit(account1, new TransactionAmount(60)),
-				new PaymentSplit(account2, new TransactionAmount(40)),
-			];
-			const originalFromSplits = [...item.fromSplits];
-
-			// Act
-			await useCase.execute({
-				itemID: item.id,
-				n,
-				fromSplits,
-				permanentChanges: true,
-			});
-
-			// Assert
-			// Check that the scheduled item was updated with multiple splits
-			expect(item.fromSplits).toHaveLength(2);
-			expect(item.fromSplits[0].accountId.value).toBe(account1.value);
-			expect(item.fromSplits[0].amount.value).toBe(60);
-			expect(item.fromSplits[1].accountId.value).toBe(account2.value);
-			expect(item.fromSplits[1].amount.value).toBe(40);
-			expect(item.fromSplits).not.toEqual(originalFromSplits);
-
-			// Check that the transaction was recorded with new values
-			expect(mockTransactionsService.transactions).toHaveLength(1);
-			const recordedTransaction = mockTransactionsService.transactions[0];
-			expect(recordedTransaction.fromSplits).toHaveLength(2);
-		});
-
-		it("should update scheduled item operation accounts when permanentChanges is true", async () => {
-			// Arrange
-			const item = testItems[0];
-			const n = new NumberValueObject(0);
-			const newAccount = AccountID.generate();
-			const newToAccount = AccountID.generate();
-			const originalAccount = item.fromSplits[0]?.accountId;
-
-			// Act
-			await useCase.execute({
-				itemID: item.id,
-				n,
-				fromSplits: [
-					new PaymentSplit(newAccount, new TransactionAmount(100)),
-				],
-				toSplits: [
-					new PaymentSplit(newToAccount, new TransactionAmount(100)),
-				],
-				permanentChanges: true,
-			});
-
-			// Assert
-			// Check that the scheduled item operation was updated
-			expect(item.fromSplits[0]?.accountId.value).toBe(newAccount.value);
-			expect(item.toSplits[0]?.accountId?.value).toBe(newToAccount.value);
-			expect(item.fromSplits[0]?.accountId.value).not.toBe(
-				originalAccount.value
-			);
-		});
-
-		it("should update scheduled item with multiple toSplits for transfers when permanentChanges is true", async () => {
-			// Arrange
-			const account1 = AccountID.generate();
-			const account2 = AccountID.generate();
-			const transferItems = buildTestItems([
-				{
-					price: new ItemPrice(100),
-					operation: ItemOperation.transfer(),
-					account: account1,
-					toAccount: account2,
-				},
-			]);
-			mockScheduledItemsRepository = new ItemsRepositoryMock(
-				transferItems
-			);
-			useCase = new RecordItemRecurrenceUseCase(
-				mockTransactionsService,
-				mockScheduledItemsRepository
-			);
-
-			const item = transferItems[0];
-			const n = new NumberValueObject(0);
-			const toAccount1 = AccountID.generate();
-			const toAccount2 = AccountID.generate();
-			const toSplits = [
-				new PaymentSplit(toAccount1, new TransactionAmount(70)),
-				new PaymentSplit(toAccount2, new TransactionAmount(30)),
-			];
-			const originalToSplits = [...item.toSplits];
-
-			// Act
-			await useCase.execute({
-				itemID: item.id,
-				n,
-				toSplits,
-				permanentChanges: true,
-			});
-
-			// Assert
-			// Check that the scheduled item was updated with multiple toSplits
-			expect(item.toSplits).toHaveLength(2);
-			expect(item.toSplits[0].accountId.value).toBe(toAccount1.value);
-			expect(item.toSplits[0].amount.value).toBe(70);
-			expect(item.toSplits[1].accountId.value).toBe(toAccount2.value);
-			expect(item.toSplits[1].amount.value).toBe(30);
-			expect(item.toSplits).not.toEqual(originalToSplits);
-
-			// Check that the transaction was recorded with new values
-			expect(mockTransactionsService.transactions).toHaveLength(1);
-			const recordedTransaction = mockTransactionsService.transactions[0];
-			expect(recordedTransaction.toSplits).toHaveLength(2);
-		});
-
-		it("should update scheduled item recurrence start date when permanentChanges is true and new date is provided", async () => {
-			// Arrange
-			const item = testItems[0];
-			const n = new NumberValueObject(0);
-			const newDate = new TransactionDate(new Date("2024-01-15"));
-			const originalStartDate = item.recurrence.startDate;
-
-			// Act
-			await useCase.execute({
-				itemID: item.id,
-				n,
-				date: newDate,
-				permanentChanges: true,
-			});
-
-			// Assert
-			// Check that the recurrence start date was updated
-			expect(
-				item.recurrence.startDate.value.toISOString().split("T")[0]
-			).toBe("2024-01-15");
-			expect(item.recurrence.startDate.value).not.toEqual(
-				originalStartDate.value
-			);
-
-			// Check that the transaction was recorded with the new date
-			expect(mockTransactionsService.transactions).toHaveLength(1);
-			const recordedTransaction = mockTransactionsService.transactions[0];
-			expect(
-				recordedTransaction.date.value.toISOString().split("T")[0]
-			).toBe("2024-01-15");
-		});
-
-		it("should NOT update scheduled item recurrence start date when permanentChanges is false", async () => {
-			// Arrange
-			const item = testItems[0];
-			const n = new NumberValueObject(0);
-			const newDate = new TransactionDate(new Date("2024-01-15"));
-			const originalStartDate = item.recurrence.startDate;
-
-			// Act
-			await useCase.execute({
-				itemID: item.id,
-				n,
-				date: newDate,
-				permanentChanges: false,
-			});
-
-			// Assert
-			// Check that the recurrence start date was NOT updated
-			expect(item.recurrence.startDate.value).toEqual(
-				originalStartDate.value
-			);
-
-			// Check that the transaction was recorded with the new date
-			expect(mockTransactionsService.transactions).toHaveLength(1);
-			const recordedTransaction = mockTransactionsService.transactions[0];
-			expect(
-				recordedTransaction.date.value.toISOString().split("T")[0]
-			).toBe("2024-01-15");
-		});
-	});
-
 	describe("date handling", () => {
 		it("should use provided date for transaction", async () => {
 			// Arrange
-			const item = testItems[0];
+			const item = testItemsV2[0];
 			const n = new NumberValueObject(0);
 			const customDate = new TransactionDate(new Date("2023-01-15"));
 
@@ -530,7 +378,7 @@ describe("RecordItemRecurrenceUseCase", () => {
 
 		it("should use current date when no date is provided", async () => {
 			// Arrange
-			const item = testItems[0];
+			const item = testItemsV2[0];
 			const n = new NumberValueObject(0);
 			const beforeExecution = new Date();
 

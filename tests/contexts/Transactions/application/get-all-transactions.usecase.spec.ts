@@ -39,7 +39,7 @@ describe("GetAllTransactionsUseCase", () => {
 			const category = CategoryID.generate();
 			const subCategory = SubCategoryID.generate();
 
-			const transaction1 = Transaction.createWithoutItem(
+			const transaction1 = Transaction.create(
 				[new PaymentSplit(account1, new TransactionAmount(100))],
 				[new PaymentSplit(account2, new TransactionAmount(100))],
 				new TransactionName("Transfer 1"),
@@ -48,7 +48,7 @@ describe("GetAllTransactionsUseCase", () => {
 				subCategory
 			);
 
-			const transaction2 = Transaction.createWithoutItem(
+			const transaction2 = Transaction.create(
 				[new PaymentSplit(account2, new TransactionAmount(50))],
 				[],
 				new TransactionName("Expense 1"),
@@ -57,7 +57,7 @@ describe("GetAllTransactionsUseCase", () => {
 				subCategory
 			);
 
-			const transaction3 = Transaction.createWithoutItem(
+			const transaction3 = Transaction.create(
 				[new PaymentSplit(account1, new TransactionAmount(75))],
 				[],
 				new TransactionName("Expense 2"),
@@ -91,7 +91,7 @@ describe("GetAllTransactionsUseCase", () => {
 			const category = CategoryID.generate();
 			const subCategory = SubCategoryID.generate();
 
-			const transaction1 = Transaction.createWithoutItem(
+			const transaction1 = Transaction.create(
 				[new PaymentSplit(account2, new TransactionAmount(100))],
 				[new PaymentSplit(account1, new TransactionAmount(100))],
 				new TransactionName("Transfer to account1"),
@@ -100,7 +100,7 @@ describe("GetAllTransactionsUseCase", () => {
 				subCategory
 			);
 
-			const transaction2 = Transaction.createWithoutItem(
+			const transaction2 = Transaction.create(
 				[new PaymentSplit(account2, new TransactionAmount(50))],
 				[],
 				new TransactionName("Expense from account2"),
@@ -132,7 +132,7 @@ describe("GetAllTransactionsUseCase", () => {
 			const category = CategoryID.generate();
 			const subCategory = SubCategoryID.generate();
 
-			const transaction1 = Transaction.createWithoutItem(
+			const transaction1 = Transaction.create(
 				[new PaymentSplit(account1, new TransactionAmount(100))],
 				[],
 				new TransactionName("Transaction 1"),
@@ -141,7 +141,7 @@ describe("GetAllTransactionsUseCase", () => {
 				subCategory
 			);
 
-			const transaction2 = Transaction.createWithoutItem(
+			const transaction2 = Transaction.create(
 				[new PaymentSplit(account2, new TransactionAmount(50))],
 				[],
 				new TransactionName("Transaction 2"),
@@ -173,7 +173,7 @@ describe("GetAllTransactionsUseCase", () => {
 			const category2 = CategoryID.generate();
 			const subCategory = SubCategoryID.generate();
 
-			const transaction1 = Transaction.createWithoutItem(
+			const transaction1 = Transaction.create(
 				[new PaymentSplit(account, new TransactionAmount(100))],
 				[],
 				new TransactionName("Transaction 1"),
@@ -182,7 +182,7 @@ describe("GetAllTransactionsUseCase", () => {
 				subCategory
 			);
 
-			const transaction2 = Transaction.createWithoutItem(
+			const transaction2 = Transaction.create(
 				[new PaymentSplit(account, new TransactionAmount(50))],
 				[],
 				new TransactionName("Transaction 2"),
@@ -214,7 +214,7 @@ describe("GetAllTransactionsUseCase", () => {
 			const subCategory1 = SubCategoryID.generate();
 			const subCategory2 = SubCategoryID.generate();
 
-			const transaction1 = Transaction.createWithoutItem(
+			const transaction1 = Transaction.create(
 				[new PaymentSplit(account, new TransactionAmount(100))],
 				[],
 				new TransactionName("Transaction 1"),
@@ -223,7 +223,7 @@ describe("GetAllTransactionsUseCase", () => {
 				subCategory1
 			);
 
-			const transaction2 = Transaction.createWithoutItem(
+			const transaction2 = Transaction.create(
 				[new PaymentSplit(account, new TransactionAmount(50))],
 				[],
 				new TransactionName("Transaction 2"),
@@ -259,7 +259,7 @@ describe("GetAllTransactionsUseCase", () => {
 			const subCategory1 = SubCategoryID.generate();
 			const subCategory2 = SubCategoryID.generate();
 
-			const transaction1 = Transaction.createWithoutItem(
+			const transaction1 = Transaction.create(
 				[new PaymentSplit(account1, new TransactionAmount(100))],
 				[],
 				new TransactionName("Transaction 1"),
@@ -268,7 +268,7 @@ describe("GetAllTransactionsUseCase", () => {
 				subCategory1
 			);
 
-			const transaction2 = Transaction.createWithoutItem(
+			const transaction2 = Transaction.create(
 				[new PaymentSplit(account1, new TransactionAmount(50))],
 				[],
 				new TransactionName("Transaction 2"),
@@ -277,7 +277,7 @@ describe("GetAllTransactionsUseCase", () => {
 				subCategory1
 			);
 
-			const transaction3 = Transaction.createWithoutItem(
+			const transaction3 = Transaction.create(
 				[new PaymentSplit(account1, new TransactionAmount(75))],
 				[],
 				new TransactionName("Transaction 3"),
@@ -286,7 +286,7 @@ describe("GetAllTransactionsUseCase", () => {
 				subCategory2
 			);
 
-			const transaction4 = Transaction.createWithoutItem(
+			const transaction4 = Transaction.create(
 				[new PaymentSplit(account2, new TransactionAmount(25))],
 				[],
 				new TransactionName("Transaction 4"),
@@ -331,7 +331,7 @@ describe("GetAllTransactionsUseCase", () => {
 			const itemId = "test-item-id";
 
 			for (let i = 0; i < 3; i++) {
-				const transaction = Transaction.createWithoutItem(
+				const transaction = Transaction.create(
 					[new PaymentSplit(account, new TransactionAmount(100))],
 					[],
 					new TransactionName("Test Item"),
@@ -368,7 +368,7 @@ describe("GetAllTransactionsUseCase", () => {
 			const subCategory = SubCategoryID.generate();
 
 			// Create a single transaction (quantity = 1)
-			const transaction = Transaction.createWithoutItem(
+			const transaction = Transaction.create(
 				[new PaymentSplit(account, new TransactionAmount(50))],
 				[],
 				new TransactionName("Single Item"),

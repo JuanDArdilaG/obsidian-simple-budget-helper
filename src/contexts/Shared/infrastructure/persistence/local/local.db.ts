@@ -1,15 +1,16 @@
 import { Account } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
-import { Brand } from "contexts/Items/domain/brand.entity";
-import { ProductItem } from "contexts/Items/domain/product-item.entity";
-import { Provider } from "contexts/Items/domain/provider.entity";
-import { ScheduledItem } from "contexts/Items/domain/scheduled-item.entity";
-import { Store } from "contexts/Items/domain/store.entity";
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { SubCategory } from "contexts/Subcategories/domain";
 import { Transaction } from "contexts/Transactions/domain";
 import Dexie from "dexie";
 import { App } from "obsidian";
+import {
+	RecurrenceModification,
+	ScheduledTransaction,
+} from "../../../../ScheduledTransactions/domain";
+import { ScheduledItem } from "../../../../ScheduledTransactions/domain/old/scheduled-item.entity";
+import { Store } from "../../../../Stores/domain";
 import { Logger } from "../../logger";
 import { DB } from "../db";
 import { BackupManager } from "./backup-manager";
@@ -61,7 +62,7 @@ export class LocalDB extends DB {
 
 			this.logger.debug("local dexie initialized successfully");
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error initializing local dexie", error);
 			throw error;
 		}
 	}
@@ -79,7 +80,7 @@ export class LocalDB extends DB {
 				await this.createBackup();
 				this.logger.debug("Periodic backup created");
 			} catch (error) {
-				this.logger.error(error);
+				this.logger.error("Error during periodic backup", error);
 			}
 		}, 600000); // 10 minutes
 
@@ -132,7 +133,7 @@ export class LocalDB extends DB {
 				await this.importData(dataToImport);
 			}
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error loading data from local files", error);
 			// Continue with empty database if loading fails
 		}
 	}
@@ -143,7 +144,7 @@ export class LocalDB extends DB {
 			await this.fileManager.saveData(data);
 			this.logger.debug("Data saved to local files");
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error saving data to local files", error);
 			throw error;
 		}
 	}
@@ -199,7 +200,7 @@ export class LocalDB extends DB {
 
 			this.logger.debug("Data imported successfully");
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error importing data", error);
 			throw error;
 		}
 	}
@@ -226,7 +227,7 @@ export class LocalDB extends DB {
 			await this.backupManager.cleanupOldBackups();
 			return backupInfo;
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error creating backup", error);
 			throw error;
 		}
 	}
@@ -242,7 +243,7 @@ export class LocalDB extends DB {
 			}
 			return false;
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error checking if database has data", error);
 			return false;
 		}
 	}
@@ -262,7 +263,7 @@ export class LocalDB extends DB {
 
 			this.logger.debug("Sync completed successfully");
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Error during sync", error);
 			throw error;
 		}
 	}
@@ -275,21 +276,18 @@ export class LocalDB extends DB {
 			[Config.categoriesTableName]: Object.keys(
 				Category.emptyPrimitives()
 			).join(", "),
-			[Config.itemsTableName]: Object.keys(
-				ProductItem.emptyPrimitives()
-			).join(", "),
-			[Config.scheduledItemsTableName]: Object.keys(
+			[Config.scheduledItemsTableOldName]: Object.keys(
 				ScheduledItem.emptyPrimitives()
 			).join(", "),
-			[Config.brandsTableName]: Object.keys(Brand.emptyPrimitives()).join(
-				", "
-			),
+			[Config.scheduledTransactionsTableName]: Object.keys(
+				ScheduledTransaction.emptyPrimitives()
+			).join(", "),
+			[Config.scheduledTransactionsModificationsTableName]: Object.keys(
+				RecurrenceModification.emptyPrimitives()
+			).join(", "),
 			[Config.storesTableName]: Object.keys(Store.emptyPrimitives()).join(
 				", "
 			),
-			[Config.providersTableName]: Object.keys(
-				Provider.emptyPrimitives()
-			).join(", "),
 			[Config.subCategoriesTableName]: Object.keys(
 				SubCategory.emptyPrimitives()
 			).join(", "),

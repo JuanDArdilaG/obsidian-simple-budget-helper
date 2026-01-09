@@ -5,8 +5,8 @@ import {
 	InjectionMode,
 } from "awilix";
 
-import { AccountsService } from "contexts/Accounts/application/accounts.service";
 import { AccountsIntegrityService } from "contexts/Accounts/application/accounts-integrity.service";
+import { AccountsService } from "contexts/Accounts/application/accounts.service";
 import { CalculateAccountIntegrityUseCase } from "contexts/Accounts/application/calculate-account-integrity.usecase";
 import { CalculateAllAccountsIntegrityUseCase } from "contexts/Accounts/application/calculate-all-accounts-integrity.usecase";
 import { CreateAccountUseCase } from "contexts/Accounts/application/create-account.usecase";
@@ -21,35 +21,15 @@ import { DeleteCategoryUseCase } from "contexts/Categories/application/delete-ca
 import { GetAllCategoriesWithSubCategoriesUseCase } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 import { GetAllCategoriesUseCase } from "contexts/Categories/application/get-all-categories.usecase";
 import { CategoriesLocalRepository } from "contexts/Categories/infrastructure/persistence/local/categories-local.repository";
-import { CreateBrandUseCase } from "contexts/Items/application/create-brand.usecase";
-import { CreateProviderUseCase } from "contexts/Items/application/create-provider.usecase";
-import { CreateRegularItemUseCase } from "contexts/Items/application/create-regular-item.usecase";
-import { CreateScheduledItemUseCase } from "contexts/Items/application/create-scheduled-item.usecase";
-import { CreateStoreUseCase } from "contexts/Items/application/create-store.usecase";
-import { DeleteItemRecurrenceUseCase } from "contexts/Items/application/delete-item-recurrence.usecase";
-import { DeleteItemUseCase } from "contexts/Items/application/delete-item.usecase";
-import { GetAllBrandsUseCase } from "contexts/Items/application/get-all-brands.usecase";
-import { GetAllItemsUseCase } from "contexts/Items/application/get-all-items.usecase";
-import { GetAllProvidersUseCase } from "contexts/Items/application/get-all-providers.usecase";
-import { GetAllRegularItemsUseCase } from "contexts/Items/application/get-all-regular-items.usecase";
-import { GetAllStoresUseCase } from "contexts/Items/application/get-all-stores.usecase";
-import { GetAllUniqueItemsByNameUseCase } from "contexts/Items/application/get-all-unique-items-by-name.usecase";
-import { GetItemsUntilDateUseCase } from "contexts/Items/application/get-items-until-date.usecase";
-import { ItemsWithAccumulatedBalanceUseCase } from "contexts/Items/application/items-with-accumulated-balance.usecase";
-import { ItemsService } from "contexts/Items/application/items.service";
-import { ModifyNItemRecurrenceUseCase } from "contexts/Items/application/modify-n-item-recurrence.usecase";
-import { UpdateRegularItemUseCase } from "contexts/Items/application/update-regular-item.usecase";
-import { UpdateScheduledItemUseCase } from "contexts/Items/application/update-scheduled-item.usecase";
-import { BrandsLocalRepository } from "contexts/Items/infrastructure/persistence/local/brands-local.repository";
-import { ItemsLocalRepository } from "contexts/Items/infrastructure/persistence/local/items-local.repository";
-import { ProvidersLocalRepository } from "contexts/Items/infrastructure/persistence/local/providers-local.repository";
-import { ScheduledItemsLocalRepository } from "contexts/Items/infrastructure/persistence/local/scheduled-items-local.repository";
-import { StoresLocalRepository } from "contexts/Items/infrastructure/persistence/local/stores-local.repository";
 import { GetTotalPerMonthUseCase } from "contexts/Reports/application/get-total-per-month.usecase";
 import { GetTotalUseCase } from "contexts/Reports/application/get-total.usecase";
 import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
 import { ReportsService } from "contexts/Reports/application/reports.service";
+import { CreateScheduledItemUseCase } from "contexts/ScheduledTransactions/application/create-scheduled-item.usecase";
+import { DeleteItemRecurrenceUseCase } from "contexts/ScheduledTransactions/application/delete-scheduled-transaction-recurrence.usecase";
+import { ModifyNItemRecurrenceUseCase } from "contexts/ScheduledTransactions/application/modify-n-item-recurrence.usecase";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
+import { StoresLocalRepository } from "contexts/Stores/infrastructure/persistence/stores-local.repository";
 import { CreateSubCategoryUseCase } from "contexts/Subcategories/application/create-subcategory.usecase";
 import { DeleteSubCategoryUseCase } from "contexts/Subcategories/application/delete-subcategory.usecase";
 import { GetAllSubcategoriesUseCase } from "contexts/Subcategories/application/get-all-subcategories.usecase";
@@ -58,16 +38,25 @@ import { SubcategoriesLocalRepository } from "contexts/Subcategories/infrastruct
 import { AdjustAccountUseCase } from "contexts/Transactions/application/adjust-account.usecase";
 import { DeleteTransactionUseCase } from "contexts/Transactions/application/delete-transaction.usecase";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
-import { GetAllUniqueItemBrandsUseCase } from "contexts/Transactions/application/get-all-unique-item-brands.usecase";
 import { GetAllUniqueItemStoresUseCase } from "contexts/Transactions/application/get-all-unique-item-stores.usecase";
 import { GetAllUniqueTransactionsByNameUseCase } from "contexts/Transactions/application/get-all-unique-transactions.usecase";
-import { RecordItemRecurrenceUseCase } from "contexts/Transactions/application/record-item-recurrence.usecase";
 import { RecordItemUseCase } from "contexts/Transactions/application/record-item.usecase";
 import { RecordTransactionUseCase } from "contexts/Transactions/application/record-transaction.usecase";
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 import { UpdateTransactionUseCase } from "contexts/Transactions/application/update-transaction.usecase";
 import { TransactionsLocalRepository } from "contexts/Transactions/infrastructure/persistence/local/transactions-local.repository";
-import { GetRegularItemByIdUseCase } from "../../../Items/application/get-regular-item-by-id.usecase";
+import { DeleteScheduledTransactionUseCase } from "../../../ScheduledTransactions/application/delete-scheduled-transaction.usecase";
+import { GetAllScheduledTransactionsUseCase } from "../../../ScheduledTransactions/application/get-all-scheduled-transactions";
+import { GetScheduledTransactionsUntilDateUseCase } from "../../../ScheduledTransactions/application/get-items-until-date.usecase";
+import { ScheduledTransactionsWithAccumulatedBalanceUseCase } from "../../../ScheduledTransactions/application/items-with-accumulated-balance.usecase";
+import { NextPendingOccurrenceUseCase } from "../../../ScheduledTransactions/application/next-pending-ocurrence.usecase";
+import { RecordScheduledTransactionUseCase } from "../../../ScheduledTransactions/application/record-scheduled-transaction.usecase";
+import { RecurrenceModificationsService } from "../../../ScheduledTransactions/application/recurrence-modifications.service";
+import { ScheduledTransactionsService } from "../../../ScheduledTransactions/application/scheduled-transactions.service";
+import { RecurrenceModificationsLocalRepository } from "../../../ScheduledTransactions/infrastructure/persistence/recurrence-modifications-local.repository";
+import { ScheduledTransactionsLocalRepository } from "../../../ScheduledTransactions/infrastructure/persistence/scheduled-transactions-local.repository";
+import { CreateStoreUseCase } from "../../../Stores/application/create-store.usecase";
+import { GetAllStoresUseCase } from "../../../Stores/application/get-all-stores.usecase";
 import { Logger } from "../logger";
 
 const container = createContainer({
@@ -79,54 +68,50 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		_logger: asClass(Logger).singleton(),
 	});
 
-	// ITEMS
+	// SCHEDULED TRANSACTIONS
 	container.register({
-		_itemsRepository: asClass(ItemsLocalRepository)
-			.singleton()
-			.inject(() => ({ _db: localDB })),
-		_scheduledItemsRepository: asClass(ScheduledItemsLocalRepository)
-			.singleton()
-			.inject(() => ({ _db: localDB })),
-		_brandRepository: asClass(BrandsLocalRepository)
-			.singleton()
-			.inject(() => ({ _db: localDB })),
 		_storeRepository: asClass(StoresLocalRepository)
 			.singleton()
 			.inject(() => ({ _db: localDB })),
-		_providerRepository: asClass(ProvidersLocalRepository)
+		_scheduledTransactionsRepository: asClass(
+			ScheduledTransactionsLocalRepository
+		)
 			.singleton()
 			.inject(() => ({ _db: localDB })),
-		_itemsService: asClass(ItemsService).singleton(),
-		createItemUseCase: asClass(CreateScheduledItemUseCase).singleton(),
-		createRegularItemUseCase: asClass(CreateRegularItemUseCase).singleton(),
-		createBrandUseCase: asClass(CreateBrandUseCase).singleton(),
-		createStoreUseCase: asClass(CreateStoreUseCase).singleton(),
-		createProviderUseCase: asClass(CreateProviderUseCase).singleton(),
-		getAllItemsUseCase: asClass(GetAllItemsUseCase).singleton(),
-		getRegularItemByIdUseCase: asClass(
-			GetRegularItemByIdUseCase
+		_scheduledTransactionsService: asClass(
+			ScheduledTransactionsService
 		).singleton(),
-		getAllBrandsUseCase: asClass(GetAllBrandsUseCase).singleton(),
+		_recurrenceModificationsRepository: asClass(
+			RecurrenceModificationsLocalRepository
+		)
+			.singleton()
+			.inject(() => ({ _db: localDB })),
+		_recurrenceModificationsService: asClass(
+			RecurrenceModificationsService
+		).singleton(),
+		getAllScheduledTransactionsUseCase: asClass(
+			GetAllScheduledTransactionsUseCase
+		).singleton(),
+		createItemUseCase: asClass(CreateScheduledItemUseCase).singleton(),
+		deleteScheduledTransactionUseCase: asClass(
+			DeleteScheduledTransactionUseCase
+		).singleton(),
+		createStoreUseCase: asClass(CreateStoreUseCase).singleton(),
 		getAllStoresUseCase: asClass(GetAllStoresUseCase).singleton(),
-		getAllProvidersUseCase: asClass(GetAllProvidersUseCase).singleton(),
-		updateItemUseCase: asClass(UpdateScheduledItemUseCase).singleton(),
-		updateRegularItemUseCase: asClass(UpdateRegularItemUseCase).singleton(),
-		deleteItemUseCase: asClass(DeleteItemUseCase).singleton(),
 		deleteItemRecurrenceUseCase: asClass(
 			DeleteItemRecurrenceUseCase
-		).singleton(),
-		getAllUniqueItemsByNameUseCase: asClass(
-			GetAllUniqueItemsByNameUseCase
-		).singleton(),
-		getAllRegularItemsUseCase: asClass(
-			GetAllRegularItemsUseCase
 		).singleton(),
 		modifyNItemRecurrenceUseCase: asClass(
 			ModifyNItemRecurrenceUseCase
 		).singleton(),
-		getItemsUntilDateUseCase: asClass(GetItemsUntilDateUseCase).singleton(),
+		getScheduledTransactionsUntilDateUseCase: asClass(
+			GetScheduledTransactionsUntilDateUseCase
+		).singleton(),
 		itemsWithAccumulatedBalanceUseCase: asClass(
-			ItemsWithAccumulatedBalanceUseCase
+			ScheduledTransactionsWithAccumulatedBalanceUseCase
+		).singleton(),
+		nextPendingOccurrenceUseCase: asClass(
+			NextPendingOccurrenceUseCase
 		).singleton(),
 	});
 
@@ -136,16 +121,24 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 			.singleton()
 			.inject(() => ({ _db: localDB })),
 		_accountsService: asClass(AccountsService).singleton(),
-		_accountsIntegrityService: asClass(AccountsIntegrityService).singleton(),
+		_accountsIntegrityService: asClass(
+			AccountsIntegrityService
+		).singleton(),
 		createAccountUseCase: asClass(CreateAccountUseCase).singleton(),
 		deleteAccountUseCase: asClass(DeleteAccountUseCase).singleton(),
 		getAllAccountNamesUseCase: asClass(
 			GetAllAccountNamesUseCase
 		).singleton(),
 		getAllAccountsUseCase: asClass(GetAllAccountsUseCase).singleton(),
-		calculateAccountIntegrityUseCase: asClass(CalculateAccountIntegrityUseCase).singleton(),
-		calculateAllAccountsIntegrityUseCase: asClass(CalculateAllAccountsIntegrityUseCase).singleton(),
-		resolveAccountDiscrepancyUseCase: asClass(ResolveAccountDiscrepancyUseCase).singleton(),
+		calculateAccountIntegrityUseCase: asClass(
+			CalculateAccountIntegrityUseCase
+		).singleton(),
+		calculateAllAccountsIntegrityUseCase: asClass(
+			CalculateAllAccountsIntegrityUseCase
+		).singleton(),
+		resolveAccountDiscrepancyUseCase: asClass(
+			ResolveAccountDiscrepancyUseCase
+		).singleton(),
 	});
 
 	// TRANSACTIONS
@@ -160,16 +153,13 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		getAllUniqueTransactionsByNameUseCase: asClass(
 			GetAllUniqueTransactionsByNameUseCase
 		),
-		getAllUniqueItemBrandsUseCase: asClass(
-			GetAllUniqueItemBrandsUseCase
-		).singleton(),
 		getAllUniqueItemStoresUseCase: asClass(
 			GetAllUniqueItemStoresUseCase
 		).singleton(),
 		recordTransactionUseCase: asClass(RecordTransactionUseCase).singleton(),
 		recordItemUseCase: asClass(RecordItemUseCase).singleton(),
 		recordItemRecurrenceUseCase: asClass(
-			RecordItemRecurrenceUseCase
+			RecordScheduledTransactionUseCase
 		).singleton(),
 		deleteTransactionUseCase: asClass(DeleteTransactionUseCase).singleton(),
 		updateTransactionUseCase: asClass(UpdateTransactionUseCase).singleton(),
@@ -187,7 +177,6 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		categoriesService: asClass(CategoriesService).singleton(),
 		subCategoriesService: asClass(SubCategoriesService).singleton(),
 		transactionsService: asClass(TransactionsService).singleton(),
-		itemsService: asClass(ItemsService).singleton(),
 		createCategoryUseCase: asClass(CreateCategoryUseCase).singleton(),
 		createSubCategoryUseCase: asClass(CreateSubCategoryUseCase).singleton(),
 		getAllCategoriesWithSubCategoriesUseCase: asClass(

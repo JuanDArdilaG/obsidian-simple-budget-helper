@@ -2,7 +2,7 @@ import { DateValueObject } from "@juandardilag/value-objects";
 import { describe, expect, it } from "vitest";
 import { AccountID } from "../../../../src/contexts/Accounts/domain";
 import { ItemPrice } from "../../../../src/contexts/Items/domain";
-import { ItemsReport } from "../../../../src/contexts/Reports/domain/items-report.entity";
+import { ItemsReport } from "../../../../src/contexts/Reports/domain/scheduled-transactions-report.entity";
 import { ItemOperation } from "../../../../src/contexts/Shared/domain";
 import { buildTestItems } from "../../Items/domain/buildTestItems";
 
@@ -146,7 +146,7 @@ describe("ItemsReport", () => {
 			]);
 			const report = new ItemsReport(items);
 
-			const infiniteItems = report.getInfiniteRecurrentItems();
+			const infiniteItems = report.getInfiniteRecurrentTransactions();
 			expect(infiniteItems).toHaveLength(2);
 			infiniteItems.forEach((item) => {
 				expect(item.recurrence?.totalRecurrences).toBe(-1);
@@ -203,18 +203,6 @@ describe("ItemsReport", () => {
 			const totalPerMonth = report.getTotalPerMonth();
 			expect(totalPerMonth.value).toBe(-600);
 		});
-
-		it("should get years from recurrences", () => {
-			const items = buildTestItems([
-				{ recurrence: { frequency: "monthly" } },
-				{ recurrence: { frequency: "monthly" } },
-				{ recurrence: { frequency: "monthly" } },
-			]);
-			const report = new ItemsReport(items);
-
-			const years = report.getYears();
-			expect(years).toContain(new Date().getFullYear());
-		});
 	});
 
 	describe("complex filtering scenarios", () => {
@@ -253,7 +241,7 @@ describe("ItemsReport", () => {
 			]);
 			const report = new ItemsReport(items);
 
-			expect(report.getInfiniteRecurrentItems()).toHaveLength(2);
+			expect(report.getInfiniteRecurrentTransactions()).toHaveLength(2);
 			expect(report.getFiniteRecurrentItems()).toHaveLength(2);
 		});
 
@@ -263,7 +251,7 @@ describe("ItemsReport", () => {
 			expect(report.getExpenseItems()).toHaveLength(0);
 			expect(report.getIncomeItems()).toHaveLength(0);
 			expect(report.getTransferItems()).toHaveLength(0);
-			expect(report.getInfiniteRecurrentItems()).toHaveLength(0);
+			expect(report.getInfiniteRecurrentTransactions()).toHaveLength(0);
 			expect(report.getFiniteRecurrentItems()).toHaveLength(0);
 			expect(report.getTotal().value).toBe(0);
 			expect(report.getTotalPerMonth().value).toBe(0);
@@ -306,7 +294,7 @@ describe("ItemsReport", () => {
 			const finiteItems = report.getFiniteRecurrentItems();
 			expect(finiteItems).toHaveLength(2); // one-time + finite
 
-			const infiniteItems = report.getInfiniteRecurrentItems();
+			const infiniteItems = report.getInfiniteRecurrentTransactions();
 			expect(infiniteItems).toHaveLength(1);
 		});
 	});
@@ -345,7 +333,7 @@ describe("ItemsReport", () => {
 			// These should provide the building blocks for component filtering
 			const expenseItems = report.getExpenseItems();
 			const transferItems = report.getTransferItems();
-			const infiniteItems = report.getInfiniteRecurrentItems();
+			const infiniteItems = report.getInfiniteRecurrentTransactions();
 			const finiteItems = report.getFiniteRecurrentItems();
 			const incomeItems = report.getIncomeItems();
 

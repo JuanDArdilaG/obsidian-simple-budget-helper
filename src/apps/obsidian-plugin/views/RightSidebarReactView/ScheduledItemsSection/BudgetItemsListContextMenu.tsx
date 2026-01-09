@@ -3,28 +3,28 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { Box, IconButton } from "@mui/material";
-import { ConfirmationModal } from "apps/obsidian-plugin/components/ConfirmationModal";
+import { useContext } from "react";
 import {
-	ItemID,
 	ItemRecurrenceInfo,
-	ScheduledItem,
-} from "contexts/Items/domain";
-import { useContext, useMemo } from "react";
-import { AppContext, ItemsContext } from "..";
+	ScheduledTransaction,
+} from "../../../../../contexts/ScheduledTransactions/domain";
+import { ConfirmationModal } from "../../../components/ConfirmationModal";
+import { AppContext } from "../Contexts";
 
 export const BudgetItemsListContextMenu = ({
 	recurrent,
 	setAction,
 	setSelectedItem,
 	currentAction,
+	handleDelete,
 }: {
+	handleDelete?: () => Promise<void>;
 	recurrent:
 		| {
 				recurrence: ItemRecurrenceInfo;
-				itemID: ItemID;
 				n?: NumberValueObject;
 		  }
-		| ScheduledItem;
+		| ScheduledTransaction;
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
@@ -32,29 +32,15 @@ export const BudgetItemsListContextMenu = ({
 		React.SetStateAction<
 			| {
 					recurrence: ItemRecurrenceInfo;
-					itemID: ItemID;
 					n?: NumberValueObject;
 			  }
-			| ScheduledItem
+			| ScheduledTransaction
 			| undefined
 		>
 	>;
 	currentAction?: "edit" | "record";
 }) => {
 	const { plugin } = useContext(AppContext);
-	const {
-		useCases: { deleteItem, deleteItemRecurrence },
-		updateItems,
-	} = useContext(ItemsContext);
-
-	const id = useMemo(
-		() =>
-			recurrent instanceof ScheduledItem
-				? recurrent.id
-				: recurrent.itemID,
-		[recurrent]
-	);
-
 	const handleEdit = () => {
 		if (currentAction === "edit") {
 			// If edit panel is already open, close it
@@ -79,49 +65,41 @@ export const BudgetItemsListContextMenu = ({
 		}
 	};
 
-	const handleDelete = async () => {
-		new ConfirmationModal(plugin.app, async (confirm) => {
-			if (confirm) {
-				if (
-					recurrent &&
-					typeof recurrent === "object" &&
-					"recurrence" in recurrent &&
-					"itemID" in recurrent
-				) {
-					// Delete a single recurrence
-					const n = recurrent.n ? recurrent.n.value : 0;
-					await deleteItemRecurrence.execute({
-						id: recurrent.itemID,
-						n: new NumberValueObject(n),
-					});
-				} else {
-					// Delete the whole item
-					await deleteItem.execute(id);
-				}
-				updateItems();
-			}
-		}).open();
-	};
-
 	return (
 		<Box sx={{ display: "flex", gap: "4px" }}>
-			<IconButton
-				onClick={handleRecord}
-				size="small"
-				color={currentAction === "record" ? "primary" : "default"}
-			>
-				<PlayArrowIcon fontSize="small" />
-			</IconButton>
-			<IconButton
-				onClick={handleEdit}
-				size="small"
-				color={currentAction === "edit" ? "primary" : "default"}
-			>
-				<EditIcon fontSize="small" />
-			</IconButton>
-			<IconButton onClick={handleDelete} size="small">
-				<DeleteIcon fontSize="small" />
-			</IconButton>
+			{!(recurrent instanceof ScheduledTransaction) && (
+				<>
+					<IconButton
+						onClick={handleRecord}
+						size="small"
+						color={
+							currentAction === "record" ? "primary" : "default"
+						}
+					>
+						<PlayArrowIcon fontSize="small" />
+					</IconButton>
+					<IconButton
+						onClick={handleEdit}
+						size="small"
+						color={currentAction === "edit" ? "primary" : "default"}
+					>
+						<EditIcon fontSize="small" />
+					</IconButton>
+				</>
+			)}
+			{handleDelete !== undefined && (
+				<IconButton
+					onClick={() => {
+						console.log("Deleting scheduled item", recurrent);
+						new ConfirmationModal(plugin.app, async (confirm) => {
+							if (confirm) await handleDelete();
+						}).open();
+					}}
+					size="small"
+				>
+					<DeleteIcon fontSize="small" />
+				</IconButton>
+			)}
 		</Box>
 	);
 };

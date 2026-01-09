@@ -1,6 +1,6 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
-import { RecordFutureItemRecurrenceUseCase } from "contexts/Items/application/record-future-item-recurrence.usecase";
 import { ItemID } from "contexts/Items/domain";
+import { RecordFutureItemRecurrenceUseCase } from "contexts/ScheduledTransactions/application/record-future-item-recurrence.usecase";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("RecordFutureItemRecurrenceUseCase", () => {

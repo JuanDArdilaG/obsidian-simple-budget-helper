@@ -1,11 +1,9 @@
-import { NumberValueObject } from "@juandardilag/value-objects";
 import {
 	AccountsContext,
-	ItemsContext,
+	ScheduledTransactionsContext,
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
-import { ItemRecurrenceInfo, ScheduledItem } from "contexts/Items/domain";
 import {
 	TransactionAmount,
 	TransactionDate,
@@ -14,46 +12,41 @@ import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueob
 import { X } from "lucide-react";
 import { useContext, useState } from "react";
 import { ReactMoneyInput } from "react-input-price";
+import { ItemRecurrenceInfo } from "../../../contexts/ScheduledTransactions/domain";
 import { DateInput } from "../components/Input/DateInput";
 import { Select } from "../components/Select/Select";
 import { useLogger } from "../hooks";
 
 export const RecordItemPanel = ({
-	item,
-	recurrence: { recurrence, n },
+	recurrence,
 	onClose,
 	updateItems,
 }: {
-	item: ScheduledItem;
-	recurrence: {
-		recurrence: ItemRecurrenceInfo;
-		n: NumberValueObject;
-	};
+	recurrence: ItemRecurrenceInfo;
 	onClose: () => void;
 	updateItems?: () => void;
 }) => {
 	const { logger, debug } = useLogger("RecordItemPanel");
-	debug("item", { item });
+	debug("recurrence", { recurrence });
 	const {
-		useCases: { recordItemRecurrence, deleteItem },
-	} = useContext(ItemsContext);
+		useCases: { recordItemRecurrence },
+	} = useContext(ScheduledTransactionsContext);
 	const { updateAccounts } = useContext(AccountsContext);
 	const { updateTransactions } = useContext(TransactionsContext);
 	const { accounts } = useContext(AccountsContext);
 	const [fromSplits, setFromSplits] = useState(
-		item.fromSplits.map((split) => ({
+		recurrence.fromSplits.map((split) => ({
 			accountId: split.accountId.value,
 			amount: split.amount,
 		}))
 	);
 	const [toSplits, setToSplits] = useState(
-		item.toSplits.map((split) => ({
+		recurrence.toSplits.map((split) => ({
 			accountId: split.accountId.value,
 			amount: split.amount,
 		}))
 	);
 	const [date, setDate] = useState<Date>(recurrence.date.value);
-	const [isPermanent, setIsPermanent] = useState(false);
 	const [isRecording, setIsRecording] = useState(false);
 
 	const handleRecord = async () => {
@@ -76,17 +69,13 @@ export const RecordItemPanel = ({
 			);
 
 			await recordItemRecurrence.execute({
-				itemID: item.id,
-				n,
+				scheduledTransactionID: recurrence.scheduledTransactionId,
+				occurrenceIndex: recurrence.occurrenceIndex,
 				fromSplits: paymentFromSplits,
 				toSplits: paymentToSplits,
 				date: new TransactionDate(date),
-				permanentChanges: isPermanent,
 			});
-			if (!item.recurrence) {
-				logger.debug("eliminating", { item });
-				await deleteItem.execute(item.id);
-			}
+
 			updateAccounts();
 			updateTransactions();
 
@@ -131,7 +120,7 @@ export const RecordItemPanel = ({
 				}}
 			>
 				<h3 style={{ margin: 0, color: "var(--text-normal)" }}>
-					Record: {item.name.toString()}
+					Record: {recurrence.name.toString()}
 				</h3>
 				<button
 					onClick={onClose}
@@ -359,32 +348,6 @@ export const RecordItemPanel = ({
 
 			<div style={{ marginBottom: "20px" }}>
 				<DateInput label="Date" value={date} onChange={setDate} />
-			</div>
-
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					marginBottom: "20px",
-					padding: "8px",
-					backgroundColor: "var(--background-secondary)",
-					borderRadius: "4px",
-				}}
-			>
-				<input
-					id="permanent-input"
-					type="checkbox"
-					onChange={(e) => {
-						setIsPermanent(e.target.checked);
-					}}
-					style={{ marginRight: "8px" }}
-				/>
-				<label
-					htmlFor="permanent-input"
-					style={{ color: "var(--text-normal)" }}
-				>
-					Modify recurrence permanently
-				</label>
 			</div>
 
 			<div

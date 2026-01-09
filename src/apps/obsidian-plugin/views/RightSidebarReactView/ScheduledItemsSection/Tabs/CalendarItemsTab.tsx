@@ -3,11 +3,11 @@ import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput
 import { useLogger } from "apps/obsidian-plugin/hooks";
 import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
-import { GetItemsUntilDateUseCaseOutput } from "contexts/Items/application/get-items-until-date.usecase";
-import { ItemDate, ItemID, ItemRecurrenceInfo } from "contexts/Items/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { useContext, useEffect, useState } from "react";
-import { ItemsContext } from "../../Contexts/ItemsContext";
+import { ItemRecurrenceInfo } from "../../../../../../contexts/ScheduledTransactions/domain";
+import { Nanoid } from "../../../../../../contexts/Shared/domain";
+import { ScheduledTransactionsContext } from "../../Contexts/ScheduledTransactionsContext";
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
 import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
 import { CalendarItemsList } from "./CalendarItemsList";
@@ -42,8 +42,8 @@ const initialFilterState: FilterState = {
 export const CalendarItemsTab = () => {
 	const { logger } = useLogger("CalendarRightSidebarReactTab");
 	const {
-		useCases: { getItemsUntilDate },
-	} = useContext(ItemsContext);
+		useCases: { getScheduledTransactionsUntilDate: getItemsUntilDate },
+	} = useContext(ScheduledTransactionsContext);
 
 	// Filter state - lifted up to persist across timeframe/date changes
 	const [filters, setFilters] = useState<FilterState>(initialFilterState);
@@ -70,13 +70,10 @@ export const CalendarItemsTab = () => {
 
 	const [selectedItem, setSelectedItem] = useState<{
 		recurrence: ItemRecurrenceInfo;
-		itemID: ItemID;
+		scheduleTransactionId: Nanoid;
 	}>();
-	const [action, setAction] = useState<"edit" | "record">();
 
-	const [items, setItems] = useState<GetItemsUntilDateUseCaseOutput>([]);
 	const [timeframe, setTimeframe] = useState<CalendarTimeframe>("3days");
-	const [refreshCounter, setRefreshCounter] = useState(0);
 
 	useEffect(() => {
 		setUntilDate(untilDateFilter);
@@ -125,28 +122,6 @@ export const CalendarItemsTab = () => {
 		setUntilDateFilter(dateWithEndTime);
 	}, [timeframe]);
 
-	const refreshItems = () => {
-		logger.debug("refreshItems called", { untilDate });
-		getItemsUntilDate.execute(new ItemDate(untilDate)).then((items) => {
-			logger.debug("getItemsUntilDate returned", {
-				untilDate,
-				itemsCount: items.length,
-				items: items.map((item) => ({
-					id: item.item.id.value,
-					name: item.item.name.toString(),
-					recurrenceDate: item.recurrence.date.value,
-					state: item.recurrence.state,
-				})),
-			});
-			setItems(items);
-			setRefreshCounter((prev) => prev + 1);
-		});
-	};
-
-	useEffect(() => {
-		refreshItems();
-	}, [untilDate, getItemsUntilDate]);
-
 	return (
 		<RightSidebarReactTab title={"Upcoming Schedules"} subtitle>
 			<div style={{ display: "flex", justifyContent: "center" }}>
@@ -154,14 +129,9 @@ export const CalendarItemsTab = () => {
 			</div>
 			<TimeframeButtons selected={timeframe} setSelected={setTimeframe} />
 			<CalendarItemsList
-				key={`refresh-${refreshCounter}`}
-				items={items}
-				updateItems={refreshItems}
 				untilDate={untilDate}
 				selectedItem={selectedItem}
 				setSelectedItem={setSelectedItem}
-				action={action}
-				setAction={setAction}
 				filters={filters}
 				setFilters={setFilters}
 				showFilters={showFilters}

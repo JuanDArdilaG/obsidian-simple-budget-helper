@@ -1,9 +1,9 @@
 export const Config = {
-	itemsTableName: "items",
-	scheduledItemsTableName: "scheduledItems",
-	brandsTableName: "brands",
+	scheduledItemsTableOldName: "scheduledItems",
+	scheduledTransactionsTableName: "scheduledTransactions",
+	scheduledTransactionsModificationsTableName:
+		"scheduledTransactionsModifications",
 	storesTableName: "stores",
-	providersTableName: "providers",
 	accountsTableName: "accounts",
 	transactionsTableName: "transactions",
 	categoriesTableName: "categories",

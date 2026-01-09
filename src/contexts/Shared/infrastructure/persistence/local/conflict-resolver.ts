@@ -46,7 +46,7 @@ export class ConflictResolver {
 				totalConflicts: conflicts.length,
 			});
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("Conflict detection error", error);
 		}
 
 		return conflicts;

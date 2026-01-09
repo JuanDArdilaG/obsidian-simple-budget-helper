@@ -1,5 +1,5 @@
 import { ReportBalance } from "./report-balance.valueobject";
-import { ItemsReport } from "./items-report.entity";
+import { ItemsReport } from "./scheduled-transactions-report.entity";
 
 export interface IReportsService {
 	getTotalPerMonth(

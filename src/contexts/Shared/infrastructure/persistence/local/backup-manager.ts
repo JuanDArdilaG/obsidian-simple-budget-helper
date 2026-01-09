@@ -34,7 +34,7 @@ export class BackupManager {
 				});
 			}
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("init error", error);
 			throw error;
 		}
 	}
@@ -90,7 +90,7 @@ export class BackupManager {
 			this.logger.debug("Backup created successfully", { backupInfo });
 			return backupInfo;
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("createBackup error", error);
 			throw error;
 		}
 	}
@@ -144,7 +144,7 @@ export class BackupManager {
 				createdAt: backupData.metadata.createdAt,
 			});
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("restoreBackup error", error);
 			throw error;
 		}
 	}
@@ -199,7 +199,7 @@ export class BackupManager {
 
 			return backups;
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("getBackupList error", error);
 			return [];
 		}
 	}
@@ -218,7 +218,7 @@ export class BackupManager {
 			await this.app.vault.adapter.remove(path);
 			this.logger.debug("Backup deleted successfully", { backupName });
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("deleteBackup error", error);
 			throw error;
 		}
 	}
@@ -240,7 +240,7 @@ export class BackupManager {
 				});
 			}
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("cleanupOldBackups error", error);
 		}
 	}
 
@@ -271,7 +271,7 @@ export class BackupManager {
 
 			return hasValidMetadata && hasValidData;
 		} catch (error) {
-			this.logger.error(error);
+			this.logger.error("validateBackup error", error);
 			return false;
 		}
 	}
