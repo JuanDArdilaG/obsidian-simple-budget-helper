@@ -185,19 +185,7 @@ export class ScheduledTransaction extends Entity<
 			RecurrencePattern.fromPrimitives({
 				startDate: new Date(itemV1.recurrence.startDate),
 				type: RecurrenceType.INFINITE,
-				endDate:
-					itemV1.recurrence.isOneTime() ||
-					!itemV1.recurrence.untilDate ||
-					itemV1.recurrence.startDate.getTime() ===
-						itemV1.recurrence.untilDate?.getTime()
-						? undefined
-						: new Date(itemV1.recurrence.untilDate),
 				frequency: itemV1.recurrence.frequency?.value,
-				maxOccurrences:
-					itemV1.recurrence.totalRecurrences === -1 ||
-					itemV1.recurrence.totalRecurrences === 1
-						? undefined
-						: itemV1.recurrence.totalRecurrences,
 			}),
 			NumberValueObject.zero(),
 			itemV1.info?.store,
