@@ -22,6 +22,12 @@ import {
 } from "../../../../src/contexts/ScheduledTransactions/domain";
 import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
 
+const category = Category.create(new StringValueObject("Salary"));
+const subCategory = SubCategory.create(
+	category.id,
+	new StringValueObject("Monthly Salary")
+);
+
 describe("ScheduledTransactionsService", () => {
 	let scheduledTransactionsService: ScheduledTransactionsService;
 	let mockItemsRepository: IScheduledTransactionsRepository;
@@ -89,12 +95,6 @@ describe("ScheduledTransactionsService", () => {
 			];
 			const toSplits: PaymentSplit[] = [];
 
-			const category = Category.create(new StringValueObject("Salary"));
-			const subCategory = SubCategory.create(
-				category.id,
-				new StringValueObject("Monthly Salary")
-			);
-
 			const item = ScheduledTransaction.createOneTime(
 				new StringValueObject("Income Item"),
 				ScheduledTransactionDate.createNowDate(),
@@ -121,12 +121,6 @@ describe("ScheduledTransactionsService", () => {
 				new PaymentSplit(accountID, new TransactionAmount(100)),
 			];
 			const toSplits: PaymentSplit[] = [];
-
-			const category = Category.create(new StringValueObject("Salary"));
-			const subCategory = SubCategory.create(
-				category.id,
-				new StringValueObject("Monthly Salary")
-			);
 
 			const item = ScheduledTransaction.createOneTime(
 				new StringValueObject("Expense Item"),
@@ -157,12 +151,6 @@ describe("ScheduledTransactionsService", () => {
 			const toSplits = [
 				new PaymentSplit(toAccountID, new TransactionAmount(100)),
 			];
-
-			const category = Category.create(new StringValueObject("Salary"));
-			const subCategory = SubCategory.create(
-				category.id,
-				new StringValueObject("Monthly Salary")
-			);
 
 			const item = ScheduledTransaction.createOneTime(
 				new StringValueObject("Transfer Item"),
@@ -206,12 +194,6 @@ describe("ScheduledTransactionsService", () => {
 				new PaymentSplit(toAccountID, new TransactionAmount(100)),
 			];
 
-			const category = Category.create(new StringValueObject("Salary"));
-			const subCategory = SubCategory.create(
-				category.id,
-				new StringValueObject("Monthly Salary")
-			);
-
 			const item = ScheduledTransaction.createOneTime(
 				new StringValueObject("Transfer Item"),
 				ScheduledTransactionDate.createNowDate(),
@@ -253,12 +235,6 @@ describe("ScheduledTransactionsService", () => {
 			const toSplits = [
 				new PaymentSplit(toAccountID, new TransactionAmount(100)),
 			];
-
-			const category = Category.create(new StringValueObject("Salary"));
-			const subCategory = SubCategory.create(
-				category.id,
-				new StringValueObject("Monthly Salary")
-			);
 
 			const item = ScheduledTransaction.createOneTime(
 				new StringValueObject("Transfer Item"),
@@ -302,12 +278,6 @@ describe("ScheduledTransactionsService", () => {
 				new PaymentSplit(toAccountID, new TransactionAmount(100)),
 			];
 
-			const category = Category.create(new StringValueObject("Salary"));
-			const subCategory = SubCategory.create(
-				category.id,
-				new StringValueObject("Monthly Salary")
-			);
-
 			const scheduledTransaction = ScheduledTransaction.createOneTime(
 				new StringValueObject("Transfer Item"),
 				ScheduledTransactionDate.createNowDate(),
@@ -348,12 +318,6 @@ describe("ScheduledTransactionsService", () => {
 				new PaymentSplit(accountID, new TransactionAmount(100)),
 			];
 			const toSplits: PaymentSplit[] = [];
-
-			const category = Category.create(new StringValueObject("Salary"));
-			const subCategory = SubCategory.create(
-				category.id,
-				new StringValueObject("Monthly Salary")
-			);
 
 			const item = ScheduledTransaction.createInfinite(
 				new StringValueObject("Recurring Income Item"),

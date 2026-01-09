@@ -2,11 +2,7 @@ import { StringValueObject } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
 import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
 import { ItemOperation, Nanoid } from "contexts/Shared/domain";
-import {
-	SubCategory,
-	SubCategoryID,
-	SubCategoryName,
-} from "contexts/Subcategories/domain";
+import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { describe, expect, it } from "vitest";
@@ -20,6 +16,14 @@ import {
 	ScheduledTransactionPrimitives,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
 import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
+
+const category = new TransactionCategory(
+	Category.create(new CategoryName("Test Category")),
+	SubCategory.create(
+		CategoryID.generate(),
+		new SubCategoryName("Test Subcategory")
+	)
+);
 
 describe("ScheduledTransaction Tags", () => {
 	const createTestItem = (tags: ItemTags = ItemTags.empty()) => {
@@ -38,13 +42,7 @@ describe("ScheduledTransaction Tags", () => {
 			fromSplits,
 			toSplits,
 			ItemOperation.income(),
-			new TransactionCategory(
-				Category.create(new CategoryName("Test")),
-				SubCategory.create(
-					CategoryID.generate(),
-					new SubCategoryName("Test Subcategory")
-				)
-			),
+			category,
 			undefined,
 			tags
 		);
@@ -141,19 +139,7 @@ describe("ScheduledTransaction Tags", () => {
 				operation: {
 					type: "income" as const,
 				},
-				category: {
-					category: {
-						id: CategoryID.generate().value,
-						name: "Test",
-						updatedAt: new Date().toISOString(),
-					},
-					subCategory: {
-						id: SubCategoryID.generate().value,
-						name: "Test Subcategory",
-						category: CategoryID.generate().value,
-						updatedAt: new Date().toISOString(),
-					},
-				},
+				category: category.toPrimitives(),
 				store: "",
 				recurrencePattern: {
 					type: RecurrenceType.ONE_TIME,
@@ -190,19 +176,7 @@ describe("ScheduledTransaction Tags", () => {
 				operation: {
 					type: "income" as const,
 				},
-				category: {
-					category: {
-						id: CategoryID.generate().value,
-						name: "Test",
-						updatedAt: new Date().toISOString(),
-					},
-					subCategory: {
-						id: SubCategoryID.generate().value,
-						name: "Test Subcategory",
-						category: CategoryID.generate().value,
-						updatedAt: new Date().toISOString(),
-					},
-				},
+				category: category.toPrimitives(),
 				store: "",
 				recurrencePattern: {
 					type: RecurrenceType.ONE_TIME,
