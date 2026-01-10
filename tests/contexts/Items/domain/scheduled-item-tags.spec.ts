@@ -148,7 +148,6 @@ describe("ScheduledTransaction Tags", () => {
 				},
 				updatedAt: new Date().toISOString(),
 				tags: tags,
-				nextOccurrenceIndex: 0,
 			};
 
 			const item = ScheduledTransaction.fromPrimitives(primitives);
@@ -184,7 +183,6 @@ describe("ScheduledTransaction Tags", () => {
 				},
 				updatedAt: new Date().toISOString(),
 				tags: [],
-				nextOccurrenceIndex: 0,
 			};
 
 			const item = ScheduledTransaction.fromPrimitives(primitives);
