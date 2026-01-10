@@ -476,6 +476,9 @@ export const AllScheduledTransactionsList = ({
 
 	useEffect(() => {
 		const fetchNextOccurrences = async () => {
+			logger.debug("Fetching next occurrences for scheduled items", {
+				scheduledItems,
+			});
 			const results = (
 				await Promise.all(
 					scheduledItems.map(async (scheduledTransaction) => {
@@ -484,6 +487,10 @@ export const AllScheduledTransactionsList = ({
 								await nextPendingOccurrenceUseCase.execute(
 									scheduledTransaction.id
 								);
+							logger.debug("Fetched next occurrence", {
+								scheduledTransactionId: scheduledTransaction.id,
+								recurrence,
+							});
 							return { scheduledTransaction, recurrence };
 						} catch (error) {
 							logger.error(
@@ -553,10 +560,6 @@ export const AllScheduledTransactionsList = ({
 										isSelected={false}
 										showBalanceInfo={false}
 										accountTypeLookup={accountTypeLookup}
-										remainingDays={
-											recurrence.date.getRemainingDays() ??
-											0
-										}
 										setAction={setAction}
 										setSelectedItem={setSelectedItem}
 										context="all-items"

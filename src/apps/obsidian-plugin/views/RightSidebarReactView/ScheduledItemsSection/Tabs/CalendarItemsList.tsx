@@ -1136,7 +1136,6 @@ const CalendarItemsListItem = ({
 				price={recurrence.fromAmount}
 				isSelected={isSelectedForRecord}
 				accountTypeLookup={accountTypeLookup}
-				remainingDays={recurrence.date.getRemainingDays() ?? 0}
 				setAction={setAction}
 				setSelectedItem={setSelectedItem}
 				context="calendar"

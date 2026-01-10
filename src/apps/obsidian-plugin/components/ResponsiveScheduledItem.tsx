@@ -13,6 +13,7 @@ import {
 	AccountType,
 } from "contexts/Accounts/domain";
 import { Forward } from "lucide-react";
+import { useMemo } from "react";
 import {
 	ItemRecurrenceInfo,
 	ScheduledTransaction,
@@ -29,7 +30,6 @@ export const ResponsiveScheduledItem = ({
 	isSelected,
 	showBalanceInfo = true,
 	accountTypeLookup,
-	remainingDays,
 	setAction,
 	setSelectedItem,
 	context = "calendar", // "calendar" or "all-items"
@@ -47,7 +47,6 @@ export const ResponsiveScheduledItem = ({
 	isSelected: boolean;
 	showBalanceInfo?: boolean;
 	accountTypeLookup: (id: AccountID) => AccountType;
-	remainingDays?: number;
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
@@ -80,13 +79,12 @@ export const ResponsiveScheduledItem = ({
 	const prettyDate = recurrence.date.toPrettyFormatDate();
 	const itemTags = scheduleTransaction.tags?.toArray() ?? [];
 
-	// Use provided remainingDays or calculate it
-	const daysRemaining =
-		remainingDays ?? recurrence.date.getRemainingDays() ?? 0;
-	let remainingDaysColor = "var(--color-green)";
-	if (Math.abs(daysRemaining) <= 3)
-		remainingDaysColor = "var(--color-yellow)";
-	else if (daysRemaining < -3) remainingDaysColor = "var(--color-red)";
+	const remainingDaysColor = useMemo(() => {
+		const daysRemaining = recurrence.date.getRemainingDays();
+		if (Math.abs(daysRemaining) <= 3) return "var(--color-yellow)";
+		if (daysRemaining < -3) return "var(--color-red)";
+		return "var(--color-green)";
+	}, [recurrence]);
 
 	// Wide screen layout (≥1200px) - Multi-column table-like layout
 	if (isWideScreen) {

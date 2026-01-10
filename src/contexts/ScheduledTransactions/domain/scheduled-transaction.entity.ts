@@ -45,7 +45,6 @@ export class ScheduledTransaction extends Entity<
 		private _operation: ItemOperation,
 		private _category: TransactionCategory,
 		private _recurrencePattern: RecurrencePattern,
-		private _nextOccurrenceIndex: NumberValueObject,
 		private _store?: StringValueObject,
 		private _tags?: ItemTags,
 		updatedAt?: DateValueObject
@@ -73,7 +72,6 @@ export class ScheduledTransaction extends Entity<
 			operation,
 			category,
 			recurrencePattern,
-			NumberValueObject.zero(),
 			store,
 			tags
 		);
@@ -102,7 +100,6 @@ export class ScheduledTransaction extends Entity<
 			operation,
 			category,
 			recurrencePattern,
-			NumberValueObject.zero(),
 			store,
 			tags
 		);
@@ -133,7 +130,6 @@ export class ScheduledTransaction extends Entity<
 			operation,
 			category,
 			recurrencePattern,
-			NumberValueObject.zero(),
 			store,
 			tags
 		);
@@ -164,7 +160,6 @@ export class ScheduledTransaction extends Entity<
 			operation,
 			category,
 			recurrencePattern,
-			NumberValueObject.zero(),
 			store,
 			tags
 		);
@@ -187,7 +182,6 @@ export class ScheduledTransaction extends Entity<
 				type: RecurrenceType.INFINITE,
 				frequency: itemV1.recurrence.frequency?.value ?? "1mo",
 			}),
-			NumberValueObject.zero(),
 			itemV1.info?.store,
 			itemV1.tags,
 			DateValueObject.createNowDate()
@@ -217,14 +211,6 @@ export class ScheduledTransaction extends Entity<
 
 	get recurrencePattern(): RecurrencePattern {
 		return this._recurrencePattern;
-	}
-
-	get nextOccurrenceIndex(): NumberValueObject {
-		return this._nextOccurrenceIndex;
-	}
-
-	set nextOccurrenceIndex(value: NumberValueObject) {
-		this._nextOccurrenceIndex = value;
 	}
 
 	get store(): StringValueObject | undefined {
@@ -384,7 +370,6 @@ export class ScheduledTransaction extends Entity<
 			this._operation,
 			this._category,
 			this._recurrencePattern,
-			this._nextOccurrenceIndex,
 			this._store,
 			this._tags,
 			this.updatedAt
@@ -416,7 +401,6 @@ export class ScheduledTransaction extends Entity<
 			operation: this._operation.toPrimitives(),
 			category: this._category.toPrimitives(),
 			recurrencePattern: this._recurrencePattern.toPrimitives(),
-			nextOccurrenceIndex: this._nextOccurrenceIndex.value,
 			tags: this._tags?.toPrimitives(),
 			updatedAt: this.updatedAt.value.toISOString(),
 		};
@@ -437,7 +421,6 @@ export class ScheduledTransaction extends Entity<
 			ItemOperation.fromPrimitives(primitives.operation),
 			TransactionCategory.fromPrimitives(primitives.category),
 			RecurrencePattern.fromPrimitives(primitives.recurrencePattern),
-			new NumberValueObject(primitives.nextOccurrenceIndex),
 			primitives.store
 				? new StringValueObject(primitives.store)
 				: undefined,
@@ -472,7 +455,6 @@ export class ScheduledTransaction extends Entity<
 			recurrencePattern: RecurrencePattern.oneTime(
 				ScheduledTransactionDate.createNowDate()
 			).toPrimitives(),
-			nextOccurrenceIndex: 0,
 			updatedAt: "",
 		};
 	}
@@ -486,7 +468,6 @@ export type ScheduledTransactionPrimitives = {
 	operation: ItemOperationPrimitives;
 	category: TransactionCategoryPrimitives;
 	recurrencePattern: RecurrencePatternPrimitives;
-	nextOccurrenceIndex: number;
 	store?: string;
 	tags?: string[];
 	updatedAt: string;
