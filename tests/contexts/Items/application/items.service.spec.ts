@@ -14,7 +14,7 @@ import { TransactionAmount } from "contexts/Transactions/domain/transaction-amou
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ScheduledTransactionsService } from "../../../../src/contexts/ScheduledTransactions/application/scheduled-transactions.service";
 import {
-	IRecurrenceModificationsRepository,
+	IRecurrenceModificationsService,
 	IScheduledTransactionsRepository,
 	ItemRecurrenceFrequency,
 	ScheduledTransaction,
@@ -63,25 +63,32 @@ describe("ScheduledTransactionsService", () => {
 		};
 
 		// Mock the recurrence modifications service using Jest
-		const recurrenceModificationsRepository: IRecurrenceModificationsRepository =
+		const recurrenceModificationsService: IRecurrenceModificationsService =
 			{
-				countByScheduledItemId: vi.fn().mockResolvedValue(0),
-				deleteByScheduledItemId: vi.fn(),
-				persist: vi.fn(),
-				deleteById: vi.fn(),
+				countModificationsByScheduledItem: vi.fn().mockResolvedValue(0),
+				deleteModificationsByScheduledItem: vi.fn(),
+				create: vi.fn(),
+				delete: vi.fn(),
 				exists: vi.fn().mockResolvedValue(false),
-				findAll: vi.fn().mockResolvedValue([]),
-				findByCriteria: vi.fn().mockResolvedValue([]),
-				findById: vi.fn().mockResolvedValue(null),
-				findByScheduledItemId: vi.fn().mockResolvedValue([]),
-				findByScheduledItemIdAndOccurrenceIndex: vi
+				getAll: vi.fn().mockResolvedValue([]),
+				getByCriteria: vi.fn().mockResolvedValue([]),
+				getByID: vi.fn().mockResolvedValue(null),
+				getByScheduledItemId: vi.fn().mockResolvedValue([]),
+				getByScheduledItemIdAndOccurrenceIndex: vi
 					.fn()
 					.mockResolvedValue(null),
+				clearAllModifications: vi.fn(),
+				getStatsByScheduledItem: vi.fn(),
+				markOccurrenceAsCompleted: vi.fn(),
+				markOccurrenceAsDeleted: vi.fn(),
+				modifyOccurrence: vi.fn(),
+				resetOccurrenceToPending: vi.fn(),
+				update: vi.fn(),
 			};
 
 		scheduledTransactionsService = new ScheduledTransactionsService(
 			mockItemsRepository,
-			recurrenceModificationsRepository,
+			recurrenceModificationsService,
 			mockAccountsService
 		);
 	});
