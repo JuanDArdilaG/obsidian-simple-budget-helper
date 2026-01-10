@@ -44,10 +44,6 @@ export class RecurrenceModificationsLocalRepository
 		scheduledItemId: Nanoid,
 		occurrenceIndex: number
 	): Promise<RecurrenceModification | null> {
-		this.#logger.debug("findByScheduledItemIdAndOccurrenceIndex", {
-			scheduledItemId,
-			occurrenceIndex,
-		});
 		const modification = await this._db.db
 			.table(this.tableName)
 			.where("scheduledItemId")

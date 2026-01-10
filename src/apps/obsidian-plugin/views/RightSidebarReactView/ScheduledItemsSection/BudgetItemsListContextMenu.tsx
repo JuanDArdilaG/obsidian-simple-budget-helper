@@ -3,13 +3,10 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { Box, IconButton } from "@mui/material";
-import { useContext } from "react";
 import {
 	ItemRecurrenceInfo,
 	ScheduledTransaction,
 } from "../../../../../contexts/ScheduledTransactions/domain";
-import { ConfirmationModal } from "../../../components/ConfirmationModal";
-import { AppContext } from "../Contexts";
 
 export const BudgetItemsListContextMenu = ({
 	recurrent,
@@ -18,7 +15,7 @@ export const BudgetItemsListContextMenu = ({
 	currentAction,
 	handleDelete,
 }: {
-	handleDelete?: () => Promise<void>;
+	handleDelete?: (e: React.MouseEvent) => Promise<void>;
 	recurrent:
 		| {
 				recurrence: ItemRecurrenceInfo;
@@ -40,7 +37,6 @@ export const BudgetItemsListContextMenu = ({
 	>;
 	currentAction?: "edit" | "record";
 }) => {
-	const { plugin } = useContext(AppContext);
 	const handleEdit = () => {
 		if (currentAction === "edit") {
 			// If edit panel is already open, close it
@@ -88,15 +84,7 @@ export const BudgetItemsListContextMenu = ({
 				</>
 			)}
 			{handleDelete !== undefined && (
-				<IconButton
-					onClick={() => {
-						console.log("Deleting scheduled item", recurrent);
-						new ConfirmationModal(plugin.app, async (confirm) => {
-							if (confirm) await handleDelete();
-						}).open();
-					}}
-					size="small"
-				>
+				<IconButton onClick={handleDelete} size="small">
 					<DeleteIcon fontSize="small" />
 				</IconButton>
 			)}

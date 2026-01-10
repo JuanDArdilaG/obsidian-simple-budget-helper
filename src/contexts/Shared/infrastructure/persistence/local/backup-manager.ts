@@ -155,11 +155,16 @@ export class BackupManager {
 
 			const files = await this.app.vault.adapter.list(this.backupFolder);
 
+			this.logger.debug("Found backup files", {
+				count: files.files.length,
+			});
+
 			const filesContent = (
 				await Promise.all(
 					files.files
 						.filter((file) => file.endsWith(".json"))
 						.map(async (file) => {
+							this.logger.debug("Reading backup file", { file });
 							return {
 								fileContent: await this.app.vault.adapter.read(
 									file
@@ -173,13 +178,21 @@ export class BackupManager {
 				file,
 			}));
 
+			this.logger.debug("Parsed backup files", {
+				count: filesContent.length,
+			});
+
 			const backups: BackupInfo[] = (
 				await Promise.all(
 					filesContent.map(({ file }) => {
+						this.logger.debug("Getting file stats", { file });
 						return this.app.vault.adapter.stat(file);
 					})
 				)
 			).map((stat, index) => {
+				this.logger.debug("Processing backup file", {
+					file: filesContent[index].file,
+				});
 				return {
 					name: filesContent[index].fileContent.metadata.name,
 					path: filesContent[index].file,
@@ -196,6 +209,10 @@ export class BackupManager {
 			backups.sort(
 				(a, b) => b.createdAt.getTime() - a.createdAt.getTime()
 			);
+
+			this.logger.debug("Sorted backup files by creation date", {
+				count: backups.length,
+			});
 
 			return backups;
 		} catch (error) {

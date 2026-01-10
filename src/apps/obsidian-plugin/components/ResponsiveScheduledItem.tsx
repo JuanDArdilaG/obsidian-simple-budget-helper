@@ -37,7 +37,7 @@ export const ResponsiveScheduledItem = ({
 	recurrentContextMenu,
 	handleDelete,
 }: {
-	handleDelete?: () => Promise<void>;
+	handleDelete?: (e: React.MouseEvent) => Promise<void>;
 	scheduleTransaction: ScheduledTransaction;
 	recurrence: ItemRecurrenceInfo;
 	accountName: AccountName;

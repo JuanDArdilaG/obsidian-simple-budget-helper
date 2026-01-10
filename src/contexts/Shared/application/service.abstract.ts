@@ -8,6 +8,7 @@ import {
 	IRepository,
 } from "../domain";
 import { IService } from "../domain/service.interface";
+import { Logger } from "../infrastructure/logger";
 
 export abstract class Service<
 	ID extends IDValueObject,
@@ -15,6 +16,7 @@ export abstract class Service<
 	P extends EntityComposedValue
 > implements IService<ID, T, P>
 {
+	#logger = new Logger("ServiceAbstract");
 	constructor(
 		private readonly _entityName: string,
 		private readonly _repository: IRepository<ID, T, P>
@@ -56,7 +58,10 @@ export abstract class Service<
 
 	async delete(id: ID): Promise<void> {
 		const exists = await this._repository.exists(id);
-		if (!exists) throw new EntityNotFoundError("Scheduled Item", id);
+		this.#logger.debug(
+			`Deleting ${this._entityName} with id ${id}, exists: ${exists}`
+		);
+		if (!exists) throw new EntityNotFoundError(this._entityName, id);
 		await this._repository.deleteById(id);
 	}
 }

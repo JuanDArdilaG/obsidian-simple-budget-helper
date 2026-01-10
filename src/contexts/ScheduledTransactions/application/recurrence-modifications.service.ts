@@ -6,7 +6,7 @@ import { Logger } from "../../Shared/infrastructure/logger";
 import {
 	IRecurrenceModificationsRepository,
 	IRecurrenceModificationsService,
-	IScheduledTransactionsService,
+	IScheduledTransactionsRepository,
 	RecurrenceModification,
 	RecurrenceModificationPrimitives,
 	RecurrenceModificationState,
@@ -23,7 +23,7 @@ export class RecurrenceModificationsService
 {
 	#logger = new Logger("RecurrenceModificationsService");
 	constructor(
-		private readonly _scheduledTransactionsService: IScheduledTransactionsService,
+		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository,
 		private readonly _recurrenceModificationsRepository: IRecurrenceModificationsRepository
 	) {
 		super("RecurrenceModification", _recurrenceModificationsRepository);
@@ -89,11 +89,11 @@ export class RecurrenceModificationsService
 		} else {
 			// Create new modification
 			const scheduledTransaction =
-				await this._scheduledTransactionsService.getByID(
+				await this._scheduledTransactionsRepository.findById(
 					scheduledItemId
 				);
 			const modificationDate =
-				scheduledTransaction.getOccurrenceDate(occurrenceIndex);
+				scheduledTransaction?.getOccurrenceDate(occurrenceIndex);
 			if (!modificationDate) {
 				throw new Error(
 					`Cannot modify occurrence at index ${occurrenceIndex} - error getting original date`
@@ -127,11 +127,11 @@ export class RecurrenceModificationsService
 
 		if (!modification) {
 			const scheduledTransaction =
-				await this._scheduledTransactionsService.getByID(
+				await this._scheduledTransactionsRepository.findById(
 					scheduledItemId
 				);
 			const modificationDate =
-				scheduledTransaction.getOccurrenceDate(occurrenceIndex);
+				scheduledTransaction?.getOccurrenceDate(occurrenceIndex);
 			if (!modificationDate) {
 				throw new Error(
 					`Cannot mark occurrence at index ${occurrenceIndex} as completed - error getting original date`
@@ -164,11 +164,11 @@ export class RecurrenceModificationsService
 		if (!modification) {
 			// Create new modification with deleted state
 			const scheduledTransaction =
-				await this._scheduledTransactionsService.getByID(
+				await this._scheduledTransactionsRepository.findById(
 					scheduledItemId
 				);
 			const modificationDate =
-				scheduledTransaction.getOccurrenceDate(occurrenceIndex);
+				scheduledTransaction?.getOccurrenceDate(occurrenceIndex);
 			if (!modificationDate) {
 				throw new Error(
 					`Cannot mark occurrence at index ${occurrenceIndex} as deleted - error getting original date`

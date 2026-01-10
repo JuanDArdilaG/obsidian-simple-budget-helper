@@ -6,7 +6,7 @@ import { ReportBalance } from "contexts/Reports/domain";
 import { ItemsReport } from "contexts/Reports/domain/scheduled-transactions-report.entity";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { ChevronDown, ChevronRight, X } from "lucide-react";
-import { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
 	CartesianGrid,
 	Legend,
@@ -33,14 +33,11 @@ import { ItemReportContext } from "../../Contexts/ItemReportContext";
 import { TransactionsContext } from "../../Contexts/TransactionsContext";
 
 export const AllScheduledTransactionsList = ({
-	scheduledTransactions,
 	selectedItem,
 	setSelectedItem,
 	action,
 	setAction,
-	updateItems,
 }: {
-	scheduledTransactions: ScheduledTransaction[];
 	selectedItem?: ScheduledTransaction;
 	setSelectedItem: React.Dispatch<
 		React.SetStateAction<ScheduledTransaction | undefined>
@@ -49,7 +46,6 @@ export const AllScheduledTransactionsList = ({
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
-	updateItems: () => void;
 }) => {
 	const { logger } = useLogger("AllScheduledTransactionsList");
 
@@ -64,12 +60,18 @@ export const AllScheduledTransactionsList = ({
 		useCases: { getTotalPerMonth },
 	} = useContext(ItemReportContext);
 	const {
+		scheduledItems,
+		updateScheduledTransactions,
 		useCases: { nextPendingOccurrenceUseCase },
 	} = useContext(ScheduledTransactionsContext);
 
+	useEffect(() => {
+		updateScheduledTransactions();
+	}, []);
+
 	const displayedItemsReport = useMemo(
-		() => new ItemsReport(scheduledTransactions),
-		[scheduledTransactions]
+		() => new ItemsReport(scheduledItems),
+		[scheduledItems]
 	);
 
 	const [showPanel, setShowPanel] = useState<{
@@ -476,12 +478,23 @@ export const AllScheduledTransactionsList = ({
 		const fetchNextOccurrences = async () => {
 			const results = (
 				await Promise.all(
-					scheduledTransactions.map(async (scheduledTransaction) => {
-						const recurrence =
-							await nextPendingOccurrenceUseCase.execute(
-								scheduledTransaction.id
+					scheduledItems.map(async (scheduledTransaction) => {
+						try {
+							const recurrence =
+								await nextPendingOccurrenceUseCase.execute(
+									scheduledTransaction.id
+								);
+							return { scheduledTransaction, recurrence };
+						} catch (error) {
+							logger.error(
+								"Error fetching next occurrence",
+								error
 							);
-						return { scheduledTransaction, recurrence };
+							return {
+								scheduledTransaction,
+								recurrence: undefined,
+							};
+						}
 					})
 				)
 			).filter((result) => !!result.recurrence) as Array<{
@@ -491,7 +504,7 @@ export const AllScheduledTransactionsList = ({
 			setScheduledTransactionsWithNextOccurrence(results);
 		};
 		fetchNextOccurrences();
-	}, [scheduledTransactions, nextPendingOccurrenceUseCase]);
+	}, [scheduledItems, nextPendingOccurrenceUseCase]);
 
 	return (
 		<div>
@@ -548,22 +561,28 @@ export const AllScheduledTransactionsList = ({
 										setSelectedItem={setSelectedItem}
 										context="all-items"
 										currentAction={showPanel?.action}
-										handleDelete={async () => {
+										handleDelete={async (
+											_: React.MouseEvent
+										) => {
+											logger.debug(
+												"Deleting scheduled transaction",
+												{
+													scheduledTransactionId:
+														scheduledTransaction.id,
+												}
+											);
 											new ConfirmationModal(
 												plugin.app,
 												async (confirm) => {
-													console.log({
-														scheduledTransaction,
-														recurrence,
-													});
 													if (confirm) {
 														await deleteScheduledTransaction.execute(
 															{
 																id: scheduledTransaction.id,
 															}
 														);
-														updateItems();
+														updateScheduledTransactions();
 													}
+													setSelectedItem(undefined);
 												}
 											).open();
 										}}

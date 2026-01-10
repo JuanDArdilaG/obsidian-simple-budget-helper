@@ -4,8 +4,9 @@ import { Service } from "contexts/Shared/application/service.abstract";
 import { SubCategory, SubCategoryID } from "contexts/Subcategories/domain";
 import { IAccountsService } from "../../Accounts/domain";
 import { Nanoid } from "../../Shared/domain";
+import { Logger } from "../../Shared/infrastructure/logger";
 import {
-	IRecurrenceModificationsRepository,
+	IRecurrenceModificationsService,
 	IScheduledTransactionsRepository,
 	IScheduledTransactionsService,
 	ItemRecurrenceInfo,
@@ -21,12 +22,26 @@ export class ScheduledTransactionsService
 	>
 	implements IScheduledTransactionsService
 {
+	#logger = new Logger("ScheduledTransactionsService");
 	constructor(
 		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository,
-		private readonly _recurrenceModificationsRepository: IRecurrenceModificationsRepository,
+		private readonly _recurrenceModificationsService: IRecurrenceModificationsService,
 		private readonly _accountsService: IAccountsService
 	) {
 		super("ScheduledTransaction", _scheduledTransactionsRepository);
+	}
+
+	async delete(id: Nanoid): Promise<void> {
+		this.#logger.debug(`Deleting scheduled transaction with id ${id}`);
+		const modifications =
+			await this._recurrenceModificationsService.getByScheduledItemId(id);
+		this.#logger.debug(
+			`Found ${modifications.length} modifications for scheduled transaction with id ${id}`
+		);
+		for (const modification of modifications) {
+			await this._recurrenceModificationsService.delete(modification.id);
+		}
+		super.delete(id);
 	}
 
 	async getByCategory(category: CategoryID): Promise<ScheduledTransaction[]> {
@@ -101,7 +116,7 @@ export class ScheduledTransactionsService
 		}
 
 		const modification =
-			await this._recurrenceModificationsRepository.findByScheduledItemIdAndOccurrenceIndex(
+			await this._recurrenceModificationsService.getByScheduledItemIdAndOccurrenceIndex(
 				id,
 				occurrenceIndex.value
 			);
