@@ -92,6 +92,7 @@ export const AccountingListItem = ({
 	return (
 		<>
 			<div
+				key={transaction.id.value}
 				onClick={handleSelectionToggle}
 				style={{
 					backgroundColor: isSelected
@@ -133,6 +134,7 @@ export const AccountingListItem = ({
 								</Typography>
 								{display.accounts.map((accountInfo) => (
 									<PriceLabel
+										key={accountInfo.name}
 										price={accountInfo.realAmount}
 										operation={transaction.operation}
 									/>
@@ -159,6 +161,7 @@ export const AccountingListItem = ({
 								{isTransfer &&
 									display.accounts.map((accountInfo) => (
 										<span
+											key={accountInfo.name}
 											style={{
 												fontSize: "12px",
 												color: "var(--text-muted)",
@@ -188,6 +191,7 @@ export const AccountingListItem = ({
 							>
 								{accounts.map((accountBalance) => (
 									<div
+										key={accountBalance.id.value}
 										style={{
 											fontSize: "11px",
 											color: "var(--text-muted)",
@@ -299,6 +303,7 @@ export const AccountingListItem = ({
 								{display.accounts.map((accountInfo, index) => (
 									<>
 										<div
+											key={accountInfo.name}
 											style={{
 												display: "flex",
 												gap: "8px",
