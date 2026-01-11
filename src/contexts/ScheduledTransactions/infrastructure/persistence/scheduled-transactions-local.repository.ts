@@ -37,12 +37,16 @@ export class ScheduledTransactionsLocalRepository
 	async findByCategory(
 		category: CategoryID
 	): Promise<ScheduledTransaction[]> {
-		return this.where("category", category.value);
+		return this.filter(
+			(record) => record.category.category.id === category.value
+		);
 	}
 
 	async findBySubCategory(
 		subCategory: SubCategoryID
 	): Promise<ScheduledTransaction[]> {
-		return this.where("subCategory", subCategory.value);
+		return this.filter(
+			(record) => record.category.subCategory.id === subCategory.value
+		);
 	}
 }
