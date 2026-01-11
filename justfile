@@ -128,7 +128,11 @@ deploy type="patch": check-git build test (bump type)
 
 alias de-b := deploy-beta
 deploy-beta: check-git build test
-    #!/usr/bin/env bash    
+    #!/usr/bin/env bash  
+	echo "🚀 Deploying beta version..."
+	# Delete existing beta tag if it exists
+	git tag -d beta 2>/dev/null || true  
+	git push origin --delete beta 2>/dev/null || true
     # Create and push tag
     git tag -a beta -m "beta"
     git push origin beta
