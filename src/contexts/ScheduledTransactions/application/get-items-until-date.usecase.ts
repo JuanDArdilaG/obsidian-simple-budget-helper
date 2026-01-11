@@ -11,25 +11,17 @@ import {
 	RecurrenceModificationState,
 } from "../domain";
 
-export type GetScheduledTransactionsUntilDateUseCaseResponse =
-	ItemRecurrenceInfo[];
-
 export class GetScheduledTransactionsUntilDateUseCase
-	implements
-		QueryUseCase<
-			DateValueObject,
-			GetScheduledTransactionsUntilDateUseCaseResponse
-		>
+	implements QueryUseCase<DateValueObject, ItemRecurrenceInfo[]>
 {
 	readonly #logger = new Logger("GetScheduledTransactionsUntilDateUse");
+
 	constructor(
 		private readonly _scheduledTransactionsService: IScheduledTransactionsService,
 		private readonly _recurrenceModificationsService: IRecurrenceModificationsService
 	) {}
 
-	async execute(
-		to: DateValueObject
-	): Promise<GetScheduledTransactionsUntilDateUseCaseResponse> {
+	async execute(to: DateValueObject): Promise<ItemRecurrenceInfo[]> {
 		this.#logger.debug("execute", { to });
 		const scheduledTransactions =
 			await this._scheduledTransactionsService.getAll();

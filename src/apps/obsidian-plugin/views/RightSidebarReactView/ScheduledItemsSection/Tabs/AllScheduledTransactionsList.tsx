@@ -51,7 +51,7 @@ export const AllScheduledTransactionsList = ({
 
 	const { plugin } = useContext(AppContext);
 	const {
-		useCases: { deleteScheduledTransaction },
+		useCases: { deleteScheduledTransaction, nextMonthExpensesUseCase },
 	} = useContext(ScheduledTransactionsContext);
 
 	const { getAccountByID, accounts } = useContext(AccountsContext);
@@ -166,6 +166,21 @@ export const AllScheduledTransactionsList = ({
 			})
 			.then((total) => setPerMonth(total));
 	}, [displayedItemsReport]);
+
+	const [nextMonthExpenses, setNextMonthExpenses] = useState(
+		PriceValueObject.zero()
+	);
+
+	useEffect(() => {
+		nextMonthExpensesUseCase.execute().then((recurrences) => {
+			logger.debug("Next month expenses fetched", { recurrences });
+			setNextMonthExpenses(
+				recurrences.reduce((total, rec) => {
+					return total.plus(rec.fromAmount);
+				}, PriceValueObject.zero())
+			);
+		});
+	}, [scheduledItems]);
 
 	interface MonthlyData {
 		name: string;
@@ -1108,6 +1123,46 @@ export const AllScheduledTransactionsList = ({
 						</div>
 					</div>
 				)}
+
+				{/* Saving for next months expenses */}
+				<div
+					style={{
+						background: "var(--background-secondary)",
+						borderRadius: "8px",
+						padding: "12px",
+						marginBottom: "10px",
+						border: "2px solid var(--color-blue)",
+					}}
+				>
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+						}}
+					>
+						<span style={{ fontWeight: "bold", fontSize: "1.1em" }}>
+							Saving for Next Month's Expenses
+						</span>
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "8px",
+							}}
+						>
+							<span
+								style={{
+									fontSize: "1.3em",
+									fontWeight: "bold",
+									color: "var(--color-blue)",
+								}}
+							>
+								{nextMonthExpenses.toString()}
+							</span>
+						</div>
+					</div>
+				</div>
 
 				{/* Total Per Month */}
 				<div

@@ -49,7 +49,8 @@ import { DeleteScheduledTransactionUseCase } from "../../../ScheduledTransaction
 import { GetAllScheduledTransactionsUseCase } from "../../../ScheduledTransactions/application/get-all-scheduled-transactions";
 import { GetScheduledTransactionsUntilDateUseCase } from "../../../ScheduledTransactions/application/get-items-until-date.usecase";
 import { ScheduledTransactionsWithAccumulatedBalanceUseCase } from "../../../ScheduledTransactions/application/items-with-accumulated-balance.usecase";
-import { NextPendingOccurrenceUseCase } from "../../../ScheduledTransactions/application/next-pending-ocurrence.usecase";
+import { NextMonthsExpensesUseCase } from "../../../ScheduledTransactions/application/next-months-expenses.usecase";
+import { NextPendingOccurrenceUseCase } from "../../../ScheduledTransactions/application/next-pending-occurrence.usecase";
 import { RecordScheduledTransactionUseCase } from "../../../ScheduledTransactions/application/record-scheduled-transaction.usecase";
 import { RecurrenceModificationsService } from "../../../ScheduledTransactions/application/recurrence-modifications.service";
 import { ScheduledTransactionsService } from "../../../ScheduledTransactions/application/scheduled-transactions.service";
@@ -112,6 +113,9 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		).singleton(),
 		nextPendingOccurrenceUseCase: asClass(
 			NextPendingOccurrenceUseCase
+		).singleton(),
+		nextMonthOccurrencesUseCase: asClass(
+			NextMonthsExpensesUseCase
 		).singleton(),
 	});
 

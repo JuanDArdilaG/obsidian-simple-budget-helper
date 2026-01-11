@@ -8,7 +8,8 @@ import { createContext } from "react";
 import { DeleteScheduledTransactionUseCase } from "../../../../../contexts/ScheduledTransactions/application/delete-scheduled-transaction.usecase";
 import { GetScheduledTransactionsUntilDateUseCase } from "../../../../../contexts/ScheduledTransactions/application/get-items-until-date.usecase";
 import { ScheduledTransactionsWithAccumulatedBalanceUseCase } from "../../../../../contexts/ScheduledTransactions/application/items-with-accumulated-balance.usecase";
-import { NextPendingOccurrenceUseCase } from "../../../../../contexts/ScheduledTransactions/application/next-pending-ocurrence.usecase";
+import { NextMonthsExpensesUseCase } from "../../../../../contexts/ScheduledTransactions/application/next-months-expenses.usecase";
+import { NextPendingOccurrenceUseCase } from "../../../../../contexts/ScheduledTransactions/application/next-pending-occurrence.usecase";
 import { RecordScheduledTransactionUseCase } from "../../../../../contexts/ScheduledTransactions/application/record-scheduled-transaction.usecase";
 import { ScheduledTransaction } from "../../../../../contexts/ScheduledTransactions/domain";
 import { CreateStoreUseCase } from "../../../../../contexts/Stores/application/create-store.usecase";
@@ -27,6 +28,7 @@ export type ScheduledTransactionsContextType = {
 		getScheduledTransactionsUntilDate: GetScheduledTransactionsUntilDateUseCase;
 		itemsWithAccumulatedBalanceUseCase: ScheduledTransactionsWithAccumulatedBalanceUseCase;
 		nextPendingOccurrenceUseCase: NextPendingOccurrenceUseCase;
+		nextMonthExpensesUseCase: NextMonthsExpensesUseCase;
 	};
 	scheduledItems: ScheduledTransaction[];
 	updateScheduledTransactions: () => void;
@@ -48,6 +50,7 @@ export const ScheduledTransactionsContext =
 			itemsWithAccumulatedBalanceUseCase:
 				{} as ScheduledTransactionsWithAccumulatedBalanceUseCase,
 			nextPendingOccurrenceUseCase: {} as NextPendingOccurrenceUseCase,
+			nextMonthExpensesUseCase: {} as NextMonthsExpensesUseCase,
 		},
 		scheduledItems: [],
 		updateScheduledTransactions: () => {},
@@ -95,6 +98,9 @@ export const useItemsContextDefault = (
 			),
 			nextPendingOccurrenceUseCase: container.resolve(
 				"nextPendingOccurrenceUseCase"
+			),
+			nextMonthExpensesUseCase: container.resolve(
+				"nextMonthOccurrencesUseCase"
 			),
 		},
 		scheduledItems,

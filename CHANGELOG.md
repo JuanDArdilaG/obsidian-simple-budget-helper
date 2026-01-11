@@ -7,8 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Add savings calculation for next month's expenses in scheduled transactions list.
+
 ### Fixed
 
+-   Fix backup listing to not consider macOS metadata files (.\_\*.json) as valid backups.
 -   Next occurrence calculation for scheduled transactions list was not considering modifications properly, leading to incorrect next occurrence dates.
 
 ## [0.14.2] - 2025-09-21

@@ -7,10 +7,7 @@ import {
 import { QueryUseCase } from "contexts/Shared/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { ItemRecurrenceInfo, RecurrenceModificationState } from "../domain";
-import {
-	GetScheduledTransactionsUntilDateUseCase,
-	GetScheduledTransactionsUntilDateUseCaseResponse,
-} from "./get-items-until-date.usecase";
+import { GetScheduledTransactionsUntilDateUseCase } from "./get-items-until-date.usecase";
 
 export type ItemWithAccounts = {
 	recurrence: ItemRecurrenceInfo;
@@ -38,9 +35,7 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 		private readonly getScheduledTransactionsUntilDateUseCase: GetScheduledTransactionsUntilDateUseCase
 	) {}
 
-	async getItems(
-		untilDate: DateValueObject
-	): Promise<GetScheduledTransactionsUntilDateUseCaseResponse> {
+	async getItems(untilDate: DateValueObject): Promise<ItemRecurrenceInfo[]> {
 		return await this.getScheduledTransactionsUntilDateUseCase.execute(
 			untilDate
 		);
@@ -50,18 +45,14 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 		return this._accountsService.getAll();
 	}
 
-	preValidate(
-		items: GetScheduledTransactionsUntilDateUseCaseResponse
-	): boolean {
+	preValidate(items: ItemRecurrenceInfo[]): boolean {
 		this.#logger.debug("preValidate", {
 			length: items.length,
 		});
 		return items.length > 0;
 	}
 
-	sort(
-		items: GetScheduledTransactionsUntilDateUseCaseResponse
-	): GetScheduledTransactionsUntilDateUseCaseResponse {
+	sort(items: ItemRecurrenceInfo[]): ItemRecurrenceInfo[] {
 		items.sort((a, b) => a.date.compareTo(b.date));
 		this.#logger.debug("sort", {
 			items: [...items],
@@ -69,9 +60,7 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 		return items;
 	}
 
-	filter(
-		scheduledTransactions: GetScheduledTransactionsUntilDateUseCaseResponse
-	): GetScheduledTransactionsUntilDateUseCaseResponse {
+	filter(scheduledTransactions: ItemRecurrenceInfo[]): ItemRecurrenceInfo[] {
 		this.#logger.debug("filter", {
 			totalItems: scheduledTransactions.length,
 			itemsByState: scheduledTransactions.reduce((acc, item) => {
@@ -94,7 +83,7 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 	}
 
 	addAccounts(
-		recurrences: GetScheduledTransactionsUntilDateUseCaseResponse,
+		recurrences: ItemRecurrenceInfo[],
 		accounts: Account[]
 	): ItemWithAccounts[] {
 		return recurrences

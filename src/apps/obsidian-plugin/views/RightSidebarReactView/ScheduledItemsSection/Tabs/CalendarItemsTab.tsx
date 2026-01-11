@@ -4,10 +4,9 @@ import { useLogger } from "apps/obsidian-plugin/hooks";
 import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ItemRecurrenceInfo } from "../../../../../../contexts/ScheduledTransactions/domain";
 import { Nanoid } from "../../../../../../contexts/Shared/domain";
-import { ScheduledTransactionsContext } from "../../Contexts/ScheduledTransactionsContext";
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
 import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
 import { CalendarItemsList } from "./CalendarItemsList";
@@ -41,9 +40,6 @@ const initialFilterState: FilterState = {
 
 export const CalendarItemsTab = () => {
 	const { logger } = useLogger("CalendarRightSidebarReactTab");
-	const {
-		useCases: { getScheduledTransactionsUntilDate: getItemsUntilDate },
-	} = useContext(ScheduledTransactionsContext);
 
 	// Filter state - lifted up to persist across timeframe/date changes
 	const [filters, setFilters] = useState<FilterState>(initialFilterState);
