@@ -162,25 +162,51 @@ export class BackupManager {
 			const filesContent = (
 				await Promise.all(
 					files.files
-						.filter((file) => file.endsWith(".json"))
+						.filter((file) => {
+							const fileName = file.split("/").pop() || "";
+							// Filter out macOS metadata files (._*) and only include .json files
+							return (
+								file.endsWith(".json") &&
+								!fileName.startsWith("._")
+							);
+						})
 						.map(async (file) => {
-							this.logger.debug("Reading backup file", { file });
-							return {
-								fileContent: await this.app.vault.adapter.read(
-									file
-								),
-								file,
-							};
+							try {
+								const fileContent =
+									await this.app.vault.adapter.read(file);
+								this.logger.debug("Reading backup file", {
+									file,
+								});
+								return {
+									fileContent,
+									file,
+								};
+							} catch (error) {
+								this.logger.error(
+									"Error reading backup file",
+									error
+								);
+								return { fileContent: null, file: file };
+							}
 						})
 				)
-			).map(({ fileContent, file }) => ({
-				fileContent: JSON.parse(fileContent),
-				file,
-			}));
-
-			this.logger.debug("Parsed backup files", {
-				count: filesContent.length,
-			});
+			)
+				.filter(({ fileContent }) => fileContent !== null)
+				.map(({ fileContent, file }) => {
+					try {
+						this.logger.debug("Parsing backup file", {
+							file,
+						});
+						return {
+							fileContent: JSON.parse(fileContent!),
+							file,
+						};
+					} catch (error) {
+						this.logger.error("Error parsing backup file", error);
+						return null;
+					}
+				})
+				.filter((item) => item !== null);
 
 			const backups: BackupInfo[] = (
 				await Promise.all(
