@@ -345,6 +345,7 @@ export const TransactionFormImproved = ({
 
 	// Shared properties for all transactions
 	const getInitialSharedProperties = () => {
+		logger.debug("getInitialSharedProperties", { transaction });
 		if (!transaction) {
 			return {
 				date: new Date(),
@@ -378,6 +379,7 @@ export const TransactionFormImproved = ({
 			setTransactionItems(items);
 		});
 	}, [transaction, categories, subCategories]);
+
 	const [sharedProperties, setSharedProperties] = useState(
 		getInitialSharedProperties()
 	);
@@ -415,8 +417,7 @@ export const TransactionFormImproved = ({
 
 	// Helper function to reset form while preserving certain fields
 	const resetFormForNewTransaction = () => {
-		// Preserve date, operation type, and store
-		const preservedDate = date;
+		logger.debug("resetting form for new transaction");
 		const preservedOperation = sharedProperties.operation;
 
 		// Reset transaction items to a single empty item
@@ -433,7 +434,7 @@ export const TransactionFormImproved = ({
 
 		// Reset shared properties but preserve certain fields
 		setSharedProperties({
-			date: preservedDate,
+			date: new Date(),
 			operation: preservedOperation,
 			fromSplits: [],
 			toSplits: [],
