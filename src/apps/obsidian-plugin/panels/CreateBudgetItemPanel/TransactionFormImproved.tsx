@@ -58,6 +58,7 @@ import React, {
 	useCallback,
 	useContext,
 	useEffect,
+	useMemo,
 	useState,
 } from "react";
 import { Store } from "../../../../contexts/Stores/domain";
@@ -313,6 +314,7 @@ export const TransactionFormImproved = ({
 
 	// Helper to extract primitives from Transaction for editing
 	const getInitialTransactionItems = async () => {
+		logger.debug("getting initial transaction items", { transaction });
 		if (!transaction) {
 			return [
 				{
@@ -345,7 +347,7 @@ export const TransactionFormImproved = ({
 
 	// Shared properties for all transactions
 	const getInitialSharedProperties = () => {
-		logger.debug("getInitialSharedProperties", { transaction });
+		logger.debug("getting shared properties", { transaction });
 		if (!transaction) {
 			return {
 				date: new Date(),
@@ -378,16 +380,33 @@ export const TransactionFormImproved = ({
 		getInitialTransactionItems().then((items) => {
 			setTransactionItems(items);
 		});
-	}, [transaction, categories, subCategories]);
+	}, [transaction]);
 
-	const [sharedProperties, setSharedProperties] = useState(
-		getInitialSharedProperties()
-	);
+	const [sharedProperties, setSharedProperties] = useState<{
+		date: Date;
+		operation: OperationType;
+		fromSplits: {
+			accountId: string;
+			amount: number;
+		}[];
+		toSplits: {
+			accountId: string;
+			amount: number;
+		}[];
+		store: string;
+	}>({
+		date: new Date(),
+		operation: "expense" as OperationType,
+		fromSplits: [] as PaymentSplitPrimitives[],
+		toSplits: [] as PaymentSplitPrimitives[],
+		store: "",
+	});
 
 	// Update shared properties when transaction changes
 	useEffect(() => {
 		setSharedProperties(getInitialSharedProperties());
 	}, [transaction]);
+
 	const [calculatorModalOpen, setCalculatorModalOpen] = useState(false);
 	const [calculatorExpression, setCalculatorExpression] = useState("");
 	const [calculatorError, setCalculatorError] = useState("");
@@ -410,9 +429,13 @@ export const TransactionFormImproved = ({
 		);
 
 	// Calculate total amount
-	const totalAmount = transactionItems.reduce(
-		(sum, item) => sum + item.amount * item.quantity,
-		0
+	const totalAmount = useMemo(
+		() =>
+			transactionItems.reduce(
+				(sum, item) => sum + item.amount * item.quantity,
+				0
+			),
+		[transactionItems]
 	);
 
 	// Helper function to reset form while preserving certain fields
@@ -461,32 +484,46 @@ export const TransactionFormImproved = ({
 	};
 
 	// Category/Subcategory options
-	const categoryOptions = categories
-		.map((cat) => ({ id: cat.id.value, name: cat.name.value }))
-		.sort((a, b) => a.name.localeCompare(b.name));
+	const categoryOptions = useMemo(
+		() =>
+			categories
+				.map((cat) => ({ id: cat.id.value, name: cat.name.value }))
+				.sort((a, b) => a.name.localeCompare(b.name)),
+		[categories]
+	);
 
-	const subCategoryOptions = (parentCategoryName: string) =>
-		(!parentCategoryName
-			? subCategories
-			: subCategories.filter((sub) => {
-					const cat = categories.find(
-						(c) => c.name.value === parentCategoryName
-					);
-					if (!cat) return false;
-					return cat.id.value === sub.category.value;
-			  })
-		)
-			.map((sub) => ({ id: sub.id.value, name: sub.name.value }))
-			.sort((a, b) => a.name.localeCompare(b.name));
+	const subCategoryOptions = useCallback(
+		(parentCategoryName: string) =>
+			(!parentCategoryName
+				? subCategories
+				: subCategories.filter((sub) => {
+						const cat = categories.find(
+							(c) => c.name.value === parentCategoryName
+						);
+						if (!cat) return false;
+						return cat.id.value === sub.category.value;
+				  })
+			)
+				.map((sub) => ({ id: sub.id.value, name: sub.name.value }))
+				.sort((a, b) => a.name.localeCompare(b.name)),
+		[categories, subCategories]
+	);
 
-	// Helper functions
-	const getCategoryIdByName = (name: string) =>
-		categories.find((c) => c.name.value === name)?.id;
-	const getSubCategoryIdByName = (name: string) =>
-		subCategories.find((s) => s.name.value === name)?.id;
+	// Update helpers
+	const updateTransactionItem = (
+		id: string,
+		updates: Partial<TransactionItem>
+	) => {
+		setTransactionItems(
+			transactionItems.map((item) =>
+				item.id === id ? { ...item, ...updates } : item
+			)
+		);
+	};
 
 	// Inline category creation functions
-	const handleCreateCategory = async () => {
+	const handleCreateCategory = async (itemId: string) => {
+		logger.debug("Creating category", { newCategoryName });
 		if (!newCategoryName.trim()) return;
 
 		setIsCreatingCategory(true);
@@ -496,11 +533,14 @@ export const TransactionFormImproved = ({
 			await createCategory.execute(
 				Category.create(new CategoryName(newCategoryName.trim()))
 			);
+			logger.debug("Category created successfully");
 			updateCategories();
 			updateCategoriesWithSubcategories();
 			setNewCategoryName("");
 			setShowCategoryCreation(false);
+			updateTransactionItem(itemId, { category: newCategoryName.trim() });
 		} catch (error) {
+			logger.error("Failed to create category", error);
 			setCategoryCreationError(
 				error instanceof Error
 					? error.message
@@ -512,7 +552,11 @@ export const TransactionFormImproved = ({
 	};
 
 	// Inline subcategory creation functions
-	const handleCreateSubcategory = async () => {
+	const handleCreateSubcategory = async (itemId: string) => {
+		logger.debug("Creating subcategory", {
+			newSubcategoryName,
+			selectedParentCategory,
+		});
 		if (!newSubcategoryName.trim() || !selectedParentCategory) return;
 
 		setIsCreatingSubcategory(true);
@@ -522,6 +566,7 @@ export const TransactionFormImproved = ({
 			const parentCategory = categories.find(
 				(c) => c.name.value === selectedParentCategory
 			);
+			logger.debug("Found parent category", { parentCategory });
 			if (!parentCategory) {
 				throw new Error("Parent category not found");
 			}
@@ -532,12 +577,17 @@ export const TransactionFormImproved = ({
 					new SubCategoryName(newSubcategoryName.trim())
 				)
 			);
+			logger.debug("Subcategory created successfully");
 			updateSubCategories();
 			updateCategoriesWithSubcategories();
 			setNewSubcategoryName("");
 			setSelectedParentCategory("");
 			setShowSubcategoryCreation(false);
+			updateTransactionItem(itemId, {
+				subCategory: newSubcategoryName.trim(),
+			});
 		} catch (error) {
+			logger.error("Failed to create subcategory", error);
 			setSubcategoryCreationError(
 				error instanceof Error
 					? error.message
@@ -573,18 +623,29 @@ export const TransactionFormImproved = ({
 	};
 
 	// Store, brand, provider, name options
-	const storeOptions = Array.from(
-		new Set(
-			stores
-				.map((store) => store.name.value)
-				.filter(
-					(t): t is string => typeof t === "string" && t.trim() !== ""
+	const storeOptions = useMemo(
+		() =>
+			Array.from(
+				new Set(
+					stores
+						.map((store) => store.name.value)
+						.filter(
+							(t): t is string =>
+								typeof t === "string" && t.trim() !== ""
+						)
 				)
-		)
+			),
+		[stores]
 	);
 
-	const nameOptions = Array.from(
-		new Set(transactions.map((transaction) => transaction.name.value))
+	const nameOptions = useMemo(
+		() =>
+			Array.from(
+				new Set(
+					transactions.map((transaction) => transaction.name.value)
+				)
+			),
+		[transactions]
 	);
 
 	// Calculator functions
@@ -642,18 +703,6 @@ export const TransactionFormImproved = ({
 		}
 	};
 
-	// Update helpers
-	const updateTransactionItem = (
-		id: string,
-		updates: Partial<TransactionItem>
-	) => {
-		setTransactionItems(
-			transactionItems.map((item) =>
-				item.id === id ? { ...item, ...updates } : item
-			)
-		);
-	};
-
 	const updateSharedProperties = useCallback(
 		(updates: Partial<typeof sharedProperties>) => {
 			setSharedProperties((prev) => ({ ...prev, ...updates }));
@@ -696,10 +745,12 @@ export const TransactionFormImproved = ({
 							new TransactionAmount(split.amount)
 						)
 				);
-				const categoryId = getCategoryIdByName(firstItem.category);
-				const subCategoryId = getSubCategoryIdByName(
-					firstItem.subCategory
-				);
+				const categoryId = categories.find(
+					(c) => c.name.value === firstItem.category
+				)?.id;
+				const subCategoryId = subCategories.find(
+					(sc) => sc.name.value === firstItem.subCategory
+				)?.id;
 				if (!categoryId || !subCategoryId) {
 					throw new Error("Category and subcategory are required");
 				}
@@ -726,10 +777,12 @@ export const TransactionFormImproved = ({
 			} else {
 				// Create a transaction for each item
 				for (const item of transactionItems) {
-					const categoryId = getCategoryIdByName(item.category);
-					const subCategoryId = getSubCategoryIdByName(
-						item.subCategory
-					);
+					const categoryId = categories.find(
+						(c) => c.name.value === item.category
+					)?.id;
+					const subCategoryId = subCategories.find(
+						(sc) => sc.name.value === item.subCategory
+					)?.id;
 					if (!categoryId || !subCategoryId) {
 						throw new Error(
 							"Category and subcategory are required"
@@ -1090,6 +1143,9 @@ export const TransactionFormImproved = ({
 										(opt) => opt.name
 									)}
 									onChange={(categoryName) => {
+										logger.debug("Selected category", {
+											categoryName,
+										});
 										if (
 											categoryName &&
 											categoryOptions.some(
@@ -1189,7 +1245,11 @@ export const TransactionFormImproved = ({
 											<Button
 												variant="contained"
 												size="small"
-												onClick={handleCreateCategory}
+												onClick={() =>
+													handleCreateCategory(
+														item.id
+													)
+												}
 												disabled={
 													!newCategoryName.trim() ||
 													newCategoryName.length >
@@ -1368,8 +1428,10 @@ export const TransactionFormImproved = ({
 											<Button
 												variant="contained"
 												size="small"
-												onClick={
-													handleCreateSubcategory
+												onClick={() =>
+													handleCreateSubcategory(
+														item.id
+													)
 												}
 												disabled={
 													!newSubcategoryName.trim() ||
