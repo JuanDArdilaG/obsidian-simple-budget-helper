@@ -45,6 +45,7 @@ import { RecordTransactionUseCase } from "contexts/Transactions/application/reco
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 import { UpdateTransactionUseCase } from "contexts/Transactions/application/update-transaction.usecase";
 import { TransactionsLocalRepository } from "contexts/Transactions/infrastructure/persistence/local/transactions-local.repository";
+import { ChangeAccountNameUseCase } from "../../../Accounts/application/change-account-name.usecase";
 import { DeleteScheduledTransactionUseCase } from "../../../ScheduledTransactions/application/delete-scheduled-transaction.usecase";
 import { GetAllScheduledTransactionsUseCase } from "../../../ScheduledTransactions/application/get-all-scheduled-transactions";
 import { GetScheduledTransactionsUntilDateUseCase } from "../../../ScheduledTransactions/application/get-items-until-date.usecase";
@@ -143,6 +144,7 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		resolveAccountDiscrepancyUseCase: asClass(
 			ResolveAccountDiscrepancyUseCase
 		).singleton(),
+		changeAccountNameUseCase: asClass(ChangeAccountNameUseCase).singleton(),
 	});
 
 	// TRANSACTIONS

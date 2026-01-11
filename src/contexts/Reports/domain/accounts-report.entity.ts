@@ -13,7 +13,7 @@ export class AccountsReport {
 			);
 	}
 
-	getTotalForLiabilites(): ReportBalance {
+	getTotalForLiabilities(): ReportBalance {
 		return this._accounts
 			.filter((acc) => acc.type.isLiability())
 			.reduce(
@@ -23,6 +23,6 @@ export class AccountsReport {
 	}
 
 	getTotal(): ReportBalance {
-		return this.getTotalForAssets().sustract(this.getTotalForLiabilites());
+		return this.getTotalForAssets().sustract(this.getTotalForLiabilities());
 	}
 }

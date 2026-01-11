@@ -2,11 +2,11 @@ import {
 	DateValueObject,
 	NumberValueObject,
 	PriceValueObject,
+	StringValueObject,
 } from "@juandardilag/value-objects";
 import {
 	AccountBalance,
 	AccountID,
-	AccountName,
 	AccountType,
 	AccountTypeType,
 } from "contexts/Accounts/domain";
@@ -20,14 +20,14 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 	constructor(
 		id: AccountID,
 		private readonly _type: AccountType,
-		private readonly _name: AccountName,
+		private _name: StringValueObject,
 		private _balance: AccountBalance,
 		updatedAt: DateValueObject
 	) {
 		super(id, updatedAt);
 	}
 
-	static create(type: AccountType, name: AccountName): Account {
+	static create(type: AccountType, name: StringValueObject): Account {
 		return new Account(
 			AccountID.generate(),
 			type,
@@ -51,8 +51,13 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		return this._type;
 	}
 
-	get name(): AccountName {
+	get name(): StringValueObject {
 		return this._name;
+	}
+
+	set name(name: StringValueObject) {
+		this._name = name;
+		this.updateTimestamp();
 	}
 
 	get balance(): AccountBalance {
@@ -144,7 +149,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		const account = new Account(
 			new AccountID(id),
 			new AccountType(type),
-			new AccountName(name),
+			new StringValueObject(name),
 			new AccountBalance(new PriceValueObject(balance)),
 			updatedAt
 				? new DateValueObject(new Date(updatedAt))

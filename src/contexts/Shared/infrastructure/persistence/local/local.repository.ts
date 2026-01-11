@@ -41,7 +41,7 @@ export abstract class LocalRepository<
 				for (const [field, filter] of Object.entries(
 					criteria.filters
 				)) {
-					const recordValue = (record as any)[field];
+					const recordValue = record[field];
 					const filterValue = filter.value;
 
 					switch (filter.operator) {
@@ -77,8 +77,8 @@ export abstract class LocalRepository<
 		if (criteria.orders && criteria.orders.length > 0) {
 			records.sort((a, b) => {
 				for (const order of criteria.orders) {
-					const aValue = (a as any)[order.field];
-					const bValue = (b as any)[order.field];
+					const aValue = a[order.field];
+					const bValue = b[order.field];
 
 					if (aValue < bValue)
 						return order.direction === "ASC" ? -1 : 1;

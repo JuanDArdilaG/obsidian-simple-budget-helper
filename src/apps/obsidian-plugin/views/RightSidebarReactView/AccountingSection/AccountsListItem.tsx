@@ -1,3 +1,4 @@
+import { StringValueObject } from "@juandardilag/value-objects";
 import {
 	Accordion,
 	AccordionDetails,
@@ -13,16 +14,18 @@ import {
 	CheckCircle,
 	CircleX,
 	EqualNot,
+	Pencil,
 	SettingsIcon,
 	Trash2,
 } from "lucide-react";
 import { useContext, useState } from "react";
+import { Input } from "../../../components/Input/Input";
 import { AccountsContext, TransactionsContext } from "../Contexts";
 
 export const AccountsListItem = ({ account }: { account: Account }) => {
 	const {
 		updateAccounts,
-		useCases: { deleteAccount },
+		useCases: { deleteAccount, changeAccountName },
 	} = useContext(AccountsContext);
 	const { updateTransactions } = useContext(TransactionsContext);
 	const {
@@ -31,7 +34,32 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 
 	const [adjustingBalance, setAdjustingBalance] = useState(false);
 	const [newBalance, setNewBalance] = useState(account.balance.value);
+
+	const [changingName, setChangingName] = useState(false);
+	const [newName, setNewName] = useState(account.name.toString());
+
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+	const handleChangeName = async () => {
+		try {
+			await changeAccountName.execute({
+				id: account.id,
+				name: new StringValueObject(newName),
+			});
+			updateTransactions();
+			updateAccounts();
+		} catch (error) {
+			console.error("Error changing account name:", error);
+			// Show error message to user
+			if (error instanceof Error) {
+				alert(`Failed to change account name: ${error.message}`);
+			} else {
+				alert("Failed to change account name. Please try again.");
+			}
+		} finally {
+			setChangingName(false);
+		}
+	};
 
 	const handleDelete = async () => {
 		try {
@@ -85,10 +113,22 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 						<Button
 							label="Adjust"
 							icon={<EqualNot />}
-							onClick={async () =>
-								setAdjustingBalance(!adjustingBalance)
-							}
+							onClick={async () => {
+								setAdjustingBalance(!adjustingBalance);
+								setChangingName(false);
+							}}
 						/>
+						<IconButton
+							onClick={() => {
+								setChangingName(!changingName);
+								setAdjustingBalance(false);
+							}}
+							color="error"
+							size="small"
+							title="Change account name"
+						>
+							<Pencil size={16} />
+						</IconButton>
 						<IconButton
 							onClick={() => setShowDeleteDialog(true)}
 							color="error"
@@ -140,6 +180,34 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 										color: "var(--text-normal)",
 									}}
 									onClick={() => setAdjustingBalance(false)}
+								/>
+							</div>
+						)}
+						{changingName && (
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+								}}
+							>
+								<Input<string>
+									id="newName"
+									label="New name"
+									value={newName}
+									onChange={setNewName}
+								/>
+
+								<CheckCircle
+									style={{
+										color: "var(--text-normal)",
+									}}
+									onClick={handleChangeName}
+								/>
+								<CircleX
+									style={{
+										color: "var(--text-normal)",
+									}}
+									onClick={() => setChangingName(false)}
 								/>
 							</div>
 						)}

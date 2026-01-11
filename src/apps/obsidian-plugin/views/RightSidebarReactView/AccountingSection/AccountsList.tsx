@@ -311,7 +311,7 @@ export const AccountsList = () => {
 						paddingLeft: "5px",
 					}}
 				>
-					Total: {projectedReport.getTotalForLiabilites().toString()}
+					Total: {projectedReport.getTotalForLiabilities().toString()}
 					{showProjectedBalances && (
 						<span
 							style={{ fontStyle: "italic", marginLeft: "5px" }}
