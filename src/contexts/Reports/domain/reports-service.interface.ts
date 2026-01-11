@@ -1,9 +1,9 @@
 import { ReportBalance } from "./report-balance.valueobject";
-import { ItemsReport } from "./scheduled-transactions-report.entity";
+import { ScheduledMonthlyReport } from "./scheduled-monthly-report.entity";
 
 export interface IReportsService {
 	getTotalPerMonth(
-		report: ItemsReport,
+		report: ScheduledMonthlyReport,
 		type: "expenses" | "incomes" | "all"
 	): Promise<ReportBalance>;
 
@@ -13,7 +13,7 @@ export interface IReportsService {
 	 * @param type the type of transactions to calculate (if null calculates all transactions)
 	 */
 	getTotal(
-		report: ItemsReport,
+		report: ScheduledMonthlyReport,
 		type?: "expenses" | "incomes"
 	): Promise<ReportBalance>;
 }

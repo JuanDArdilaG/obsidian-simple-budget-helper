@@ -44,7 +44,7 @@ export class NextPendingOccurrenceUseCase
 		);
 
 		let info: ItemRecurrenceInfo | null = null;
-		const maximumIterations = 10000; // Prevent infinite loops
+		const maximumIterations = 100; // Prevent infinite loops
 		let i = 0;
 		while (i < maximumIterations) {
 			this.#logger.debug(

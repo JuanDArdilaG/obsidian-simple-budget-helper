@@ -1,9 +1,9 @@
-import { Account, AccountID, IAccountsService } from "contexts/Accounts/domain";
+import { Account, IAccountsService } from "contexts/Accounts/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { ScheduledTransaction } from "../../ScheduledTransactions/domain";
 import { ReportBalance } from "../domain";
 import { IReportsService } from "../domain/reports-service.interface";
-import { ItemsReport } from "../domain/scheduled-transactions-report.entity";
+import { ScheduledMonthlyReport } from "../domain/scheduled-monthly-report.entity";
 
 type ScheduledTransactionsWithAccounts = {
 	scheduledTransaction: ScheduledTransaction;
@@ -17,24 +17,26 @@ export class ReportsService implements IReportsService {
 
 	/**
 	 * Retrieve and map accounts to items
-	 * @param {ItemsReport} report
+	 * @param {ScheduledMonthlyReport} report
 	 * @returns {ScheduledTransactionsWithAccounts[]} an array containing the items with its corresponding account and toAccount (if applies)
 	 */
 	async #addAccountsToItems(
-		report: ItemsReport
+		report: ScheduledMonthlyReport
 	): Promise<ScheduledTransactionsWithAccounts[]> {
 		return await Promise.all(
-			report.items.map(async (scheduledTransaction) => {
-				const account = await this._accountsService.getByID(
-					scheduledTransaction.fromSplits[0]?.accountId
-				);
-				const toAccount =
-					scheduledTransaction.toSplits[0]?.accountId &&
-					(await this._accountsService.getByID(
-						scheduledTransaction.toSplits[0]?.accountId
-					));
-				return { scheduledTransaction, account, toAccount };
-			})
+			report.scheduledTransactionsWithAccounts.map(
+				async ({ scheduledTransaction }) => {
+					const account = await this._accountsService.getByID(
+						scheduledTransaction.fromSplits[0]?.accountId
+					);
+					const toAccount =
+						scheduledTransaction.toSplits[0]?.accountId &&
+						(await this._accountsService.getByID(
+							scheduledTransaction.toSplits[0]?.accountId
+						));
+					return { scheduledTransaction, account, toAccount };
+				}
+			)
 		);
 	}
 
@@ -67,7 +69,7 @@ export class ReportsService implements IReportsService {
 	}
 
 	async getTotal(
-		report: ItemsReport,
+		report: ScheduledMonthlyReport,
 		type?: "expenses" | "incomes"
 	): Promise<ReportBalance> {
 		this.#logger.debug("getTotal", { report, type });
@@ -107,7 +109,7 @@ export class ReportsService implements IReportsService {
 	}
 
 	async getTotalPerMonth(
-		report: ItemsReport,
+		report: ScheduledMonthlyReport,
 		type: "expenses" | "incomes" | "all" = "all"
 	): Promise<ReportBalance> {
 		this.#logger.debug("getTotalPerMonth", { report, type });
@@ -123,17 +125,11 @@ export class ReportsService implements IReportsService {
 			account,
 			toAccount,
 		} of items) {
-			// Create account type lookup function
-			const accountTypeLookup = (id: AccountID) => {
-				if (id.value === account.id.value) return account.type;
-				if (toAccount && id.value === toAccount.id.value)
-					return toAccount.type;
-				throw new Error(`Account ${id.value} not found in lookup`);
-			};
-
 			// Use the item's getPricePerMonthWithAccountTypes method to handle recurring conversions
-			const monthlyPrice =
-				item.getPricePerMonthWithAccountTypes(accountTypeLookup);
+			const monthlyPrice = item.getPricePerMonthWithAccountTypes(
+				account.type,
+				toAccount?.type
+			);
 			total = total.plus(monthlyPrice);
 		}
 		return total;

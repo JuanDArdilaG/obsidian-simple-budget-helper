@@ -7,58 +7,26 @@ import { SubCategory } from "contexts/Subcategories/domain";
 import { ScheduledTransaction } from "../../ScheduledTransactions/domain";
 import { ReportBalance } from "./report-balance.valueobject";
 
-export type ItemsWithCategoryAndSubCategory = {
-	category: {
-		category: Category;
-		percentageOperation: NumberValueObject;
-		percentageInverseOperation: NumberValueObject;
-	};
-	subCategoriesItems: {
-		subCategory: {
-			subCategory: SubCategory;
-			percentageOperation: NumberValueObject;
-			percentageInverseOperation: NumberValueObject;
-		};
-		items: {
-			item: ScheduledTransaction;
-			percentageOperation: NumberValueObject;
-			percentageInverseOperation: NumberValueObject;
-		}[];
-	}[];
-};
-
-export class ItemsReport {
-	readonly _ = new Logger("ItemsReport");
+export class ScheduledCategoriesReport {
+	readonly _ = new Logger("ScheduledCategoriesReport");
 	private static readonly defaultAccountTypeLookup = () => {
 		return new AccountType("asset");
 	};
 
-	constructor(readonly items: ScheduledTransaction[]) {}
+	constructor(readonly scheduledTransactions: ScheduledTransaction[]) {}
 
-	onlyExpenses(): ItemsReport {
-		return new ItemsReport(
-			this.items.filter((item) => item.operation.type.isExpense())
-		);
-	}
-
-	onlyIncomes(): ItemsReport {
-		return new ItemsReport(
-			this.items.filter((item) => item.operation.type.isIncome())
-		);
-	}
-
-	onlyInfiniteRecurrent(): ItemsReport {
-		return new ItemsReport(
-			this.items.filter(
-				(item) => item.recurrencePattern.totalOccurrences === -1
+	onlyExpenses(): ScheduledCategoriesReport {
+		return new ScheduledCategoriesReport(
+			this.scheduledTransactions.filter((item) =>
+				item.operation.type.isExpense()
 			)
 		);
 	}
 
-	onlyFiniteRecurrent(): ItemsReport {
-		return new ItemsReport(
-			this.items.filter(
-				(item) => item.recurrencePattern.totalOccurrences !== -1
+	onlyIncomes(): ScheduledCategoriesReport {
+		return new ScheduledCategoriesReport(
+			this.scheduledTransactions.filter((item) =>
+				item.operation.type.isIncome()
 			)
 		);
 	}
@@ -67,28 +35,34 @@ export class ItemsReport {
 	 * Returns all items that are expenses (excluding transfers)
 	 */
 	getExpenseItems(): ScheduledTransaction[] {
-		return this.items.filter((item) => item.operation.type.isExpense());
+		return this.scheduledTransactions.filter((item) =>
+			item.operation.type.isExpense()
+		);
 	}
 
 	/**
 	 * Returns all items that are incomes (excluding transfers)
 	 */
 	getIncomeItems(): ScheduledTransaction[] {
-		return this.items.filter((item) => item.operation.type.isIncome());
+		return this.scheduledTransactions.filter((item) =>
+			item.operation.type.isIncome()
+		);
 	}
 
 	/**
 	 * Returns all transfer items
 	 */
 	getTransferItems(): ScheduledTransaction[] {
-		return this.items.filter((item) => item.operation.type.isTransfer());
+		return this.scheduledTransactions.filter((item) =>
+			item.operation.type.isTransfer()
+		);
 	}
 
 	/**
 	 * Returns infinite recurrent items
 	 */
 	getInfiniteRecurrentItems(): ScheduledTransaction[] {
-		return this.items.filter(
+		return this.scheduledTransactions.filter(
 			(item) => item.recurrencePattern.totalOccurrences === -1
 		);
 	}
@@ -97,13 +71,13 @@ export class ItemsReport {
 	 * Returns finite recurrent items
 	 */
 	getFiniteRecurrentItems(): ScheduledTransaction[] {
-		return this.items.filter(
+		return this.scheduledTransactions.filter(
 			(item) => item.recurrencePattern.totalOccurrences !== -1
 		);
 	}
 
 	getTotal(): ReportBalance {
-		return this.items.reduce(
+		return this.scheduledTransactions.reduce(
 			(total, item) => total.plus(item.realPrice),
 			ReportBalance.zero()
 		);
@@ -113,10 +87,18 @@ export class ItemsReport {
 		accountTypeLookup?: (id: AccountID) => AccountType
 	): ReportBalance {
 		const lookup =
-			accountTypeLookup || ItemsReport.defaultAccountTypeLookup;
-		return this.items.reduce(
+			accountTypeLookup ||
+			ScheduledCategoriesReport.defaultAccountTypeLookup;
+		return this.scheduledTransactions.reduce(
 			(total, item) =>
-				total.plus(item.getPricePerMonthWithAccountTypes(lookup)),
+				total.plus(
+					item.getPricePerMonthWithAccountTypes(
+						lookup(item.fromSplits[0].accountId),
+						item.toSplits.length > 0
+							? lookup(item.toSplits[0].accountId)
+							: undefined
+					)
+				),
 			ReportBalance.zero()
 		);
 	}
@@ -130,7 +112,8 @@ export class ItemsReport {
 		items: ItemsWithCategoryAndSubCategory[];
 	} {
 		const lookup =
-			accountTypeLookup || ItemsReport.defaultAccountTypeLookup;
+			accountTypeLookup ||
+			ScheduledCategoriesReport.defaultAccountTypeLookup;
 		const res: ItemsWithCategoryAndSubCategory[] = [];
 		const totalExpenses = this.onlyExpenses()
 			.getTotalPerMonth(lookup)
@@ -138,7 +121,7 @@ export class ItemsReport {
 		const totalIncomes = this.onlyIncomes().getTotalPerMonth(lookup).abs();
 		const expenses = NumberValueObject.zero();
 		const inverseOperation = NumberValueObject.zero();
-		this.items
+		this.scheduledTransactions
 			.filter((item) => !item.operation.type.isTransfer())
 			.forEach((item) => {
 				const categoryWithSubCategories =
@@ -161,8 +144,12 @@ export class ItemsReport {
 					});
 					r = res.last();
 				}
-				const itemPricePerMonth =
-					item.getPricePerMonthWithAccountTypes(lookup);
+				const itemPricePerMonth = item.getPricePerMonthWithAccountTypes(
+					lookup(item.fromSplits[0].accountId),
+					item.toSplits.length > 0
+						? lookup(item.toSplits[0].accountId)
+						: undefined
+				);
 				if (r?.category.percentageOperation !== undefined)
 					r.category.percentageOperation =
 						r.category.percentageOperation.plus(
@@ -262,3 +249,23 @@ export class ItemsReport {
 		};
 	}
 }
+
+export type ItemsWithCategoryAndSubCategory = {
+	category: {
+		category: Category;
+		percentageOperation: NumberValueObject;
+		percentageInverseOperation: NumberValueObject;
+	};
+	subCategoriesItems: {
+		subCategory: {
+			subCategory: SubCategory;
+			percentageOperation: NumberValueObject;
+			percentageInverseOperation: NumberValueObject;
+		};
+		items: {
+			item: ScheduledTransaction;
+			percentageOperation: NumberValueObject;
+			percentageInverseOperation: NumberValueObject;
+		}[];
+	}[];
+};

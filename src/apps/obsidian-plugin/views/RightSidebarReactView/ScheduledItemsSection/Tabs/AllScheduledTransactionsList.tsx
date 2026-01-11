@@ -1,9 +1,9 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
 import { ResponsiveScheduledItem } from "apps/obsidian-plugin/components/ResponsiveScheduledItem";
 import { useLogger } from "apps/obsidian-plugin/hooks";
-import { AccountID, AccountName, AccountType } from "contexts/Accounts/domain";
+import { AccountName } from "contexts/Accounts/domain";
 import { ReportBalance } from "contexts/Reports/domain";
-import { ItemsReport } from "contexts/Reports/domain/scheduled-transactions-report.entity";
+import { ScheduledMonthlyReport } from "contexts/Reports/domain/scheduled-monthly-report.entity";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { ChevronDown, ChevronRight, X } from "lucide-react";
 import React, { useContext, useEffect, useMemo, useState } from "react";
@@ -70,8 +70,8 @@ export const AllScheduledTransactionsList = ({
 	}, []);
 
 	const displayedItemsReport = useMemo(
-		() => new ItemsReport(scheduledItems),
-		[scheduledItems]
+		() => new ScheduledMonthlyReport(scheduledItems, accounts),
+		[scheduledItems, accounts]
 	);
 
 	const [showPanel, setShowPanel] = useState<{
@@ -190,136 +190,6 @@ export const AllScheduledTransactionsList = ({
 
 	const [selectedMonthData, setSelectedMonthData] =
 		useState<MonthlyData | null>(null);
-
-	// Define the accountTypeLookup function
-	const accountTypeLookup = (id: AccountID): AccountType => {
-		const account = getAccountByID(id);
-		if (!account) return new AccountType("asset"); // fallback or throw if preferred
-		return account.type;
-	};
-
-	// Helper functions to get filtered items
-	const getInfiniteExpenseItems = () => {
-		const expenseItems = displayedItemsReport.getExpenseItems();
-		const transferItems = displayedItemsReport.getTransferItems();
-		const infiniteItems = displayedItemsReport.getInfiniteRecurrentItems();
-
-		// Filter expense items that are infinite recurrent
-		const infiniteExpenseItems = expenseItems.filter(
-			(item: ScheduledTransaction) =>
-				infiniteItems.some((infiniteItem: ScheduledTransaction) =>
-					infiniteItem.id.equalTo(item.id)
-				)
-		);
-
-		// Filter transfer items that are infinite recurrent and Asset to Liability
-		const infiniteAssetToLiabilityTransfers = transferItems.filter(
-			(item: ScheduledTransaction) => {
-				const isInfinite = infiniteItems.some(
-					(infiniteItem: ScheduledTransaction) =>
-						infiniteItem.id.equalTo(item.id)
-				);
-				if (!isInfinite) return false;
-
-				const account = getAccountByID(item.fromSplits[0]?.accountId);
-				const toAccount = getAccountByID(item.toSplits[0]?.accountId);
-				return account?.type.isAsset() && toAccount?.type.isLiability();
-			}
-		);
-
-		return [
-			...infiniteExpenseItems,
-			...infiniteAssetToLiabilityTransfers,
-		].sort((a, b) =>
-			a
-				.getPricePerMonthWithAccountTypes(accountTypeLookup)
-				.compareTo(
-					b.getPricePerMonthWithAccountTypes(accountTypeLookup)
-				)
-		);
-	};
-
-	const getFiniteExpenseItems = () => {
-		const expenseItems = displayedItemsReport.getExpenseItems();
-		const transferItems = displayedItemsReport.getTransferItems();
-		const finiteItems = displayedItemsReport.getFiniteRecurrentItems();
-
-		// Filter expense items that are finite recurrent
-		const finiteExpenseItems = expenseItems.filter(
-			(item: ScheduledTransaction) =>
-				finiteItems.some((finiteItem: ScheduledTransaction) =>
-					finiteItem.id.equalTo(item.id)
-				)
-		);
-
-		// Filter transfer items that are finite recurrent and Asset to Liability
-		const finiteAssetToLiabilityTransfers = transferItems.filter(
-			(item: ScheduledTransaction) => {
-				const checkIfIsFinite = finiteItems.some(
-					(finiteItem: ScheduledTransaction) =>
-						finiteItem.id.equalTo(item.id)
-				);
-				if (!checkIfIsFinite) return false;
-
-				const account = getAccountByID(item.fromSplits[0]?.accountId);
-				const toAccount = getAccountByID(item.toSplits[0]?.accountId);
-				return account?.type.isAsset() && toAccount?.type.isLiability();
-			}
-		);
-
-		return [...finiteExpenseItems, ...finiteAssetToLiabilityTransfers].sort(
-			(a, b) =>
-				a
-					.getPricePerMonthWithAccountTypes(accountTypeLookup)
-					.compareTo(
-						b.getPricePerMonthWithAccountTypes(accountTypeLookup)
-					)
-		);
-	};
-
-	const getIncomeItems = () => {
-		const incomeItems = displayedItemsReport.getIncomeItems();
-		const transferItems = displayedItemsReport.getTransferItems();
-
-		// Filter transfer items that are Liability to Asset
-		const liabilityToAssetTransfers = transferItems.filter(
-			(item: ScheduledTransaction) => {
-				const account = getAccountByID(item.fromSplits[0]?.accountId);
-				const toAccount = getAccountByID(item.toSplits[0]?.accountId);
-				return account?.type.isLiability() && toAccount?.type.isAsset();
-			}
-		);
-
-		return [...incomeItems, ...liabilityToAssetTransfers].sort((a, b) =>
-			a
-				.getPricePerMonthWithAccountTypes(accountTypeLookup)
-				.compareTo(
-					b.getPricePerMonthWithAccountTypes(accountTypeLookup)
-				)
-		);
-	};
-
-	const getTotalExpenseItems = () => {
-		const expenseItems = displayedItemsReport.getExpenseItems();
-		const transferItems = displayedItemsReport.getTransferItems();
-
-		// Filter transfer items that are Asset to Liability
-		const assetToLiabilityTransfers = transferItems.filter(
-			(item: ScheduledTransaction) => {
-				const account = getAccountByID(item.fromSplits[0]?.accountId);
-				const toAccount = getAccountByID(item.toSplits[0]?.accountId);
-				return account?.type.isAsset() && toAccount?.type.isLiability();
-			}
-		);
-
-		return [...expenseItems, ...assetToLiabilityTransfers].sort((a, b) =>
-			a
-				.getPricePerMonthWithAccountTypes(accountTypeLookup)
-				.compareTo(
-					b.getPricePerMonthWithAccountTypes(accountTypeLookup)
-				)
-		);
-	};
 
 	useEffect(() => {
 		// const incomeItems = getIncomeItems();
@@ -559,7 +429,6 @@ export const AllScheduledTransactionsList = ({
 										price={scheduledTransaction.fromAmount}
 										isSelected={false}
 										showBalanceInfo={false}
-										accountTypeLookup={accountTypeLookup}
 										setAction={setAction}
 										setSelectedItem={setSelectedItem}
 										context="all-items"
@@ -1325,39 +1194,6 @@ export const AllScheduledTransactionsList = ({
 							)}
 						</div>
 					</div>
-					{expandedSections.incomes && (
-						<div
-							style={{
-								marginTop: "10px",
-								paddingTop: "10px",
-								borderTop:
-									"1px solid var(--background-modifier-border)",
-							}}
-						>
-							{getIncomeItems().map((item) => (
-								<div
-									key={item.id.value}
-									style={{
-										display: "flex",
-										justifyContent: "space-between",
-										padding: "4px 0",
-										fontSize: "0.9em",
-									}}
-								>
-									<span>{item.name.value}</span>
-									<span
-										style={{ color: "var(--color-green)" }}
-									>
-										{item
-											.getPricePerMonthWithAccountTypes(
-												accountTypeLookup
-											)
-											.toString()}
-									</span>
-								</div>
-							))}
-						</div>
-					)}
 				</div>
 
 				{/* Total Expenses Section */}
@@ -1405,41 +1241,6 @@ export const AllScheduledTransactionsList = ({
 							)}
 						</div>
 					</div>
-					{expandedSections.totalExpenses && (
-						<div
-							style={{
-								marginTop: "10px",
-								paddingTop: "10px",
-								borderTop:
-									"1px solid var(--background-modifier-border)",
-							}}
-						>
-							{getTotalExpenseItems().map((item) => (
-								<div
-									key={item.id.value}
-									style={{
-										display: "flex",
-										justifyContent: "space-between",
-										padding: "4px 0",
-										fontSize: "0.9em",
-									}}
-								>
-									<span>{item.name.value}</span>
-									<span
-										style={{
-											color: "var(--color-red)",
-										}}
-									>
-										{item
-											.getPricePerMonthWithAccountTypes(
-												accountTypeLookup
-											)
-											.toString()}
-									</span>
-								</div>
-							))}
-						</div>
-					)}
 				</div>
 
 				{/* Infinite Expenses Section */}
@@ -1487,39 +1288,6 @@ export const AllScheduledTransactionsList = ({
 							)}
 						</div>
 					</div>
-					{expandedSections.infiniteExpenses && (
-						<div
-							style={{
-								marginTop: "10px",
-								paddingTop: "10px",
-								borderTop:
-									"1px solid var(--background-modifier-border)",
-							}}
-						>
-							{getInfiniteExpenseItems().map((item) => (
-								<div
-									key={item.id.value}
-									style={{
-										display: "flex",
-										justifyContent: "space-between",
-										padding: "4px 0",
-										fontSize: "0.9em",
-									}}
-								>
-									<span>{item.name.value}</span>
-									<span
-										style={{ color: "var(--color-orange)" }}
-									>
-										{item
-											.getPricePerMonthWithAccountTypes(
-												accountTypeLookup
-											)
-											.toString()}
-									</span>
-								</div>
-							))}
-						</div>
-					)}
 				</div>
 
 				{/* Finite Expenses Section */}
@@ -1567,37 +1335,6 @@ export const AllScheduledTransactionsList = ({
 							)}
 						</div>
 					</div>
-					{expandedSections.finiteExpenses && (
-						<div
-							style={{
-								marginTop: "10px",
-								paddingTop: "10px",
-								borderTop:
-									"1px solid var(--background-modifier-border)",
-							}}
-						>
-							{getFiniteExpenseItems().map((item) => (
-								<div
-									key={item.id.value}
-									style={{
-										display: "flex",
-										justifyContent: "space-between",
-										padding: "4px 0",
-										fontSize: "0.9em",
-									}}
-								>
-									<span>{item.name.value}</span>
-									<span style={{ color: "var(--color-red)" }}>
-										{item
-											.getPricePerMonthWithAccountTypes(
-												accountTypeLookup
-											)
-											.toString()}
-									</span>
-								</div>
-							))}
-						</div>
-					)}
 				</div>
 			</div>
 		</div>

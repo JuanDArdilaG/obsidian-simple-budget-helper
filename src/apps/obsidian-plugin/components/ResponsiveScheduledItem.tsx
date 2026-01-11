@@ -8,17 +8,17 @@ import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
 import { BudgetItemsListContextMenu } from "apps/obsidian-plugin/views/RightSidebarReactView/ScheduledItemsSection/BudgetItemsListContextMenu";
 import {
 	AccountBalance,
-	AccountID,
 	AccountName,
 	AccountType,
 } from "contexts/Accounts/domain";
 import { Forward } from "lucide-react";
-import { useMemo } from "react";
+import { useContext, useMemo } from "react";
 import {
 	ItemRecurrenceInfo,
 	ScheduledTransaction,
 } from "../../../contexts/ScheduledTransactions/domain";
 import { Nanoid } from "../../../contexts/Shared/domain";
+import { AccountsContext } from "../views";
 
 export const ResponsiveScheduledItem = ({
 	scheduleTransaction,
@@ -29,7 +29,6 @@ export const ResponsiveScheduledItem = ({
 	price,
 	isSelected,
 	showBalanceInfo = true,
-	accountTypeLookup,
 	setAction,
 	setSelectedItem,
 	context = "calendar", // "calendar" or "all-items"
@@ -46,7 +45,6 @@ export const ResponsiveScheduledItem = ({
 	price: PriceValueObject;
 	isSelected: boolean;
 	showBalanceInfo?: boolean;
-	accountTypeLookup: (id: AccountID) => AccountType;
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
@@ -85,6 +83,27 @@ export const ResponsiveScheduledItem = ({
 		if (daysRemaining < -3) return "var(--color-red)";
 		return "var(--color-green)";
 	}, [recurrence]);
+
+	const { accounts } = useContext(AccountsContext);
+	const fromAccount = useMemo(
+		() =>
+			accounts.find(
+				(account) =>
+					account.id === scheduleTransaction.fromSplits[0].accountId
+			),
+		[scheduleTransaction, accounts]
+	);
+	const toAccount = useMemo(
+		() =>
+			scheduleTransaction.toSplits.length > 0
+				? accounts.find(
+						(account) =>
+							account.id ===
+							scheduleTransaction.toSplits[0].accountId
+				  )
+				: undefined,
+		[scheduleTransaction, accounts]
+	);
 
 	// Wide screen layout (≥1200px) - Multi-column table-like layout
 	if (isWideScreen) {
@@ -248,7 +267,9 @@ export const ResponsiveScheduledItem = ({
 								Per Month ≈{" "}
 								{scheduleTransaction
 									.getPricePerMonthWithAccountTypes(
-										accountTypeLookup
+										fromAccount?.type ??
+											AccountType.asset(),
+										toAccount?.type ?? AccountType.asset()
 									)
 									.toString()}
 							</div>
@@ -427,7 +448,9 @@ export const ResponsiveScheduledItem = ({
 								Per Month ≈{" "}
 								{scheduleTransaction
 									.getPricePerMonthWithAccountTypes(
-										accountTypeLookup
+										fromAccount?.type ??
+											AccountType.asset(),
+										toAccount?.type ?? AccountType.asset()
 									)
 									.toString()}
 							</div>
@@ -588,7 +611,9 @@ export const ResponsiveScheduledItem = ({
 								Per Month ≈{" "}
 								{scheduleTransaction
 									.getPricePerMonthWithAccountTypes(
-										accountTypeLookup
+										fromAccount?.type ??
+											AccountType.asset(),
+										toAccount?.type ?? AccountType.asset()
 									)
 									.toString()}
 							</div>

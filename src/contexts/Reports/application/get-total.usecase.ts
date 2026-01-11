@@ -1,8 +1,12 @@
 import { QueryUseCase } from "contexts/Shared/domain";
-import { IReportsService, ItemsReport, ReportBalance } from "../domain";
+import {
+	IReportsService,
+	ReportBalance,
+	ScheduledMonthlyReport,
+} from "../domain";
 
 export type GetTotalUseCaseInput = {
-	report: ItemsReport;
+	report: ScheduledMonthlyReport;
 	type?: "expenses" | "incomes";
 };
 export type GetTotalUseCaseOutput = ReportBalance;

@@ -23,7 +23,6 @@ import {
 	AccountBalance,
 	AccountID,
 	AccountName,
-	AccountType,
 } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import { AccountsReport } from "contexts/Reports/domain";
@@ -261,13 +260,6 @@ export const CalendarItemsList = ({
 			setShowPanel(undefined);
 		}
 	}, [action, selectedItem]);
-
-	// Define the accountTypeLookup function
-	const accountTypeLookup = (id: AccountID): AccountType => {
-		const account = getAccountByID(id);
-		if (!account) return new AccountType("asset"); // fallback
-		return account.type;
-	};
 
 	// Filter handlers
 	const handleFilterChange = <K extends keyof FilterState>(
@@ -978,9 +970,6 @@ export const CalendarItemsList = ({
 											setShowPanel={setShowPanel}
 											setSelectedItem={setSelectedItem}
 											setAction={setAction}
-											accountTypeLookup={
-												accountTypeLookup
-											}
 											updateItems={() =>
 												setRefreshItems(true)
 											}
@@ -1020,9 +1009,6 @@ export const CalendarItemsList = ({
 														setSelectedItem
 													}
 													setAction={setAction}
-													accountTypeLookup={
-														accountTypeLookup
-													}
 													updateItems={() =>
 														setRefreshItems(true)
 													}
@@ -1048,7 +1034,6 @@ const CalendarItemsListItem = ({
 	setShowPanel,
 	setSelectedItem,
 	setAction,
-	accountTypeLookup,
 	updateItems,
 }: {
 	updateItems: () => void;
@@ -1089,7 +1074,6 @@ const CalendarItemsListItem = ({
 	setAction: React.Dispatch<
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
-	accountTypeLookup: (id: AccountID) => AccountType;
 }) => {
 	const {
 		scheduledItems,
@@ -1135,7 +1119,6 @@ const CalendarItemsListItem = ({
 				accountPrevBalance={accountPrevBalance}
 				price={recurrence.fromAmount}
 				isSelected={isSelectedForRecord}
-				accountTypeLookup={accountTypeLookup}
 				setAction={setAction}
 				setSelectedItem={setSelectedItem}
 				context="calendar"

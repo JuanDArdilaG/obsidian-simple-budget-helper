@@ -4,7 +4,7 @@ import {
 	PriceValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
-import { AccountID, AccountType } from "contexts/Accounts/domain";
+import { AccountType } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
 import {
 	ItemOperation,
@@ -243,20 +243,21 @@ export class ScheduledTransaction extends Entity<
 	 * Returns the real price with account types consideration
 	 */
 	getRealPriceWithAccountTypes(
-		accountTypeLookup: (id: AccountID) => AccountType
+		fromAccountType: AccountType,
+		toAccountType?: AccountType
 	): PriceValueObject {
 		if (this._operation.type.isIncome()) {
 			return this.fromAmount;
 		} else if (this._operation.type.isExpense()) {
 			return this.fromAmount.negate();
-		} else if (this._operation.type.isTransfer()) {
+		} else if (this._operation.type.isTransfer() && toAccountType) {
 			// For transfers, we need to check account types to determine the sign
 			if (this._fromSplits.length === 0 || this._toSplits.length === 0) {
 				return PriceValueObject.zero();
 			}
 
-			const fromType = accountTypeLookup(this._fromSplits[0].accountId);
-			const toType = accountTypeLookup(this._toSplits[0].accountId);
+			const fromType = fromAccountType;
+			const toType = toAccountType;
 
 			// Asset to Liability: negative (expense)
 			if (fromType.isAsset() && toType.isLiability()) {
@@ -278,9 +279,13 @@ export class ScheduledTransaction extends Entity<
 	 * Returns the price per month with account types consideration
 	 */
 	getPricePerMonthWithAccountTypes(
-		accountTypeLookup: (id: AccountID) => AccountType
+		fromAccountType: AccountType,
+		toAccountType?: AccountType
 	): PriceValueObject {
-		const realPrice = this.getRealPriceWithAccountTypes(accountTypeLookup);
+		const realPrice = this.getRealPriceWithAccountTypes(
+			fromAccountType,
+			toAccountType
+		);
 		const monthlyFactor = this.getMonthlyFrequencyFactor();
 		return realPrice.times(monthlyFactor);
 	}

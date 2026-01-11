@@ -1,6 +1,12 @@
 import { DateValueObject, PriceValueObject } from "@juandardilag/value-objects";
 import { describe, expect, it } from "vitest";
-import { ItemsReport } from "../../../../src/contexts/Reports/domain/scheduled-transactions-report.entity";
+import {
+	Account,
+	AccountBalance,
+	AccountName,
+	AccountType,
+} from "../../../../src/contexts/Accounts/domain";
+import { ScheduledMonthlyReport } from "../../../../src/contexts/Reports/domain/scheduled-monthly-report.entity";
 import { ItemOperation } from "../../../../src/contexts/Shared/domain";
 import { buildTestItems } from "../../Items/domain/buildTestItems";
 
@@ -12,13 +18,19 @@ describe("ItemsReport", () => {
 				{ operation: ItemOperation.income() },
 				{ operation: ItemOperation.expense() },
 			]);
-			const report = new ItemsReport(items);
+			const report = new ScheduledMonthlyReport(items, []);
 
 			const expensesReport = report.onlyExpenses();
-			expect(expensesReport.items).toHaveLength(2);
-			expensesReport.items.forEach((item) => {
-				expect(item.operation.type.isExpense()).toBe(true);
-			});
+			expect(
+				expensesReport.scheduledTransactionsWithAccounts
+			).toHaveLength(2);
+			expensesReport.scheduledTransactionsWithAccounts.forEach(
+				({ scheduledTransaction }) => {
+					expect(
+						scheduledTransaction.operation.type.isExpense()
+					).toBe(true);
+				}
+			);
 		});
 
 		it("should filter only incomes", () => {
@@ -27,13 +39,19 @@ describe("ItemsReport", () => {
 				{ operation: ItemOperation.income() },
 				{ operation: ItemOperation.income() },
 			]);
-			const report = new ItemsReport(items);
+			const report = new ScheduledMonthlyReport(items, []);
 
 			const incomesReport = report.onlyIncomes();
-			expect(incomesReport.items).toHaveLength(2);
-			incomesReport.items.forEach((item) => {
-				expect(item.operation.type.isIncome()).toBe(true);
-			});
+			expect(
+				incomesReport.scheduledTransactionsWithAccounts
+			).toHaveLength(2);
+			incomesReport.scheduledTransactionsWithAccounts.forEach(
+				({ scheduledTransaction }) => {
+					expect(scheduledTransaction.operation.type.isIncome()).toBe(
+						true
+					);
+				}
+			);
 		});
 
 		it("should filter only infinite recurrent items", () => {
@@ -47,13 +65,19 @@ describe("ItemsReport", () => {
 				}, // finite
 				{ recurrence: { frequency: "monthly" } }, // infinite
 			]);
-			const report = new ItemsReport(items);
+			const report = new ScheduledMonthlyReport(items, []);
 
 			const infiniteReport = report.onlyInfiniteRecurrent();
-			expect(infiniteReport.items).toHaveLength(2);
-			infiniteReport.items.forEach((item) => {
-				expect(item.recurrencePattern.totalOccurrences).toBe(-1);
-			});
+			expect(
+				infiniteReport.scheduledTransactionsWithAccounts
+			).toHaveLength(2);
+			infiniteReport.scheduledTransactionsWithAccounts.forEach(
+				({ scheduledTransaction }) => {
+					expect(
+						scheduledTransaction.recurrencePattern.totalOccurrences
+					).toBe(-1);
+				}
+			);
 		});
 
 		it("should filter only finite recurrent items", () => {
@@ -72,13 +96,19 @@ describe("ItemsReport", () => {
 					},
 				}, // finite
 			]);
-			const report = new ItemsReport(items);
+			const report = new ScheduledMonthlyReport(items, []);
 
 			const finiteReport = report.onlyFiniteRecurrent();
-			expect(finiteReport.items).toHaveLength(2);
-			finiteReport.items.forEach((item) => {
-				expect(item.recurrencePattern.totalOccurrences).not.toBe(-1);
-			});
+			expect(finiteReport.scheduledTransactionsWithAccounts).toHaveLength(
+				2
+			);
+			finiteReport.scheduledTransactionsWithAccounts.forEach(
+				({ scheduledTransaction }) => {
+					expect(
+						scheduledTransaction.recurrencePattern.totalOccurrences
+					).not.toBe(-1);
+				}
+			);
 		});
 	});
 
@@ -89,7 +119,7 @@ describe("ItemsReport", () => {
 				{ operation: ItemOperation.income() },
 				{ operation: ItemOperation.expense() },
 			]);
-			const report = new ItemsReport(items);
+			const report = new ScheduledMonthlyReport(items, []);
 
 			const expenseItems = report.getExpenseItems();
 			expect(expenseItems).toHaveLength(2);
@@ -104,7 +134,7 @@ describe("ItemsReport", () => {
 				{ operation: ItemOperation.income() },
 				{ operation: ItemOperation.income() },
 			]);
-			const report = new ItemsReport(items);
+			const report = new ScheduledMonthlyReport(items, []);
 
 			const incomeItems = report.getIncomeItems();
 			expect(incomeItems).toHaveLength(2);
@@ -120,7 +150,7 @@ describe("ItemsReport", () => {
 				{ operation: ItemOperation.income() },
 				{ operation: ItemOperation.transfer() },
 			]);
-			const report = new ItemsReport(items);
+			const report = new ScheduledMonthlyReport(items, []);
 
 			const transferItems = report.getTransferItems();
 			expect(transferItems).toHaveLength(2);
@@ -145,7 +175,7 @@ describe("ItemsReport", () => {
 					},
 				}, // finite
 			]);
-			const report = new ItemsReport(items);
+			const report = new ScheduledMonthlyReport(items, []);
 
 			const finiteItems = report.getFiniteRecurrentItems();
 			expect(finiteItems).toHaveLength(2);
@@ -162,7 +192,7 @@ describe("ItemsReport", () => {
 				{ price: new PriceValueObject(200) },
 				{ price: new PriceValueObject(300) },
 			]);
-			const report = new ItemsReport(items);
+			const report = new ScheduledMonthlyReport(items, []);
 
 			const total = report.getTotal();
 			expect(total.value).toBe(-600);
@@ -174,7 +204,19 @@ describe("ItemsReport", () => {
 				{ price: new PriceValueObject(200) },
 				{ price: new PriceValueObject(300) },
 			]);
-			const report = new ItemsReport(items);
+			const report = new ScheduledMonthlyReport(
+				items,
+				items.map(
+					(item) =>
+						new Account(
+							item.fromSplits[0].accountId,
+							AccountType.asset(),
+							new AccountName("Test Account"),
+							AccountBalance.zero(),
+							DateValueObject.createNowDate()
+						)
+				)
+			);
 
 			const totalPerMonth = report.getTotalPerMonth();
 			expect(totalPerMonth.value).toBe(-600);
@@ -189,7 +231,7 @@ describe("ItemsReport", () => {
 				{ operation: ItemOperation.transfer() },
 				{ operation: ItemOperation.expense() },
 			]);
-			const report = new ItemsReport(items);
+			const report = new ScheduledMonthlyReport(items, []);
 
 			expect(report.getExpenseItems()).toHaveLength(2);
 			expect(report.getIncomeItems()).toHaveLength(1);
@@ -204,7 +246,7 @@ describe("ItemsReport", () => {
 				{ operation: ItemOperation.transfer() },
 				{ operation: ItemOperation.expense() },
 			]);
-			const report = new ItemsReport(items);
+			const report = new ScheduledMonthlyReport(items, []);
 
 			const transferItems = report.getTransferItems();
 			expect(transferItems).toHaveLength(2);
