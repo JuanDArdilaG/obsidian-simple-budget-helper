@@ -126,6 +126,15 @@ deploy type="patch": check-git build test (bump type)
     
     echo "✅ Deployed version $new_version successfully!"
 
+alias de-b := deploy-beta
+deploy-beta: check-git build test
+    #!/usr/bin/env bash    
+    # Create and push tag
+    git tag -a beta -m "beta"
+    git push origin beta
+    
+    echo "✅ Deployed version beta successfully!"
+
 check-git:
     #!/usr/bin/env bash
     echo "🔍 Checking git status..."
