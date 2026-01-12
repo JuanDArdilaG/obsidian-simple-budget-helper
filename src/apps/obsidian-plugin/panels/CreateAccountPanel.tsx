@@ -1,6 +1,9 @@
 import { Input } from "apps/obsidian-plugin/components/Input/Input";
 import { Select } from "apps/obsidian-plugin/components/Select/Select";
-import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
+import {
+	AccountsContext,
+	AppContext,
+} from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import {
 	Account,
 	AccountName,
@@ -8,18 +11,28 @@ import {
 	AccountTypeType,
 } from "contexts/Accounts/domain";
 import { useContext, useState } from "react";
+import {
+	currencies,
+	Currency,
+} from "../../../contexts/Shared/domain/currency.vo";
 
 export const CreateAccountPanel = ({ onCreate }: { onCreate: () => void }) => {
+	const { plugin } = useContext(AppContext);
 	const {
 		useCases: { createAccount },
 	} = useContext(AccountsContext);
 
-	const [accountName, setAccountName] = useState("");
 	const [type, setType] = useState("asset" as AccountTypeType);
+	const [accountName, setAccountName] = useState("");
+	const [currency, setCurrency] = useState(plugin.settings.defaultCurrency);
 
 	const handleSubmit = () => async () => {
 		await createAccount.execute(
-			Account.create(new AccountType(type), new AccountName(accountName))
+			Account.create(
+				new AccountType(type),
+				new AccountName(accountName),
+				new Currency(currency)
+			)
 		);
 
 		onCreate();
@@ -41,6 +54,13 @@ export const CreateAccountPanel = ({ onCreate }: { onCreate: () => void }) => {
 				value={type}
 				values={["asset", "liability"]}
 				onChange={(type) => setType(type as AccountTypeType)}
+			/>
+			<Select
+				id="currency"
+				label="Currency"
+				value={currency}
+				values={Object.keys(currencies)}
+				onChange={setCurrency}
 			/>
 			<button onClick={handleSubmit()}>Create</button>
 		</div>

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Add savings calculation for next month's expenses in scheduled transactions list.
 -   Option to change account name in accounts list.
+-   Add currency field to accounts.
 
 ### Changed
 

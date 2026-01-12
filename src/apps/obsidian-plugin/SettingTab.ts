@@ -4,6 +4,7 @@ import { ResolveAccountDiscrepancyUseCase } from "contexts/Accounts/application/
 import { App, Modal, Notice, PluginSettingTab, Setting } from "obsidian";
 import { GetAllAccountsUseCase } from "../../contexts/Accounts/application/get-all-accounts.usecase";
 import { Account, IntegrityCheckReport } from "../../contexts/Accounts/domain";
+import { currencies } from "../../contexts/Shared/domain/currency.vo";
 import SimpleBudgetHelperPlugin from "./main";
 
 class IntegrityReportModal extends Modal {
@@ -103,9 +104,7 @@ class IntegrityReportModal extends Modal {
 								"var(--background-modifier-success)";
 							resolveButton.textContent = "Resolved ✓";
 							resolveButton.disabled = true;
-							const _ = new Notice(
-								"Discrepancy resolved successfully!"
-							);
+							new Notice("Discrepancy resolved successfully!");
 						} catch (error) {
 							console.error(
 								"Failed to resolve discrepancy:",
@@ -114,7 +113,7 @@ class IntegrityReportModal extends Modal {
 							resolveButton.textContent = "Failed to resolve";
 							resolveButton.style.backgroundColor =
 								"var(--background-modifier-error)";
-							const _ = new Notice(
+							new Notice(
 								"Failed to resolve discrepancy: " +
 									(error instanceof Error
 										? error.message
@@ -182,6 +181,19 @@ export class SettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
+			.setName("Default Currency")
+			.setDesc("The preferred currency for accounts and transactions")
+			.addDropdown((dropdown) =>
+				dropdown
+					.setValue(this.plugin.settings.defaultCurrency)
+					.addOptions(currencies)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultCurrency = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
 			.setName("Root folder")
 			.setDesc("The path to the root folder to store budget items")
 			.addText((text) =>
@@ -242,7 +254,7 @@ export class SettingTab extends PluginSettingTab {
 						modal.open();
 					} catch (error) {
 						console.error("Failed to run integrity check:", error);
-						const _ = new Notice(
+						new Notice(
 							"Integrity check failed: " +
 								(error instanceof Error
 									? error.message

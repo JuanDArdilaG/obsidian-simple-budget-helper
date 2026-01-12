@@ -13,6 +13,7 @@ import {
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Transaction } from "contexts/Transactions/domain";
+import { Currency } from "../../Shared/domain/currency.vo";
 
 const logger: Logger = new Logger("Account");
 
@@ -21,17 +22,23 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		id: AccountID,
 		private readonly _type: AccountType,
 		private _name: StringValueObject,
+		private _currency: Currency,
 		private _balance: AccountBalance,
 		updatedAt: DateValueObject
 	) {
 		super(id, updatedAt);
 	}
 
-	static create(type: AccountType, name: StringValueObject): Account {
+	static create(
+		type: AccountType,
+		name: StringValueObject,
+		currency: Currency
+	): Account {
 		return new Account(
 			AccountID.generate(),
 			type,
 			name,
+			currency,
 			AccountBalance.zero(),
 			DateValueObject.createNowDate()
 		);
@@ -42,6 +49,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			this._id,
 			this._type,
 			this._name,
+			this._currency,
 			this._balance,
 			this._updatedAt
 		);
@@ -57,6 +65,15 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 
 	set name(name: StringValueObject) {
 		this._name = name;
+		this.updateTimestamp();
+	}
+
+	get currency(): Currency {
+		return this._currency;
+	}
+
+	set currency(currency: Currency) {
+		this._currency = currency;
 		this.updateTimestamp();
 	}
 
@@ -134,6 +151,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			id: this._id.value,
 			type: this._type.value,
 			name: this._name.value,
+			currency: this._currency.value,
 			balance: this._balance.value.value,
 			updatedAt: this._updatedAt.toISOString(),
 		};
@@ -143,6 +161,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		id,
 		type,
 		name,
+		currency,
 		balance,
 		updatedAt,
 	}: AccountPrimitives): Account {
@@ -150,6 +169,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			new AccountID(id),
 			new AccountType(type),
 			new StringValueObject(name),
+			new Currency(currency ?? "COP"),
 			new AccountBalance(new PriceValueObject(balance)),
 			updatedAt
 				? new DateValueObject(new Date(updatedAt))
@@ -163,6 +183,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			id: "",
 			type: "asset",
 			name: "",
+			currency: "USD",
 			balance: 0,
 			updatedAt: new Date().toISOString(),
 		};
@@ -173,6 +194,7 @@ export type AccountPrimitives = {
 	id: string;
 	type: AccountTypeType;
 	name: string;
+	currency: string;
 	balance: number;
 	updatedAt: string;
 };

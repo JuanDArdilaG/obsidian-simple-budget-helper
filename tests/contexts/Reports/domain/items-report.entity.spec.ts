@@ -8,6 +8,7 @@ import {
 } from "../../../../src/contexts/Accounts/domain";
 import { ScheduledMonthlyReport } from "../../../../src/contexts/Reports/domain/scheduled-monthly-report.entity";
 import { ItemOperation } from "../../../../src/contexts/Shared/domain";
+import { Currency } from "../../../../src/contexts/Shared/domain/currency.vo";
 import { buildTestItems } from "../../Items/domain/buildTestItems";
 
 describe("ItemsReport", () => {
@@ -212,6 +213,7 @@ describe("ItemsReport", () => {
 							item.fromSplits[0].accountId,
 							AccountType.asset(),
 							new AccountName("Test Account"),
+							new Currency("USD"),
 							AccountBalance.zero(),
 							DateValueObject.createNowDate()
 						)

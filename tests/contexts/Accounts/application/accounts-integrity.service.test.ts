@@ -64,6 +64,7 @@ describe("AccountsIntegrityService", () => {
 			id: testAccountId.value,
 			type: "asset",
 			name: "Test Account",
+			currency: "USD",
 			balance: 100,
 			updatedAt: new Date().toISOString(),
 		});
@@ -169,6 +170,7 @@ describe("AccountsIntegrityService", () => {
 				id: account1Id.value,
 				type: "asset",
 				name: "Account 1",
+				currency: "USD",
 				balance: 100,
 				updatedAt: new Date().toISOString(),
 			});
@@ -176,6 +178,7 @@ describe("AccountsIntegrityService", () => {
 				id: account2Id.value,
 				type: "asset",
 				name: "Account 2",
+				currency: "USD",
 				balance: 200,
 				updatedAt: new Date().toISOString(),
 			});
@@ -211,6 +214,7 @@ describe("AccountsIntegrityService", () => {
 				id: account1Id.value,
 				type: "asset",
 				name: "Account 1",
+				currency: "USD",
 				balance: 100,
 				updatedAt: new Date().toISOString(),
 			});
@@ -218,6 +222,7 @@ describe("AccountsIntegrityService", () => {
 				id: account2Id.value,
 				type: "asset",
 				name: "Account 2",
+				currency: "USD",
 				balance: 200,
 				updatedAt: new Date().toISOString(),
 			});
