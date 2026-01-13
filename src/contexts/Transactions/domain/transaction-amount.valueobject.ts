@@ -1,3 +1,7 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
 
-export class TransactionAmount extends PriceValueObject {}
+export class TransactionAmount extends PriceValueObject {
+	constructor(value: number) {
+		super(value, { decimals: 2, withSign: true });
+	}
+}

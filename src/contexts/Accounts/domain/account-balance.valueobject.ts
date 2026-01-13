@@ -4,7 +4,9 @@ export class AccountBalance {
 	constructor(private _balance: PriceValueObject) {}
 
 	static zero(): AccountBalance {
-		return new AccountBalance(PriceValueObject.zero());
+		return new AccountBalance(
+			new PriceValueObject(0, { decimals: 2, withSign: false })
+		);
 	}
 
 	get value(): PriceValueObject {

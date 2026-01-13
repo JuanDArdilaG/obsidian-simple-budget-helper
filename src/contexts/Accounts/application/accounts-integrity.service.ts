@@ -151,7 +151,10 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 		transactions: Transaction[]
 	): PriceValueObject {
 		// Start with initial balance of zero (assuming all transactions reflect the full balance history)
-		let expectedBalance = new PriceValueObject(0);
+		let expectedBalance = new PriceValueObject(0, {
+			decimals: 2,
+			withSign: false,
+		});
 
 		this._logger.debug("Calculating expected balance", {
 			accountId: account.id.value,

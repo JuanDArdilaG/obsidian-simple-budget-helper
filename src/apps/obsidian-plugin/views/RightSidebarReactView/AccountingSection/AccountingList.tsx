@@ -224,20 +224,24 @@ export function AccountingList({
 							accounts: accounts.map(({ id }) => {
 								const name =
 									getAccountByID(id)?.name.value ?? "";
-								
+
 								// For transfer transactions, check both fromSplits and toSplits
 								// For other transactions, only use fromSplits
-								let realAmount = PriceValueObject.zero();
-								
+								let realAmount = new PriceValueObject(0, {
+									decimals: 2,
+									withSign: true,
+								});
+
 								if (transaction.operation.isTransfer()) {
 									// Check fromSplits (outgoing) and toSplits (incoming) for transfers
-									const fromSplit = transaction.fromSplits.find((split) =>
-										split.accountId.equalTo(id)
+									const fromSplit =
+										transaction.fromSplits.find((split) =>
+											split.accountId.equalTo(id)
+										);
+									const toSplit = transaction.toSplits.find(
+										(split) => split.accountId.equalTo(id)
 									);
-									const toSplit = transaction.toSplits.find((split) =>
-										split.accountId.equalTo(id)
-									);
-									
+
 									if (fromSplit) {
 										// Money going out of this account (negative)
 										realAmount = fromSplit.amount.negate();
@@ -248,12 +252,15 @@ export function AccountingList({
 								} else {
 									// For income/expense transactions, use fromSplits
 									// The amount sign should already be correct based on operation type
-									const fromSplit = transaction.fromSplits.find((split) =>
-										split.accountId.equalTo(id)
-									);
-									realAmount = fromSplit?.amount || PriceValueObject.zero();
+									const fromSplit =
+										transaction.fromSplits.find((split) =>
+											split.accountId.equalTo(id)
+										);
+									realAmount =
+										fromSplit?.amount ||
+										PriceValueObject.zero();
 								}
-								
+
 								return {
 									name,
 									truncatedName: truncateText(name, 15),
