@@ -16,7 +16,7 @@ export class AccountIntegrityResult {
 		expectedBalance: PriceValueObject,
 		actualBalance: PriceValueObject
 	): AccountIntegrityResult {
-		const discrepancy = actualBalance.sustract(expectedBalance);
+		const discrepancy = actualBalance.subtract(expectedBalance);
 		const hasIntegrity = discrepancy.equalTo(new TransactionAmount(0));
 
 		return new AccountIntegrityResult(

@@ -131,7 +131,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 
 		if (prevAmount.equalTo(newAmount)) return;
 
-		this._balance = this._balance.sustract(prevAmount).plus(newAmount);
+		this._balance = this._balance.subtract(prevAmount).plus(newAmount);
 		this.updateTimestamp();
 	}
 
@@ -142,7 +142,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 					.times(new NumberValueObject(-1))
 			: transaction.getRealAmountForAccount(this.id);
 
-		this._balance = this._balance.sustract(amount);
+		this._balance = this._balance.subtract(amount);
 		this.updateTimestamp();
 	}
 

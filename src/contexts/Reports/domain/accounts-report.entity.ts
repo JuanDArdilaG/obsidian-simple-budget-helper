@@ -23,6 +23,6 @@ export class AccountsReport {
 	}
 
 	getTotal(): ReportBalance {
-		return this.getTotalForAssets().sustract(this.getTotalForLiabilities());
+		return this.getTotalForAssets().subtract(this.getTotalForLiabilities());
 	}
 }

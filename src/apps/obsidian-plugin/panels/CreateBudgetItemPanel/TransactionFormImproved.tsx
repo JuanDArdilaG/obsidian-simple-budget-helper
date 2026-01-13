@@ -1074,6 +1074,7 @@ export const TransactionFormImproved = ({
 										new PriceValueObject(item.amount || 0, {
 											withSign: false,
 											decimals: 2,
+											withZeros: true,
 										})
 									}
 									onChange={(val) =>

@@ -5,7 +5,7 @@ export class AccountBalance {
 
 	static zero(): AccountBalance {
 		return new AccountBalance(
-			new PriceValueObject(0, { decimals: 2, withSign: false })
+			new PriceValueObject(0, { decimals: 2, withSign: true })
 		);
 	}
 
@@ -17,13 +17,12 @@ export class AccountBalance {
 		return new AccountBalance(this._balance.plus(other));
 	}
 
-	sustract(other: PriceValueObject): AccountBalance {
-		return new AccountBalance(this._balance.sustract(other));
+	subtract(other: PriceValueObject): AccountBalance {
+		return new AccountBalance(this._balance.subtract(other));
 	}
 
 	adjust(newBalance: PriceValueObject): PriceValueObject {
-		const difference = newBalance.sustract(this._balance);
-
+		const difference = newBalance.subtract(this._balance);
 		this._balance = newBalance;
 
 		return difference;
