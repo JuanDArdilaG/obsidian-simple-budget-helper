@@ -62,7 +62,10 @@ export const MultiSelectDropdown = ({
 		[accounts]
 	);
 
-	const selectedIds = selectedAccounts.map((split) => split.accountId);
+	const selectedIds: Set<string> = useMemo(
+		() => new Set(selectedAccounts.map((split) => split.accountId)),
+		[selectedAccounts]
+	);
 
 	const handleClick = (event: React.MouseEvent<HTMLElement>) => {
 		if (!isLocked) {
@@ -257,7 +260,7 @@ export const MultiSelectDropdown = ({
 									e.stopPropagation();
 									handleAccountToggle(
 										account.id,
-										!selectedIds.includes(account.id)
+										!selectedIds.has(account.id)
 									);
 								}}
 								sx={{
@@ -270,7 +273,7 @@ export const MultiSelectDropdown = ({
 								}}
 							>
 								<Checkbox
-									checked={selectedIds.includes(account.id)}
+									checked={selectedIds.has(account.id)}
 									sx={{
 										color: "var(--interactive-accent)",
 										"&.Mui-checked": {
@@ -384,7 +387,7 @@ export const MultiSelectDropdown = ({
 										value={
 											new PriceValueObject(
 												split.amount || 0,
-												{ withSign: false, decimals: 0 }
+												{ withSign: false, decimals: 2 }
 											)
 										}
 										onChange={(val) =>

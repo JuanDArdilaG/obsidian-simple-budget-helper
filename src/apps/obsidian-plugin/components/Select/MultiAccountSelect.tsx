@@ -263,7 +263,7 @@ export const MultiAccountSelect = ({
 										value={
 											new PriceValueObject(
 												split.amount || 0,
-												{ withSign: false, decimals: 0 }
+												{ withSign: false, decimals: 2 }
 											)
 										}
 										onChange={(val) =>

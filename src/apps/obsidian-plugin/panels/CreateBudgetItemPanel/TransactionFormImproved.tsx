@@ -174,7 +174,7 @@ const useMultiTransactionValidation = (
 		}
 
 		// Date validation
-		if (!date || isNaN(date.getTime())) {
+		if (!date || Number.isNaN(date.getTime())) {
 			newErrors.date = "Valid date is required";
 		} else {
 			const now = new Date();
@@ -359,7 +359,7 @@ export const TransactionFormImproved = ({
 		}
 		return {
 			date: transaction.date.value,
-			operation: transaction.operation.value as OperationType,
+			operation: transaction.operation.value,
 			fromSplits: transaction.fromSplits.map((split) => ({
 				accountId: split.accountId.value,
 				amount: split.amount.value,
@@ -494,7 +494,7 @@ export const TransactionFormImproved = ({
 
 	const subCategoryOptions = useCallback(
 		(parentCategoryName: string) =>
-			(!parentCategoryName
+			(parentCategoryName === ""
 				? subCategories
 				: subCategories.filter((sub) => {
 						const cat = categories.find(
@@ -661,7 +661,7 @@ export const TransactionFormImproved = ({
 			setCalculatorError("");
 			const result = math.evaluate(calculatorExpression);
 			const numericResult = Number(result);
-			if (isNaN(numericResult)) {
+			if (Number.isNaN(numericResult)) {
 				setCalculatorError("Invalid expression");
 				return;
 			}
@@ -1099,38 +1099,36 @@ export const TransactionFormImproved = ({
 
 							{/* Quantity */}
 							{sharedProperties.operation !== "transfer" && (
-								<>
-									<TextField
-										id={`quantity-${item.id}`}
-										label="Quantity *"
-										type="number"
-										value={item.quantity}
-										onChange={(e) => {
-											const value =
-												parseInt(e.target.value) ?? 0;
-											updateTransactionItem(item.id, {
-												quantity: value,
-											});
-										}}
-										slotProps={{
-											htmlInput: { min: 0, step: 1 },
-										}}
-										variant="outlined"
-										size="small"
-										sx={{
+								<TextField
+									id={`quantity-${item.id}`}
+									label="Quantity *"
+									type="number"
+									value={item.quantity}
+									onChange={(e) => {
+										const value =
+											parseInt(e.target.value) ?? 0;
+										updateTransactionItem(item.id, {
+											quantity: value,
+										});
+									}}
+									slotProps={{
+										htmlInput: { min: 0, step: 1 },
+									}}
+									variant="outlined"
+									size="small"
+									sx={{
+										color: "var(--text-normal)",
+										"& .MuiInputBase-input": {
 											color: "var(--text-normal)",
-											"& .MuiInputBase-input": {
-												color: "var(--text-normal)",
-											},
-											"& .MuiInputLabel-root": {
-												color: "var(--text-normal)",
-											},
-											"& .MuiFormHelperText-root": {
-												color: "var(--text-muted)",
-											},
-										}}
-									/>
-								</>
+										},
+										"& .MuiInputLabel-root": {
+											color: "var(--text-normal)",
+										},
+										"& .MuiFormHelperText-root": {
+											color: "var(--text-muted)",
+										},
+									}}
+								/>
 							)}
 
 							{/* Category */}

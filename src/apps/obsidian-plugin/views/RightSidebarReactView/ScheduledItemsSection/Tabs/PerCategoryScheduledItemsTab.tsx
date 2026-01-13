@@ -365,7 +365,7 @@ export const PerCategoryItemsTab = () => {
 						arcLabel: ({ value }: { value: number }) =>
 							new PriceValueObject(value, {
 								withSign: true,
-								decimals: 0,
+								decimals: 2,
 							}).toString(),
 						arcLabelMinAngle: 18,
 						data: byCategoryChartData,
@@ -458,7 +458,7 @@ export const PerCategoryItemsTab = () => {
 							arcLabel: ({ value }: { value: number }) =>
 								new PriceValueObject(value, {
 									withSign: true,
-									decimals: 0,
+									decimals: 2,
 								}).toString(),
 							arcLabelMinAngle: 18,
 							data: bySubcategoryChartData,
@@ -499,7 +499,7 @@ export const PerCategoryItemsTab = () => {
 				>
 					{bySubcategoryChartData.map((item, index) => (
 						<div
-							key={index}
+							key={item.id}
 							style={{
 								display: "flex",
 								alignItems: "center",
@@ -558,7 +558,7 @@ export const PerCategoryItemsTab = () => {
 							arcLabel: ({ value }: { value: number }) =>
 								new PriceValueObject(value, {
 									withSign: true,
-									decimals: 0,
+									decimals: 2,
 								}).toString(),
 							arcLabelMinAngle: 18,
 							data: byTransactionChartData,
@@ -590,7 +590,7 @@ export const PerCategoryItemsTab = () => {
 				>
 					{byTransactionChartData.map((item, index) => (
 						<div
-							key={index}
+							key={item.id}
 							style={{
 								display: "flex",
 								alignItems: "center",

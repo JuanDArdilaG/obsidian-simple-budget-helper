@@ -374,7 +374,7 @@ export const CreateScheduleTransactionForm = ({
 								) ?? 0,
 								{
 									withSign: false,
-									decimals: 0,
+									decimals: 2,
 								}
 							)
 						}
