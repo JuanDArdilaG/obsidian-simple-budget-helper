@@ -113,16 +113,14 @@ export class ItemRecurrenceInfo {
 				const toSplit = (this._toSplits ?? itemToSplits)?.find(
 					(split) => split.accountId.equalTo(account.id)
 				);
-				if (toSplit) {
-					multiplier = 1;
-				} else {
-					multiplier = 0; // Account not involved in this recurrence
+				if (!toSplit) {
+					multiplier = 0;
 				}
 			}
 		}
 		if (operation.type.isExpense()) multiplier = -multiplier;
 		if (account.type.isLiability()) multiplier = -multiplier;
-		return new PriceValueObject(amount * multiplier);
+		return new TransactionAmount(amount * multiplier);
 	}
 
 	toPrimitives(): ItemRecurrenceInfoPrimitives {

@@ -20,17 +20,17 @@ import { ScheduledTransaction } from "./scheduled-transaction.entity";
 
 export class ItemRecurrenceInfo {
 	constructor(
-		private _scheduledTransactionId: Nanoid,
-		private _occurrenceIndex: NumberValueObject,
-		private _name: StringValueObject,
+		private readonly _scheduledTransactionId: Nanoid,
+		private readonly _occurrenceIndex: NumberValueObject,
+		private readonly _name: StringValueObject,
 		private _date: ScheduledTransactionDate,
-		private _operation: ItemOperation,
-		private _category: TransactionCategory,
+		private readonly _operation: ItemOperation,
+		private readonly _category: TransactionCategory,
 		private _state: RecurrenceModificationState,
 		private _fromSplits: PaymentSplit[],
 		private _toSplits: PaymentSplit[],
 		private _store?: StringValueObject,
-		private _tags?: ItemTags
+		private readonly _tags?: ItemTags
 	) {}
 
 	static fromScheduledTransaction(
@@ -176,15 +176,13 @@ export class ItemRecurrenceInfo {
 				const toSplit = (this._toSplits ?? itemToSplits)?.find(
 					(split) => split.accountId.equalTo(account.id)
 				);
-				if (toSplit) {
-					multiplier = 1;
-				} else {
-					multiplier = 0; // Account not involved in this recurrence
+				if (!toSplit) {
+					multiplier = 0;
 				}
 			}
 		}
 		if (operation.type.isExpense()) multiplier = -multiplier;
 		if (account.type.isLiability()) multiplier = -multiplier;
-		return new PriceValueObject(amount * multiplier);
+		return new TransactionAmount(amount * multiplier);
 	}
 }

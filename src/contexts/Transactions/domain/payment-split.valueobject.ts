@@ -11,13 +11,7 @@ export class PaymentSplit {
 	constructor(
 		private readonly _accountId: AccountID,
 		private readonly _amount: TransactionAmount
-	) {
-		this.validate();
-	}
-
-	validate(): void {
-		// In this case, validation is handled by the composed value objects (AccountID, TransactionAmount)
-	}
+	) {}
 
 	get accountId(): AccountID {
 		return this._accountId;

@@ -54,7 +54,10 @@ export const MultiAccountSelect = ({
 		[accounts]
 	);
 
-	const selectedIds = selectedAccounts.map((split) => split.accountId);
+	const selectedIds = useMemo(
+		() => new Set(selectedAccounts.map((split) => split.accountId)),
+		[selectedAccounts]
+	);
 
 	const handleAccountToggle = (accountId: string, checked: boolean) => {
 		let newSplits: PaymentSplitPrimitives[];
@@ -137,7 +140,7 @@ export const MultiAccountSelect = ({
 							key={account.id}
 							control={
 								<Checkbox
-									checked={selectedIds.includes(account.id)}
+									checked={selectedIds.has(account.id)}
 									onChange={(e) =>
 										handleAccountToggle(
 											account.id,
@@ -145,8 +148,10 @@ export const MultiAccountSelect = ({
 										)
 									}
 									disabled={isLocked}
-									inputProps={{
-										"aria-label": `Select account ${account.name}`,
+									slotProps={{
+										input: {
+											"aria-label": `Select account ${account.name}`,
+										},
 									}}
 									sx={{
 										color: "var(--interactive-accent)",

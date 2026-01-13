@@ -15,7 +15,10 @@ import {
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { AccountID } from "contexts/Accounts/domain";
 import { Nanoid, OperationType } from "contexts/Shared/domain";
-import { TransactionDate } from "contexts/Transactions/domain";
+import {
+	TransactionAmount,
+	TransactionDate,
+} from "contexts/Transactions/domain";
 import {
 	PropsWithChildren,
 	useContext,
@@ -324,8 +327,7 @@ export const CreateScheduleTransactionForm = ({
 								)
 							)?.name.value
 						}${
-							item.operation &&
-							item.operation.type === "transfer" &&
+							item.operation?.type === "transfer" &&
 							item.toSplits?.[0]?.accountId
 								? ` -> ${
 										getAccountByID(
@@ -340,7 +342,7 @@ export const CreateScheduleTransactionForm = ({
 							item.fromSplits?.[0]?.amount === 0
 								? ""
 								: "  " +
-								  new PriceValueObject(
+								  new TransactionAmount(
 										item.fromSplits?.[0]?.amount ?? 0
 								  ).toString()
 						}`;

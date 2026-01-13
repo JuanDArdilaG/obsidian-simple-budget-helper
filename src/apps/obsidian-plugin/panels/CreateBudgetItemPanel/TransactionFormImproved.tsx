@@ -1106,7 +1106,8 @@ export const TransactionFormImproved = ({
 									value={item.quantity}
 									onChange={(e) => {
 										const value =
-											parseInt(e.target.value) ?? 0;
+											Number.parseInt(e.target.value) ??
+											0;
 										updateTransactionItem(item.id, {
 											quantity: value,
 										});

@@ -1,10 +1,10 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
 import { CalculateAllAccountsIntegrityUseCase } from "contexts/Accounts/application/calculate-all-accounts-integrity.usecase";
 import { ResolveAccountDiscrepancyUseCase } from "contexts/Accounts/application/resolve-account-discrepancy.usecase";
 import { App, Modal, Notice, PluginSettingTab, Setting } from "obsidian";
 import { GetAllAccountsUseCase } from "../../contexts/Accounts/application/get-all-accounts.usecase";
 import { Account, IntegrityCheckReport } from "../../contexts/Accounts/domain";
 import { currencies } from "../../contexts/Shared/domain/currency.vo";
+import { TransactionAmount } from "../../contexts/Transactions/domain";
 import SimpleBudgetHelperPlugin from "./main";
 
 class IntegrityReportModal extends Modal {
@@ -70,17 +70,17 @@ class IntegrityReportModal extends Modal {
 						}`,
 					});
 					accountEl.createEl("p", {
-						text: `Expected Balance: ${new PriceValueObject(
+						text: `Expected Balance: ${new TransactionAmount(
 							result.expectedBalance
 						)}`,
 					});
 					accountEl.createEl("p", {
-						text: `Actual Balance: ${new PriceValueObject(
+						text: `Actual Balance: ${new TransactionAmount(
 							result.actualBalance
 						)}`,
 					});
 					accountEl.createEl("p", {
-						text: `Discrepancy: ${new PriceValueObject(
+						text: `Discrepancy: ${new TransactionAmount(
 							result.discrepancy
 						)}`,
 						cls: "integrity-discrepancy",

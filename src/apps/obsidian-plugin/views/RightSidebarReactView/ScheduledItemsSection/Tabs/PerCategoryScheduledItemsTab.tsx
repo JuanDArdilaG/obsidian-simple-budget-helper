@@ -1,4 +1,3 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
 import { PieValueType } from "@mui/x-charts";
 import { pieArcLabelClasses, PieChart } from "@mui/x-charts/PieChart";
 import { Select } from "apps/obsidian-plugin/components/Select";
@@ -9,6 +8,7 @@ import {
 } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
 import { TransactionsReport } from "contexts/Reports/domain";
 import { useContext, useEffect, useMemo, useState } from "react";
+import { TransactionAmount } from "../../../../../../contexts/Transactions/domain";
 import { TransactionsContext } from "../../Contexts";
 
 const monthAbbreviations = [
@@ -363,10 +363,7 @@ export const PerCategoryItemsTab = () => {
 				series={[
 					{
 						arcLabel: ({ value }: { value: number }) =>
-							new PriceValueObject(value, {
-								withSign: true,
-								decimals: 2,
-							}).toString(),
+							new TransactionAmount(value).toString(),
 						arcLabelMinAngle: 18,
 						data: byCategoryChartData,
 						highlightScope: { fade: "global", highlight: "item" },
@@ -434,7 +431,7 @@ export const PerCategoryItemsTab = () => {
 							{typeof item.label === "string"
 								? item.label
 								: "Unknown"}{" "}
-							({new PriceValueObject(item.value).toString()})
+							({new TransactionAmount(item.value).toString()})
 						</span>
 					</div>
 				))}
@@ -456,10 +453,7 @@ export const PerCategoryItemsTab = () => {
 					series={[
 						{
 							arcLabel: ({ value }: { value: number }) =>
-								new PriceValueObject(value, {
-									withSign: true,
-									decimals: 2,
-								}).toString(),
+								new TransactionAmount(value).toString(),
 							arcLabelMinAngle: 18,
 							data: bySubcategoryChartData,
 							highlightScope: {
@@ -533,7 +527,7 @@ export const PerCategoryItemsTab = () => {
 								{typeof item.label === "string"
 									? item.label
 									: "Unknown"}{" "}
-								({new PriceValueObject(item.value).toString()})
+								({new TransactionAmount(item.value).toString()})
 							</span>
 						</div>
 					))}
@@ -556,10 +550,7 @@ export const PerCategoryItemsTab = () => {
 					series={[
 						{
 							arcLabel: ({ value }: { value: number }) =>
-								new PriceValueObject(value, {
-									withSign: true,
-									decimals: 2,
-								}).toString(),
+								new TransactionAmount(value).toString(),
 							arcLabelMinAngle: 18,
 							data: byTransactionChartData,
 							highlightScope: {
@@ -612,7 +603,7 @@ export const PerCategoryItemsTab = () => {
 							/>
 							<span style={{ fontSize: "0.9em" }}>
 								{item.label} (
-								{new PriceValueObject(item.value).toString()})
+								{new TransactionAmount(item.value).toString()})
 							</span>
 						</div>
 					))}

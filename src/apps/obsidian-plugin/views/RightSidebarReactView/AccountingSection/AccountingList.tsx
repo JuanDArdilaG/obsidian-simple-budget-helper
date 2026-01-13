@@ -25,7 +25,7 @@ import {
 	TransactionsReport,
 } from "contexts/Reports/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
-import { Transaction } from "contexts/Transactions/domain";
+import { Transaction, TransactionAmount } from "contexts/Transactions/domain";
 import {
 	useCallback,
 	useContext,
@@ -227,10 +227,7 @@ export function AccountingList({
 
 								// For transfer transactions, check both fromSplits and toSplits
 								// For other transactions, only use fromSplits
-								let realAmount = new PriceValueObject(0, {
-									decimals: 2,
-									withSign: true,
-								});
+								let realAmount = TransactionAmount.zero();
 
 								if (transaction.operation.isTransfer()) {
 									// Check fromSplits (outgoing) and toSplits (incoming) for transfers
@@ -244,7 +241,9 @@ export function AccountingList({
 
 									if (fromSplit) {
 										// Money going out of this account (negative)
-										realAmount = fromSplit.amount.negate();
+										realAmount = new TransactionAmount(
+											fromSplit.amount.value * -1
+										);
 									} else if (toSplit) {
 										// Money coming into this account (positive)
 										realAmount = toSplit.amount;
@@ -258,8 +257,10 @@ export function AccountingList({
 										);
 									realAmount =
 										fromSplit?.amount ||
-										PriceValueObject.zero();
+										TransactionAmount.zero();
 								}
+
+								console.log({ realAmount });
 
 								return {
 									name,
@@ -287,8 +288,8 @@ export function AccountingList({
 					};
 
 				const date = transaction.date.toLocaleDateString();
-				if (!res.find((r) => r[0] === date)) res.push([date, []]);
-				const lastGroup = res[res.length - 1];
+				if (!res.some((r) => r[0] === date)) res.push([date, []]);
+				const lastGroup = res.at(-1);
 				if (lastGroup) {
 					lastGroup[1].push(displayableTransaction);
 				}

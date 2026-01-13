@@ -1,4 +1,5 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
+import { TransactionAmount } from "../../Transactions/domain";
 import { AccountID } from "./account-id.valueobject";
 
 export class AccountIntegrityResult {
@@ -16,7 +17,7 @@ export class AccountIntegrityResult {
 		actualBalance: PriceValueObject
 	): AccountIntegrityResult {
 		const discrepancy = actualBalance.sustract(expectedBalance);
-		const hasIntegrity = discrepancy.equalTo(new PriceValueObject(0));
+		const hasIntegrity = discrepancy.equalTo(new TransactionAmount(0));
 
 		return new AccountIntegrityResult(
 			accountId,

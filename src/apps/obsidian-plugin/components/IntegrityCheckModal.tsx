@@ -1,6 +1,6 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
 import { AccountID, IntegrityCheckReport } from "contexts/Accounts/domain";
 import React, { useContext, useState } from "react";
+import { TransactionAmount } from "../../../contexts/Transactions/domain";
 import { AccountsContext } from "../views";
 import { Button } from "./Button";
 import { ConfirmationDialog } from "./ConfirmationDialog";
@@ -303,22 +303,14 @@ const AccountIntegrityItem: React.FC<AccountIntegrityItemProps> = ({
 						Expected Balance:{" "}
 						<PriceLabel
 							price={
-								new PriceValueObject(result.expectedBalance, {
-									decimals: 2,
-									withSign: true,
-								})
+								new TransactionAmount(result.expectedBalance)
 							}
 						/>
 					</p>
 					<p style={{ margin: "2px 0", color: "var(--text-normal)" }}>
 						Actual Balance:{" "}
 						<PriceLabel
-							price={
-								new PriceValueObject(result.actualBalance, {
-									decimals: 2,
-									withSign: true,
-								})
-							}
+							price={new TransactionAmount(result.actualBalance)}
 						/>
 					</p>
 					{!result.hasIntegrity && (
@@ -331,10 +323,7 @@ const AccountIntegrityItem: React.FC<AccountIntegrityItemProps> = ({
 							Discrepancy:{" "}
 							<PriceLabel
 								price={
-									new PriceValueObject(result.discrepancy, {
-										decimals: 2,
-										withSign: true,
-									})
+									new TransactionAmount(result.discrepancy)
 								}
 							/>
 						</p>
