@@ -1,88 +1,36 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
-import {
-	FormControl,
-	FormHelperText,
-	Input,
-	InputAdornment,
-	InputLabel,
-} from "@mui/material";
-import { WithLockField } from "../WithLockField";
+import CurrencyInput from "react-currency-input-field";
 
 export const PriceInput = ({
 	id,
-	label,
 	value,
 	onChange,
-	isLocked,
-	setIsLocked,
-	error,
-	disabled,
+	placeholder,
+	prefix,
 }: {
 	id: string;
-	label: string;
 	value: PriceValueObject;
 	onChange?: (value: PriceValueObject) => void;
-	isLocked?: boolean;
-	setIsLocked?: (value: boolean) => void;
-	error?: string;
-	disabled?: boolean;
+	placeholder?: string;
+	prefix?: string;
 }) => {
 	return (
-		<WithLockField isLocked={isLocked} setIsLocked={setIsLocked}>
-			<FormControl fullWidth variant="standard" error={!!error}>
-				<InputLabel
-					htmlFor={id}
-					style={{
-						color: error
-							? "var(--text-error)"
-							: "var(--text-normal)",
-						paddingLeft: 15,
-					}}
-				>
-					{label}
-				</InputLabel>
-				<Input
-					id={id}
-					className="no-styles"
-					startAdornment={
-						<InputAdornment position="start">
-							<span style={{ color: "var(--text-normal)" }}>
-								$
-							</span>
-						</InputAdornment>
-					}
-					value={value.toString()}
-					onChange={(e) =>
-						onChange?.(PriceValueObject.fromString(e.target.value))
-					}
-					style={{
-						backgroundColor:
-							"var(--background-modifier-form-field)",
-						color: "var(--text-normal)",
-						padding: 5,
-						borderColor: error ? "var(--text-error)" : undefined,
-					}}
-					disabled={isLocked || disabled}
-					slotProps={{
-						input: {
-							style: {
-								backgroundColor:
-									"var(--background-modifier-form-field)",
-								border: "none",
-								borderRadius: 0,
-								paddingLeft: 0,
-							},
-						},
-					}}
-				/>
-				{error && (
-					<FormHelperText
-						style={{ color: "var(--text-error)", marginLeft: 0 }}
-					>
-						{error}
-					</FormHelperText>
-				)}
-			</FormControl>
-		</WithLockField>
+		<CurrencyInput
+			id={id}
+			placeholder={placeholder}
+			allowDecimals
+			decimalsLimit={2}
+			decimalScale={2}
+			value={value.value}
+			onValueChange={(value) =>
+				onChange?.(
+					PriceValueObject.fromString(value ?? "0", {
+						decimals: 2,
+						withSign: true,
+					})
+				)
+			}
+			prefix={prefix}
+		/>
 	);
 };

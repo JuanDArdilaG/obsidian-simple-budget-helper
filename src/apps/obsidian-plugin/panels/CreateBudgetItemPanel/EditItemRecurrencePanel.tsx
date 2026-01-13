@@ -72,7 +72,7 @@ export const EditItemRecurrencePanel = ({
 				<h4>From Splits</h4>
 				{fromSplits.map((split, idx) => (
 					<div
-						key={idx}
+						key={split.accountId}
 						style={{
 							display: "flex",
 							gap: 8,
@@ -94,13 +94,18 @@ export const EditItemRecurrencePanel = ({
 						/>
 						<PriceInput
 							id={`from-amount-${idx}`}
-							label="Amount"
+							placeholder="Amount"
 							value={split.amount}
 							onChange={(val) => {
 								const newSplits = [...fromSplits];
 								newSplits[idx].amount = val;
 								setFromSplits(newSplits);
 							}}
+							prefix={
+								accounts.find(
+									(acc) => acc.id.value === split.accountId
+								)?.currency.symbol || ""
+							}
 						/>
 						<button
 							onClick={() =>
@@ -131,7 +136,7 @@ export const EditItemRecurrencePanel = ({
 				<h4>To Splits</h4>
 				{toSplits.map((split, idx) => (
 					<div
-						key={idx}
+						key={split.accountId}
 						style={{
 							display: "flex",
 							gap: 8,
@@ -153,13 +158,18 @@ export const EditItemRecurrencePanel = ({
 						/>
 						<PriceInput
 							id={`to-amount-${idx}`}
-							label="Amount"
+							placeholder="Amount"
 							value={split.amount}
 							onChange={(val) => {
 								const newSplits = [...toSplits];
 								newSplits[idx].amount = val;
 								setToSplits(newSplits);
 							}}
+							prefix={
+								accounts.find(
+									(acc) => acc.id.value === split.accountId
+								)?.currency.symbol || ""
+							}
 						/>
 						<button
 							onClick={() =>

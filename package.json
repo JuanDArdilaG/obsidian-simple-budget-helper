@@ -64,6 +64,7 @@
 		"mathjs": "^14.5.2",
 		"nanoid": "^5.0.9",
 		"react": "^19.0.0",
+		"react-currency-input-field": "^4.0.3",
 		"react-dom": "^19.0.0",
 		"react-input-price": "^0.0.3",
 		"react-virtualized-auto-sizer": "^1.0.26",

@@ -186,7 +186,14 @@ export class SettingTab extends PluginSettingTab {
 			.addDropdown((dropdown) =>
 				dropdown
 					.setValue(this.plugin.settings.defaultCurrency)
-					.addOptions(currencies)
+					.addOptions(
+						Object.keys(currencies).reduce((options, code) => {
+							options[
+								code
+							] = `${code} - ${currencies[code].name}`;
+							return options;
+						}, {} as Record<string, string>)
+					)
 					.onChange(async (value) => {
 						this.plugin.settings.defaultCurrency = value;
 						await this.plugin.saveSettings();

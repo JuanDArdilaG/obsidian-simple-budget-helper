@@ -57,6 +57,7 @@ export const MultiSelectDropdown = ({
 						typeof account.balance === "number"
 							? account.balance
 							: account.balance?.value ?? 0,
+					symbol: account.currency.symbol,
 				}))
 				.sort((a, b) => a.name.localeCompare(b.name)),
 		[accounts]
@@ -383,7 +384,7 @@ export const MultiSelectDropdown = ({
 									)}
 									<PriceInput
 										id={`amount-${split.accountId}`}
-										label="Amount"
+										placeholder="Amount"
 										value={
 											new PriceValueObject(
 												split.amount || 0,
@@ -396,7 +397,7 @@ export const MultiSelectDropdown = ({
 												val.toNumber()
 											)
 										}
-										disabled={isLocked}
+										prefix={account.symbol}
 									/>
 									{/* Max button for single-account split */}
 									{selectedAccounts.length === 1 && (

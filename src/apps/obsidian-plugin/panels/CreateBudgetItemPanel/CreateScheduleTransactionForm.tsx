@@ -127,7 +127,7 @@ export const CreateScheduleTransactionForm = ({
 			0
 		);
 		const newErrors = {
-			name: !item.name.trim() ? "Name is required" : undefined,
+			name: item.name.trim() === "" ? "Name is required" : undefined,
 			fromSplits:
 				totalAmount <= 0 ? "Amount must be greater than 0" : undefined,
 			toSplits: undefined,
@@ -367,7 +367,7 @@ export const CreateScheduleTransactionForm = ({
 					{DateInput}
 					<PriceInput
 						id="amount"
-						label="Amount"
+						placeholder="Amount"
 						value={
 							new PriceValueObject(
 								item.fromSplits?.reduce(
@@ -392,7 +392,13 @@ export const CreateScheduleTransactionForm = ({
 								],
 							})
 						}
-						error={showErrors ? errors.fromSplits : undefined}
+						prefix={
+							getAccountByID(
+								new AccountID(
+									item.fromSplits?.[0]?.accountId || ""
+								)
+							)?.currency.symbol
+						}
 					/>
 				</Box>
 			</Box>

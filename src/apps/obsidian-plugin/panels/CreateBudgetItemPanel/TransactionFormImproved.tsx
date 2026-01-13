@@ -36,7 +36,7 @@ import {
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { AccountID } from "contexts/Accounts/domain";
 import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
-import { OperationType } from "contexts/Shared/domain";
+import { Nanoid, OperationType } from "contexts/Shared/domain";
 import {
 	SubCategory,
 	SubCategoryID,
@@ -261,7 +261,7 @@ export const TransactionFormImproved = ({
 	const {
 		useCases: { getAllStores, createStore },
 	} = useContext(ScheduledTransactionsContext);
-	const { updateAccounts } = useContext(AccountsContext);
+	const { updateAccounts, accounts } = useContext(AccountsContext);
 
 	// State for brands, stores, and providers
 	const [stores, setStores] = useState<Store[]>([]);
@@ -1069,7 +1069,7 @@ export const TransactionFormImproved = ({
 							>
 								<PriceInput
 									id={`amount-${item.id}`}
-									label="Amount *"
+									placeholder="Amount *"
 									value={
 										new PriceValueObject(item.amount || 0, {
 											withSign: false,
@@ -1081,6 +1081,18 @@ export const TransactionFormImproved = ({
 										updateTransactionItem(item.id, {
 											amount: val.toNumber(),
 										})
+									}
+									prefix={
+										sharedProperties.fromSplits[0]
+											?.accountId
+											? accounts.find((acc) =>
+													acc.id.equalTo(
+														new Nanoid(
+															sharedProperties.fromSplits[0].accountId
+														)
+													)
+											  )?.currency.symbol
+											: "$"
 									}
 								/>
 								<IconButton

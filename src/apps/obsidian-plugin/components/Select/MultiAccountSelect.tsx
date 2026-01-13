@@ -50,6 +50,7 @@ export const MultiAccountSelect = ({
 					typeof account.balance === "number"
 						? account.balance
 						: account.balance?.value ?? 0,
+				symbol: account.currency.symbol,
 			})),
 		[accounts]
 	);
@@ -264,7 +265,7 @@ export const MultiAccountSelect = ({
 									)}
 									<PriceInput
 										id={`amount-${split.accountId}`}
-										label="Amount"
+										placeholder="Amount"
 										value={
 											new PriceValueObject(
 												split.amount || 0,
@@ -277,7 +278,7 @@ export const MultiAccountSelect = ({
 												val.toNumber()
 											)
 										}
-										disabled={isLocked}
+										prefix={account.symbol}
 									/>
 									{/* Max button for single-account split */}
 									{selectedAccounts.length === 1 && (
