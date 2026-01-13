@@ -2,7 +2,7 @@ import { Account } from "contexts/Accounts/domain";
 import { ReportBalance } from "./report-balance.valueobject";
 
 export class AccountsReport {
-	constructor(private _accounts: Account[]) {}
+	constructor(private readonly _accounts: Account[]) {}
 
 	getTotalForAssets(): ReportBalance {
 		return this._accounts

@@ -171,7 +171,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			new StringValueObject(name),
 			new Currency(currency ?? "COP"),
 			new AccountBalance(
-				new PriceValueObject(balance, { decimals: 2, withSign: false })
+				new PriceValueObject(balance, { decimals: 2, withSign: true })
 			),
 			updatedAt
 				? new DateValueObject(new Date(updatedAt))
