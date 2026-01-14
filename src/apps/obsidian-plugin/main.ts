@@ -8,7 +8,7 @@ import { buildContainer } from "contexts/Shared/infrastructure/di/container";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
 import { App, Plugin, PluginManifest } from "obsidian";
 import { AccountsLocalRepository } from "../../contexts/Accounts/infrastructure/persistence/local/accounts-local.repository";
-import { Currency } from "../../contexts/Shared/domain/currency.vo";
+import { Currency } from "../../contexts/Currencies/domain/currency.vo";
 import { Logger } from "../../contexts/Shared/infrastructure/logger";
 import { views } from "./config";
 import { DEFAULT_SETTINGS, SimpleBudgetHelperSettings } from "./PluginSettings";
@@ -81,7 +81,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		// Initialize local database
 		await this.db.init(this.settings.dbId);
 
-		await this.migrate();
+		// await this.migrate();
 
 		const statusBarItem = this.addStatusBarItem();
 		this.registerView(

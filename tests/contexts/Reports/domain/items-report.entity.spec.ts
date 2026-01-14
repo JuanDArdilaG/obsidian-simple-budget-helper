@@ -6,9 +6,9 @@ import {
 	AccountName,
 	AccountType,
 } from "../../../../src/contexts/Accounts/domain";
+import { Currency } from "../../../../src/contexts/Currencies/domain/currency.vo";
 import { ScheduledMonthlyReport } from "../../../../src/contexts/Reports/domain/scheduled-monthly-report.entity";
 import { ItemOperation } from "../../../../src/contexts/Shared/domain";
-import { Currency } from "../../../../src/contexts/Shared/domain/currency.vo";
 import { buildTestItems } from "../../Items/domain/buildTestItems";
 
 describe("ItemsReport", () => {

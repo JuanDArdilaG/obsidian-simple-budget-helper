@@ -1,4 +1,5 @@
 import {
+	DateValueObject,
 	PriceValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
@@ -20,12 +21,15 @@ import {
 	SettingsIcon,
 	Trash2,
 } from "lucide-react";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { Currency } from "../../../../../contexts/Currencies/domain/currency.vo";
 import { Input } from "../../../components/Input/Input";
 import { PriceInput } from "../../../components/Input/PriceInput";
-import { AccountsContext, TransactionsContext } from "../Contexts";
+import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
+import { ExchangeRatesContext } from "../Contexts/ExchangeRatesContext";
 
 export const AccountsListItem = ({ account }: { account: Account }) => {
+	const { plugin } = useContext(AppContext);
 	const {
 		updateAccounts,
 		useCases: { deleteAccount, changeAccountName },
@@ -34,6 +38,9 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 	const {
 		useCases: { adjustAccount },
 	} = useContext(TransactionsContext);
+	const {
+		useCases: { getExchangeRate },
+	} = useContext(ExchangeRatesContext);
 
 	const [adjustingBalance, setAdjustingBalance] = useState(false);
 	const [newBalance, setNewBalance] = useState(
@@ -86,6 +93,45 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 		}
 	};
 
+	const [convertedBalance, setConvertedBalance] =
+		useState<PriceValueObject | null>(null);
+
+	useEffect(() => {
+		const fetchConvertedBalance = async () => {
+			console.log("Fetching converted balance for account", {
+				accountId: account.id,
+				accountCurrency: account.currency.toString(),
+				defaultCurrency: plugin.settings.defaultCurrency,
+			});
+			if (account.currency.value === plugin.settings.defaultCurrency) {
+				return null;
+			}
+
+			const exchangeRate = await getExchangeRate.execute({
+				fromCurrency: account.currency,
+				toCurrency: new Currency(plugin.settings.defaultCurrency),
+				date: DateValueObject.createNowDate(),
+			});
+
+			if (!exchangeRate) {
+				return null;
+			}
+
+			const convertedValue =
+				exchangeRate.rate.value * account.balance.value.value;
+
+			setConvertedBalance(
+				new PriceValueObject(convertedValue, {
+					decimals: 2,
+					withSign: true,
+					withZeros: true,
+				})
+			);
+		};
+
+		fetchConvertedBalance();
+	}, [account, getExchangeRate, plugin.settings.defaultCurrency]);
+
 	return (
 		<>
 			<Accordion style={{ width: "100%" }}>
@@ -103,7 +149,16 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 				>
 					<Typography variant="body1">
 						{account.name.toString()}:{" "}
-						{account.balance.value.toString()}
+						{account.balance.value.toString()}{" "}
+						{account.currency.value ===
+						plugin.settings.defaultCurrency
+							? ""
+							: account.currency.value}{" "}
+						{convertedBalance
+							? `(≈ ${convertedBalance.toString()} ${
+									plugin.settings.defaultCurrency
+							  })`
+							: ""}
 					</Typography>
 				</AccordionSummary>
 				<AccordionDetails

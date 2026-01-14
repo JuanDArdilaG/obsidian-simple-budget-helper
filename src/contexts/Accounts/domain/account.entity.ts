@@ -13,7 +13,7 @@ import {
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Transaction } from "contexts/Transactions/domain";
-import { Currency } from "../../Shared/domain/currency.vo";
+import { Currency } from "../../Currencies/domain/currency.vo";
 
 const logger: Logger = new Logger("Account");
 
@@ -169,13 +169,11 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			new AccountID(id),
 			new AccountType(type),
 			new StringValueObject(name),
-			new Currency(currency ?? "COP"),
+			new Currency(currency),
 			new AccountBalance(
 				new PriceValueObject(balance, { decimals: 2, withSign: true })
 			),
-			updatedAt
-				? new DateValueObject(new Date(updatedAt))
-				: DateValueObject.createNowDate()
+			new DateValueObject(new Date(updatedAt))
 		);
 		return account;
 	}

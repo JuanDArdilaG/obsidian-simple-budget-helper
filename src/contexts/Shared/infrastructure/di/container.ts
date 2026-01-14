@@ -46,6 +46,9 @@ import { TransactionsService } from "contexts/Transactions/application/transacti
 import { UpdateTransactionUseCase } from "contexts/Transactions/application/update-transaction.usecase";
 import { TransactionsLocalRepository } from "contexts/Transactions/infrastructure/persistence/local/transactions-local.repository";
 import { ChangeAccountNameUseCase } from "../../../Accounts/application/change-account-name.usecase";
+import { GetExchangeRateUseCase } from "../../../Currencies/application/get-exchange-rate.usecase";
+import { ErExchangeRateGetter } from "../../../Currencies/infrastructure/er-exchange-rate-getter";
+import { ExchangeRateLocalRepository } from "../../../Currencies/infrastructure/persistence/exchange-rate-local.repository";
 import { DeleteScheduledTransactionUseCase } from "../../../ScheduledTransactions/application/delete-scheduled-transaction.usecase";
 import { GetAllScheduledTransactionsUseCase } from "../../../ScheduledTransactions/application/get-all-scheduled-transactions";
 import { GetScheduledTransactionsUntilDateUseCase } from "../../../ScheduledTransactions/application/get-items-until-date.usecase";
@@ -204,6 +207,15 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		groupByCategoryWithAccumulatedBalanceUseCase: asClass(
 			GroupByCategoryWithAccumulatedBalanceUseCase
 		).singleton(),
+	});
+
+	// Exchange Rates
+	container.register({
+		_exchangeRateRepository: asClass(ExchangeRateLocalRepository)
+			.singleton()
+			.inject(() => ({ _db: localDB })),
+		_exchangeRateGetter: asClass(ErExchangeRateGetter).singleton(),
+		getExchangeRateUseCase: asClass(GetExchangeRateUseCase).singleton(),
 	});
 
 	return container;

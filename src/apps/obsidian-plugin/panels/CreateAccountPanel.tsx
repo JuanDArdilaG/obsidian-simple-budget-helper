@@ -14,7 +14,7 @@ import { useContext, useState } from "react";
 import {
 	currencies,
 	Currency,
-} from "../../../contexts/Shared/domain/currency.vo";
+} from "../../../contexts/Currencies/domain/currency.vo";
 
 export const CreateAccountPanel = ({ onCreate }: { onCreate: () => void }) => {
 	const { plugin } = useContext(AppContext);

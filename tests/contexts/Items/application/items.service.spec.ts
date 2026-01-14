@@ -12,6 +12,7 @@ import { SubCategory } from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Currency } from "../../../../src/contexts/Currencies/domain/currency.vo";
 import { ScheduledTransactionsService } from "../../../../src/contexts/ScheduledTransactions/application/scheduled-transactions.service";
 import {
 	IRecurrenceModificationsService,
@@ -20,7 +21,6 @@ import {
 	ScheduledTransaction,
 	ScheduledTransactionDate,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
-import { Currency } from "../../../../src/contexts/Shared/domain/currency.vo";
 import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
 
 const category = Category.create(new StringValueObject("Salary"));

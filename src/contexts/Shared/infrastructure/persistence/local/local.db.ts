@@ -5,6 +5,7 @@ import { SubCategory } from "contexts/Subcategories/domain";
 import { Transaction } from "contexts/Transactions/domain";
 import Dexie from "dexie";
 import { App } from "obsidian";
+import { ExchangeRate } from "../../../../Currencies/domain/exchange-rate.vo";
 import {
 	RecurrenceModification,
 	ScheduledTransaction,
@@ -26,9 +27,9 @@ export class LocalDB extends DB {
 	db: Dexie;
 	logger: Logger = new Logger("LocalDB");
 	public fileManager: LocalFileManager;
-	private conflictResolver: ConflictResolver;
+	private readonly conflictResolver: ConflictResolver;
 	public backupManager: BackupManager;
-	private dataVersioning: DataVersioning;
+	private readonly dataVersioning: DataVersioning;
 	private dbId: string = "";
 
 	constructor(app: App) {
@@ -71,7 +72,7 @@ export class LocalDB extends DB {
 	public startPeriodicBackups(): number {
 		// Clear existing global interval if any
 		if (globalPeriodicBackupInterval) {
-			window.clearInterval(globalPeriodicBackupInterval);
+			globalThis.clearInterval(globalPeriodicBackupInterval);
 		}
 
 		globalPeriodicBackupInterval = window.setInterval(async () => {
@@ -91,12 +92,12 @@ export class LocalDB extends DB {
 	// Stop all intervals
 	public stopIntervals(): void {
 		if (globalAutoSyncInterval) {
-			window.clearInterval(globalAutoSyncInterval);
+			globalThis.clearInterval(globalAutoSyncInterval);
 			globalAutoSyncInterval = undefined;
 			this.logger.debug("Auto-sync interval stopped");
 		}
 		if (globalPeriodicBackupInterval) {
-			window.clearInterval(globalPeriodicBackupInterval);
+			globalThis.clearInterval(globalPeriodicBackupInterval);
 			globalPeriodicBackupInterval = undefined;
 			this.logger.debug("Periodic backup interval stopped");
 		}
@@ -269,7 +270,7 @@ export class LocalDB extends DB {
 	}
 
 	#initializeTables() {
-		this.db.version(3).stores({
+		this.db.version(4).stores({
 			[Config.accountsTableName]: Object.keys(
 				Account.emptyPrimitives()
 			).join(", "),
@@ -293,6 +294,9 @@ export class LocalDB extends DB {
 			).join(", "),
 			[Config.transactionsTableName]: Object.keys(
 				Transaction.emptyPrimitives()
+			).join(", "),
+			[Config.exchangeRatesTableName]: Object.keys(
+				ExchangeRate.emptyPrimitives()
 			).join(", "),
 		});
 	}

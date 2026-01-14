@@ -6,7 +6,7 @@ import {
 	AccountName,
 	AccountType,
 } from "contexts/Accounts/domain";
-import { Currency } from "../../../../src/contexts/Shared/domain/currency.vo";
+import { Currency } from "../../../../src/contexts/Currencies/domain/currency.vo";
 
 export const buildTestAccounts = (n: number) => {
 	return new Array(n)

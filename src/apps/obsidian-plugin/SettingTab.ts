@@ -3,7 +3,7 @@ import { ResolveAccountDiscrepancyUseCase } from "contexts/Accounts/application/
 import { App, Modal, Notice, PluginSettingTab, Setting } from "obsidian";
 import { GetAllAccountsUseCase } from "../../contexts/Accounts/application/get-all-accounts.usecase";
 import { Account, IntegrityCheckReport } from "../../contexts/Accounts/domain";
-import { currencies } from "../../contexts/Shared/domain/currency.vo";
+import { currencies } from "../../contexts/Currencies/domain/currency.vo";
 import { TransactionAmount } from "../../contexts/Transactions/domain";
 import SimpleBudgetHelperPlugin from "./main";
 

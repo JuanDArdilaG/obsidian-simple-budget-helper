@@ -7,7 +7,7 @@ import {
 	AccountName,
 	AccountType,
 } from "../../../../src/contexts/Accounts/domain";
-import { Currency } from "../../../../src/contexts/Shared/domain/currency.vo";
+import { Currency } from "../../../../src/contexts/Currencies/domain/currency.vo";
 import { buildTestTransactions } from "../../Reports/domain/buildTestTransactions";
 
 describe("adjustOnTransactionDeletion", () => {
