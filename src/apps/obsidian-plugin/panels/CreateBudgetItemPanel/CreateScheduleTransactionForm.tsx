@@ -332,8 +332,7 @@ export const CreateScheduleTransactionForm = ({
 								? ` -> ${
 										getAccountByID(
 											new AccountID(
-												item.toSplits[0]?.accountId ||
-													""
+												item.toSplits[0].accountId
 											)
 										)?.name.value
 								  } - `
@@ -393,11 +392,13 @@ export const CreateScheduleTransactionForm = ({
 							})
 						}
 						prefix={
-							getAccountByID(
-								new AccountID(
-									item.fromSplits?.[0]?.accountId || ""
-								)
-							)?.currency.symbol
+							item.fromSplits?.[0].accountId
+								? getAccountByID(
+										new AccountID(
+											item.fromSplits[0].accountId
+										)
+								  )?.currency.symbol
+								: "$"
 						}
 					/>
 				</Box>

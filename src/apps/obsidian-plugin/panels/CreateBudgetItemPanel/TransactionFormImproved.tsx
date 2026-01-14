@@ -352,22 +352,42 @@ export const TransactionFormImproved = ({
 			return {
 				date: new Date(),
 				operation: "expense" as OperationType,
-				fromSplits: [] as PaymentSplitPrimitives[],
-				toSplits: [] as PaymentSplitPrimitives[],
+				fromSplits: [] as {
+					accountId: string;
+					amount: number;
+					currency: string;
+				}[],
+				toSplits: [] as {
+					accountId: string;
+					amount: number;
+					currency: string;
+				}[],
 				store: "",
 			};
 		}
 		return {
 			date: transaction.date.value,
 			operation: transaction.operation.value,
-			fromSplits: transaction.fromSplits.map((split) => ({
-				accountId: split.accountId.value,
-				amount: split.amount.value,
-			})),
-			toSplits: transaction.toSplits.map((split) => ({
-				accountId: split.accountId.value,
-				amount: split.amount.value,
-			})),
+			fromSplits: transaction.fromSplits.map((split) => {
+				const account = accounts.find((acc) =>
+					acc.id.equalTo(split.accountId)
+				);
+				return {
+					accountId: split.accountId.value,
+					amount: split.amount.value,
+					currency: account?.currency.value || "",
+				};
+			}),
+			toSplits: transaction.toSplits.map((split) => {
+				const account = accounts.find((acc) =>
+					acc.id.equalTo(split.accountId)
+				);
+				return {
+					accountId: split.accountId.value,
+					amount: split.amount.value,
+					currency: account?.currency.value || "",
+				};
+			}),
 			store: transaction.store?.value || "",
 		};
 	};
@@ -388,17 +408,29 @@ export const TransactionFormImproved = ({
 		fromSplits: {
 			accountId: string;
 			amount: number;
+			currency: string;
 		}[];
 		toSplits: {
 			accountId: string;
 			amount: number;
+			currency: string;
 		}[];
+
+		exchangeRate?: number;
 		store: string;
 	}>({
 		date: new Date(),
 		operation: "expense" as OperationType,
-		fromSplits: [] as PaymentSplitPrimitives[],
-		toSplits: [] as PaymentSplitPrimitives[],
+		fromSplits: [] as {
+			accountId: string;
+			amount: number;
+			currency: string;
+		}[],
+		toSplits: [] as {
+			accountId: string;
+			amount: number;
+			currency: string;
+		}[],
 		store: "",
 	});
 
@@ -480,6 +512,7 @@ export const TransactionFormImproved = ({
 			amount: Number(
 				((split.amount * itemAmount) / totalAmount).toFixed(2)
 			),
+			currency: split.currency,
 		}));
 	};
 
@@ -980,6 +1013,103 @@ export const TransactionFormImproved = ({
 					)}
 				</Box>
 			</Box>
+
+			{/* Account Selection Section */}
+			<Box sx={{ mb: 3 }}>
+				<Typography
+					variant="h6"
+					sx={{ mb: 2, color: currentColors.primary }}
+				>
+					Account Distribution
+				</Typography>
+
+				{/* From Account Selection */}
+				<Box sx={{ mb: 2 }}>
+					<Typography
+						variant="body2"
+						sx={{ mb: 1, color: "var(--text-muted)" }}
+					>
+						{sharedProperties.operation === "transfer"
+							? "From Accounts *"
+							: "Accounts *"}
+					</Typography>
+					<MultiSelectDropdown
+						id="fromSplits"
+						label=""
+						placeholder="Select accounts..."
+						selectedAccounts={sharedProperties.fromSplits}
+						totalAmount={totalAmount}
+						onChange={(fromSplits) => {
+							updateSharedProperties({ fromSplits });
+						}}
+						error={getFieldError("fromSplits")}
+					/>
+					{getFieldError("fromSplits") && (
+						<Typography
+							variant="caption"
+							color="error"
+							sx={{ mt: 0.5, display: "block" }}
+						>
+							{getFieldError("fromSplits")}
+						</Typography>
+					)}
+				</Box>
+
+				{/* Transfer To Accounts */}
+				{sharedProperties.operation === "transfer" && (
+					<Box sx={{ mb: 2 }}>
+						<Typography
+							variant="body2"
+							sx={{ mb: 1, color: "var(--text-muted)" }}
+						>
+							To Accounts *
+						</Typography>
+						<MultiSelectDropdown
+							id="toSplits"
+							label=""
+							placeholder="Select to accounts..."
+							selectedAccounts={sharedProperties.toSplits}
+							totalAmount={totalAmount}
+							onChange={(toSplits) => {
+								updateSharedProperties({ toSplits });
+							}}
+							error={getFieldError("toSplits")}
+						/>
+						{getFieldError("toSplits") && (
+							<Typography
+								variant="caption"
+								color="error"
+								sx={{ mt: 0.5, display: "block" }}
+							>
+								{getFieldError("toSplits")}
+							</Typography>
+						)}
+					</Box>
+				)}
+			</Box>
+			{sharedProperties.operation === "transfer" &&
+				sharedProperties.fromSplits?.[0]?.currency !==
+					sharedProperties.toSplits?.[0]?.currency && (
+					<PriceInput
+						id={"exchange-rate"}
+						key={"exchange-rate"}
+						label="Exchange Rate"
+						value={
+							new PriceValueObject(
+								sharedProperties.exchangeRate || 0,
+								{
+									decimals: 2,
+									withZeros: true,
+								}
+							)
+						}
+						onChange={(value) =>
+							updateSharedProperties({
+								exchangeRate: value.value,
+							})
+						}
+					/>
+				)}
 
 			{/* Transaction Items Section */}
 			<Box sx={{ mb: 3 }}>
@@ -1594,80 +1724,6 @@ export const TransactionFormImproved = ({
 					/>
 				</Box>
 			)}
-
-			{/* Account Selection Section */}
-			<Box sx={{ mb: 3 }}>
-				<Typography
-					variant="h6"
-					sx={{ mb: 2, color: currentColors.primary }}
-				>
-					Account Distribution
-				</Typography>
-
-				{/* From Account Selection */}
-				<Box sx={{ mb: 2 }}>
-					<Typography
-						variant="body2"
-						sx={{ mb: 1, color: "var(--text-muted)" }}
-					>
-						{sharedProperties.operation === "transfer"
-							? "From Accounts *"
-							: "Accounts *"}
-					</Typography>
-					<MultiSelectDropdown
-						id="fromSplits"
-						label=""
-						placeholder="Select accounts..."
-						selectedAccounts={sharedProperties.fromSplits}
-						totalAmount={totalAmount}
-						onChange={(fromSplits) => {
-							updateSharedProperties({ fromSplits });
-						}}
-						error={getFieldError("fromSplits")}
-					/>
-					{getFieldError("fromSplits") && (
-						<Typography
-							variant="caption"
-							color="error"
-							sx={{ mt: 0.5, display: "block" }}
-						>
-							{getFieldError("fromSplits")}
-						</Typography>
-					)}
-				</Box>
-
-				{/* Transfer To Accounts */}
-				{sharedProperties.operation === "transfer" && (
-					<Box sx={{ mb: 2 }}>
-						<Typography
-							variant="body2"
-							sx={{ mb: 1, color: "var(--text-muted)" }}
-						>
-							To Accounts *
-						</Typography>
-						<MultiSelectDropdown
-							id="toSplits"
-							label=""
-							placeholder="Select to accounts..."
-							selectedAccounts={sharedProperties.toSplits}
-							totalAmount={totalAmount}
-							onChange={(toSplits) => {
-								updateSharedProperties({ toSplits });
-							}}
-							error={getFieldError("toSplits")}
-						/>
-						{getFieldError("toSplits") && (
-							<Typography
-								variant="caption"
-								color="error"
-								sx={{ mt: 0.5, display: "block" }}
-							>
-								{getFieldError("toSplits")}
-							</Typography>
-						)}
-					</Box>
-				)}
-			</Box>
 
 			{children}
 

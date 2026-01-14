@@ -15,7 +15,6 @@ import {
 } from "@mui/material";
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { PaymentSplitPrimitives } from "contexts/Transactions/domain";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { WithLockField } from "../WithLockField";
 
@@ -23,8 +22,18 @@ interface MultiSelectDropdownProps {
 	id: string;
 	label: string;
 	placeholder?: string;
-	selectedAccounts: PaymentSplitPrimitives[];
-	onChange: (accounts: PaymentSplitPrimitives[]) => void;
+	selectedAccounts: {
+		accountId: string;
+		amount: number;
+		currency: string;
+	}[];
+	onChange: (
+		accounts: {
+			accountId: string;
+			amount: number;
+			currency: string;
+		}[]
+	) => void;
 	totalAmount?: number;
 	error?: string;
 	isLocked?: boolean;
@@ -57,7 +66,7 @@ export const MultiSelectDropdown = ({
 						typeof account.balance === "number"
 							? account.balance
 							: account.balance?.value ?? 0,
-					symbol: account.currency.symbol,
+					currency: account.currency,
 				}))
 				.sort((a, b) => a.name.localeCompare(b.name)),
 		[accounts]
@@ -78,11 +87,22 @@ export const MultiSelectDropdown = ({
 		setAnchorEl(null);
 	};
 
-	const handleAccountToggle = (accountId: string, checked: boolean) => {
-		let newSplits: PaymentSplitPrimitives[];
+	const handleAccountToggle = (
+		accountId: string,
+		currency: string,
+		checked: boolean
+	) => {
+		let newSplits: {
+			accountId: string;
+			amount: number;
+			currency: string;
+		}[];
 		if (checked) {
 			// Add account with default amount
-			newSplits = [...selectedAccounts, { accountId, amount: 0 }];
+			newSplits = [
+				...selectedAccounts,
+				{ accountId, amount: 0, currency },
+			];
 		} else {
 			// Remove account
 			newSplits = selectedAccounts.filter(
@@ -214,6 +234,7 @@ export const MultiSelectDropdown = ({
 										(account) => ({
 											accountId: account.id,
 											amount: 0,
+											currency: account.currency.value,
 										})
 									);
 									onChange(allSplits);
@@ -261,6 +282,7 @@ export const MultiSelectDropdown = ({
 									e.stopPropagation();
 									handleAccountToggle(
 										account.id,
+										account.currency.value,
 										!selectedIds.has(account.id)
 									);
 								}}
@@ -397,7 +419,7 @@ export const MultiSelectDropdown = ({
 												val.toNumber()
 											)
 										}
-										prefix={account.symbol}
+										prefix={account.currency.symbol}
 									/>
 									{/* Max button for single-account split */}
 									{selectedAccounts.length === 1 && (

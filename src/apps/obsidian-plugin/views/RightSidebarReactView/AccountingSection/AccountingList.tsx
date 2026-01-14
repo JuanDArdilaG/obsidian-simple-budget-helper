@@ -260,8 +260,6 @@ export function AccountingList({
 										TransactionAmount.zero();
 								}
 
-								console.log({ realAmount });
-
 								return {
 									name,
 									truncatedName: truncateText(name, 15),
