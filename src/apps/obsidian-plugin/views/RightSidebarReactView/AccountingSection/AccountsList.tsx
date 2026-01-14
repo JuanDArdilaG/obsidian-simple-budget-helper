@@ -116,8 +116,14 @@ export const AccountsList = () => {
 					.filter((acc) => acc.type.isLiability())
 					.toSorted(
 						(accA, accB) =>
-							accB.balance.value.toNumber() -
-							accA.balance.value.toNumber()
+							(
+								accB.defaultCurrencyBalance?.value ??
+								accB.balance.value
+							).toNumber() -
+							(
+								accA.defaultCurrencyBalance?.value ??
+								accA.balance.value
+							).toNumber()
 					)
 					.map((account) => (
 						<ListItem key={account.id.value}>

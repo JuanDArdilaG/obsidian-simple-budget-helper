@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Fix bug that avoids deleting a category.
 -   Fix backup listing to not consider macOS metadata files (.\_\*.json) as valid backups.
 -   Next occurrence calculation for scheduled transactions list was not considering modifications properly, leading to incorrect next occurrence dates.
+-   Bug when reloading the plugin causes account currencies to be set as COP.
 
 ## [0.14.2] - 2025-09-21
 
