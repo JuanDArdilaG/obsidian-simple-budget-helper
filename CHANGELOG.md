@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   EUR and GDP currency symbols.
 -   Exchange rate fetching for all supported currencies.
+-   Show account balance in default currency in accounts list and account's totals.
 
 ## [0.17.0] - 2026-01-13
 

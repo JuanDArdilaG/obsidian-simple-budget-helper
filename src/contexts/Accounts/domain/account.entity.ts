@@ -24,7 +24,8 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		private _name: StringValueObject,
 		private _currency: Currency,
 		private _balance: AccountBalance,
-		updatedAt: DateValueObject
+		updatedAt: DateValueObject,
+		private _defaultCurrencyBalance?: AccountBalance
 	) {
 		super(id, updatedAt);
 	}
@@ -79,6 +80,14 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 
 	get balance(): AccountBalance {
 		return this._balance;
+	}
+
+	get defaultCurrencyBalance(): AccountBalance | undefined {
+		return this._defaultCurrencyBalance;
+	}
+
+	set defaultCurrencyBalance(balance: AccountBalance | undefined) {
+		this._defaultCurrencyBalance = balance;
 	}
 
 	get realBalance(): PriceValueObject {

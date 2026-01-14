@@ -134,8 +134,6 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		this.logger.debugB("saving settings", { data: this.settings }).log();
 		await this.saveData(this.settings);
 	}
-
-	async loadCurrencies() {}
 }
 
 async function persist() {
