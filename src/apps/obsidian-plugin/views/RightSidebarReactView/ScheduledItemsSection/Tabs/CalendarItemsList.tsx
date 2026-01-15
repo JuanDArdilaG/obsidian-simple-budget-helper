@@ -217,7 +217,7 @@ export const CalendarItemsList = ({
 		itemsWithAccountsBalance.forEach(({ recurrence }) => {
 			recurrence.tags?.toArray().forEach((tag) => tagSet.add(tag));
 		});
-		return Array.from(tagSet).toSorted();
+		return Array.from(tagSet).toSorted((a, b) => a.localeCompare(b));
 	}, [itemsWithAccountsBalance]);
 
 	useEffect(() => {
