@@ -50,6 +50,10 @@ import { GetExchangeRateUseCase } from "../../../Currencies/application/get-exch
 import { ErExchangeRateGetter } from "../../../Currencies/infrastructure/er-exchange-rate-getter";
 import { ExchangeRateLocalRepository } from "../../../Currencies/infrastructure/persistence/exchange-rate-local.repository";
 import { DeleteScheduledTransactionUseCase } from "../../../ScheduledTransactions/application/delete-scheduled-transaction.usecase";
+import { EditScheduledTransactionAmountUseCase } from "../../../ScheduledTransactions/application/edit-scheduled-transaction-amount.usecase";
+import { EditScheduledTransactionFrequencyUseCase } from "../../../ScheduledTransactions/application/edit-scheduled-transaction-frequency.usecase";
+import { EditScheduledTransactionNameUseCase } from "../../../ScheduledTransactions/application/edit-scheduled-transaction-name.usecase";
+import { EditScheduledTransactionStartDateUseCase } from "../../../ScheduledTransactions/application/edit-scheduled-transaction-start-date.usecase";
 import { GetAllScheduledTransactionsUseCase } from "../../../ScheduledTransactions/application/get-all-scheduled-transactions";
 import { GetScheduledTransactionsUntilDateUseCase } from "../../../ScheduledTransactions/application/get-items-until-date.usecase";
 import { ScheduledTransactionsWithAccumulatedBalanceUseCase } from "../../../ScheduledTransactions/application/items-with-accumulated-balance.usecase";
@@ -105,6 +109,18 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		getAllStoresUseCase: asClass(GetAllStoresUseCase).singleton(),
 		deleteItemRecurrenceUseCase: asClass(
 			DeleteItemRecurrenceUseCase
+		).singleton(),
+		editScheduledTransactionNameUseCase: asClass(
+			EditScheduledTransactionNameUseCase
+		).singleton(),
+		editScheduledTransactionAmountUseCase: asClass(
+			EditScheduledTransactionAmountUseCase
+		).singleton(),
+		editScheduledTransactionStartDateUseCase: asClass(
+			EditScheduledTransactionStartDateUseCase
+		).singleton(),
+		editScheduledTransactionFrequencyUseCase: asClass(
+			EditScheduledTransactionFrequencyUseCase
 		).singleton(),
 		modifyNItemRecurrenceUseCase: asClass(
 			ModifyNItemRecurrenceUseCase

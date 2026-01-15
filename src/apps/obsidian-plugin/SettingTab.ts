@@ -72,17 +72,17 @@ class IntegrityReportModal extends Modal {
 					accountEl.createEl("p", {
 						text: `Expected Balance: ${new TransactionAmount(
 							result.expectedBalance
-						)}`,
+						).toString()}`,
 					});
 					accountEl.createEl("p", {
 						text: `Actual Balance: ${new TransactionAmount(
 							result.actualBalance
-						)}`,
+						).toString()}`,
 					});
 					accountEl.createEl("p", {
 						text: `Discrepancy: ${new TransactionAmount(
 							result.discrepancy
-						)}`,
+						).toString()}`,
 						cls: "integrity-discrepancy",
 					});
 

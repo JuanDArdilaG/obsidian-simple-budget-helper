@@ -27,12 +27,14 @@ export class ReportsService implements IReportsService {
 			report.scheduledTransactionsWithAccounts.map(
 				async ({ scheduledTransaction }) => {
 					const account = await this._accountsService.getByID(
-						scheduledTransaction.fromSplits[0]?.accountId
+						scheduledTransaction.originAccounts[0]?.accountId
 					);
 					const toAccount =
-						scheduledTransaction.toSplits[0]?.accountId &&
+						scheduledTransaction.destinationAccounts[0]
+							?.accountId &&
 						(await this._accountsService.getByID(
-							scheduledTransaction.toSplits[0]?.accountId
+							scheduledTransaction.destinationAccounts[0]
+								?.accountId
 						));
 					return { scheduledTransaction, account, toAccount };
 				}
@@ -88,17 +90,17 @@ export class ReportsService implements IReportsService {
 			toAccount,
 		} of items) {
 			if (item.operation.type.isIncome()) {
-				total = total.plus(item.fromAmount);
+				total = total.plus(item.originAmount);
 			} else if (item.operation.type.isExpense()) {
-				total = total.plus(item.fromAmount.negate());
+				total = total.plus(item.originAmount.negate());
 			} else if (item.operation.type.isTransfer()) {
 				if (account.type.isAsset() && toAccount?.type.isLiability()) {
-					total = total.plus(item.fromAmount.negate());
+					total = total.plus(item.originAmount.negate());
 				} else if (
 					account.type.isLiability() &&
 					toAccount?.type.isAsset()
 				) {
-					total = total.plus(item.fromAmount);
+					total = total.plus(item.originAmount);
 				}
 				// Asset to Asset and Liability to Liability transfers are neutral (not added to total)
 			}

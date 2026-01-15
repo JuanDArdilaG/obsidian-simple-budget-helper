@@ -34,8 +34,10 @@ export const ResponsiveScheduledItem = ({
 	context = "calendar", // "calendar" or "all-items"
 	currentAction,
 	recurrentContextMenu,
+	handleEdit,
 	handleDelete,
 }: {
+	handleEdit?: (e: React.MouseEvent) => Promise<void>;
 	handleDelete?: (e: React.MouseEvent) => Promise<void>;
 	scheduleTransaction: ScheduledTransaction;
 	recurrence: ItemRecurrenceInfo;
@@ -89,17 +91,18 @@ export const ResponsiveScheduledItem = ({
 		() =>
 			accounts.find(
 				(account) =>
-					account.id === scheduleTransaction.fromSplits[0].accountId
+					account.id ===
+					scheduleTransaction.originAccounts[0].accountId
 			),
 		[scheduleTransaction, accounts]
 	);
 	const toAccount = useMemo(
 		() =>
-			scheduleTransaction.toSplits.length > 0
+			scheduleTransaction.destinationAccounts.length > 0
 				? accounts.find(
 						(account) =>
 							account.id ===
-							scheduleTransaction.toSplits[0].accountId
+							scheduleTransaction.destinationAccounts[0].accountId
 				  )
 				: undefined,
 		[scheduleTransaction, accounts]
@@ -159,7 +162,7 @@ export const ResponsiveScheduledItem = ({
 							>
 								{itemTags.map((tag, index) => (
 									<Chip
-										key={index}
+										key={tag.toString()}
 										label={tag}
 										size="small"
 										sx={{
@@ -279,6 +282,7 @@ export const ResponsiveScheduledItem = ({
 					{/* Actions */}
 					<div>
 						<BudgetItemsListContextMenu
+							handleEdit={handleEdit}
 							handleDelete={handleDelete}
 							recurrent={
 								recurrentContextMenu ??
@@ -352,7 +356,7 @@ export const ResponsiveScheduledItem = ({
 							>
 								{itemTags.map((tag, index) => (
 									<Chip
-										key={index}
+										key={tag.toString()}
 										label={tag}
 										size="small"
 										sx={{
@@ -460,6 +464,7 @@ export const ResponsiveScheduledItem = ({
 					{/* Actions */}
 					<div>
 						<BudgetItemsListContextMenu
+							handleEdit={handleEdit}
 							recurrent={
 								recurrentContextMenu ??
 								(context === "calendar"
@@ -531,9 +536,9 @@ export const ResponsiveScheduledItem = ({
 									gap: "3px",
 								}}
 							>
-								{itemTags.map((tag, index) => (
+								{itemTags.map((tag) => (
 									<Chip
-										key={index}
+										key={tag.toString()}
 										label={tag}
 										size="small"
 										sx={{
@@ -573,6 +578,7 @@ export const ResponsiveScheduledItem = ({
 							size={19}
 						/>
 						<BudgetItemsListContextMenu
+							handleEdit={handleEdit}
 							handleDelete={handleDelete}
 							recurrent={
 								recurrentContextMenu ??

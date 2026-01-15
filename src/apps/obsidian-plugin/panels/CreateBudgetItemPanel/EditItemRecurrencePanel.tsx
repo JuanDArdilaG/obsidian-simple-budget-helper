@@ -40,7 +40,7 @@ export const EditItemRecurrencePanel = ({
 			accountId: split.accountId.value,
 			amount: split.amount,
 		})) ??
-			scheduledTransaction.fromSplits.map((split) => ({
+			scheduledTransaction.originAccounts.map((split) => ({
 				accountId: split.accountId.value,
 				amount: split.amount,
 			}))
@@ -50,7 +50,7 @@ export const EditItemRecurrencePanel = ({
 			accountId: split.accountId.value,
 			amount: split.amount,
 		})) ??
-			scheduledTransaction.toSplits.map((split) => ({
+			scheduledTransaction.destinationAccounts.map((split) => ({
 				accountId: split.accountId.value,
 				amount: split.amount,
 			}))

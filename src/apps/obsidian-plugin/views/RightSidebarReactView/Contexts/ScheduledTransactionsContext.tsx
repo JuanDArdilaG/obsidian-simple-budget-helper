@@ -6,6 +6,10 @@ import { ModifyNItemRecurrenceUseCase } from "contexts/ScheduledTransactions/app
 import { RecordItemUseCase } from "contexts/Transactions/application/record-item.usecase";
 import { createContext } from "react";
 import { DeleteScheduledTransactionUseCase } from "../../../../../contexts/ScheduledTransactions/application/delete-scheduled-transaction.usecase";
+import { EditScheduledTransactionAmountUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-amount.usecase";
+import { EditScheduledTransactionFrequencyUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-frequency.usecase";
+import { EditScheduledTransactionNameUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-name.usecase";
+import { EditScheduledTransactionStartDateUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-start-date.usecase";
 import { GetScheduledTransactionsUntilDateUseCase } from "../../../../../contexts/ScheduledTransactions/application/get-items-until-date.usecase";
 import { ScheduledTransactionsWithAccumulatedBalanceUseCase } from "../../../../../contexts/ScheduledTransactions/application/items-with-accumulated-balance.usecase";
 import { NextMonthsExpensesUseCase } from "../../../../../contexts/ScheduledTransactions/application/next-months-expenses.usecase";
@@ -21,6 +25,10 @@ export type ScheduledTransactionsContextType = {
 		createStore: CreateStoreUseCase;
 		deleteScheduledTransaction: DeleteScheduledTransactionUseCase;
 		deleteItemRecurrence: DeleteItemRecurrenceUseCase;
+		editScheduledTransactionName: EditScheduledTransactionNameUseCase;
+		editScheduledTransactionAmount: EditScheduledTransactionAmountUseCase;
+		editScheduledTransactionFrequency: EditScheduledTransactionFrequencyUseCase;
+		editScheduledTransactionStartDate: EditScheduledTransactionStartDateUseCase;
 		recordItem: RecordItemUseCase;
 		recordItemRecurrence: RecordScheduledTransactionUseCase;
 		modifyNItemRecurrence: ModifyNItemRecurrenceUseCase;
@@ -46,6 +54,14 @@ export const ScheduledTransactionsContext =
 			getScheduledTransactionsUntilDate:
 				{} as GetScheduledTransactionsUntilDateUseCase,
 			deleteItemRecurrence: {} as DeleteItemRecurrenceUseCase,
+			editScheduledTransactionName:
+				{} as EditScheduledTransactionNameUseCase,
+			editScheduledTransactionAmount:
+				{} as EditScheduledTransactionAmountUseCase,
+			editScheduledTransactionFrequency:
+				{} as EditScheduledTransactionFrequencyUseCase,
+			editScheduledTransactionStartDate:
+				{} as EditScheduledTransactionStartDateUseCase,
 			modifyNItemRecurrence: {} as ModifyNItemRecurrenceUseCase,
 			itemsWithAccumulatedBalanceUseCase:
 				{} as ScheduledTransactionsWithAccumulatedBalanceUseCase,
@@ -92,6 +108,18 @@ export const useItemsContextDefault = (
 				"recordItemRecurrenceUseCase"
 			),
 			deleteItemRecurrence,
+			editScheduledTransactionName: container.resolve(
+				"editScheduledTransactionNameUseCase"
+			),
+			editScheduledTransactionAmount: container.resolve(
+				"editScheduledTransactionAmountUseCase"
+			),
+			editScheduledTransactionFrequency: container.resolve(
+				"editScheduledTransactionFrequencyUseCase"
+			),
+			editScheduledTransactionStartDate: container.resolve(
+				"editScheduledTransactionStartDateUseCase"
+			),
 			modifyNItemRecurrence,
 			itemsWithAccumulatedBalanceUseCase: container.resolve(
 				"itemsWithAccumulatedBalanceUseCase"

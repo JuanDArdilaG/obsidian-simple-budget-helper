@@ -35,17 +35,19 @@ describe("ScheduledTransaction Tags", () => {
 		];
 		const toSplits: PaymentSplit[] = [];
 
-		return ScheduledTransaction.createInfinite(
+		const scheduledTransaction = ScheduledTransaction.createInfinite(
 			new StringValueObject("Test Item"),
 			startDate,
 			frequency,
 			fromSplits,
 			toSplits,
 			ItemOperation.income(),
-			category,
-			undefined,
-			tags
+			category
 		);
+
+		scheduledTransaction.updateTags(tags);
+
+		return scheduledTransaction;
 	};
 
 	describe("tags initialization", () => {

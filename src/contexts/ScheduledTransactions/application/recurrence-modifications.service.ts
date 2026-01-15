@@ -21,7 +21,7 @@ export class RecurrenceModificationsService
 	>
 	implements IRecurrenceModificationsService
 {
-	#logger = new Logger("RecurrenceModificationsService");
+	readonly #logger = new Logger("RecurrenceModificationsService");
 	constructor(
 		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository,
 		private readonly _recurrenceModificationsRepository: IRecurrenceModificationsRepository
@@ -225,14 +225,13 @@ export class RecurrenceModificationsService
 
 		for (const modification of modifications) {
 			modification.clearModifications();
-			// If modification has no changes after clearing, delete it
-			if (!modification.hasModifications()) {
-				await this._recurrenceModificationsRepository.deleteById(
-					modification.id
-				);
-			} else {
+			if (modification.hasModifications()) {
 				await this._recurrenceModificationsRepository.persist(
 					modification
+				);
+			} else {
+				await this._recurrenceModificationsRepository.deleteById(
+					modification.id
 				);
 			}
 		}

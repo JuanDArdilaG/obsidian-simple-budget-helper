@@ -13,9 +13,9 @@ export interface BackupInfo {
 }
 
 export class BackupManager {
-	private app: App;
-	private logger: Logger = new Logger("BackupManager");
-	private backupFolder: string = "";
+	private readonly app: App;
+	private readonly logger: Logger = new Logger("BackupManager");
+	private readonly backupFolder: string = "";
 
 	constructor(app: App) {
 		this.app = app;
@@ -47,7 +47,7 @@ export class BackupManager {
 		try {
 			await this.init();
 
-			const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+			const timestamp = new Date().toISOString().replaceAll(/[:.]/g, "-");
 			const name = backupName || `backup-${dbId}-${timestamp}`;
 			const path = normalizePath(`${this.backupFolder}/${name}.json`);
 
@@ -125,10 +125,11 @@ export class BackupManager {
 				blob = new Blob([uint8Array]);
 			} else if (typeof backupData.data === "string") {
 				// New format: base64 string using browser-compatible method
-				const uint8Array = Base64.toUint8Array(backupData.data);
+				const decoded = Base64.toUint8Array(backupData.data);
+				const uint8Array = new Uint8Array(decoded);
 				blob = new Blob([uint8Array]);
 			} else {
-				throw new Error("Unsupported backup data format");
+				throw new TypeError("Unsupported backup data format");
 			}
 
 			// Import backup into database

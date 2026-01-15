@@ -19,8 +19,8 @@ export class RecurrencePattern {
 
 	private constructor(
 		private readonly _type: RecurrenceType,
-		private readonly _startDate: ScheduledTransactionDate,
-		private readonly _frequency?: ItemRecurrenceFrequency,
+		private _startDate: ScheduledTransactionDate,
+		private _frequency?: ItemRecurrenceFrequency,
 		private readonly _endDate?: DateValueObject,
 		private readonly _maxOccurrences?: NumberValueObject
 	) {
@@ -77,8 +77,16 @@ export class RecurrencePattern {
 		return this._startDate;
 	}
 
+	updateStartDate(newStartDate: ScheduledTransactionDate) {
+		this._startDate = newStartDate;
+	}
+
 	get frequency(): ItemRecurrenceFrequency | undefined {
 		return this._frequency;
+	}
+
+	updateFrequency(newFrequency: ItemRecurrenceFrequency) {
+		this._frequency = newFrequency;
 	}
 
 	get endDate(): DateValueObject | undefined {

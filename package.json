@@ -56,8 +56,8 @@
 		"@mui/x-date-pickers": "^8.0.0-beta.3",
 		"awilix": "^12.0.5",
 		"dayjs": "^1.11.13",
-		"dexie": "^4.0.11",
-		"dexie-cloud-addon": "^4.0.11",
+		"dexie": "4.0.11",
+		"dexie-cloud-addon": "4.0.11",
 		"dexie-export-import": "^4.1.4",
 		"js-base64": "^3.7.7",
 		"lucide-react": "^0.473.0",
@@ -66,7 +66,6 @@
 		"react": "^19.0.0",
 		"react-currency-input-field": "^4.0.3",
 		"react-dom": "^19.0.0",
-		"react-input-price": "^0.0.3",
 		"react-virtualized-auto-sizer": "^1.0.26",
 		"react-window": "^1.8.11",
 		"recharts": "^2.15.4"

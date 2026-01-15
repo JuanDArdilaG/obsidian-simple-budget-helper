@@ -210,7 +210,7 @@ describe("ItemsReport", () => {
 				items.map(
 					(item) =>
 						new Account(
-							item.fromSplits[0].accountId,
+							item.originAccounts[0].accountId,
 							AccountType.asset(),
 							new AccountName("Test Account"),
 							new Currency("USD"),
@@ -254,7 +254,7 @@ describe("ItemsReport", () => {
 			expect(transferItems).toHaveLength(2);
 			transferItems.forEach((item) => {
 				expect(item.operation.type.isTransfer()).toBe(true);
-				expect(item.toSplits[0]?.accountId).toBeDefined();
+				expect(item.destinationAccounts[0]?.accountId).toBeDefined();
 			});
 		});
 	});

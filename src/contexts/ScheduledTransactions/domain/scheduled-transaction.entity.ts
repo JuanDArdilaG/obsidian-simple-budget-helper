@@ -40,12 +40,12 @@ export class ScheduledTransaction extends Entity<
 	private constructor(
 		id: Nanoid,
 		private _name: StringValueObject,
-		private _fromSplits: PaymentSplit[],
-		private _toSplits: PaymentSplit[],
+		private _originAccounts: PaymentSplit[],
+		private _destinationAccounts: PaymentSplit[],
 		private _operation: ItemOperation,
-		private _category: TransactionCategory,
+		private readonly _category: TransactionCategory,
 		private _recurrencePattern: RecurrencePattern,
-		private _store?: StringValueObject,
+		private readonly _store?: StringValueObject,
 		private _tags?: ItemTags,
 		updatedAt?: DateValueObject
 	) {
@@ -60,8 +60,7 @@ export class ScheduledTransaction extends Entity<
 		toSplits: PaymentSplit[],
 		operation: ItemOperation,
 		category: TransactionCategory,
-		store?: StringValueObject,
-		tags?: ItemTags
+		store?: StringValueObject
 	): ScheduledTransaction {
 		const recurrencePattern = RecurrencePattern.oneTime(date);
 		return new ScheduledTransaction(
@@ -72,8 +71,7 @@ export class ScheduledTransaction extends Entity<
 			operation,
 			category,
 			recurrencePattern,
-			store,
-			tags
+			store
 		);
 	}
 
@@ -85,8 +83,7 @@ export class ScheduledTransaction extends Entity<
 		toSplits: PaymentSplit[],
 		operation: ItemOperation,
 		category: TransactionCategory,
-		store?: StringValueObject,
-		tags?: ItemTags
+		store?: StringValueObject
 	): ScheduledTransaction {
 		const recurrencePattern = RecurrencePattern.infinite(
 			startDate,
@@ -100,8 +97,7 @@ export class ScheduledTransaction extends Entity<
 			operation,
 			category,
 			recurrencePattern,
-			store,
-			tags
+			store
 		);
 	}
 
@@ -114,8 +110,7 @@ export class ScheduledTransaction extends Entity<
 		toSplits: PaymentSplit[],
 		operation: ItemOperation,
 		category: TransactionCategory,
-		store?: StringValueObject,
-		tags?: ItemTags
+		store?: StringValueObject
 	): ScheduledTransaction {
 		const recurrencePattern = RecurrencePattern.untilDate(
 			startDate,
@@ -130,8 +125,7 @@ export class ScheduledTransaction extends Entity<
 			operation,
 			category,
 			recurrencePattern,
-			store,
-			tags
+			store
 		);
 	}
 
@@ -144,8 +138,7 @@ export class ScheduledTransaction extends Entity<
 		toSplits: PaymentSplit[],
 		operation: ItemOperation,
 		category: TransactionCategory,
-		store?: StringValueObject,
-		tags?: ItemTags
+		store?: StringValueObject
 	): ScheduledTransaction {
 		const recurrencePattern = RecurrencePattern.untilNOccurrences(
 			startDate,
@@ -160,8 +153,7 @@ export class ScheduledTransaction extends Entity<
 			operation,
 			category,
 			recurrencePattern,
-			store,
-			tags
+			store
 		);
 	}
 
@@ -193,12 +185,12 @@ export class ScheduledTransaction extends Entity<
 		return this._name;
 	}
 
-	get fromSplits(): PaymentSplit[] {
-		return this._fromSplits;
+	get originAccounts(): PaymentSplit[] {
+		return this._originAccounts;
 	}
 
-	get toSplits(): PaymentSplit[] {
-		return this._toSplits;
+	get destinationAccounts(): PaymentSplit[] {
+		return this._destinationAccounts;
 	}
 
 	get operation(): ItemOperation {
@@ -221,21 +213,21 @@ export class ScheduledTransaction extends Entity<
 		return this._tags;
 	}
 
-	get fromAmount(): TransactionAmount {
-		return PaymentSplit.totalAmount(this._fromSplits);
+	get originAmount(): TransactionAmount {
+		return PaymentSplit.totalAmount(this._originAccounts);
 	}
 
-	get toAmount(): TransactionAmount {
-		return PaymentSplit.totalAmount(this._toSplits);
+	get destinationAmount(): TransactionAmount {
+		return PaymentSplit.totalAmount(this._destinationAccounts);
 	}
 
 	/**
 	 * Returns the real price for this item based on operation type
 	 */
 	get realPrice(): PriceValueObject {
-		if (this._operation.type.isIncome()) return this.fromAmount;
+		if (this._operation.type.isIncome()) return this.originAmount;
 		else if (this._operation.type.isExpense())
-			return this.fromAmount.negate();
+			return this.originAmount.negate();
 		return PriceValueObject.zero();
 	}
 
@@ -247,12 +239,15 @@ export class ScheduledTransaction extends Entity<
 		toAccountType?: AccountType
 	): PriceValueObject {
 		if (this._operation.type.isIncome()) {
-			return this.fromAmount;
+			return this.originAmount;
 		} else if (this._operation.type.isExpense()) {
-			return this.fromAmount.negate();
+			return this.originAmount.negate();
 		} else if (this._operation.type.isTransfer() && toAccountType) {
 			// For transfers, we need to check account types to determine the sign
-			if (this._fromSplits.length === 0 || this._toSplits.length === 0) {
+			if (
+				this._originAccounts.length === 0 ||
+				this._destinationAccounts.length === 0
+			) {
 				return PriceValueObject.zero();
 			}
 
@@ -261,11 +256,11 @@ export class ScheduledTransaction extends Entity<
 
 			// Asset to Liability: negative (expense)
 			if (fromType.isAsset() && toType.isLiability()) {
-				return this.fromAmount.negate();
+				return this.originAmount.negate();
 			}
 			// Liability to Asset: positive (income)
 			else if (fromType.isLiability() && toType.isAsset()) {
-				return this.fromAmount;
+				return this.originAmount;
 			}
 			// Asset to Asset or Liability to Liability: neutral (zero)
 			else {
@@ -292,17 +287,18 @@ export class ScheduledTransaction extends Entity<
 
 	// Basic property updates
 	updateName(name: StringValueObject): void {
+		if (this._name.equalTo(name)) return;
 		this._name = name;
 		this.updateTimestamp();
 	}
 
-	updateFromSplits(fromSplits: PaymentSplit[]): void {
-		this._fromSplits = fromSplits;
+	updateOriginAccounts(fromSplits: PaymentSplit[]): void {
+		this._originAccounts = fromSplits;
 		this.updateTimestamp();
 	}
 
-	updateToSplits(toSplits: PaymentSplit[]): void {
-		this._toSplits = toSplits;
+	updateDestinationAccounts(toSplits: PaymentSplit[]): void {
+		this._destinationAccounts = toSplits;
 		this.updateTimestamp();
 	}
 
@@ -318,9 +314,7 @@ export class ScheduledTransaction extends Entity<
 	}
 
 	addTag(tag: ItemTag): void {
-		if (!this._tags) {
-			this._tags = ItemTags.empty();
-		}
+		this._tags ??= ItemTags.empty();
 		this._tags = this._tags.add(tag);
 		this.updateTimestamp();
 	}
@@ -362,16 +356,12 @@ export class ScheduledTransaction extends Entity<
 		return new ScheduledTransaction(
 			this._id,
 			this._name,
-			[
-				...this._fromSplits.map((split) =>
-					PaymentSplit.fromPrimitives(split.toPrimitives())
-				),
-			],
-			[
-				...this._toSplits.map((split) =>
-					PaymentSplit.fromPrimitives(split.toPrimitives())
-				),
-			],
+			this._originAccounts.map((split) =>
+				PaymentSplit.fromPrimitives(split.toPrimitives())
+			),
+			this._destinationAccounts.map((split) =>
+				PaymentSplit.fromPrimitives(split.toPrimitives())
+			),
 			this._operation,
 			this._category,
 			this._recurrencePattern,
@@ -401,8 +391,12 @@ export class ScheduledTransaction extends Entity<
 		return {
 			id: this.id.value,
 			name: this._name.value,
-			fromSplits: this._fromSplits.map((split) => split.toPrimitives()),
-			toSplits: this._toSplits.map((split) => split.toPrimitives()),
+			fromSplits: this._originAccounts.map((split) =>
+				split.toPrimitives()
+			),
+			toSplits: this._destinationAccounts.map((split) =>
+				split.toPrimitives()
+			),
 			operation: this._operation.toPrimitives(),
 			category: this._category.toPrimitives(),
 			recurrencePattern: this._recurrencePattern.toPrimitives(),
@@ -440,7 +434,10 @@ export class ScheduledTransaction extends Entity<
 	 * Validates that transfer operations have a toSplits array
 	 */
 	private validateTransferOperation(): void {
-		if (this._operation.type.isTransfer() && this._toSplits.length === 0) {
+		if (
+			this._operation.type.isTransfer() &&
+			this._destinationAccounts.length === 0
+		) {
 			throw new Error("Transfer operations must have a toSplits array");
 		}
 	}

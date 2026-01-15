@@ -93,9 +93,9 @@ export class ScheduledCategoriesReport {
 			(total, item) =>
 				total.plus(
 					item.getPricePerMonthWithAccountTypes(
-						lookup(item.fromSplits[0].accountId),
-						item.toSplits.length > 0
-							? lookup(item.toSplits[0].accountId)
+						lookup(item.originAccounts[0].accountId),
+						item.destinationAccounts.length > 0
+							? lookup(item.destinationAccounts[0].accountId)
 							: undefined
 					)
 				),
@@ -145,9 +145,9 @@ export class ScheduledCategoriesReport {
 					r = res.last();
 				}
 				const itemPricePerMonth = item.getPricePerMonthWithAccountTypes(
-					lookup(item.fromSplits[0].accountId),
-					item.toSplits.length > 0
-						? lookup(item.toSplits[0].accountId)
+					lookup(item.originAccounts[0].accountId),
+					item.destinationAccounts.length > 0
+						? lookup(item.destinationAccounts[0].accountId)
 						: undefined
 				);
 				if (r?.category.percentageOperation !== undefined)
