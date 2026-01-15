@@ -113,7 +113,8 @@ class IntegrityReportModal extends Modal {
 							resolveButton.textContent = "Failed to resolve";
 							resolveButton.style.backgroundColor =
 								"var(--background-modifier-error)";
-							new Notice(
+							const notice = new Notice("");
+							notice.setMessage(
 								"Failed to resolve discrepancy: " +
 									(error instanceof Error
 										? error.message
@@ -261,7 +262,8 @@ export class SettingTab extends PluginSettingTab {
 						modal.open();
 					} catch (error) {
 						console.error("Failed to run integrity check:", error);
-						new Notice(
+						const notice = new Notice("");
+						notice.setMessage(
 							"Integrity check failed: " +
 								(error instanceof Error
 									? error.message
