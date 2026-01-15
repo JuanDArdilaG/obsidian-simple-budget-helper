@@ -31,7 +31,7 @@ export const AccountsList = () => {
 					account.currency.value === plugin.settings.defaultCurrency
 				) {
 					accountsResponse.push(account);
-					return;
+					continue;
 				}
 
 				const exchangeRate = await getExchangeRate.execute({
@@ -42,7 +42,7 @@ export const AccountsList = () => {
 
 				if (!exchangeRate) {
 					accountsResponse.push(account);
-					return;
+					continue;
 				}
 
 				const convertedValue =
