@@ -270,7 +270,7 @@ export class LocalDB extends DB {
 	}
 
 	#initializeTables() {
-		this.db.version(5).stores({
+		this.db.version(6).stores({
 			[Config.accountsTableName]: Object.keys(
 				Account.emptyPrimitives()
 			).join(", "),
