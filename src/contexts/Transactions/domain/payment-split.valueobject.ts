@@ -1,3 +1,4 @@
+import { NumberValueObject } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain";
 import { TransactionAmount } from "./transaction-amount.valueobject";
 
@@ -11,13 +12,7 @@ export class PaymentSplit {
 	constructor(
 		private readonly _accountId: AccountID,
 		private readonly _amount: TransactionAmount
-	) {
-		this.validate();
-	}
-
-	validate(): void {
-		// In this case, validation is handled by the composed value objects (AccountID, TransactionAmount)
-	}
+	) {}
 
 	get accountId(): AccountID {
 		return this._accountId;
@@ -52,9 +47,18 @@ export class PaymentSplit {
 		);
 	}
 
-	static totalAmount(splits: PaymentSplit[]): TransactionAmount {
+	static totalAmount(
+		splits: PaymentSplit[],
+		exchangeRate?: NumberValueObject
+	): TransactionAmount {
 		return new TransactionAmount(
-			splits.reduce((sum, split) => sum + split.amount.value, 0)
+			splits.reduce(
+				(sum, split) =>
+					sum +
+					split.amount.times(exchangeRate ?? new NumberValueObject(1))
+						.value,
+				0
+			)
 		);
 	}
 }

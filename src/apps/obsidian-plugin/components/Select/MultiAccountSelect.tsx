@@ -50,11 +50,15 @@ export const MultiAccountSelect = ({
 					typeof account.balance === "number"
 						? account.balance
 						: account.balance?.value ?? 0,
+				symbol: account.currency.symbol,
 			})),
 		[accounts]
 	);
 
-	const selectedIds = selectedAccounts.map((split) => split.accountId);
+	const selectedIds = useMemo(
+		() => new Set(selectedAccounts.map((split) => split.accountId)),
+		[selectedAccounts]
+	);
 
 	const handleAccountToggle = (accountId: string, checked: boolean) => {
 		let newSplits: PaymentSplitPrimitives[];
@@ -137,7 +141,7 @@ export const MultiAccountSelect = ({
 							key={account.id}
 							control={
 								<Checkbox
-									checked={selectedIds.includes(account.id)}
+									checked={selectedIds.has(account.id)}
 									onChange={(e) =>
 										handleAccountToggle(
 											account.id,
@@ -145,8 +149,10 @@ export const MultiAccountSelect = ({
 										)
 									}
 									disabled={isLocked}
-									inputProps={{
-										"aria-label": `Select account ${account.name}`,
+									slotProps={{
+										input: {
+											"aria-label": `Select account ${account.name}`,
+										},
 									}}
 									sx={{
 										color: "var(--interactive-accent)",
@@ -259,11 +265,11 @@ export const MultiAccountSelect = ({
 									)}
 									<PriceInput
 										id={`amount-${split.accountId}`}
-										label="Amount"
+										placeholder="Amount"
 										value={
 											new PriceValueObject(
 												split.amount || 0,
-												{ withSign: false, decimals: 0 }
+												{ withSign: false, decimals: 2 }
 											)
 										}
 										onChange={(val) =>
@@ -272,7 +278,7 @@ export const MultiAccountSelect = ({
 												val.toNumber()
 											)
 										}
-										disabled={isLocked}
+										prefix={account.symbol}
 									/>
 									{/* Max button for single-account split */}
 									{selectedAccounts.length === 1 && (

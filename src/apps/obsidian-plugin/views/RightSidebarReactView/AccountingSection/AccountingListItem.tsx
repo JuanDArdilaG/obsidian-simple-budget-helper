@@ -1,5 +1,5 @@
 import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
-import { Transaction } from "contexts/Transactions/domain";
+import { Transaction, TransactionAmount } from "contexts/Transactions/domain";
 import React, { useCallback, useContext, useMemo } from "react";
 import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
 import { DisplayableTransactionWithAccumulatedBalance } from "./AccountingList";
@@ -90,284 +90,295 @@ export const AccountingListItem = ({
 	if (!display.accounts.length) return <></>;
 
 	return (
-		<>
+		<div
+			key={transaction.id.value}
+			onClick={handleSelectionToggle}
+			style={{
+				backgroundColor: isSelected
+					? "var(--background-modifier-hover)"
+					: "transparent",
+				cursor: "pointer",
+				borderBottom: "1px solid var(--background-modifier-border)",
+				width: "100%",
+			}}
+		>
 			<div
-				key={transaction.id.value}
-				onClick={handleSelectionToggle}
+				className="accounting-list-item"
 				style={{
-					backgroundColor: isSelected
-						? "var(--background-modifier-hover)"
-						: "transparent",
-					cursor: "pointer",
-					borderBottom: "1px solid var(--background-modifier-border)",
+					flexGrow: 1,
+					padding: isMobile ? "8px 4px" : "8px 16px",
 					width: "100%",
+					display: "flex",
+					flexDirection: "column",
 				}}
 			>
-				<div
-					className="accounting-list-item"
-					style={{
-						flexGrow: 1,
-						padding: isMobile ? "8px 4px" : "8px 16px",
-						width: "100%",
-						display: "flex",
-						flexDirection: "column",
-					}}
-				>
-					{isMobile ? (
-						<div style={{ width: "100%" }}>
-							{/* First Row: Name and Amount */}
-							<div
+				{isMobile ? (
+					<div style={{ width: "100%" }}>
+						{/* First Row: Name and Amount */}
+						<div
+							style={{
+								display: "flex",
+								justifyContent: "space-between",
+								alignItems: "center",
+								marginBottom: "4px",
+							}}
+						>
+							<Typography
+								variant="body2"
 								style={{
-									display: "flex",
-									justifyContent: "space-between",
-									alignItems: "center",
-									marginBottom: "4px",
+									wordBreak: "break-word",
 								}}
 							>
-								<Typography
-									variant="body2"
+								{display.truncatedTransactionName}
+							</Typography>
+							{display.accounts.map((accountInfo) => (
+								<PriceLabel
+									key={accountInfo.name}
+									price={accountInfo.realAmount}
+									operation={transaction.operation}
+								/>
+							))}
+						</div>
+
+						{/* Second Row: Category and Account */}
+						<div
+							style={{
+								display: "flex",
+								justifyContent: "space-between",
+								alignItems: "center",
+								marginBottom: "4px",
+							}}
+						>
+							<Typography
+								variant="caption"
+								style={{ color: "var(--text-muted)" }}
+							>
+								{display.truncatedCategoryName}
+								{display.subCategoryName &&
+									` • ${display.truncatedSubCategoryName}`}
+							</Typography>
+							{isTransfer &&
+								display.accounts.map((accountInfo) => (
+									<span
+										key={accountInfo.name}
+										style={{
+											fontSize: "12px",
+											color: "var(--text-muted)",
+										}}
+									>
+										{accountInfo.realAmount.toNumber() < 0
+											? "← "
+											: ""}
+										{accountInfo.realAmount.toNumber() > 0
+											? "→ "
+											: ""}
+										{accountInfo.truncatedName}
+									</span>
+								))}
+						</div>
+
+						{/* Third Row: Balance and Time */}
+						<div
+							style={{
+								display: "flex",
+								justifyContent: "space-between",
+								alignItems: "center",
+								marginBottom: "8px",
+							}}
+						>
+							{accounts.map((accountBalance) => (
+								<div
+									key={accountBalance.id.value}
 									style={{
-										wordBreak: "break-word",
+										fontSize: "11px",
+										color: "var(--text-muted)",
 									}}
 								>
-									{display.truncatedTransactionName}
-								</Typography>
-								{display.accounts.map((accountInfo) => (
 									<PriceLabel
-										key={accountInfo.name}
-										price={accountInfo.realAmount}
-										operation={transaction.operation}
+										price={
+											new TransactionAmount(
+												accountBalance.prevBalance.value
+											)
+										}
+									/>{" "}
+									→{" "}
+									<PriceLabel
+										price={
+											new TransactionAmount(
+												accountBalance.balance.value
+											)
+										}
 									/>
-								))}
-							</div>
-
-							{/* Second Row: Category and Account */}
-							<div
+								</div>
+							))}
+							<span
 								style={{
-									display: "flex",
-									justifyContent: "space-between",
-									alignItems: "center",
+									fontSize: "11px",
+									color: "var(--text-muted)",
+								}}
+							>
+								{display.formattedTime}
+							</span>
+						</div>
+
+						{/* Fourth Row: Actions */}
+						<div
+							style={{
+								display: "flex",
+								justifyContent: "flex-end",
+							}}
+						>
+							<IconButton
+								onClick={handleEdit}
+								size="small"
+								sx={{ padding: "4px" }}
+							>
+								<EditIcon fontSize="small" />
+							</IconButton>
+							<IconButton
+								onClick={handleDelete}
+								size="small"
+								sx={{ padding: "4px" }}
+							>
+								<DeleteIcon fontSize="small" />
+							</IconButton>
+						</div>
+					</div>
+				) : (
+					/* Desktop Layout - Two Columns */
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							width: "100%",
+							gap: isTablet ? "8px" : "16px",
+							alignItems: "center",
+						}}
+					>
+						<div
+							style={{
+								display: "flex",
+								flexDirection: "column",
+								alignItems: "flex-start",
+								justifyContent: "center",
+								flex: 1,
+								minWidth: 0,
+							}}
+						>
+							<Typography
+								variant="body2"
+								style={{
+									wordBreak: "break-word",
 									marginBottom: "4px",
 								}}
 							>
+								{display.transactionName}
+							</Typography>
+							<Typography
+								variant="caption"
+								style={{
+									color: "var(--text-muted)",
+								}}
+							>
+								<b>Store: </b>
+								{transaction.store ?? "-"}
+							</Typography>
+							<div>
 								<Typography
 									variant="caption"
 									style={{ color: "var(--text-muted)" }}
 								>
-									{display.truncatedCategoryName}
-									{display.subCategoryName &&
-										` • ${display.truncatedSubCategoryName}`}
+									{display.categoryName.toString() ?? ""}
+									{display.subCategoryName
+										? ` • ${display.subCategoryName}`
+										: ""}
 								</Typography>
-								{isTransfer &&
-									display.accounts.map((accountInfo) => (
+							</div>
+						</div>
+						<div
+							style={{
+								display: "flex",
+								flexDirection: "column",
+								alignItems: "flex-end",
+								justifyContent: "center",
+								minWidth: "fit-content",
+								gap: "4px",
+							}}
+						>
+							{display.accounts.map((accountInfo, index) => (
+								<>
+									<div
+										key={accountInfo.name}
+										style={{
+											display: "flex",
+											gap: "8px",
+											alignItems: "center",
+											flexWrap: "wrap",
+										}}
+									>
 										<span
-											key={accountInfo.name}
 											style={{
 												fontSize: "12px",
 												color: "var(--text-muted)",
 											}}
 										>
-											{accountInfo.realAmount.toNumber() <
-											0
+											{isTransfer &&
+											accountInfo.realAmount.toNumber() <
+												0
 												? "← "
 												: ""}
-											{accountInfo.realAmount.toNumber() >
-											0
+											{isTransfer &&
+											accountInfo.realAmount.toNumber() >
+												0
 												? "→ "
 												: ""}
-											{accountInfo.truncatedName}
+											{accountInfo.name.toString() ?? ""}
 										</span>
-									))}
-							</div>
-
-							{/* Third Row: Balance and Time */}
-							<div
-								style={{
-									display: "flex",
-									justifyContent: "space-between",
-									alignItems: "center",
-									marginBottom: "8px",
-								}}
-							>
-								{accounts.map((accountBalance) => (
+										<PriceLabel
+											price={accountInfo.realAmount}
+											operation={transaction.operation}
+										/>
+									</div>
 									<div
-										key={accountBalance.id.value}
 										style={{
 											fontSize: "11px",
 											color: "var(--text-muted)",
 										}}
 									>
 										<PriceLabel
-											price={accountBalance.prevBalance}
+											price={
+												new TransactionAmount(
+													accounts[
+														index
+													].prevBalance.value
+												)
+											}
 										/>{" "}
 										→{" "}
 										<PriceLabel
-											price={accountBalance.balance}
+											price={
+												new TransactionAmount(
+													accounts[
+														index
+													].balance.value
+												)
+											}
 										/>
 									</div>
-								))}
-								<span
-									style={{
-										fontSize: "11px",
-										color: "var(--text-muted)",
-									}}
-								>
-									{display.formattedTime}
-								</span>
-							</div>
-
-							{/* Fourth Row: Actions */}
-							<div
-								style={{
-									display: "flex",
-									justifyContent: "flex-end",
-								}}
-							>
-								<IconButton
-									onClick={handleEdit}
-									size="small"
-									sx={{ padding: "4px" }}
-								>
-									<EditIcon fontSize="small" />
-								</IconButton>
-								<IconButton
-									onClick={handleDelete}
-									size="small"
-									sx={{ padding: "4px" }}
-								>
-									<DeleteIcon fontSize="small" />
-								</IconButton>
-							</div>
+								</>
+							))}
 						</div>
-					) : (
-						/* Desktop Layout - Two Columns */
-						<div
-							style={{
-								display: "flex",
-								justifyContent: "space-between",
-								width: "100%",
-								gap: isTablet ? "8px" : "16px",
-								alignItems: "center",
-							}}
-						>
-							<div
-								style={{
-									display: "flex",
-									flexDirection: "column",
-									alignItems: "flex-start",
-									justifyContent: "center",
-									flex: 1,
-									minWidth: 0,
-								}}
-							>
-								<Typography
-									variant="body2"
-									style={{
-										wordBreak: "break-word",
-										marginBottom: "4px",
-									}}
-								>
-									{display.transactionName}
-								</Typography>
-								<Typography
-									variant="caption"
-									style={{
-										color: "var(--text-muted)",
-									}}
-								>
-									<b>Store: </b>
-									{transaction.store ?? "-"}
-								</Typography>
-								<div>
-									<Typography
-										variant="caption"
-										style={{ color: "var(--text-muted)" }}
-									>
-										{display.categoryName.toString() ?? ""}
-										{display.subCategoryName
-											? ` • ${display.subCategoryName}`
-											: ""}
-									</Typography>
-								</div>
-							</div>
-							<div
-								style={{
-									display: "flex",
-									flexDirection: "column",
-									alignItems: "flex-end",
-									justifyContent: "center",
-									minWidth: "fit-content",
-									gap: "4px",
-								}}
-							>
-								{display.accounts.map((accountInfo, index) => (
-									<>
-										<div
-											key={accountInfo.name}
-											style={{
-												display: "flex",
-												gap: "8px",
-												alignItems: "center",
-												flexWrap: "wrap",
-											}}
-										>
-											<span
-												style={{
-													fontSize: "12px",
-													color: "var(--text-muted)",
-												}}
-											>
-												{isTransfer &&
-												accountInfo.realAmount.toNumber() <
-													0
-													? "← "
-													: ""}
-												{isTransfer &&
-												accountInfo.realAmount.toNumber() >
-													0
-													? "→ "
-													: ""}
-												{accountInfo.name.toString() ??
-													""}
-											</span>
-											<PriceLabel
-												price={accountInfo.realAmount}
-												operation={
-													transaction.operation
-												}
-											/>
-										</div>
-										<div
-											style={{
-												fontSize: "11px",
-												color: "var(--text-muted)",
-											}}
-										>
-											<PriceLabel
-												price={
-													accounts[index].prevBalance
-												}
-											/>{" "}
-											→{" "}
-											<PriceLabel
-												price={accounts[index].balance}
-											/>
-										</div>
-									</>
-								))}
-							</div>
-							<Box sx={{ display: "flex", gap: "4px" }}>
-								<IconButton onClick={handleEdit} size="small">
-									<EditIcon fontSize="small" />
-								</IconButton>
-								<IconButton onClick={handleDelete} size="small">
-									<DeleteIcon fontSize="small" />
-								</IconButton>
-							</Box>
-						</div>
-					)}
-				</div>
+						<Box sx={{ display: "flex", gap: "4px" }}>
+							<IconButton onClick={handleEdit} size="small">
+								<EditIcon fontSize="small" />
+							</IconButton>
+							<IconButton onClick={handleDelete} size="small">
+								<DeleteIcon fontSize="small" />
+							</IconButton>
+						</Box>
+					</div>
+				)}
 			</div>
-		</>
+		</div>
 	);
 };

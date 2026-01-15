@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.18.0] - 2026-01-15
 
 ### Added
 
+-   EUR and GDP currency symbols.
+-   Exchange rate fetching for all supported currencies.
+-   Show account balance in default currency in accounts list and account's totals.
+-   Add exchange rate field to transaction form when creating transfer transactions between different currencies.
+
+## [0.17.0] - 2026-01-13
+
+### Added
+
+-   Add decimals to the amount field in the transaction form.
+-   Add currency field to accounts.
 -   Add savings calculation for next month's expenses in scheduled transactions list.
 -   Option to change account name in accounts list.
 
@@ -22,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Fix bug that avoids deleting a category.
 -   Fix backup listing to not consider macOS metadata files (.\_\*.json) as valid backups.
 -   Next occurrence calculation for scheduled transactions list was not considering modifications properly, leading to incorrect next occurrence dates.
+-   Bug when reloading the plugin causes account currencies to be set as COP.
 
 ## [0.14.2] - 2025-09-21
 

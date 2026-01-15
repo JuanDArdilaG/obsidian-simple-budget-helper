@@ -22,7 +22,10 @@ import {
 	ItemRecurrenceInfo,
 	ScheduledTransaction,
 } from "../../../../../../contexts/ScheduledTransactions/domain";
-import { Transaction } from "../../../../../../contexts/Transactions/domain";
+import {
+	Transaction,
+	TransactionAmount,
+} from "../../../../../../contexts/Transactions/domain";
 import { ConfirmationModal } from "../../../../components/ConfirmationModal";
 import {
 	AccountsContext,
@@ -207,9 +210,6 @@ export const AllScheduledTransactionsList = ({
 		useState<MonthlyData | null>(null);
 
 	useEffect(() => {
-		// const incomeItems = getIncomeItems();
-		// const expenseItems = getTotalExpenseItems();
-
 		// Calculate initial accumulated balance from account balances
 		const initialBalance = accounts.reduce((total, account) => {
 			const balance = account.realBalance;
@@ -237,44 +237,6 @@ export const AllScheduledTransactionsList = ({
 			});
 		}
 
-		// const processItems = (
-		// 	scheduledTransactions: ScheduledTransaction[],
-		// 	type: "income" | "expense"
-		// ) => {
-		// 	for (const scheduledTransaction of scheduledTransactions) {
-		// 		for (const recurrence of scheduledTransaction.recurrence.recurrences) {
-		// 			if (
-		// 				recurrence.state !== RecurrenceModificationState.DELETED
-		// 			) {
-		// 				const recurrenceDate = new Date(
-		// 					recurrence.date.getTime()
-		// 				);
-		// 				const monthIndex =
-		// 					(recurrenceDate.getFullYear() - now.getFullYear()) *
-		// 						12 +
-		// 					recurrenceDate.getMonth() -
-		// 					now.getMonth();
-
-		// 				if (monthIndex >= 0 && monthIndex < 12) {
-		// 					let price = 0;
-		// 					price = scheduledTransaction.fromSplits.reduce(
-		// 						(sum, s) => sum + s.amount.value,
-		// 						0
-		// 					);
-
-		// 					if (type === "income") {
-		// 						months[monthIndex].income += price;
-		// 						months[monthIndex].incomeItems.push(scheduledTransaction);
-		// 					} else {
-		// 						months[monthIndex].expense += price;
-		// 						months[monthIndex].expenseItems.push(scheduledTransaction);
-		// 					}
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// };
-
 		const processTransactions = () => {
 			for (const transaction of transactions) {
 				const transactionDate = new Date(transaction.date);
@@ -286,11 +248,11 @@ export const AllScheduledTransactionsList = ({
 
 				if (monthIndex >= 0 && monthIndex < 12) {
 					if (transaction.operation.isIncome()) {
-						const amount = transaction.fromAmount.value;
+						const amount = transaction.originAmount.value;
 						months[monthIndex].income += amount;
 						months[monthIndex].incomeTransactions.push(transaction);
 					} else if (transaction.operation.isExpense()) {
-						const amount = transaction.fromAmount.value;
+						const amount = transaction.originAmount.value;
 						months[monthIndex].expense += amount;
 						months[monthIndex].expenseTransactions.push(
 							transaction
@@ -300,15 +262,13 @@ export const AllScheduledTransactionsList = ({
 			}
 		};
 
-		// processItems(incomeItems, "income");
-		// processItems(expenseItems, "expense");
 		processTransactions();
 
 		let accumulatedBalance = initialBalance;
 		const finalMonths = months.map((month) => {
 			const balance = month.income - month.expense;
 			accumulatedBalance = accumulatedBalance.plus(
-				new PriceValueObject(balance)
+				new TransactionAmount(balance)
 			);
 			return {
 				...month,
@@ -340,7 +300,7 @@ export const AllScheduledTransactionsList = ({
 	};
 
 	const currencyFormatter = (value: number) =>
-		new PriceValueObject(value).toString();
+		new TransactionAmount(value).toString();
 
 	const toggleSection = (section: keyof typeof expandedSections) => {
 		setExpandedSections((prev) => ({
@@ -407,7 +367,7 @@ export const AllScheduledTransactionsList = ({
 			>
 				{(() => {
 					return scheduledTransactionsWithNextOccurrence
-						.sort((a, b) => {
+						.toSorted((a, b) => {
 							const dateA = a.recurrence.date;
 							const dateB = b.recurrence.date;
 							return dateA.isGreaterOrEqualThan(dateB) ? 1 : -1;
@@ -901,7 +861,7 @@ export const AllScheduledTransactionsList = ({
 										{selectedMonthData.incomeTransactions.map(
 											(transaction, index) => {
 												const fromAccounts =
-													transaction.fromSplits
+													transaction.originAccounts
 														.map(
 															(s: PaymentSplit) =>
 																getAccountByID(
@@ -911,7 +871,7 @@ export const AllScheduledTransactionsList = ({
 														)
 														.join(", ");
 												const toAccounts =
-													transaction.toSplits
+													transaction.destinationAccounts
 														.map(
 															(s: PaymentSplit) =>
 																getAccountByID(
@@ -921,7 +881,7 @@ export const AllScheduledTransactionsList = ({
 														)
 														.join(", ");
 												const amount =
-													transaction.toSplits.reduce(
+													transaction.destinationAccounts.reduce(
 														(
 															sum: number,
 															s: PaymentSplit
@@ -930,7 +890,7 @@ export const AllScheduledTransactionsList = ({
 															s.amount.value,
 														0
 													) -
-													transaction.fromSplits.reduce(
+													transaction.originAccounts.reduce(
 														(
 															sum: number,
 															s: PaymentSplit
@@ -1024,7 +984,7 @@ export const AllScheduledTransactionsList = ({
 										{selectedMonthData.expenseTransactions.map(
 											(transaction, index) => {
 												const fromAccounts =
-													transaction.fromSplits
+													transaction.originAccounts
 														.map(
 															(s: PaymentSplit) =>
 																getAccountByID(
@@ -1034,7 +994,7 @@ export const AllScheduledTransactionsList = ({
 														)
 														.join(", ");
 												const toAccounts =
-													transaction.toSplits
+													transaction.destinationAccounts
 														.map(
 															(s: PaymentSplit) =>
 																getAccountByID(
@@ -1044,7 +1004,7 @@ export const AllScheduledTransactionsList = ({
 														)
 														.join(", ");
 												const amount =
-													transaction.toSplits.reduce(
+													transaction.destinationAccounts.reduce(
 														(
 															sum: number,
 															s: PaymentSplit
@@ -1053,7 +1013,7 @@ export const AllScheduledTransactionsList = ({
 															s.amount.value,
 														0
 													) -
-													transaction.fromSplits.reduce(
+													transaction.originAccounts.reduce(
 														(
 															sum: number,
 															s: PaymentSplit

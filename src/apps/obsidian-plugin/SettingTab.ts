@@ -1,9 +1,10 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
 import { CalculateAllAccountsIntegrityUseCase } from "contexts/Accounts/application/calculate-all-accounts-integrity.usecase";
 import { ResolveAccountDiscrepancyUseCase } from "contexts/Accounts/application/resolve-account-discrepancy.usecase";
 import { App, Modal, Notice, PluginSettingTab, Setting } from "obsidian";
 import { GetAllAccountsUseCase } from "../../contexts/Accounts/application/get-all-accounts.usecase";
 import { Account, IntegrityCheckReport } from "../../contexts/Accounts/domain";
+import { currencies } from "../../contexts/Currencies/domain/currency.vo";
+import { TransactionAmount } from "../../contexts/Transactions/domain";
 import SimpleBudgetHelperPlugin from "./main";
 
 class IntegrityReportModal extends Modal {
@@ -69,17 +70,17 @@ class IntegrityReportModal extends Modal {
 						}`,
 					});
 					accountEl.createEl("p", {
-						text: `Expected Balance: ${new PriceValueObject(
+						text: `Expected Balance: ${new TransactionAmount(
 							result.expectedBalance
 						)}`,
 					});
 					accountEl.createEl("p", {
-						text: `Actual Balance: ${new PriceValueObject(
+						text: `Actual Balance: ${new TransactionAmount(
 							result.actualBalance
 						)}`,
 					});
 					accountEl.createEl("p", {
-						text: `Discrepancy: ${new PriceValueObject(
+						text: `Discrepancy: ${new TransactionAmount(
 							result.discrepancy
 						)}`,
 						cls: "integrity-discrepancy",
@@ -103,9 +104,7 @@ class IntegrityReportModal extends Modal {
 								"var(--background-modifier-success)";
 							resolveButton.textContent = "Resolved ✓";
 							resolveButton.disabled = true;
-							const _ = new Notice(
-								"Discrepancy resolved successfully!"
-							);
+							new Notice("Discrepancy resolved successfully!");
 						} catch (error) {
 							console.error(
 								"Failed to resolve discrepancy:",
@@ -114,7 +113,8 @@ class IntegrityReportModal extends Modal {
 							resolveButton.textContent = "Failed to resolve";
 							resolveButton.style.backgroundColor =
 								"var(--background-modifier-error)";
-							const _ = new Notice(
+							const notice = new Notice("");
+							notice.setMessage(
 								"Failed to resolve discrepancy: " +
 									(error instanceof Error
 										? error.message
@@ -182,6 +182,26 @@ export class SettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
+			.setName("Default Currency")
+			.setDesc("The preferred currency for accounts and transactions")
+			.addDropdown((dropdown) =>
+				dropdown
+					.setValue(this.plugin.settings.defaultCurrency)
+					.addOptions(
+						Object.keys(currencies).reduce((options, code) => {
+							options[
+								code
+							] = `${code} - ${currencies[code].name}`;
+							return options;
+						}, {} as Record<string, string>)
+					)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultCurrency = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
 			.setName("Root folder")
 			.setDesc("The path to the root folder to store budget items")
 			.addText((text) =>
@@ -242,7 +262,8 @@ export class SettingTab extends PluginSettingTab {
 						modal.open();
 					} catch (error) {
 						console.error("Failed to run integrity check:", error);
-						const _ = new Notice(
+						const notice = new Notice("");
+						notice.setMessage(
 							"Integrity check failed: " +
 								(error instanceof Error
 									? error.message

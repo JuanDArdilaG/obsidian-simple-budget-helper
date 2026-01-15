@@ -8,4 +8,5 @@ export const Config = {
 	transactionsTableName: "transactions",
 	categoriesTableName: "categories",
 	subCategoriesTableName: "subCategories",
+	exchangeRatesTableName: "exchangeRates",
 } as const;

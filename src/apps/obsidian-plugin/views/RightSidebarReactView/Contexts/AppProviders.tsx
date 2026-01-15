@@ -15,6 +15,10 @@ import { AwilixContainer } from "awilix";
 import { PropsWithChildren } from "react";
 import { AccountsContext, getAccountsContextValues } from "./AccountsContext";
 import {
+	ExchangeRatesContext,
+	getExchangeRatesContext,
+} from "./ExchangeRatesContext";
+import {
 	getItemReportContextValues,
 	ItemReportContext,
 } from "./ItemReportContext";
@@ -49,7 +53,13 @@ export const AppProviders = ({
 										container
 									)}
 								>
-									{children}
+									<ExchangeRatesContext.Provider
+										value={getExchangeRatesContext(
+											container
+										)}
+									>
+										{children}
+									</ExchangeRatesContext.Provider>
 								</ItemReportContext.Provider>
 							</TransactionsContext.Provider>
 						</CategoriesContext.Provider>

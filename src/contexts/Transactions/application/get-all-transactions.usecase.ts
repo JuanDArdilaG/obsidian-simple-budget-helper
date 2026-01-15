@@ -58,10 +58,10 @@ export class GetAllTransactionsUseCase
 		if (accountFilter) {
 			filteredTransactions = filteredTransactions.filter(
 				(transaction) => {
-					const fromAccountIds = transaction.fromSplits.map(
+					const fromAccountIds = transaction.originAccounts.map(
 						(split) => split.accountId
 					);
-					const toAccountIds = transaction.toSplits.map(
+					const toAccountIds = transaction.destinationAccounts.map(
 						(split) => split.accountId
 					);
 					const allAccountIds = [...fromAccountIds, ...toAccountIds];

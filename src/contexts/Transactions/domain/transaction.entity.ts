@@ -1,5 +1,6 @@
 import {
 	DateValueObject,
+	NumberValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
 import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
@@ -22,15 +23,16 @@ import { TransactionOperation } from "./transaction-operation.valueobject";
 export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	constructor(
 		id: TransactionID,
-		private _fromSplits: PaymentSplit[],
-		private _toSplits: PaymentSplit[],
+		private _originAccounts: PaymentSplit[],
+		private _destinationAccounts: PaymentSplit[],
 		private _name: TransactionName,
 		private _operation: TransactionOperation,
 		private _category: CategoryID,
 		private _subCategory: SubCategoryID,
 		private _date: TransactionDate,
 		updatedAt: DateValueObject,
-		private readonly _store?: StringValueObject
+		private readonly _store?: StringValueObject,
+		private _exchangeRate?: NumberValueObject
 	) {
 		super(id, updatedAt);
 		this.validateTransferOperation();
@@ -41,17 +43,20 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	 */
 	private validateTransferOperation(): void {
 		if (this._operation.isTransfer()) {
-			if (this._fromSplits.length === 0 || this._toSplits.length === 0) {
+			if (
+				this._originAccounts.length === 0 ||
+				this._destinationAccounts.length === 0
+			) {
 				throw new InvalidArgumentError(
 					"Transaction",
 					"toSplits",
 					"Transfer operations must have a toSplits array"
 				);
 			}
-			if (!this.fromAmount.equalTo(this.toAmount)) {
+			if (!this.originAmount.equalTo(this.destinationAmount)) {
 				throw new InvalidArgumentError(
 					"Transaction",
-					`from amount: ${this.fromAmount}. to amount: ${this.toAmount}`,
+					`from amount: ${this.originAmount}. to amount: ${this.destinationAmount}`,
 					"From amount and to amount should be the same"
 				);
 			}
@@ -97,44 +102,29 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		);
 	}
 
-	copy(): Transaction {
-		return new Transaction(
-			TransactionID.generate(),
-			[...this._fromSplits],
-			[...this._toSplits],
-			this._name,
-			this._operation,
-			this._category,
-			this._subCategory,
-			this._date,
-			this._updatedAt,
-			this._store
-		);
+	get originAccounts(): PaymentSplit[] {
+		return this._originAccounts;
 	}
 
-	get fromSplits(): PaymentSplit[] {
-		return this._fromSplits;
+	get originAmount(): TransactionAmount {
+		return PaymentSplit.totalAmount(this._originAccounts);
 	}
 
-	get fromAmount(): TransactionAmount {
-		return PaymentSplit.totalAmount(this._fromSplits);
+	get destinationAccounts(): PaymentSplit[] {
+		return this._destinationAccounts;
 	}
 
-	get toSplits(): PaymentSplit[] {
-		return this._toSplits;
+	get destinationAmount(): TransactionAmount {
+		return PaymentSplit.totalAmount(this._destinationAccounts);
 	}
 
-	get toAmount(): TransactionAmount {
-		return PaymentSplit.totalAmount(this._toSplits);
-	}
-
-	setFromSplits(splits: PaymentSplit[]): void {
-		this._fromSplits = splits;
+	setOriginAccounts(splits: PaymentSplit[]): void {
+		this._originAccounts = splits;
 		this.updateTimestamp();
 	}
 
-	setToSplits(splits: PaymentSplit[]): void {
-		this._toSplits = splits;
+	setDestinationAccounts(splits: PaymentSplit[]): void {
+		this._destinationAccounts = splits;
 		this.validateTransferOperation();
 		this.updateTimestamp();
 	}
@@ -193,20 +183,34 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		return this._store;
 	}
 
+	get exchangeRate(): NumberValueObject {
+		return this._exchangeRate ?? new NumberValueObject(1);
+	}
+
+	updateExchangeRate(exchangeRate: NumberValueObject) {
+		this._exchangeRate = exchangeRate;
+		this.updateTimestamp();
+	}
+
 	getRealAmountForAccount(accountID: AccountID): TransactionAmount {
-		const fromSplits = this._fromSplits.filter((split) =>
+		const originAccounts = this._originAccounts.filter((split) =>
 			split.accountId.equalTo(accountID)
 		);
-		const toSplits = this._toSplits.filter((split) =>
+		const destinationAccounts = this._destinationAccounts.filter((split) =>
 			split.accountId.equalTo(accountID)
 		);
-		const totalTo = PaymentSplit.totalAmount(toSplits).toNumber();
-		const totalFrom = PaymentSplit.totalAmount(fromSplits).toNumber();
-		if (this._operation.value === "transfer") {
-			return new TransactionAmount(totalTo - totalFrom);
+
+		const originTotal = PaymentSplit.totalAmount(originAccounts).toNumber();
+		const destinationTotal = PaymentSplit.totalAmount(
+			destinationAccounts,
+			this._exchangeRate
+		).toNumber();
+
+		if (this._operation.isTransfer()) {
+			return new TransactionAmount(destinationTotal - originTotal);
 		}
 		return new TransactionAmount(
-			this._operation.value === "expense" ? -totalFrom : totalFrom
+			this._operation.isExpense() ? -originTotal : originTotal
 		);
 	}
 
@@ -216,28 +220,27 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			name: this._name.value,
 			category: this._category.value,
 			subCategory: this._subCategory.value,
-			fromSplits: this._fromSplits.map((s) => s.toPrimitives()),
-			toSplits: this._toSplits.map((s) => s.toPrimitives()),
+			fromSplits: this._originAccounts.map((s) => s.toPrimitives()),
+			toSplits: this._destinationAccounts.map((s) => s.toPrimitives()),
 			operation: this._operation.value,
 			date: this._date,
 			updatedAt: this._updatedAt.toISOString(),
 			store: this._store?.value,
+			exchangeRate: this._exchangeRate?.value,
 		};
 	}
 
 	static fromPrimitives({
 		id,
-		item,
 		name,
 		category,
 		subCategory,
 		fromSplits,
 		toSplits,
-		amount,
 		operation,
 		date,
-		brand,
 		store,
+		exchangeRate,
 		updatedAt,
 	}: TransactionPrimitives): Transaction {
 		let _fromSplits: PaymentSplit[] = [];
@@ -260,7 +263,8 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			updatedAt
 				? new DateValueObject(new Date(updatedAt))
 				: DateValueObject.createNowDate(),
-			store ? new StringValueObject(store) : undefined
+			store ? new StringValueObject(store) : undefined,
+			exchangeRate ? new NumberValueObject(exchangeRate) : undefined
 		);
 	}
 
@@ -274,9 +278,8 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			toSplits: [],
 			operation: "expense",
 			date: new Date(),
-			amount: 0,
-			brand: "",
 			store: "",
+			exchangeRate: 0,
 			updatedAt: new Date().toISOString(),
 		};
 	}
@@ -284,7 +287,6 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 
 export type TransactionPrimitives = {
 	id: string;
-	item?: string;
 	name: string;
 	category: string;
 	subCategory: string;
@@ -292,8 +294,7 @@ export type TransactionPrimitives = {
 	toSplits?: PaymentSplitPrimitives[];
 	operation: OperationType;
 	date: Date;
-	amount?: number;
-	brand?: string;
 	store?: string;
+	exchangeRate?: number;
 	updatedAt: string;
 };

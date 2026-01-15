@@ -1,4 +1,7 @@
-import { StringValueObject } from "@juandardilag/value-objects";
+import {
+	PriceValueObject,
+	StringValueObject,
+} from "@juandardilag/value-objects";
 import {
 	Accordion,
 	AccordionDetails,
@@ -8,7 +11,6 @@ import {
 } from "@mui/material";
 import { Button } from "apps/obsidian-plugin/components/Button";
 import { ConfirmationDialog } from "apps/obsidian-plugin/components/ConfirmationDialog";
-import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { Account, AccountBalance } from "contexts/Accounts/domain";
 import {
 	CheckCircle,
@@ -20,9 +22,11 @@ import {
 } from "lucide-react";
 import { useContext, useState } from "react";
 import { Input } from "../../../components/Input/Input";
-import { AccountsContext, TransactionsContext } from "../Contexts";
+import { PriceInput } from "../../../components/Input/PriceInput";
+import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
 
 export const AccountsListItem = ({ account }: { account: Account }) => {
+	const { plugin } = useContext(AppContext);
 	const {
 		updateAccounts,
 		useCases: { deleteAccount, changeAccountName },
@@ -33,7 +37,13 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 	} = useContext(TransactionsContext);
 
 	const [adjustingBalance, setAdjustingBalance] = useState(false);
-	const [newBalance, setNewBalance] = useState(account.balance.value);
+	const [newBalance, setNewBalance] = useState(
+		new PriceValueObject(account.balance.value.value, {
+			decimals: 2,
+			withSign: true,
+			withZeros: true,
+		})
+	);
 
 	const [changingName, setChangingName] = useState(false);
 	const [newName, setNewName] = useState(account.name.toString());
@@ -94,7 +104,16 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 				>
 					<Typography variant="body1">
 						{account.name.toString()}:{" "}
-						{account.balance.value.toString()}
+						{account.balance.value.toString()}{" "}
+						{account.currency.value ===
+						plugin.settings.defaultCurrency
+							? ""
+							: account.currency.value}{" "}
+						{account.defaultCurrencyBalance
+							? `(≈ ${account.defaultCurrencyBalance.value.toString()} ${
+									plugin.settings.defaultCurrency
+							  })`
+							: ""}
 					</Typography>
 				</AccordionSummary>
 				<AccordionDetails
@@ -153,9 +172,10 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 							>
 								<PriceInput
 									id="newAmount"
-									label="New balance"
+									placeholder="New balance"
 									value={newBalance}
 									onChange={setNewBalance}
+									prefix={account.currency.symbol}
 								/>
 
 								<CheckCircle

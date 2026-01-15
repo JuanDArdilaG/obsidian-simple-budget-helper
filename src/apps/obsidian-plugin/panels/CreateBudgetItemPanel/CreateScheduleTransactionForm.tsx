@@ -15,7 +15,10 @@ import {
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { AccountID } from "contexts/Accounts/domain";
 import { Nanoid, OperationType } from "contexts/Shared/domain";
-import { TransactionDate } from "contexts/Transactions/domain";
+import {
+	TransactionAmount,
+	TransactionDate,
+} from "contexts/Transactions/domain";
 import {
 	PropsWithChildren,
 	useContext,
@@ -124,7 +127,7 @@ export const CreateScheduleTransactionForm = ({
 			0
 		);
 		const newErrors = {
-			name: !item.name.trim() ? "Name is required" : undefined,
+			name: item.name.trim() === "" ? "Name is required" : undefined,
 			fromSplits:
 				totalAmount <= 0 ? "Amount must be greater than 0" : undefined,
 			toSplits: undefined,
@@ -324,14 +327,12 @@ export const CreateScheduleTransactionForm = ({
 								)
 							)?.name.value
 						}${
-							item.operation &&
-							item.operation.type === "transfer" &&
+							item.operation?.type === "transfer" &&
 							item.toSplits?.[0]?.accountId
 								? ` -> ${
 										getAccountByID(
 											new AccountID(
-												item.toSplits[0]?.accountId ||
-													""
+												item.toSplits[0].accountId
 											)
 										)?.name.value
 								  } - `
@@ -340,7 +341,7 @@ export const CreateScheduleTransactionForm = ({
 							item.fromSplits?.[0]?.amount === 0
 								? ""
 								: "  " +
-								  new PriceValueObject(
+								  new TransactionAmount(
 										item.fromSplits?.[0]?.amount ?? 0
 								  ).toString()
 						}`;
@@ -365,7 +366,7 @@ export const CreateScheduleTransactionForm = ({
 					{DateInput}
 					<PriceInput
 						id="amount"
-						label="Amount"
+						placeholder="Amount"
 						value={
 							new PriceValueObject(
 								item.fromSplits?.reduce(
@@ -374,7 +375,7 @@ export const CreateScheduleTransactionForm = ({
 								) ?? 0,
 								{
 									withSign: false,
-									decimals: 0,
+									decimals: 2,
 								}
 							)
 						}
@@ -390,7 +391,15 @@ export const CreateScheduleTransactionForm = ({
 								],
 							})
 						}
-						error={showErrors ? errors.fromSplits : undefined}
+						prefix={
+							item.fromSplits?.[0].accountId
+								? getAccountByID(
+										new AccountID(
+											item.fromSplits[0].accountId
+										)
+								  )?.currency.symbol
+								: "$"
+						}
 					/>
 				</Box>
 			</Box>

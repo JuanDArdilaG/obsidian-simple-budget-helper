@@ -49,7 +49,7 @@
 	"dependencies": {
 		"@emotion/react": "^11.14.0",
 		"@emotion/styled": "^11.14.0",
-		"@juandardilag/value-objects": "^2.1.0",
+		"@juandardilag/value-objects": "^2.2.1",
 		"@mui/icons-material": "^7.1.2",
 		"@mui/material": "^7.1.2",
 		"@mui/x-charts": "^8.2.0",
@@ -64,6 +64,7 @@
 		"mathjs": "^14.5.2",
 		"nanoid": "^5.0.9",
 		"react": "^19.0.0",
+		"react-currency-input-field": "^4.0.3",
 		"react-dom": "^19.0.0",
 		"react-input-price": "^0.0.3",
 		"react-virtualized-auto-sizer": "^1.0.26",

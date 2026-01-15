@@ -177,10 +177,12 @@ export class TransactionsService implements ITransactionsService {
 	async update(transaction: Transaction): Promise<void> {
 		const prevTransaction = await this.getByID(transaction.id);
 		const allAccountIDs = [
-			...transaction.fromSplits.map((s) => s.accountId.value),
-			...transaction.toSplits.map((s) => s.accountId.value),
-			...prevTransaction.fromSplits.map((s) => s.accountId.value),
-			...prevTransaction.toSplits.map((s) => s.accountId.value),
+			...transaction.originAccounts.map((s) => s.accountId.value),
+			...transaction.destinationAccounts.map((s) => s.accountId.value),
+			...prevTransaction.originAccounts.map((s) => s.accountId.value),
+			...prevTransaction.destinationAccounts.map(
+				(s) => s.accountId.value
+			),
 		];
 		const uniqueAccountIDs = Array.from(new Set(allAccountIDs)).map(
 			(id) => new AccountID(id)
@@ -205,8 +207,8 @@ export class TransactionsService implements ITransactionsService {
 
 	async #adjustAccountsOnDeletion(transaction: Transaction) {
 		const allAccountIDs = [
-			...transaction.fromSplits.map((s) => s.accountId.value),
-			...transaction.toSplits.map((s) => s.accountId.value),
+			...transaction.originAccounts.map((s) => s.accountId.value),
+			...transaction.destinationAccounts.map((s) => s.accountId.value),
 		];
 		const uniqueAccountIDs = Array.from(new Set(allAccountIDs)).map(
 			(id) => new AccountID(id)
@@ -234,16 +236,16 @@ export class TransactionsService implements ITransactionsService {
 			id: transaction.id.value,
 			name: transaction.name.toString(),
 			amount: transaction.operation.isIncome()
-				? transaction.fromAmount.value
-				: -transaction.fromAmount.value,
+				? transaction.originAmount.value
+				: -transaction.originAmount.value,
 			date: transaction.date.value.toISOString().split("T")[0],
 			operation: transaction.operation.value as
 				| "income"
 				| "expense"
 				| "transfer",
 			account:
-				transaction.fromSplits[0]?.accountId.value ||
-				transaction.toSplits[0]?.accountId.value,
+				transaction.originAccounts[0]?.accountId.value ||
+				transaction.destinationAccounts[0]?.accountId.value,
 		}));
 	}
 
@@ -264,16 +266,16 @@ export class TransactionsService implements ITransactionsService {
 			id: transaction.id.value,
 			name: transaction.name.toString(),
 			amount: transaction.operation.isIncome()
-				? transaction.fromAmount.value
-				: -transaction.fromAmount.value,
+				? transaction.originAmount.value
+				: -transaction.originAmount.value,
 			date: transaction.date.value.toISOString().split("T")[0],
 			operation: transaction.operation.value as
 				| "income"
 				| "expense"
 				| "transfer",
 			account:
-				transaction.fromSplits[0]?.accountId.value ||
-				transaction.toSplits[0]?.accountId.value,
+				transaction.originAccounts[0]?.accountId.value ||
+				transaction.destinationAccounts[0]?.accountId.value,
 		}));
 	}
 }

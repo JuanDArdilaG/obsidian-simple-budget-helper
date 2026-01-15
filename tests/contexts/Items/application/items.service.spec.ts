@@ -12,6 +12,7 @@ import { SubCategory } from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Currency } from "../../../../src/contexts/Currencies/domain/currency.vo";
 import { ScheduledTransactionsService } from "../../../../src/contexts/ScheduledTransactions/application/scheduled-transactions.service";
 import {
 	IRecurrenceModificationsService,
@@ -49,7 +50,8 @@ describe("ScheduledTransactionsService", () => {
 				.mockResolvedValue(
 					Account.create(
 						AccountType.asset(),
-						new AccountName("Test Account")
+						new AccountName("Test Account"),
+						new Currency("USD")
 					)
 				),
 			create: vi.fn(),
@@ -170,11 +172,13 @@ describe("ScheduledTransactionsService", () => {
 
 			const fromAccount = Account.create(
 				AccountType.asset(),
-				new AccountName("Asset Account")
+				new AccountName("Asset Account"),
+				new Currency("USD")
 			);
 			const toAccount = Account.create(
 				AccountType.liability(),
-				new AccountName("Liability Account")
+				new AccountName("Liability Account"),
+				new Currency("USD")
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -212,11 +216,13 @@ describe("ScheduledTransactionsService", () => {
 
 			const fromAccount = Account.create(
 				AccountType.liability(),
-				new AccountName("Liability Account")
+				new AccountName("Liability Account"),
+				new Currency("USD")
 			);
 			const toAccount = Account.create(
 				AccountType.asset(),
-				new AccountName("Asset Account")
+				new AccountName("Asset Account"),
+				new Currency("USD")
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -254,11 +260,13 @@ describe("ScheduledTransactionsService", () => {
 
 			const fromAccount = Account.create(
 				AccountType.asset(),
-				new AccountName("Asset Account 1")
+				new AccountName("Asset Account 1"),
+				new Currency("USD")
 			);
 			const toAccount = Account.create(
 				AccountType.asset(),
-				new AccountName("Asset Account 2")
+				new AccountName("Asset Account 2"),
+				new Currency("USD")
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -296,11 +304,13 @@ describe("ScheduledTransactionsService", () => {
 
 			const fromAccount = Account.create(
 				AccountType.liability(),
-				new AccountName("Liability Account 1")
+				new AccountName("Liability Account 1"),
+				new Currency("USD")
 			);
 			const toAccount = Account.create(
 				AccountType.liability(),
-				new AccountName("Liability Account 2")
+				new AccountName("Liability Account 2"),
+				new Currency("USD")
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(

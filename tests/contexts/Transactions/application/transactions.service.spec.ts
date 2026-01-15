@@ -5,23 +5,30 @@ import { TransactionsService } from "contexts/Transactions/application/transacti
 import { TransactionID } from "contexts/Transactions/domain";
 import { describe, expect, it, vi } from "vitest";
 
+const generateMockTransaction = () => {
+	return {
+		id: { value: TransactionID.generate().value },
+		name: { toString: () => "Mock Transaction" },
+		updateName: vi.fn(),
+		operation: { isIncome: () => true, value: "income" as const },
+		originAmount: { value: 100 },
+		date: { value: new Date("2024-01-01") },
+		originAccounts: [{ accountId: { value: "mock-account-id" } }],
+		destinationAccounts: [] as any[],
+	};
+};
+
 describe("update", () => {
 	it("should update transaction and adjust accounts", async () => {
 		const mockAccountId1 = AccountID.generate().value;
 		const mockAccountId2 = AccountID.generate().value;
-		const mockTransaction = {
-			id: { value: TransactionID.generate().value },
-			updateName: vi.fn(),
-			fromSplits: [{ accountId: { value: mockAccountId1 } }],
-			toSplits: [{ accountId: { value: mockAccountId2 } }],
-			name: { toString: () => "Test Transaction" },
-			operation: { isIncome: () => true, value: "income" },
-			category: { value: "cat-1" },
-			subCategory: { value: "subcat-1" },
-			date: { value: new Date() },
-			itemID: undefined,
-			copy: vi.fn().mockReturnThis(),
-		};
+		const mockTransaction = generateMockTransaction();
+		mockTransaction.originAccounts = [
+			{ accountId: { value: mockAccountId1 } },
+		];
+		mockTransaction.destinationAccounts = [
+			{ accountId: { value: mockAccountId2 } },
+		];
 		const accountsService = {
 			getByID: vi.fn().mockResolvedValue({
 				adjustOnTransactionUpdate: vi.fn(),
@@ -56,18 +63,13 @@ describe("delete", () => {
 	it("should delete transaction and adjust accounts", async () => {
 		const mockAccountId1 = AccountID.generate().value;
 		const mockAccountId2 = AccountID.generate().value;
-		const mockTransaction = {
-			id: { value: TransactionID.generate().value },
-			fromSplits: [{ accountId: { value: mockAccountId1 } }],
-			toSplits: [{ accountId: { value: mockAccountId2 } }],
-			name: { toString: () => "Test Transaction" },
-			operation: { isIncome: () => true, value: "income" },
-			category: { value: "cat-1" },
-			subCategory: { value: "subcat-1" },
-			date: { value: new Date() },
-			itemID: undefined,
-			copy: vi.fn().mockReturnThis(),
-		};
+		const mockTransaction = generateMockTransaction();
+		mockTransaction.originAccounts = [
+			{ accountId: { value: mockAccountId1 } },
+		];
+		mockTransaction.destinationAccounts = [
+			{ accountId: { value: mockAccountId2 } },
+		];
 		const accountsService = {
 			getByID: vi.fn().mockResolvedValue({
 				adjustOnTransactionDeletion: vi.fn(),
@@ -100,18 +102,7 @@ describe("delete", () => {
 
 describe("TransactionsService extra methods", () => {
 	it("should get transaction summaries by category", async () => {
-		const mockTransaction = {
-			id: { value: TransactionID.generate().value },
-			name: { toString: () => "Test Transaction" },
-			operation: {
-				isIncome: () => true,
-				value: "income" as const,
-			},
-			fromAmount: { value: 100 },
-			date: { value: new Date("2024-01-01") },
-			fromSplits: [{ accountId: { value: "mock-account-id" } }],
-			toSplits: [],
-		};
+		const mockTransaction = generateMockTransaction();
 
 		const service = new TransactionsService(
 			{} as any,
@@ -133,18 +124,7 @@ describe("TransactionsService extra methods", () => {
 	});
 
 	it("should get transaction summaries by subcategory", async () => {
-		const mockTransaction = {
-			id: { value: TransactionID.generate().value },
-			name: { toString: () => "Test Transaction" },
-			operation: {
-				isIncome: () => false,
-				value: "expense" as const,
-			},
-			fromAmount: { value: 50 },
-			date: { value: new Date("2024-01-01") },
-			fromSplits: [{ accountId: { value: "mock-account-id" } }],
-			toSplits: [],
-		};
+		const mockTransaction = generateMockTransaction();
 
 		const service = new TransactionsService(
 			{} as any,
@@ -166,18 +146,7 @@ describe("TransactionsService extra methods", () => {
 	});
 
 	it("should return correct transaction summary structure", async () => {
-		const mockTransaction = {
-			id: { value: TransactionID.generate().value },
-			name: { toString: () => "Test Transaction" },
-			operation: {
-				isIncome: () => true,
-				value: "income" as const,
-			},
-			fromAmount: { value: 100 },
-			date: { value: new Date("2024-01-01") },
-			fromSplits: [{ accountId: { value: "mock-account-id" } }],
-			toSplits: [],
-		};
+		const mockTransaction = generateMockTransaction();
 
 		const service = new TransactionsService(
 			{} as any,

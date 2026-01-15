@@ -7,9 +7,8 @@ import { AwilixContainer } from "awilix";
 import { buildContainer } from "contexts/Shared/infrastructure/di/container";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
 import { App, Plugin, PluginManifest } from "obsidian";
-import { ScheduledTransaction } from "../../contexts/ScheduledTransactions/domain";
-import { ScheduledItemsLocalRepository } from "../../contexts/ScheduledTransactions/infrastructure/persistence/old/scheduled-items-local.repository";
-import { ScheduledTransactionsLocalRepository } from "../../contexts/ScheduledTransactions/infrastructure/persistence/scheduled-transactions-local.repository";
+import { AccountsLocalRepository } from "../../contexts/Accounts/infrastructure/persistence/local/accounts-local.repository";
+import { Currency } from "../../contexts/Currencies/domain/currency.vo";
 import { Logger } from "../../contexts/Shared/infrastructure/logger";
 import { views } from "./config";
 import { DEFAULT_SETTINGS, SimpleBudgetHelperSettings } from "./PluginSettings";
@@ -50,69 +49,18 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		}
 	}
 
-	async migrateScheduledTransactionsFromV1toV2() {
-		const scheduledTransactionsV1Repository =
-			new ScheduledItemsLocalRepository(this.db);
-		const scheduledTransactionsV2Repository = this.container.resolve(
-			"_scheduledTransactionsRepository"
-		) as ScheduledTransactionsLocalRepository;
-		const categoriesRepository = this.container.resolve(
-			"_categoriesRepository"
-		);
-		const subCategoriesRepository = this.container.resolve(
-			"_subCategoriesRepository"
-		);
+	async migrate() {
+		const accountsRepository = new AccountsLocalRepository(this.db);
+		const accounts = await accountsRepository.findAll();
+		this.logger.debug("migrate accounts", { accounts });
 
-		const allV1Items = await scheduledTransactionsV1Repository.findAll();
-		this.logger.debug("Found V1 items to migrate", {
-			count: allV1Items.length,
-			allV1Items,
-		});
-
-		const migratedScheduledTransactions: ScheduledTransaction[] = [];
-
-		for (const v1Item of allV1Items) {
-			const category = await categoriesRepository.findById(
-				v1Item.category
-			);
-			if (!category) {
-				this.logger.debug(
-					"Cannot migrate V1 item: category not found",
-					{
-						v1ItemId: v1Item.id.value,
-						categoryId: v1Item.category.value,
-					}
-				);
-				continue;
-			}
-			const subCategory = await subCategoriesRepository.findById(
-				v1Item.subCategory
-			);
-			if (!subCategory) {
-				this.logger.debug(
-					"Cannot migrate V1 item: subCategory not found",
-					{
-						v1ItemId: v1Item.id.value,
-						subCategoryId: v1Item.subCategory.value,
-					}
-				);
-				continue;
-			}
-			const v2Item = ScheduledTransaction.fromScheduledItemV1(
-				v1Item,
-				category,
-				subCategory
-			);
-			migratedScheduledTransactions.push(v2Item);
-			await scheduledTransactionsV2Repository.save(v2Item);
-			// this.logger.debug("Migrated V1 item to V2", {
-			// 	v1ItemId: v1Item.id.value,
-			// 	v2ItemId: v2Item.id.value,
-			// });
-		}
-		this.logger.debug("Migration completed", {
-			migratedCount: migratedScheduledTransactions.length,
-			migratedScheduledTransactions,
+		accounts.forEach(async (account) => {
+			this.logger.debug("Account", { account: account.toPrimitives() });
+			account.currency = new Currency(this.settings.defaultCurrency);
+			this.logger.debug("Updated Account", {
+				account: account.toPrimitives(),
+			});
+			await accountsRepository.persist(account);
 		});
 	}
 
@@ -133,7 +81,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		// Initialize local database
 		await this.db.init(this.settings.dbId);
 
-		// await this.migrateScheduledTransactionsFromV1toV2();
+		// await this.migrate();
 
 		const statusBarItem = this.addStatusBarItem();
 		this.registerView(

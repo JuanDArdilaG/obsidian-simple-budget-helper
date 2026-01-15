@@ -1,4 +1,7 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
+import {
+	NumberValueObject,
+	PriceValueObject,
+} from "@juandardilag/value-objects";
 import {
 	Box,
 	CircularProgress,
@@ -25,7 +28,7 @@ import {
 	TransactionsReport,
 } from "contexts/Reports/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
-import { Transaction } from "contexts/Transactions/domain";
+import { Transaction, TransactionAmount } from "contexts/Transactions/domain";
 import {
 	useCallback,
 	useContext,
@@ -148,10 +151,10 @@ export function AccountingList({
 			}
 
 			// Search in account names
-			const fromAccounts = transaction.fromSplits
+			const fromAccounts = transaction.originAccounts
 				.map((s) => getAccountByID(s.accountId)?.name.value || "")
 				.join(", ");
-			const toAccounts = transaction.toSplits
+			const toAccounts = transaction.destinationAccounts
 				.map((s) => getAccountByID(s.accountId)?.name.value || "")
 				.join(", ");
 			const accountNames =
@@ -224,36 +227,50 @@ export function AccountingList({
 							accounts: accounts.map(({ id }) => {
 								const name =
 									getAccountByID(id)?.name.value ?? "";
-								
+
 								// For transfer transactions, check both fromSplits and toSplits
 								// For other transactions, only use fromSplits
-								let realAmount = PriceValueObject.zero();
-								
+								let realAmount = TransactionAmount.zero();
+
 								if (transaction.operation.isTransfer()) {
 									// Check fromSplits (outgoing) and toSplits (incoming) for transfers
-									const fromSplit = transaction.fromSplits.find((split) =>
-										split.accountId.equalTo(id)
-									);
-									const toSplit = transaction.toSplits.find((split) =>
-										split.accountId.equalTo(id)
-									);
-									
-									if (fromSplit) {
+									const originAccount =
+										transaction.originAccounts.find(
+											(split) =>
+												split.accountId.equalTo(id)
+										);
+									const destinationAccount =
+										transaction.destinationAccounts.find(
+											(split) =>
+												split.accountId.equalTo(id)
+										);
+
+									if (originAccount) {
 										// Money going out of this account (negative)
-										realAmount = fromSplit.amount.negate();
-									} else if (toSplit) {
+										realAmount = new TransactionAmount(
+											originAccount.amount.value * -1
+										);
+									} else if (destinationAccount) {
 										// Money coming into this account (positive)
-										realAmount = toSplit.amount;
+										realAmount =
+											destinationAccount.amount.times(
+												transaction.exchangeRate ??
+													new NumberValueObject(1)
+											);
 									}
 								} else {
 									// For income/expense transactions, use fromSplits
 									// The amount sign should already be correct based on operation type
-									const fromSplit = transaction.fromSplits.find((split) =>
-										split.accountId.equalTo(id)
-									);
-									realAmount = fromSplit?.amount || PriceValueObject.zero();
+									const originAccount =
+										transaction.originAccounts.find(
+											(split) =>
+												split.accountId.equalTo(id)
+										);
+									realAmount =
+										originAccount?.amount ||
+										TransactionAmount.zero();
 								}
-								
+
 								return {
 									name,
 									truncatedName: truncateText(name, 15),
@@ -280,8 +297,8 @@ export function AccountingList({
 					};
 
 				const date = transaction.date.toLocaleDateString();
-				if (!res.find((r) => r[0] === date)) res.push([date, []]);
-				const lastGroup = res[res.length - 1];
+				if (!res.some((r) => r[0] === date)) res.push([date, []]);
+				const lastGroup = res.at(-1);
 				if (lastGroup) {
 					lastGroup[1].push(displayableTransaction);
 				}
@@ -443,7 +460,7 @@ export function AccountingList({
 				? `${
 						selection.length
 				  } transactions selected. Total: ${selection.reduce(
-						(acc, curr) => curr.fromAmount.plus(acc),
+						(acc, curr) => curr.originAmount.plus(acc),
 						PriceValueObject.zero()
 				  )}`
 				: ""

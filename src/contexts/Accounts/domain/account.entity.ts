@@ -13,6 +13,7 @@ import {
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Transaction } from "contexts/Transactions/domain";
+import { Currency } from "../../Currencies/domain/currency.vo";
 
 const logger: Logger = new Logger("Account");
 
@@ -21,17 +22,24 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		id: AccountID,
 		private readonly _type: AccountType,
 		private _name: StringValueObject,
+		private _currency: Currency,
 		private _balance: AccountBalance,
-		updatedAt: DateValueObject
+		updatedAt: DateValueObject,
+		private _defaultCurrencyBalance?: AccountBalance
 	) {
 		super(id, updatedAt);
 	}
 
-	static create(type: AccountType, name: StringValueObject): Account {
+	static create(
+		type: AccountType,
+		name: StringValueObject,
+		currency: Currency
+	): Account {
 		return new Account(
 			AccountID.generate(),
 			type,
 			name,
+			currency,
 			AccountBalance.zero(),
 			DateValueObject.createNowDate()
 		);
@@ -42,6 +50,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			this._id,
 			this._type,
 			this._name,
+			this._currency,
 			this._balance,
 			this._updatedAt
 		);
@@ -60,8 +69,25 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		this.updateTimestamp();
 	}
 
+	get currency(): Currency {
+		return this._currency;
+	}
+
+	set currency(currency: Currency) {
+		this._currency = currency;
+		this.updateTimestamp();
+	}
+
 	get balance(): AccountBalance {
 		return this._balance;
+	}
+
+	get defaultCurrencyBalance(): AccountBalance | undefined {
+		return this._defaultCurrencyBalance;
+	}
+
+	set defaultCurrencyBalance(balance: AccountBalance | undefined) {
+		this._defaultCurrencyBalance = balance;
 	}
 
 	get realBalance(): PriceValueObject {
@@ -114,7 +140,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 
 		if (prevAmount.equalTo(newAmount)) return;
 
-		this._balance = this._balance.sustract(prevAmount).plus(newAmount);
+		this._balance = this._balance.subtract(prevAmount).plus(newAmount);
 		this.updateTimestamp();
 	}
 
@@ -125,7 +151,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 					.times(new NumberValueObject(-1))
 			: transaction.getRealAmountForAccount(this.id);
 
-		this._balance = this._balance.sustract(amount);
+		this._balance = this._balance.subtract(amount);
 		this.updateTimestamp();
 	}
 
@@ -134,6 +160,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			id: this._id.value,
 			type: this._type.value,
 			name: this._name.value,
+			currency: this._currency.value,
 			balance: this._balance.value.value,
 			updatedAt: this._updatedAt.toISOString(),
 		};
@@ -143,6 +170,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		id,
 		type,
 		name,
+		currency,
 		balance,
 		updatedAt,
 	}: AccountPrimitives): Account {
@@ -150,10 +178,11 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			new AccountID(id),
 			new AccountType(type),
 			new StringValueObject(name),
-			new AccountBalance(new PriceValueObject(balance)),
-			updatedAt
-				? new DateValueObject(new Date(updatedAt))
-				: DateValueObject.createNowDate()
+			new Currency(currency),
+			new AccountBalance(
+				new PriceValueObject(balance, { decimals: 2, withSign: true })
+			),
+			new DateValueObject(new Date(updatedAt))
 		);
 		return account;
 	}
@@ -163,6 +192,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 			id: "",
 			type: "asset",
 			name: "",
+			currency: "USD",
 			balance: 0,
 			updatedAt: new Date().toISOString(),
 		};
@@ -173,6 +203,7 @@ export type AccountPrimitives = {
 	id: string;
 	type: AccountTypeType;
 	name: string;
+	currency: string;
 	balance: number;
 	updatedAt: string;
 };

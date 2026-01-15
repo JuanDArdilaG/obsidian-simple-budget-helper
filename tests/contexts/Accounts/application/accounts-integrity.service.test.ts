@@ -32,6 +32,8 @@ const mockTransactionsRepository = {
 	findByAccountId: vi.fn(),
 } as const;
 
+const currency = "USD";
+
 // Mock transaction that behaves like a real transaction
 const createMockTransaction = (testAccountId: AccountID, amount: number) => {
 	const mockTransaction = {
@@ -64,6 +66,7 @@ describe("AccountsIntegrityService", () => {
 			id: testAccountId.value,
 			type: "asset",
 			name: "Test Account",
+			currency,
 			balance: 100,
 			updatedAt: new Date().toISOString(),
 		});
@@ -169,6 +172,7 @@ describe("AccountsIntegrityService", () => {
 				id: account1Id.value,
 				type: "asset",
 				name: "Account 1",
+				currency,
 				balance: 100,
 				updatedAt: new Date().toISOString(),
 			});
@@ -176,6 +180,7 @@ describe("AccountsIntegrityService", () => {
 				id: account2Id.value,
 				type: "asset",
 				name: "Account 2",
+				currency,
 				balance: 200,
 				updatedAt: new Date().toISOString(),
 			});
@@ -211,6 +216,7 @@ describe("AccountsIntegrityService", () => {
 				id: account1Id.value,
 				type: "asset",
 				name: "Account 1",
+				currency,
 				balance: 100,
 				updatedAt: new Date().toISOString(),
 			});
@@ -218,6 +224,7 @@ describe("AccountsIntegrityService", () => {
 				id: account2Id.value,
 				type: "asset",
 				name: "Account 2",
+				currency,
 				balance: 200,
 				updatedAt: new Date().toISOString(),
 			});

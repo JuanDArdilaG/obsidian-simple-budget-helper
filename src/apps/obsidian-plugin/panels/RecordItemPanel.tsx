@@ -11,9 +11,9 @@ import {
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { X } from "lucide-react";
 import { useContext, useState } from "react";
-import { ReactMoneyInput } from "react-input-price";
 import { ItemRecurrenceInfo } from "../../../contexts/ScheduledTransactions/domain";
 import { DateInput } from "../components/Input/DateInput";
+import { PriceInput } from "../components/Input/PriceInput";
 import { Select } from "../components/Select/Select";
 import { useLogger } from "../hooks";
 
@@ -33,7 +33,7 @@ export const RecordItemPanel = ({
 	} = useContext(ScheduledTransactionsContext);
 	const { updateAccounts } = useContext(AccountsContext);
 	const { updateTransactions } = useContext(TransactionsContext);
-	const { accounts } = useContext(AccountsContext);
+	const { accounts, getAccountByID } = useContext(AccountsContext);
 	const [fromSplits, setFromSplits] = useState(
 		recurrence.fromSplits.map((split) => ({
 			accountId: split.accountId.value,
@@ -147,7 +147,7 @@ export const RecordItemPanel = ({
 				</h4>
 				{fromSplits.map((split, idx) => (
 					<div
-						key={idx}
+						key={split.accountId}
 						style={{
 							display: "flex",
 							gap: 8,
@@ -179,10 +179,10 @@ export const RecordItemPanel = ({
 							/>
 						</div>
 						<div style={{ flex: 2, minWidth: 0, width: "100%" }}>
-							<ReactMoneyInput
+							<PriceInput
 								id={`from-amount-${idx}`}
-								initialValue={split.amount.toNumber()}
-								onValueChange={(priceVO) => {
+								value={split.amount}
+								onChange={(priceVO) => {
 									const newSplits = [...fromSplits];
 									newSplits[idx].amount =
 										new TransactionAmount(
@@ -190,6 +190,11 @@ export const RecordItemPanel = ({
 										);
 									setFromSplits(newSplits);
 								}}
+								prefix={
+									getAccountByID(
+										new AccountID(split.accountId)
+									)?.currency.symbol ?? "$"
+								}
 							/>
 						</div>
 						<button
@@ -252,7 +257,7 @@ export const RecordItemPanel = ({
 				</h4>
 				{toSplits.map((split, idx) => (
 					<div
-						key={idx}
+						key={split.accountId}
 						style={{
 							display: "flex",
 							gap: 8,
@@ -284,10 +289,10 @@ export const RecordItemPanel = ({
 							/>
 						</div>
 						<div style={{ flex: 2, minWidth: 0, width: "100%" }}>
-							<ReactMoneyInput
+							<PriceInput
 								id={`to-amount-${idx}`}
-								initialValue={split.amount.toNumber()}
-								onValueChange={(priceVO) => {
+								value={split.amount}
+								onChange={(priceVO) => {
 									const newSplits = [...toSplits];
 									newSplits[idx].amount =
 										new TransactionAmount(
@@ -295,6 +300,11 @@ export const RecordItemPanel = ({
 										);
 									setToSplits(newSplits);
 								}}
+								prefix={
+									getAccountByID(
+										new AccountID(split.accountId)
+									)?.currency.symbol ?? "$"
+								}
 							/>
 						</div>
 						<button

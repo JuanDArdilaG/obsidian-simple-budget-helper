@@ -7,6 +7,7 @@ import {
 	AccountName,
 	AccountType,
 } from "../../../../src/contexts/Accounts/domain";
+import { Currency } from "../../../../src/contexts/Currencies/domain/currency.vo";
 import { buildTestTransactions } from "../../Reports/domain/buildTestTransactions";
 
 describe("adjustOnTransactionDeletion", () => {
@@ -138,6 +139,7 @@ const buildTestAccount = (): Account => {
 		AccountID.generate(),
 		AccountType.asset(),
 		new AccountName("name"),
+		new Currency("USD"),
 		new AccountBalance(PriceValueObject.zero()),
 		DateValueObject.createNowDate()
 	);
@@ -148,6 +150,7 @@ const buildTestLiabilityAccount = (): Account => {
 		AccountID.generate(),
 		AccountType.liability(),
 		new AccountName("Liability Account"),
+		new Currency("USD"),
 		new AccountBalance(PriceValueObject.zero()),
 		DateValueObject.createNowDate()
 	);

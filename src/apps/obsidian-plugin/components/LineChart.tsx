@@ -1,16 +1,16 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
 import { FunctionComponent } from "react";
 import {
-	LineChart as RechartsLineChart,
 	CartesianGrid,
+	LabelList,
 	Legend,
 	Line,
+	LineChart as RechartsLineChart,
+	ResponsiveContainer,
 	Tooltip,
 	XAxis,
-	LabelList,
-	ResponsiveContainer,
 	YAxis,
 } from "recharts";
+import { TransactionAmount } from "../../../contexts/Transactions/domain";
 
 export const LineChart = ({
 	data,
@@ -57,7 +57,7 @@ const CustomizedLabel: FunctionComponent<any> = (props: any) => {
 			fontSize={10}
 			textAnchor="middle"
 		>
-			{new PriceValueObject(value ?? 0).toString()}
+			{new TransactionAmount(value ?? 0).toString()}
 		</text>
 	);
 };
@@ -75,7 +75,7 @@ const CustomizedAxisTick: FunctionComponent<any> = (props: any) => {
 				fill="#666"
 				transform="rotate(-35)"
 			>
-				{new PriceValueObject(payload.value ?? 0).toString()}
+				{new TransactionAmount(payload.value ?? 0).toString()}
 			</text>
 		</g>
 	);
