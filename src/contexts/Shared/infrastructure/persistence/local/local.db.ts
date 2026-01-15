@@ -43,13 +43,14 @@ export class LocalDB extends DB {
 	async init(dbId: string) {
 		try {
 			this.logger.debug("initializing local dexie");
-			this.db = new Dexie(`BudgetHelper-${dbId}`);
+			const dexieDbName = `BudgetHelper-${dbId}`;
+			this.db = new Dexie(dexieDbName);
 			this.dbId = dbId;
 
 			this.logger.debug("initializing tables");
 			this.#initializeTables();
 
-			this.logger.debug("opening db");
+			this.logger.debug(`opening db: ${dexieDbName}`);
 			await this.db.open();
 
 			// Initialize file manager with database ID
