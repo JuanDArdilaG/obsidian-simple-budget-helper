@@ -219,7 +219,7 @@ export const PerCategoryItemsTab = () => {
 					};
 				}
 				groups[name].totalAmount += Math.abs(
-					transaction.fromAmount.value
+					transaction.originAmount.value
 				);
 				groups[name].count += 1;
 				return groups;

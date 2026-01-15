@@ -69,7 +69,7 @@ describe("transfer operation validation", () => {
 		);
 
 		expect(() => {
-			transaction.setToSplits([]);
+			transaction.setDestinationAccounts([]);
 		}).toThrow("Transfer operations must have a toSplits array");
 	});
 

@@ -57,16 +57,16 @@ export class RecordItemUseCase
 
 		// Update splits if amount/account/toAccount are provided
 		if (amount || account || toAccount) {
-			let fromSplits = transaction.fromSplits;
-			let toSplits = transaction.toSplits;
+			let fromSplits = transaction.originAccounts;
+			let toSplits = transaction.destinationAccounts;
 			if (account && amount) {
 				fromSplits = [new PaymentSplit(account, amount)];
 			}
 			if (toAccount && amount) {
 				toSplits = [new PaymentSplit(toAccount, amount)];
 			}
-			transaction.setFromSplits(fromSplits);
-			transaction.setToSplits(toSplits);
+			transaction.setOriginAccounts(fromSplits);
+			transaction.setDestinationAccounts(toSplits);
 		}
 
 		this.#logger.debug("transaction after update", { transaction });

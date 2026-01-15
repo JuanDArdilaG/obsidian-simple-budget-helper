@@ -12,8 +12,8 @@ describe("update", () => {
 		const mockTransaction = {
 			id: { value: TransactionID.generate().value },
 			updateName: vi.fn(),
-			fromSplits: [{ accountId: { value: mockAccountId1 } }],
-			toSplits: [{ accountId: { value: mockAccountId2 } }],
+			originAccounts: [{ accountId: { value: mockAccountId1 } }],
+			destinationAccounts: [{ accountId: { value: mockAccountId2 } }],
 			name: { toString: () => "Test Transaction" },
 			operation: { isIncome: () => true, value: "income" },
 			category: { value: "cat-1" },
@@ -58,8 +58,8 @@ describe("delete", () => {
 		const mockAccountId2 = AccountID.generate().value;
 		const mockTransaction = {
 			id: { value: TransactionID.generate().value },
-			fromSplits: [{ accountId: { value: mockAccountId1 } }],
-			toSplits: [{ accountId: { value: mockAccountId2 } }],
+			originAccounts: [{ accountId: { value: mockAccountId1 } }],
+			destinationAccounts: [{ accountId: { value: mockAccountId2 } }],
 			name: { toString: () => "Test Transaction" },
 			operation: { isIncome: () => true, value: "income" },
 			category: { value: "cat-1" },
@@ -107,10 +107,10 @@ describe("TransactionsService extra methods", () => {
 				isIncome: () => true,
 				value: "income" as const,
 			},
-			fromAmount: { value: 100 },
+			originAmount: { value: 100 },
 			date: { value: new Date("2024-01-01") },
-			fromSplits: [{ accountId: { value: "mock-account-id" } }],
-			toSplits: [],
+			originAccounts: [{ accountId: { value: "mock-account-id" } }],
+			destinationAccounts: [],
 		};
 
 		const service = new TransactionsService(
@@ -140,10 +140,10 @@ describe("TransactionsService extra methods", () => {
 				isIncome: () => false,
 				value: "expense" as const,
 			},
-			fromAmount: { value: 50 },
+			originAmount: { value: 50 },
 			date: { value: new Date("2024-01-01") },
-			fromSplits: [{ accountId: { value: "mock-account-id" } }],
-			toSplits: [],
+			originAccounts: [{ accountId: { value: "mock-account-id" } }],
+			destinationAccounts: [],
 		};
 
 		const service = new TransactionsService(
@@ -173,10 +173,10 @@ describe("TransactionsService extra methods", () => {
 				isIncome: () => true,
 				value: "income" as const,
 			},
-			fromAmount: { value: 100 },
+			originAmount: { value: 100 },
 			date: { value: new Date("2024-01-01") },
-			fromSplits: [{ accountId: { value: "mock-account-id" } }],
-			toSplits: [],
+			originAccounts: [{ accountId: { value: "mock-account-id" } }],
+			destinationAccounts: [],
 		};
 
 		const service = new TransactionsService(

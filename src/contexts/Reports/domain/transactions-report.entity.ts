@@ -65,11 +65,11 @@ export class TransactionsReport {
 		return new TransactionsReport(
 			this._transactions.toSorted((a, b) =>
 				direction === "asc"
-					? PaymentSplit.totalAmount(a.fromSplits).compareTo(
-							PaymentSplit.totalAmount(b.fromSplits)
+					? PaymentSplit.totalAmount(a.originAccounts).compareTo(
+							PaymentSplit.totalAmount(b.originAccounts)
 					  )
-					: PaymentSplit.totalAmount(b.fromSplits).compareTo(
-							PaymentSplit.totalAmount(a.fromSplits)
+					: PaymentSplit.totalAmount(b.originAccounts).compareTo(
+							PaymentSplit.totalAmount(a.originAccounts)
 					  )
 			)
 		);
@@ -105,56 +105,63 @@ export class TransactionsReport {
 					transactions.push(
 						{
 							transaction,
-							accounts: transaction.fromSplits.map((split) => {
-								const accountID = split.accountId.value;
-								if (!accumulated[accountID])
-									accumulated[accountID] = new ReportBalance(
-										0
+							accounts: transaction.originAccounts.map(
+								(split) => {
+									const accountID = split.accountId.value;
+									if (!accumulated[accountID])
+										accumulated[accountID] =
+											new ReportBalance(0);
+									const prevBalance = accumulated[accountID];
+									accumulated[accountID] = accumulated[
+										accountID
+									].plus(
+										transaction.getRealAmountForAccount(
+											split.accountId
+										)
 									);
-								const prevBalance = accumulated[accountID];
-								accumulated[accountID] = accumulated[
-									accountID
-								].plus(
-									transaction.getRealAmountForAccount(
-										split.accountId
-									)
-								);
-								return {
-									id: split.accountId,
-									balance: accumulated[split.accountId.value],
-									prevBalance,
-								};
-							}),
+									return {
+										id: split.accountId,
+										balance:
+											accumulated[split.accountId.value],
+										prevBalance,
+									};
+								}
+							),
 						},
 						{
 							transaction,
-							accounts: transaction.toSplits.map((toSplit) => {
-								const accountID = toSplit.accountId.value;
-								if (!accumulated[accountID])
-									accumulated[accountID] = new ReportBalance(
-										0
+							accounts: transaction.destinationAccounts.map(
+								(toSplit) => {
+									const accountID = toSplit.accountId.value;
+									if (!accumulated[accountID])
+										accumulated[accountID] =
+											new ReportBalance(0);
+									const prevBalance = accumulated[accountID];
+									accumulated[accountID] = accumulated[
+										accountID
+									].plus(
+										transaction.getRealAmountForAccount(
+											toSplit.accountId
+										)
 									);
-								const prevBalance = accumulated[accountID];
-								accumulated[accountID] = accumulated[
-									accountID
-								].plus(
-									transaction.getRealAmountForAccount(
-										toSplit.accountId
-									)
-								);
-								return {
-									id: toSplit.accountId,
-									balance: accumulated[accountID],
-									prevBalance,
-								};
-							}),
+									return {
+										id: toSplit.accountId,
+										balance: accumulated[accountID],
+										prevBalance,
+									};
+								}
+							),
 						}
 					);
 				} else {
 					// For non-transfer transactions, use the original logic
 					const allAccountIDs = [
-						...transaction.fromSplits.map((s) => s.accountId.value),
-						...transaction.toSplits.map((s) => s.accountId.value),
+						...transaction.originAccounts.map(
+							(s) => s.accountId.value
+						),
+						...transaction.destinationAccounts.map(
+							(s) => s.accountId.value
+						),
 					];
 					const uniqueAccountIDs = Array.from(new Set(allAccountIDs));
 					transactions.push({

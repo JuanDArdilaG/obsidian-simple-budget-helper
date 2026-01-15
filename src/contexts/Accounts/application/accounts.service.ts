@@ -57,31 +57,30 @@ export class AccountsService
 	}
 
 	async adjustOnTransaction(transaction: Transaction): Promise<void> {
-		// Adjust all fromSplits
-		for (const split of transaction.fromSplits) {
-			const account = await this.getByID(split.accountId);
+		for (const account of transaction.originAccounts) {
+			const originAccount = await this.getByID(account.accountId);
 			this._logger.debug("adjusting account (fromSplit)", {
-				account: account.toPrimitives(),
+				account: originAccount.toPrimitives(),
 				transaction: transaction.toPrimitives(),
 			});
-			account.adjustFromTransaction(transaction);
+			originAccount.adjustFromTransaction(transaction);
 			this._logger.debug("adjusting account adjusted (fromSplit)", {
-				...account.toPrimitives(),
+				...originAccount.toPrimitives(),
 			});
-			await this.update(account);
+			await this.update(originAccount);
 		}
 		// Adjust all toSplits
-		for (const split of transaction.toSplits) {
-			const account = await this.getByID(split.accountId);
+		for (const account of transaction.destinationAccounts) {
+			const destinationAccount = await this.getByID(account.accountId);
 			this._logger.debug("adjusting account (toSplit)", {
-				account: account.toPrimitives(),
+				account: destinationAccount.toPrimitives(),
 				transaction: transaction.toPrimitives(),
 			});
-			account.adjustFromTransaction(transaction);
+			destinationAccount.adjustFromTransaction(transaction);
 			this._logger.debug("adjusting account adjusted (toSplit)", {
-				...account.toPrimitives(),
+				...destinationAccount.toPrimitives(),
 			});
-			await this.update(account);
+			await this.update(destinationAccount);
 		}
 	}
 }

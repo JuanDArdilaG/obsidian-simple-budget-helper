@@ -1,5 +1,6 @@
 import {
 	DateValueObject,
+	NumberValueObject,
 	PriceValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
@@ -102,6 +103,7 @@ interface ValidationErrors {
 	operation?: string;
 	fromSplits?: string;
 	toSplits?: string;
+	exchangeRate?: string;
 	general?: string;
 }
 
@@ -111,12 +113,22 @@ const useMultiTransactionValidation = (
 	date: Date,
 	operation: OperationType,
 	fromSplits: PaymentSplitPrimitives[],
-	toSplits: PaymentSplitPrimitives[]
+	toSplits: PaymentSplitPrimitives[],
+	exchangeRate?: number
 ) => {
 	const [errors, setErrors] = useState<ValidationErrors>({});
 
 	const validate = (): boolean => {
 		const newErrors: ValidationErrors = {};
+
+		if (
+			operation === "transfer" &&
+			fromSplits.length > 0 &&
+			toSplits.length > 0 &&
+			(!exchangeRate || exchangeRate <= 0)
+		) {
+			newErrors.exchangeRate = "Exchange rate must be greater than zero";
+		}
 
 		// Items validation
 		if (!items || items.length === 0) {
@@ -332,7 +344,7 @@ export const TransactionFormImproved = ({
 			{
 				id: "1",
 				name: transaction.name.value,
-				amount: transaction.fromSplits[0]?.amount.value || 0,
+				amount: transaction.originAccounts[0]?.amount.value || 0,
 				quantity: 1,
 				category:
 					categories.find((c) => c.id.equalTo(transaction.category))
@@ -368,7 +380,7 @@ export const TransactionFormImproved = ({
 		return {
 			date: transaction.date.value,
 			operation: transaction.operation.value,
-			fromSplits: transaction.fromSplits.map((split) => {
+			fromSplits: transaction.originAccounts.map((split) => {
 				const account = accounts.find((acc) =>
 					acc.id.equalTo(split.accountId)
 				);
@@ -378,7 +390,7 @@ export const TransactionFormImproved = ({
 					currency: account?.currency.value || "",
 				};
 			}),
-			toSplits: transaction.toSplits.map((split) => {
+			toSplits: transaction.destinationAccounts.map((split) => {
 				const account = accounts.find((acc) =>
 					acc.id.equalTo(split.accountId)
 				);
@@ -457,7 +469,8 @@ export const TransactionFormImproved = ({
 			date,
 			sharedProperties.operation,
 			sharedProperties.fromSplits,
-			sharedProperties.toSplits
+			sharedProperties.toSplits,
+			sharedProperties.exchangeRate
 		);
 
 	// Calculate total amount
@@ -494,6 +507,7 @@ export const TransactionFormImproved = ({
 			fromSplits: [],
 			toSplits: [],
 			store: "",
+			exchangeRate: undefined,
 		});
 
 		// Clear validation errors
@@ -639,7 +653,7 @@ export const TransactionFormImproved = ({
 		if (match) {
 			updateTransactionItem(transactionId, {
 				name: match.name.value,
-				amount: match.fromAmount.price,
+				amount: match.originAmount.price,
 				category:
 					categories.find((c) => c.id.value === match.category.value)
 						?.name.value || "",
@@ -775,7 +789,10 @@ export const TransactionFormImproved = ({
 					(split) =>
 						new PaymentSplit(
 							new AccountID(split.accountId),
-							new TransactionAmount(split.amount)
+							new TransactionAmount(
+								split.amount *
+									(sharedProperties.exchangeRate ?? 1)
+							)
 						)
 				);
 				const categoryId = categories.find(
@@ -804,8 +821,12 @@ export const TransactionFormImproved = ({
 				transaction.updateCategory(transactionData.category);
 				transaction.updateSubCategory(transactionData.subCategory);
 				transaction.updateDate(transactionData.date);
-				transaction.setFromSplits(transactionData.fromSplits);
-				transaction.setToSplits(transactionData.toSplits);
+				transaction.setOriginAccounts(transactionData.fromSplits);
+				transaction.setDestinationAccounts(transactionData.toSplits);
+				sharedProperties.exchangeRate &&
+					transaction.updateExchangeRate(
+						new NumberValueObject(sharedProperties.exchangeRate)
+					);
 				await updateTransaction.execute(transaction);
 			} else {
 				// Create a transaction for each item
@@ -878,6 +899,11 @@ export const TransactionFormImproved = ({
 								sharedProperties.store
 									? new StringValueObject(
 											sharedProperties.store
+									  )
+									: undefined,
+								sharedProperties.exchangeRate
+									? new NumberValueObject(
+											sharedProperties.exchangeRate
 									  )
 									: undefined
 							)
@@ -1090,25 +1116,36 @@ export const TransactionFormImproved = ({
 			{sharedProperties.operation === "transfer" &&
 				sharedProperties.fromSplits?.[0]?.currency !==
 					sharedProperties.toSplits?.[0]?.currency && (
-					<PriceInput
-						id={"exchange-rate"}
-						key={"exchange-rate"}
-						label="Exchange Rate"
-						value={
-							new PriceValueObject(
-								sharedProperties.exchangeRate || 0,
-								{
-									decimals: 2,
-									withZeros: true,
-								}
-							)
-						}
-						onChange={(value) =>
-							updateSharedProperties({
-								exchangeRate: value.value,
-							})
-						}
-					/>
+					<>
+						<PriceInput
+							id={"exchange-rate"}
+							key={"exchange-rate"}
+							label="Exchange Rate"
+							value={
+								new PriceValueObject(
+									sharedProperties.exchangeRate || 0,
+									{
+										decimals: 2,
+										withZeros: true,
+									}
+								)
+							}
+							onChange={(value) =>
+								updateSharedProperties({
+									exchangeRate: value.value,
+								})
+							}
+						/>
+						{getFieldError("exchangeRate") && (
+							<Typography
+								variant="caption"
+								color="error"
+								sx={{ mt: 0.5, display: "block" }}
+							>
+								{getFieldError("exchangeRate")}
+							</Typography>
+						)}
+					</>
 				)}
 
 			{/* Transaction Items Section */}

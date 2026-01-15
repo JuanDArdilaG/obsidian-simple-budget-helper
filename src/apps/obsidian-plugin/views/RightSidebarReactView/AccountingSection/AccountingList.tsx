@@ -1,4 +1,7 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
+import {
+	NumberValueObject,
+	PriceValueObject,
+} from "@juandardilag/value-objects";
 import {
 	Box,
 	CircularProgress,
@@ -148,10 +151,10 @@ export function AccountingList({
 			}
 
 			// Search in account names
-			const fromAccounts = transaction.fromSplits
+			const fromAccounts = transaction.originAccounts
 				.map((s) => getAccountByID(s.accountId)?.name.value || "")
 				.join(", ");
-			const toAccounts = transaction.toSplits
+			const toAccounts = transaction.destinationAccounts
 				.map((s) => getAccountByID(s.accountId)?.name.value || "")
 				.join(", ");
 			const accountNames =
@@ -231,32 +234,40 @@ export function AccountingList({
 
 								if (transaction.operation.isTransfer()) {
 									// Check fromSplits (outgoing) and toSplits (incoming) for transfers
-									const fromSplit =
-										transaction.fromSplits.find((split) =>
-											split.accountId.equalTo(id)
+									const originAccount =
+										transaction.originAccounts.find(
+											(split) =>
+												split.accountId.equalTo(id)
 										);
-									const toSplit = transaction.toSplits.find(
-										(split) => split.accountId.equalTo(id)
-									);
+									const destinationAccount =
+										transaction.destinationAccounts.find(
+											(split) =>
+												split.accountId.equalTo(id)
+										);
 
-									if (fromSplit) {
+									if (originAccount) {
 										// Money going out of this account (negative)
 										realAmount = new TransactionAmount(
-											fromSplit.amount.value * -1
+											originAccount.amount.value * -1
 										);
-									} else if (toSplit) {
+									} else if (destinationAccount) {
 										// Money coming into this account (positive)
-										realAmount = toSplit.amount;
+										realAmount =
+											destinationAccount.amount.times(
+												transaction.exchangeRate ??
+													new NumberValueObject(1)
+											);
 									}
 								} else {
 									// For income/expense transactions, use fromSplits
 									// The amount sign should already be correct based on operation type
-									const fromSplit =
-										transaction.fromSplits.find((split) =>
-											split.accountId.equalTo(id)
+									const originAccount =
+										transaction.originAccounts.find(
+											(split) =>
+												split.accountId.equalTo(id)
 										);
 									realAmount =
-										fromSplit?.amount ||
+										originAccount?.amount ||
 										TransactionAmount.zero();
 								}
 
@@ -449,7 +460,7 @@ export function AccountingList({
 				? `${
 						selection.length
 				  } transactions selected. Total: ${selection.reduce(
-						(acc, curr) => curr.fromAmount.plus(acc),
+						(acc, curr) => curr.originAmount.plus(acc),
 						PriceValueObject.zero()
 				  )}`
 				: ""

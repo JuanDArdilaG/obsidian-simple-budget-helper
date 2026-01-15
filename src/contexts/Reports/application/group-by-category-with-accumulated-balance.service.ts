@@ -63,23 +63,23 @@ export class GroupByCategoryWithAccumulatedBalanceUseCase
 			if (transaction.operation.isExpense()) {
 				result[transaction.category.value].balance = result[
 					transaction.category.value
-				].balance.plus(transaction.fromAmount.negate());
+				].balance.plus(transaction.originAmount.negate());
 
 				result[transaction.category.value].subCategories[
 					transaction.subCategory.value
 				].balance = result[transaction.category.value].subCategories[
 					transaction.subCategory.value
-				].balance.plus(transaction.fromAmount.negate());
+				].balance.plus(transaction.originAmount.negate());
 			} else {
 				result[transaction.category.value].balance = result[
 					transaction.category.value
-				].balance.plus(transaction.fromAmount);
+				].balance.plus(transaction.originAmount);
 
 				result[transaction.category.value].subCategories[
 					transaction.subCategory.value
 				].balance = result[transaction.category.value].subCategories[
 					transaction.subCategory.value
-				].balance.plus(transaction.fromAmount);
+				].balance.plus(transaction.originAmount);
 			}
 		}
 

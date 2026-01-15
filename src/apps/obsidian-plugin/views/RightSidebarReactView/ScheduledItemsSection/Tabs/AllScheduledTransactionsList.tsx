@@ -248,11 +248,11 @@ export const AllScheduledTransactionsList = ({
 
 				if (monthIndex >= 0 && monthIndex < 12) {
 					if (transaction.operation.isIncome()) {
-						const amount = transaction.fromAmount.value;
+						const amount = transaction.originAmount.value;
 						months[monthIndex].income += amount;
 						months[monthIndex].incomeTransactions.push(transaction);
 					} else if (transaction.operation.isExpense()) {
-						const amount = transaction.fromAmount.value;
+						const amount = transaction.originAmount.value;
 						months[monthIndex].expense += amount;
 						months[monthIndex].expenseTransactions.push(
 							transaction
@@ -861,7 +861,7 @@ export const AllScheduledTransactionsList = ({
 										{selectedMonthData.incomeTransactions.map(
 											(transaction, index) => {
 												const fromAccounts =
-													transaction.fromSplits
+													transaction.originAccounts
 														.map(
 															(s: PaymentSplit) =>
 																getAccountByID(
@@ -871,7 +871,7 @@ export const AllScheduledTransactionsList = ({
 														)
 														.join(", ");
 												const toAccounts =
-													transaction.toSplits
+													transaction.destinationAccounts
 														.map(
 															(s: PaymentSplit) =>
 																getAccountByID(
@@ -881,7 +881,7 @@ export const AllScheduledTransactionsList = ({
 														)
 														.join(", ");
 												const amount =
-													transaction.toSplits.reduce(
+													transaction.destinationAccounts.reduce(
 														(
 															sum: number,
 															s: PaymentSplit
@@ -890,7 +890,7 @@ export const AllScheduledTransactionsList = ({
 															s.amount.value,
 														0
 													) -
-													transaction.fromSplits.reduce(
+													transaction.originAccounts.reduce(
 														(
 															sum: number,
 															s: PaymentSplit
@@ -984,7 +984,7 @@ export const AllScheduledTransactionsList = ({
 										{selectedMonthData.expenseTransactions.map(
 											(transaction, index) => {
 												const fromAccounts =
-													transaction.fromSplits
+													transaction.originAccounts
 														.map(
 															(s: PaymentSplit) =>
 																getAccountByID(
@@ -994,7 +994,7 @@ export const AllScheduledTransactionsList = ({
 														)
 														.join(", ");
 												const toAccounts =
-													transaction.toSplits
+													transaction.destinationAccounts
 														.map(
 															(s: PaymentSplit) =>
 																getAccountByID(
@@ -1004,7 +1004,7 @@ export const AllScheduledTransactionsList = ({
 														)
 														.join(", ");
 												const amount =
-													transaction.toSplits.reduce(
+													transaction.destinationAccounts.reduce(
 														(
 															sum: number,
 															s: PaymentSplit
@@ -1013,7 +1013,7 @@ export const AllScheduledTransactionsList = ({
 															s.amount.value,
 														0
 													) -
-													transaction.fromSplits.reduce(
+													transaction.originAccounts.reduce(
 														(
 															sum: number,
 															s: PaymentSplit
