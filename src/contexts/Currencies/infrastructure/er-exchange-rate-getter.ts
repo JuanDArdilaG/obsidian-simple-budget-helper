@@ -16,28 +16,28 @@ export class ErExchangeRateGetter implements IExchangeRateGetter {
 		toCurrency: Currency,
 		date: DateValueObject
 	): Promise<ExchangeRate | null> {
+		const dateVO = new DateValueObject(
+			new Date(
+				date.getFullYear(),
+				date.getMonth(),
+				date.getDate(),
+				0,
+				0,
+				0,
+				0
+			)
+		);
 		this.#logger.debug("Getting exchange rate", {
 			fromCurrency: fromCurrency.toString(),
 			toCurrency: toCurrency.toString(),
-			date: date.toString(),
+			date: dateVO.toString(),
 		});
-		date.setHours(0, 0, 0, 0);
 
 		const exchangeRate =
 			await this._exchangeRateRepository.getByFromToAndDate(
 				fromCurrency,
 				toCurrency,
-				new DateValueObject(
-					new Date(
-						date.getFullYear(),
-						date.getMonth(),
-						date.getDate(),
-						0,
-						0,
-						0,
-						0
-					)
-				)
+				dateVO
 			);
 		this.#logger.debug("Found exchange rate in repository", {
 			exchangeRate,
@@ -66,7 +66,7 @@ export class ErExchangeRateGetter implements IExchangeRateGetter {
 			new Currency(fromCurrency.toString()),
 			new Currency(toCurrency.toString()),
 			rate,
-			date
+			dateVO
 		);
 
 		await this._exchangeRateRepository.persist(newExchangeRate);
