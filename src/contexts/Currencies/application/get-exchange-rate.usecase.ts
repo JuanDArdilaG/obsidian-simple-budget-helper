@@ -24,18 +24,22 @@ export class GetExchangeRateUseCase
 	}): Promise<ExchangeRate | null> {
 		const fromCurrency = input.fromCurrency;
 		const toCurrency = input.toCurrency;
-		const date = new DateValueObject(input.date);
-		date.setHours(0, 0, 0, 0);
 
 		const exchangeRate = await this._exchangeRateGetter.getExchangeRate(
 			fromCurrency,
 			toCurrency,
-			date
+			new DateValueObject(
+				new Date(
+					input.date.getFullYear(),
+					input.date.getMonth(),
+					input.date.getDate(),
+					0,
+					0,
+					0,
+					0
+				)
+			)
 		);
-
-		if (!exchangeRate) {
-			return null;
-		}
 
 		return exchangeRate;
 	}

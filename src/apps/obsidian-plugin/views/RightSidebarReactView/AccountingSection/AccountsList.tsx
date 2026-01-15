@@ -3,7 +3,10 @@ import { List, ListItem, Typography } from "@mui/material";
 import { CreateAccountPanel } from "apps/obsidian-plugin/panels/CreateAccountPanel";
 import { AccountsReport } from "contexts/Reports/domain/accounts-report.entity";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { AccountBalance } from "../../../../../contexts/Accounts/domain";
+import {
+	Account,
+	AccountBalance,
+} from "../../../../../contexts/Accounts/domain";
 import { Currency } from "../../../../../contexts/Currencies/domain/currency.vo";
 import { AccountsContext, AppContext } from "../Contexts";
 import { ExchangeRatesContext } from "../Contexts/ExchangeRatesContext";
@@ -22,40 +25,36 @@ export const AccountsList = () => {
 
 	useEffect(() => {
 		const fetchConvertedBalance = async () => {
-			setAccountsWithConvertedBalances(
-				await Promise.all(
-					accounts.map(async (account) => {
-						if (
-							account.currency.value ===
-							plugin.settings.defaultCurrency
-						) {
-							return account;
-						}
+			const accountsResponse: Account[] = [];
+			for (const account of accounts) {
+				if (
+					account.currency.value === plugin.settings.defaultCurrency
+				) {
+					accountsResponse.push(account);
+					return;
+				}
 
-						const exchangeRate = await getExchangeRate.execute({
-							fromCurrency: account.currency,
-							toCurrency: new Currency(
-								plugin.settings.defaultCurrency
-							),
-							date: DateValueObject.createNowDate(),
-						});
+				const exchangeRate = await getExchangeRate.execute({
+					fromCurrency: account.currency,
+					toCurrency: new Currency(plugin.settings.defaultCurrency),
+					date: DateValueObject.createNowDate(),
+				});
 
-						if (!exchangeRate) {
-							return account;
-						}
+				if (!exchangeRate) {
+					accountsResponse.push(account);
+					return;
+				}
 
-						const convertedValue =
-							exchangeRate.rate.value *
-							account.balance.value.value;
+				const convertedValue =
+					exchangeRate.rate.value * account.balance.value.value;
 
-						account.defaultCurrencyBalance = new AccountBalance(
-							new PriceValueObject(convertedValue)
-						);
+				account.defaultCurrencyBalance = new AccountBalance(
+					new PriceValueObject(convertedValue)
+				);
 
-						return account;
-					})
-				)
-			);
+				accountsResponse.push(account);
+			}
+			setAccountsWithConvertedBalances(accountsResponse);
 		};
 
 		fetchConvertedBalance();
