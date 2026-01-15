@@ -69,8 +69,8 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	): Transaction {
 		return new Transaction(
 			TransactionID.generate(),
-			scheduledItem.fromSplits,
-			scheduledItem.toSplits,
+			scheduledItem.originAccounts,
+			scheduledItem.destinationAccounts,
 			scheduledItem.name,
 			scheduledItem.operation.type,
 			scheduledItem.category.category.id,

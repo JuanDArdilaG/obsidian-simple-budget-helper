@@ -13,8 +13,10 @@ export const BudgetItemsListContextMenu = ({
 	setAction,
 	setSelectedItem,
 	currentAction,
+	handleEdit,
 	handleDelete,
 }: {
+	handleEdit?: (e: React.MouseEvent) => Promise<void>;
 	handleDelete?: (e: React.MouseEvent) => Promise<void>;
 	recurrent:
 		| {
@@ -37,18 +39,6 @@ export const BudgetItemsListContextMenu = ({
 	>;
 	currentAction?: "edit" | "record";
 }) => {
-	const handleEdit = () => {
-		if (currentAction === "edit") {
-			// If edit panel is already open, close it
-			setSelectedItem(undefined);
-			setAction(undefined);
-		} else {
-			// Open edit panel
-			setSelectedItem(recurrent);
-			setAction("edit");
-		}
-	};
-
 	const handleRecord = () => {
 		if (currentAction === "record") {
 			// If record panel is already open, close it
@@ -64,24 +54,22 @@ export const BudgetItemsListContextMenu = ({
 	return (
 		<Box sx={{ display: "flex", gap: "4px" }}>
 			{!(recurrent instanceof ScheduledTransaction) && (
-				<>
-					<IconButton
-						onClick={handleRecord}
-						size="small"
-						color={
-							currentAction === "record" ? "primary" : "default"
-						}
-					>
-						<PlayArrowIcon fontSize="small" />
-					</IconButton>
-					<IconButton
-						onClick={handleEdit}
-						size="small"
-						color={currentAction === "edit" ? "primary" : "default"}
-					>
-						<EditIcon fontSize="small" />
-					</IconButton>
-				</>
+				<IconButton
+					onClick={handleRecord}
+					size="small"
+					color={currentAction === "record" ? "primary" : "default"}
+				>
+					<PlayArrowIcon fontSize="small" />
+				</IconButton>
+			)}
+			{handleEdit !== undefined && (
+				<IconButton
+					onClick={handleEdit}
+					size="small"
+					color={currentAction === "edit" ? "primary" : "default"}
+				>
+					<EditIcon fontSize="small" />
+				</IconButton>
 			)}
 			{handleDelete !== undefined && (
 				<IconButton onClick={handleDelete} size="small">

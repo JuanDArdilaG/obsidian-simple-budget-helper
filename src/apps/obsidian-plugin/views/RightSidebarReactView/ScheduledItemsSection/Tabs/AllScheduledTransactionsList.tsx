@@ -27,6 +27,7 @@ import {
 	TransactionAmount,
 } from "../../../../../../contexts/Transactions/domain";
 import { ConfirmationModal } from "../../../../components/ConfirmationModal";
+import { EditScheduleTransactionPanel } from "../../../../panels/CreateBudgetItemPanel/EditScheduleTransactionPanel";
 import {
 	AccountsContext,
 	AppContext,
@@ -358,6 +359,9 @@ export const AllScheduledTransactionsList = ({
 		fetchNextOccurrences();
 	}, [scheduledItems, nextPendingOccurrenceUseCase]);
 
+	const [transactionToEdit, setTransactionToEdit] =
+		useState<ScheduledTransaction | null>(null);
+
 	return (
 		<div>
 			<ul
@@ -374,13 +378,14 @@ export const AllScheduledTransactionsList = ({
 						})
 						.map(({ scheduledTransaction, recurrence }) => {
 							const account = getAccountByID(
-								scheduledTransaction.fromSplits[0]?.accountId
+								scheduledTransaction.originAccounts[0]
+									?.accountId
 							);
-							const toAccount = scheduledTransaction.toSplits[0]
-								?.accountId
+							const toAccount = scheduledTransaction
+								.destinationAccounts[0]?.accountId
 								? getAccountByID(
-										scheduledTransaction.toSplits[0]
-											?.accountId
+										scheduledTransaction
+											.destinationAccounts[0]?.accountId
 								  )
 								: undefined;
 							const accountName =
@@ -401,13 +406,27 @@ export const AllScheduledTransactionsList = ({
 										}
 										recurrence={recurrence}
 										accountName={fullAccountName}
-										price={scheduledTransaction.fromAmount}
+										price={
+											scheduledTransaction.originAmount
+										}
 										isSelected={false}
 										showBalanceInfo={false}
 										setAction={setAction}
 										setSelectedItem={setSelectedItem}
 										context="all-items"
 										currentAction={showPanel?.action}
+										handleEdit={async () => {
+											logger.debug(
+												"Editing scheduled transaction",
+												{
+													scheduledTransactionId:
+														scheduledTransaction.id,
+												}
+											);
+											setTransactionToEdit(
+												scheduledTransaction
+											);
+										}}
 										handleDelete={async (
 											_: React.MouseEvent
 										) => {
@@ -434,6 +453,21 @@ export const AllScheduledTransactionsList = ({
 											).open();
 										}}
 									/>
+									{transactionToEdit?.id.equalTo(
+										scheduledTransaction.id
+									) && (
+										<EditScheduleTransactionPanel
+											scheduledTransaction={
+												transactionToEdit
+											}
+											onClose={() =>
+												setTransactionToEdit(null)
+											}
+											updateItems={
+												updateScheduledTransactions
+											}
+										/>
+									)}
 								</div>
 							);
 						});
@@ -674,19 +708,21 @@ export const AllScheduledTransactionsList = ({
 										{selectedMonthData.incomeItems.map(
 											(item, index) => {
 												const account = getAccountByID(
-													item.fromSplits[0]
+													item.originAccounts[0]
 														?.accountId
 												);
 												const toAccount = item
-													.toSplits[0]?.accountId
+													.destinationAccounts[0]
+													?.accountId
 													? getAccountByID(
-															item.toSplits[0]
+															item
+																.destinationAccounts[0]
 																?.accountId
 													  )
 													: undefined;
 												const price =
 													item.operation.type.isTransfer()
-														? item.fromAmount
+														? item.originAmount
 														: item.realPrice;
 
 												return (
@@ -765,19 +801,21 @@ export const AllScheduledTransactionsList = ({
 										{selectedMonthData.expenseItems.map(
 											(item, index) => {
 												const account = getAccountByID(
-													item.fromSplits[0]
+													item.originAccounts[0]
 														?.accountId
 												);
 												const toAccount = item
-													.toSplits[0]?.accountId
+													.destinationAccounts[0]
+													?.accountId
 													? getAccountByID(
-															item.toSplits[0]
+															item
+																.destinationAccounts[0]
 																?.accountId
 													  )
 													: undefined;
 												const price =
 													item.operation.type.isTransfer()
-														? item.fromAmount
+														? item.originAmount
 														: item.realPrice;
 
 												return (

@@ -55,11 +55,14 @@ export const CreateScheduledTransactionPanel = ({
 							startDate,
 							new ItemRecurrenceFrequency(frequencyString),
 							new DateValueObject(untilDate),
-							baseScheduledTransaction.fromSplits,
-							baseScheduledTransaction.toSplits,
+							baseScheduledTransaction.originAccounts,
+							baseScheduledTransaction.destinationAccounts,
 							baseScheduledTransaction.operation,
 							baseScheduledTransaction.category,
-							baseScheduledTransaction.store,
+							baseScheduledTransaction.store
+						);
+					if (baseScheduledTransaction.tags)
+						scheduledTransaction.updateTags(
 							baseScheduledTransaction.tags
 						);
 				} else {
@@ -68,11 +71,14 @@ export const CreateScheduledTransactionPanel = ({
 							ScheduledTransaction.createOneTime(
 								baseScheduledTransaction.name,
 								startDate,
-								baseScheduledTransaction.fromSplits,
-								baseScheduledTransaction.toSplits,
+								baseScheduledTransaction.originAccounts,
+								baseScheduledTransaction.destinationAccounts,
 								baseScheduledTransaction.operation,
 								baseScheduledTransaction.category,
-								baseScheduledTransaction.store,
+								baseScheduledTransaction.store
+							);
+						if (baseScheduledTransaction.tags)
+							scheduledTransaction.updateTags(
 								baseScheduledTransaction.tags
 							);
 					} else if (recurrenceType === "infinite") {
@@ -81,11 +87,14 @@ export const CreateScheduledTransactionPanel = ({
 								baseScheduledTransaction.name,
 								startDate,
 								new ItemRecurrenceFrequency(frequencyString),
-								baseScheduledTransaction.fromSplits,
-								baseScheduledTransaction.toSplits,
+								baseScheduledTransaction.originAccounts,
+								baseScheduledTransaction.destinationAccounts,
 								baseScheduledTransaction.operation,
 								baseScheduledTransaction.category,
-								baseScheduledTransaction.store,
+								baseScheduledTransaction.store
+							);
+						if (baseScheduledTransaction.tags)
+							scheduledTransaction.updateTags(
 								baseScheduledTransaction.tags
 							);
 					} else {
@@ -95,11 +104,14 @@ export const CreateScheduledTransactionPanel = ({
 								startDate,
 								new ItemRecurrenceFrequency(frequencyString),
 								new NumberValueObject(recurrences),
-								baseScheduledTransaction.fromSplits,
-								baseScheduledTransaction.toSplits,
+								baseScheduledTransaction.originAccounts,
+								baseScheduledTransaction.destinationAccounts,
 								baseScheduledTransaction.operation,
 								baseScheduledTransaction.category,
-								baseScheduledTransaction.store,
+								baseScheduledTransaction.store
+							);
+						if (baseScheduledTransaction.tags)
+							scheduledTransaction.updateTags(
 								baseScheduledTransaction.tags
 							);
 					}

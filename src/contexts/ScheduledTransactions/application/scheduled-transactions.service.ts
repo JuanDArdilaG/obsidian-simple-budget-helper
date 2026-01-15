@@ -138,12 +138,12 @@ export class ScheduledTransactionsService
 	async getMonthlyPriceEstimate(id: Nanoid): Promise<NumberValueObject> {
 		const scheduledTransaction = await this.getByID(id);
 		const fromAccount = await this._accountsService.getByID(
-			scheduledTransaction.fromSplits[0].accountId
+			scheduledTransaction.originAccounts[0].accountId
 		);
 		const toAccount =
-			scheduledTransaction.toSplits.length > 0
+			scheduledTransaction.destinationAccounts.length > 0
 				? await this._accountsService.getByID(
-						scheduledTransaction.toSplits[0].accountId
+						scheduledTransaction.destinationAccounts[0].accountId
 				  )
 				: null;
 		if (toAccount && toAccount.type.equalTo(fromAccount.type)) {
@@ -153,7 +153,7 @@ export class ScheduledTransactionsService
 			scheduledTransaction.getMonthlyFrequencyFactor();
 
 		const absValue = new NumberValueObject(
-			scheduledTransaction.fromAmount.value * frequencyFactor.value
+			scheduledTransaction.originAmount.value * frequencyFactor.value
 		);
 		if (
 			(toAccount && toAccount.type.isLiability()) ||

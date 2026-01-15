@@ -31,8 +31,10 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { ItemWithAccumulatedBalance } from "../../../../../../contexts/ScheduledTransactions/application/items-with-accumulated-balance.usecase";
 import { ItemRecurrenceInfo } from "../../../../../../contexts/ScheduledTransactions/domain";
 import { Nanoid } from "../../../../../../contexts/Shared/domain";
+import { ConfirmationModal } from "../../../../components/ConfirmationModal";
 import {
 	AccountsContext,
+	AppContext,
 	CategoriesContext,
 	ScheduledTransactionsContext,
 } from "../../Contexts";
@@ -209,42 +211,13 @@ export const CalendarItemsList = ({
 		});
 	}, [itemsWithAccountsBalance, filters]);
 
-	// Create a filtered report based on the filtered items
-	// const filteredItemsReport = useMemo(() => {
-	// 	logger.logger.debug("filteredItems", { filteredItems });
-	// 	return new ItemsReport(
-	// 		filteredItems.map(({ recurrence }) => recurrence)
-	// 	);
-	// }, [filteredItems]);
-
-	// const [total, setTotal] = useState(NumberValueObject.zero());
-	// useEffect(() => {
-	// 	getTotal.execute({ report: filteredItemsReport }).then(setTotal);
-	// }, [getTotal, filteredItemsReport]);
-
-	// const [totalExpenses, setTotalExpenses] = useState(
-	// 	NumberValueObject.zero()
-	// );
-	// useEffect(() => {
-	// 	getTotal
-	// 		.execute({ report: filteredItemsReport, type: "expenses" })
-	// 		.then(setTotalExpenses);
-	// }, [getTotal, filteredItemsReport]);
-
-	// const [totalIncomes, setTotalIncomes] = useState(NumberValueObject.zero());
-	// useEffect(() => {
-	// 	getTotal
-	// 		.execute({ report: filteredItemsReport, type: "incomes" })
-	// 		.then(setTotalIncomes);
-	// }, [getTotal, filteredItemsReport]);
-
 	// Get all available tags from items
 	const availableTags = useMemo(() => {
 		const tagSet = new Set<string>();
 		itemsWithAccountsBalance.forEach(({ recurrence }) => {
 			recurrence.tags?.toArray().forEach((tag) => tagSet.add(tag));
 		});
-		return Array.from(tagSet).sort();
+		return Array.from(tagSet).toSorted();
 	}, [itemsWithAccountsBalance]);
 
 	useEffect(() => {
@@ -1075,6 +1048,7 @@ const CalendarItemsListItem = ({
 		React.SetStateAction<"edit" | "record" | undefined>
 	>;
 }) => {
+	const { plugin } = useContext(AppContext);
 	const {
 		scheduledItems,
 		useCases: { deleteItemRecurrence },
@@ -1127,17 +1101,35 @@ const CalendarItemsListItem = ({
 					recurrence,
 					scheduleTransactionId: scheduledTransaction.id,
 				}}
+				handleEdit={async () => {
+					setAction((prev) => (prev === "edit" ? undefined : "edit"));
+					setSelectedItem((prev) =>
+						prev
+							? undefined
+							: {
+									recurrence,
+									scheduleTransactionId:
+										scheduledTransaction.id,
+							  }
+					);
+				}}
 				handleDelete={async () => {
-					console.log("Deleting recurrence:", {
-						scheduledTransaction,
-						recurrence,
-						n: recurrence.occurrenceIndex,
-					});
-					await deleteItemRecurrence.execute({
-						id: scheduledTransaction.id,
-						n: recurrence.occurrenceIndex,
-					});
-					updateItems();
+					new ConfirmationModal(
+						plugin.app,
+						async (confirmed: boolean) => {
+							if (!confirmed) return;
+							console.log("Deleting recurrence:", {
+								scheduledTransaction,
+								recurrence,
+								n: recurrence.occurrenceIndex,
+							});
+							await deleteItemRecurrence.execute({
+								id: scheduledTransaction.id,
+								n: recurrence.occurrenceIndex,
+							});
+							updateItems();
+						}
+					).open();
 				}}
 			/>
 			{showPanel &&

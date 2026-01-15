@@ -18,14 +18,15 @@ export class ScheduledMonthlyReport {
 				account: this.accounts.find(
 					(account) =>
 						account.id ===
-						scheduledTransaction.fromSplits[0].accountId
+						scheduledTransaction.originAccounts[0].accountId
 				)!,
 				toAccount:
-					scheduledTransaction.toSplits.length > 0
+					scheduledTransaction.destinationAccounts.length > 0
 						? accounts.find(
 								(account) =>
 									account.id ===
-									scheduledTransaction.toSplits[0].accountId
+									scheduledTransaction.destinationAccounts[0]
+										.accountId
 						  )
 						: undefined,
 			})

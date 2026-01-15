@@ -46,8 +46,8 @@ export class ItemRecurrenceInfo {
 			scheduledTransaction.operation,
 			scheduledTransaction.category,
 			RecurrenceModificationState.PENDING,
-			scheduledTransaction.fromSplits,
-			scheduledTransaction.toSplits,
+			scheduledTransaction.originAccounts,
+			scheduledTransaction.destinationAccounts,
 			scheduledTransaction.store,
 			scheduledTransaction.tags
 		);
@@ -67,8 +67,8 @@ export class ItemRecurrenceInfo {
 			scheduledTransaction.operation,
 			scheduledTransaction.category,
 			modification.state,
-			modification.fromSplits ?? scheduledTransaction.fromSplits,
-			modification.toSplits ?? scheduledTransaction.toSplits,
+			modification.fromSplits ?? scheduledTransaction.originAccounts,
+			modification.toSplits ?? scheduledTransaction.destinationAccounts,
 			scheduledTransaction.store,
 			scheduledTransaction.tags
 		);
