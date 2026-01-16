@@ -90,22 +90,22 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 			.filter((item) => {
 				this.#logger.debug("addAccounts", {
 					account: accounts.find((acc) =>
-						acc.id.equalTo(item.fromSplits[0].accountId)
+						acc.id.equalTo(item.originAccounts[0].accountId)
 					),
 				});
 				return accounts.find((acc) =>
-					acc.id.equalTo(item.fromSplits[0]?.accountId)
+					acc.id.equalTo(item.originAccounts[0]?.accountId)
 				);
 			})
 			.map((item) => ({
 				recurrence: item,
 				account: accounts.find((acc) =>
-					acc.id.equalTo(item.fromSplits[0]?.accountId)
+					acc.id.equalTo(item.originAccounts[0]?.accountId)
 				)!,
 				toAccount:
-					item.toSplits[0]?.accountId &&
+					item.destinationAccounts[0]?.accountId &&
 					accounts.find((acc) =>
-						acc.id.equalTo(item.toSplits[0].accountId)
+						acc.id.equalTo(item.destinationAccounts[0].accountId)
 					),
 			}));
 	}
@@ -149,8 +149,8 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 		const recurrenceAmount = recurrence.getRealPriceForAccount(
 			recurrence.operation,
 			account,
-			recurrence.fromSplits,
-			recurrence.toSplits
+			recurrence.originAccounts,
+			recurrence.destinationAccounts
 		);
 		accountBalance = accountBalance.plus(recurrenceAmount);
 
@@ -159,8 +159,8 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 				recurrence.getRealPriceForAccount(
 					recurrence.operation,
 					toAccount,
-					recurrence.fromSplits,
-					recurrence.toSplits
+					recurrence.originAccounts,
+					recurrence.destinationAccounts
 				)
 			);
 

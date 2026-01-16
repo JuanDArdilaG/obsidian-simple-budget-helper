@@ -110,7 +110,7 @@ export class ItemRecurrenceInfo {
 		this._state = state;
 	}
 
-	get fromSplits(): PaymentSplit[] {
+	get originAccounts(): PaymentSplit[] {
 		return this._fromSplits;
 	}
 
@@ -118,21 +118,21 @@ export class ItemRecurrenceInfo {
 		this._fromSplits = fromSplits;
 	}
 
-	get fromAmount(): TransactionAmount {
+	get originAmount(): TransactionAmount {
 		return this._fromSplits.reduce(
 			(sum, split) => split.amount.plus(sum),
 			TransactionAmount.zero()
 		);
 	}
 
-	get toAmount(): TransactionAmount {
+	get destinationAmount(): TransactionAmount {
 		return this._toSplits.reduce(
 			(sum, split) => split.amount.plus(sum),
 			TransactionAmount.zero()
 		);
 	}
 
-	get toSplits(): PaymentSplit[] {
+	get destinationAccounts(): PaymentSplit[] {
 		return this._toSplits;
 	}
 

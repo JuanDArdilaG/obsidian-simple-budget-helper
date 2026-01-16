@@ -36,7 +36,7 @@ export const EditItemRecurrencePanel = ({
 	);
 
 	const [fromSplits, setFromSplits] = useState(
-		recurrence.fromSplits?.map((split) => ({
+		recurrence.originAccounts?.map((split) => ({
 			accountId: split.accountId.value,
 			amount: split.amount,
 		})) ??
@@ -46,7 +46,7 @@ export const EditItemRecurrencePanel = ({
 			}))
 	);
 	const [toSplits, setToSplits] = useState(
-		recurrence.toSplits?.map((split) => ({
+		recurrence.destinationAccounts?.map((split) => ({
 			accountId: split.accountId.value,
 			amount: split.amount,
 		})) ??

@@ -35,13 +35,13 @@ export const RecordItemPanel = ({
 	const { updateTransactions } = useContext(TransactionsContext);
 	const { accounts, getAccountByID } = useContext(AccountsContext);
 	const [fromSplits, setFromSplits] = useState(
-		recurrence.fromSplits.map((split) => ({
+		recurrence.originAccounts.map((split) => ({
 			accountId: split.accountId.value,
 			amount: split.amount,
 		}))
 	);
 	const [toSplits, setToSplits] = useState(
-		recurrence.toSplits.map((split) => ({
+		recurrence.destinationAccounts.map((split) => ({
 			accountId: split.accountId.value,
 			amount: split.amount,
 		}))
