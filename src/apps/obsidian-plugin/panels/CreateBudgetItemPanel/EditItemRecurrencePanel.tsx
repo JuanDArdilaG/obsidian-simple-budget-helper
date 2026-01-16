@@ -69,7 +69,7 @@ export const EditItemRecurrencePanel = ({
 
 			{/* Splits Editor */}
 			<div>
-				<h4>From Splits</h4>
+				<h4>Origin Accounts</h4>
 				{originAccounts.map((split, idx) => (
 					<div
 						key={split.accountId}
@@ -97,9 +97,9 @@ export const EditItemRecurrencePanel = ({
 							placeholder="Amount"
 							value={split.amount}
 							onChange={(val) => {
-								const newSplits = [...originAccounts];
-								newSplits[idx].amount = val;
-								setOriginAccounts(newSplits);
+								const newOriginAccounts = [...originAccounts];
+								newOriginAccounts[idx].amount = val;
+								setOriginAccounts(newOriginAccounts);
 							}}
 							prefix={
 								accounts.find(
@@ -129,11 +129,11 @@ export const EditItemRecurrencePanel = ({
 						])
 					}
 				>
-					Add Split
+					Add Accounts
 				</button>
 			</div>
 			<div>
-				<h4>To Splits</h4>
+				<h4>Destination Accounts</h4>
 				{destinationAccounts.map((split, idx) => (
 					<div
 						key={split.accountId}
@@ -161,9 +161,11 @@ export const EditItemRecurrencePanel = ({
 							placeholder="Amount"
 							value={split.amount}
 							onChange={(val) => {
-								const newSplits = [...destinationAccounts];
-								newSplits[idx].amount = val;
-								setDestinationAccounts(newSplits);
+								const newDestinationAccounts = [
+									...destinationAccounts,
+								];
+								newDestinationAccounts[idx].amount = val;
+								setDestinationAccounts(newDestinationAccounts);
 							}}
 							prefix={
 								accounts.find(
@@ -195,7 +197,7 @@ export const EditItemRecurrencePanel = ({
 						])
 					}
 				>
-					Add Split
+					Add Account
 				</button>
 			</div>
 			{/* End Splits Editor */}
