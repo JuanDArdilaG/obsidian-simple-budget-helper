@@ -194,7 +194,8 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 				default:
 					return "Invalid pattern";
 			}
-		} catch {
+		} catch (error) {
+			console.error("Failed to create pattern preview:", error);
 			return "Invalid pattern configuration";
 		}
 	}, [
@@ -234,7 +235,11 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 				const pattern = createPattern();
 				onChange(pattern);
 			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : "Failed to create pattern";
 				console.error("Failed to create pattern:", error);
+				const updatedErrors = [errorMessage];
+				setErrors(updatedErrors);
+				onValidationChange?.(false, updatedErrors);
 			}
 		}
 	}, [
