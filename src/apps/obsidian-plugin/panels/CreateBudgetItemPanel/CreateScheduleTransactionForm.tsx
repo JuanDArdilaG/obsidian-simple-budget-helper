@@ -121,18 +121,17 @@ export const CreateScheduleTransactionForm = ({
 			fromSplits:
 				totalAmount <= 0 ? "Amount must be greater than 0" : undefined,
 			toSplits: undefined,
-			account:
-				!item.fromSplits?.[0]?.accountId
-					? "Account is required"
-					: undefined,
+			account: item.fromSplits?.[0]?.accountId
+				? undefined
+				: "Account is required",
 			toAccount:
 				item.operation.type === "transfer" &&
-				!(item.toSplits && item.toSplits[0]?.accountId)
+				!item.toSplits?.[0]?.accountId
 					? "To account is required"
 					: undefined,
 		};
 		setErrors(newErrors);
-		setIsFormValid(!Object.values(newErrors).some((err) => err));
+		setIsFormValid(!Object.values(newErrors).some(Boolean));
 	}, [item]);
 
 	useEffect(() => {
