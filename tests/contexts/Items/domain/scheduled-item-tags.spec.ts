@@ -35,7 +35,7 @@ describe("ScheduledTransaction Tags", () => {
 		];
 		const toSplits: PaymentSplit[] = [];
 
-		const scheduledTransaction = ScheduledTransaction.createInfinite(
+		const scheduledTransaction = ScheduledTransaction.create(
 			new StringValueObject("Test Item"),
 			startDate,
 			frequency,
