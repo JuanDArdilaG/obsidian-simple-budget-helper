@@ -7,6 +7,7 @@ import {
 } from "contexts/Accounts/domain";
 import { Transaction, TransactionID } from "contexts/Transactions/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { buildTestAccounts } from "../domain/buildTestAccounts";
 
 // Mock repositories
 const mockAccountsRepository = {
@@ -165,34 +166,18 @@ describe("AccountsIntegrityService", () => {
 	describe("calculateAllAccountsIntegrity", () => {
 		it("should calculate integrity for all accounts", async () => {
 			// Arrange
-			const account1Id = AccountID.generate();
-			const account2Id = AccountID.generate();
+			const accounts = buildTestAccounts(2);
 
-			const account1 = Account.fromPrimitives({
-				id: account1Id.value,
-				type: "asset",
-				name: "Account 1",
-				currency,
-				balance: 100,
-				updatedAt: new Date().toISOString(),
-			});
-			const account2 = Account.fromPrimitives({
-				id: account2Id.value,
-				type: "asset",
-				name: "Account 2",
-				currency,
-				balance: 200,
-				updatedAt: new Date().toISOString(),
-			});
-
-			mockAccountsRepository.findAll.mockResolvedValue([
-				account1,
-				account2,
-			]);
+			mockAccountsRepository.findAll.mockResolvedValue(accounts);
+			mockAccountsRepository.findById
+				.mockResolvedValueOnce(accounts[0])
+				.mockResolvedValueOnce(accounts[1]);
 			mockTransactionsRepository.findByAccountId
-				.mockResolvedValueOnce([createMockTransaction(account1Id, 100)])
 				.mockResolvedValueOnce([
-					createMockTransaction(account2Id, 200),
+					createMockTransaction(accounts[0].id, 100),
+				])
+				.mockResolvedValueOnce([
+					createMockTransaction(accounts[1].id, 200),
 				]);
 
 			// Act
@@ -200,7 +185,7 @@ describe("AccountsIntegrityService", () => {
 
 			// Assert
 			expect(report.totalAccountsChecked).toBe(2);
-			// expect(report.hasDiscrepancies).toBe(false);
+			expect(report.hasDiscrepancies).toBe(true);
 			expect(mockAccountsRepository.findAll).toHaveBeenCalledTimes(1);
 			expect(
 				mockTransactionsRepository.findByAccountId
@@ -209,34 +194,16 @@ describe("AccountsIntegrityService", () => {
 
 		it("should continue processing other accounts when one fails", async () => {
 			// Arrange
-			const account1Id = AccountID.generate();
-			const account2Id = AccountID.generate();
+			const accounts = buildTestAccounts(2);
 
-			const account1 = Account.fromPrimitives({
-				id: account1Id.value,
-				type: "asset",
-				name: "Account 1",
-				currency,
-				balance: 100,
-				updatedAt: new Date().toISOString(),
-			});
-			const account2 = Account.fromPrimitives({
-				id: account2Id.value,
-				type: "asset",
-				name: "Account 2",
-				currency,
-				balance: 200,
-				updatedAt: new Date().toISOString(),
-			});
-
-			mockAccountsRepository.findAll.mockResolvedValue([
-				account1,
-				account2,
-			]);
+			mockAccountsRepository.findAll.mockResolvedValue(accounts);
+			mockAccountsRepository.findById
+				.mockResolvedValueOnce(accounts[0])
+				.mockResolvedValueOnce(accounts[1]);
 			mockTransactionsRepository.findByAccountId
 				.mockRejectedValueOnce(new Error("Database error"))
 				.mockResolvedValueOnce([
-					createMockTransaction(account2Id, 200),
+					createMockTransaction(accounts[1].id, 200),
 				]);
 
 			// Act
