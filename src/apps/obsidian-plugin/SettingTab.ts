@@ -204,19 +204,6 @@ export class SettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Root folder")
-			.setDesc("The path to the root folder to store budget items")
-			.addText((text) =>
-				text
-					.setPlaceholder("Root Folder Path")
-					.setValue(this.plugin.settings.rootFolder)
-					.onChange(async (value) => {
-						this.plugin.settings.rootFolder = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
 			.setName("Debug mode")
 			.setDesc("Enable/Disable debug mode")
 			.addToggle((toggle) =>
