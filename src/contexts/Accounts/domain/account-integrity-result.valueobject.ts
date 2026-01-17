@@ -1,30 +1,42 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
+import { Logger } from "../../Shared/infrastructure/logger";
 import { TransactionAmount } from "../../Transactions/domain";
 import { AccountID } from "./account-id.valueobject";
 
 export class AccountIntegrityResult {
+	static readonly #logger = new Logger("AccountIntegrityResult");
 	constructor(
 		private readonly _accountId: AccountID,
 		private readonly _expectedBalance: PriceValueObject,
 		private readonly _actualBalance: PriceValueObject,
 		private readonly _hasIntegrity: boolean,
-		private readonly _discrepancy: PriceValueObject
+		private readonly _discrepancy: PriceValueObject,
 	) {}
 
 	static create(
 		accountId: AccountID,
 		expectedBalance: PriceValueObject,
-		actualBalance: PriceValueObject
+		actualBalance: PriceValueObject,
 	): AccountIntegrityResult {
 		const discrepancy = actualBalance.subtract(expectedBalance);
-		const hasIntegrity = discrepancy.equalTo(new TransactionAmount(0));
+		const hasIntegrity = discrepancy.lessOrEqualThan(
+			new TransactionAmount(0.001),
+		);
+
+		this.#logger.debug("Account integrity calculated", {
+			accountId: accountId.value,
+			expectedBalance: expectedBalance.value,
+			actualBalance: actualBalance.value,
+			hasIntegrity: hasIntegrity,
+			discrepancy: discrepancy.value,
+		});
 
 		return new AccountIntegrityResult(
 			accountId,
 			expectedBalance,
 			actualBalance,
 			hasIntegrity,
-			discrepancy
+			discrepancy,
 		);
 	}
 
