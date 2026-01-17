@@ -1,5 +1,5 @@
 alias d := dev
-dev: build test
+dev: test
     npm run dev
 
 alias b := build

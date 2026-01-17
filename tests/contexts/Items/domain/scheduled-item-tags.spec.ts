@@ -10,6 +10,7 @@ import {
 	ItemRecurrenceFrequency,
 	ItemTag,
 	ItemTags,
+	RecurrencePattern,
 	RecurrenceType,
 	ScheduledTransaction,
 	ScheduledTransactionDate,
@@ -21,8 +22,8 @@ const category = new TransactionCategory(
 	Category.create(new CategoryName("Test Category")),
 	SubCategory.create(
 		CategoryID.generate(),
-		new SubCategoryName("Test Subcategory")
-	)
+		new SubCategoryName("Test Subcategory"),
+	),
 );
 
 describe("ScheduledTransaction Tags", () => {
@@ -37,12 +38,11 @@ describe("ScheduledTransaction Tags", () => {
 
 		const scheduledTransaction = ScheduledTransaction.create(
 			new StringValueObject("Test Item"),
-			startDate,
-			frequency,
+			RecurrencePattern.infinite(startDate, frequency),
 			fromSplits,
 			toSplits,
 			ItemOperation.income(),
-			category
+			category,
 		);
 
 		scheduledTransaction.updateTags(tags);

@@ -18,6 +18,7 @@ import {
 	IRecurrenceModificationsService,
 	IScheduledTransactionsRepository,
 	ItemRecurrenceFrequency,
+	RecurrencePattern,
 	ScheduledTransaction,
 	ScheduledTransactionDate,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
@@ -26,7 +27,7 @@ import { TransactionCategory } from "../../../../src/contexts/Transactions/domai
 const category = Category.create(new StringValueObject("Salary"));
 const subCategory = SubCategory.create(
 	category.id,
-	new StringValueObject("Monthly Salary")
+	new StringValueObject("Monthly Salary"),
 );
 
 describe("ScheduledTransactionsService", () => {
@@ -51,8 +52,8 @@ describe("ScheduledTransactionsService", () => {
 					Account.create(
 						AccountType.asset(),
 						new AccountName("Test Account"),
-						new Currency("USD")
-					)
+						new Currency("USD"),
+					),
 				),
 			create: vi.fn(),
 			getAllNames: vi.fn(),
@@ -91,7 +92,7 @@ describe("ScheduledTransactionsService", () => {
 		scheduledTransactionsService = new ScheduledTransactionsService(
 			mockItemsRepository,
 			recurrenceModificationsService,
-			mockAccountsService
+			mockAccountsService,
 		);
 	});
 
@@ -104,20 +105,22 @@ describe("ScheduledTransactionsService", () => {
 			];
 			const toSplits: PaymentSplit[] = [];
 
-			const item = ScheduledTransaction.createOneTime(
+			const item = ScheduledTransaction.create(
 				new StringValueObject("Income Item"),
-				ScheduledTransactionDate.createNowDate(),
+				RecurrencePattern.oneTime(
+					ScheduledTransactionDate.createNowDate(),
+				),
 				fromSplits,
 				toSplits,
 				ItemOperation.income(),
-				new TransactionCategory(category, subCategory)
+				new TransactionCategory(category, subCategory),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
 
 			const result =
 				await scheduledTransactionsService.getMonthlyPriceEstimate(
-					itemID
+					itemID,
 				);
 
 			expect(result.value).toBe(100);
@@ -131,20 +134,22 @@ describe("ScheduledTransactionsService", () => {
 			];
 			const toSplits: PaymentSplit[] = [];
 
-			const item = ScheduledTransaction.createOneTime(
+			const item = ScheduledTransaction.create(
 				new StringValueObject("Expense Item"),
-				ScheduledTransactionDate.createNowDate(),
+				RecurrencePattern.oneTime(
+					ScheduledTransactionDate.createNowDate(),
+				),
 				fromSplits,
 				toSplits,
 				ItemOperation.expense(),
-				new TransactionCategory(category, subCategory)
+				new TransactionCategory(category, subCategory),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
 
 			const result =
 				await scheduledTransactionsService.getMonthlyPriceEstimate(
-					itemID
+					itemID,
 				);
 
 			expect(result.value).toBe(-100);
@@ -161,24 +166,26 @@ describe("ScheduledTransactionsService", () => {
 				new PaymentSplit(toAccountID, new TransactionAmount(100)),
 			];
 
-			const item = ScheduledTransaction.createOneTime(
+			const item = ScheduledTransaction.create(
 				new StringValueObject("Transfer Item"),
-				ScheduledTransactionDate.createNowDate(),
+				RecurrencePattern.oneTime(
+					ScheduledTransactionDate.createNowDate(),
+				),
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
-				new TransactionCategory(category, subCategory)
+				new TransactionCategory(category, subCategory),
 			);
 
 			const fromAccount = Account.create(
 				AccountType.asset(),
 				new AccountName("Asset Account"),
-				new Currency("USD")
+				new Currency("USD"),
 			);
 			const toAccount = Account.create(
 				AccountType.liability(),
 				new AccountName("Liability Account"),
-				new Currency("USD")
+				new Currency("USD"),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -188,7 +195,7 @@ describe("ScheduledTransactionsService", () => {
 
 			const result =
 				await scheduledTransactionsService.getMonthlyPriceEstimate(
-					itemID
+					itemID,
 				);
 
 			expect(result.value).toBe(-100);
@@ -205,24 +212,26 @@ describe("ScheduledTransactionsService", () => {
 				new PaymentSplit(toAccountID, new TransactionAmount(100)),
 			];
 
-			const item = ScheduledTransaction.createOneTime(
+			const item = ScheduledTransaction.create(
 				new StringValueObject("Transfer Item"),
-				ScheduledTransactionDate.createNowDate(),
+				RecurrencePattern.oneTime(
+					ScheduledTransactionDate.createNowDate(),
+				),
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
-				new TransactionCategory(category, subCategory)
+				new TransactionCategory(category, subCategory),
 			);
 
 			const fromAccount = Account.create(
 				AccountType.liability(),
 				new AccountName("Liability Account"),
-				new Currency("USD")
+				new Currency("USD"),
 			);
 			const toAccount = Account.create(
 				AccountType.asset(),
 				new AccountName("Asset Account"),
-				new Currency("USD")
+				new Currency("USD"),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -232,7 +241,7 @@ describe("ScheduledTransactionsService", () => {
 
 			const result =
 				await scheduledTransactionsService.getMonthlyPriceEstimate(
-					itemID
+					itemID,
 				);
 
 			expect(result.value).toBe(100);
@@ -249,24 +258,26 @@ describe("ScheduledTransactionsService", () => {
 				new PaymentSplit(toAccountID, new TransactionAmount(100)),
 			];
 
-			const item = ScheduledTransaction.createOneTime(
+			const item = ScheduledTransaction.create(
 				new StringValueObject("Transfer Item"),
-				ScheduledTransactionDate.createNowDate(),
+				RecurrencePattern.oneTime(
+					ScheduledTransactionDate.createNowDate(),
+				),
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
-				new TransactionCategory(category, subCategory)
+				new TransactionCategory(category, subCategory),
 			);
 
 			const fromAccount = Account.create(
 				AccountType.asset(),
 				new AccountName("Asset Account 1"),
-				new Currency("USD")
+				new Currency("USD"),
 			);
 			const toAccount = Account.create(
 				AccountType.asset(),
 				new AccountName("Asset Account 2"),
-				new Currency("USD")
+				new Currency("USD"),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -276,7 +287,7 @@ describe("ScheduledTransactionsService", () => {
 
 			const result =
 				await scheduledTransactionsService.getMonthlyPriceEstimate(
-					itemID
+					itemID,
 				);
 
 			expect(result.value).toBe(0);
@@ -293,28 +304,30 @@ describe("ScheduledTransactionsService", () => {
 				new PaymentSplit(toAccountID, new TransactionAmount(100)),
 			];
 
-			const scheduledTransaction = ScheduledTransaction.createOneTime(
+			const scheduledTransaction = ScheduledTransaction.create(
 				new StringValueObject("Transfer Item"),
-				ScheduledTransactionDate.createNowDate(),
+				RecurrencePattern.oneTime(
+					ScheduledTransactionDate.createNowDate(),
+				),
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
-				new TransactionCategory(category, subCategory)
+				new TransactionCategory(category, subCategory),
 			);
 
 			const fromAccount = Account.create(
 				AccountType.liability(),
 				new AccountName("Liability Account 1"),
-				new Currency("USD")
+				new Currency("USD"),
 			);
 			const toAccount = Account.create(
 				AccountType.liability(),
 				new AccountName("Liability Account 2"),
-				new Currency("USD")
+				new Currency("USD"),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(
-				scheduledTransaction
+				scheduledTransaction,
 			);
 			vi.mocked(mockAccountsService.getByID)
 				.mockResolvedValueOnce(fromAccount)
@@ -322,7 +335,7 @@ describe("ScheduledTransactionsService", () => {
 
 			const result =
 				await scheduledTransactionsService.getMonthlyPriceEstimate(
-					scheduledTransactionId
+					scheduledTransactionId,
 				);
 
 			expect(result.value).toBe(0);
@@ -338,19 +351,21 @@ describe("ScheduledTransactionsService", () => {
 
 			const item = ScheduledTransaction.create(
 				new StringValueObject("Recurring Income Item"),
-				ScheduledTransactionDate.createNowDate(),
-				new ItemRecurrenceFrequency("1w"),
+				RecurrencePattern.infinite(
+					ScheduledTransactionDate.createNowDate(),
+					new ItemRecurrenceFrequency("1w"),
+				),
 				fromSplits,
 				toSplits,
 				ItemOperation.income(),
-				new TransactionCategory(category, subCategory)
+				new TransactionCategory(category, subCategory),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
 
 			const result =
 				await scheduledTransactionsService.getMonthlyPriceEstimate(
-					itemID
+					itemID,
 				);
 
 			// 1 week frequency means 4.35 times per month (30.4167 days / 7 days)

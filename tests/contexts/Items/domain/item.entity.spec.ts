@@ -11,6 +11,7 @@ import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueob
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { describe, expect, it } from "vitest";
 import {
+	RecurrencePattern,
 	ScheduledTransaction,
 	ScheduledTransactionDate,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
@@ -30,7 +31,7 @@ describe("remainingDays", () => {
 		const item = items[0].copy();
 
 		const str = item.recurrencePattern.getNthOccurrence(
-			NumberValueObject.zero()
+			NumberValueObject.zero(),
 		)?.remainingDaysStr;
 
 		expect(str).toBe("7 days");
@@ -47,7 +48,7 @@ describe("remainingDays", () => {
 		]);
 		const item = items[0].copy();
 		const str = item.recurrencePattern.getNthOccurrence(
-			NumberValueObject.zero()
+			NumberValueObject.zero(),
 		)?.remainingDaysStr;
 
 		expect(str).toBe("-7 days");
@@ -65,7 +66,7 @@ describe("remainingDays", () => {
 		const item = items[0].copy();
 
 		const str = item.recurrencePattern.getNthOccurrence(
-			NumberValueObject.zero()
+			NumberValueObject.zero(),
 		)?.remainingDaysStr;
 
 		expect(str).toBe("1 day");
@@ -83,7 +84,7 @@ describe("remainingDays", () => {
 		const item = items[0].copy();
 
 		const str = item.recurrencePattern.getNthOccurrence(
-			NumberValueObject.zero()
+			NumberValueObject.zero(),
 		)?.remainingDaysStr;
 
 		expect(str).toBe("-1 day");
@@ -104,7 +105,7 @@ describe("createRecurrences", () => {
 		const item = items[0];
 
 		const recurrences = item.recurrencePattern.generateOccurrencesUntil(
-			new DateValueObject(new Date(2024, 0, 16))
+			new DateValueObject(new Date(2024, 0, 16)),
 		);
 
 		expect(recurrences[0].value).toEqual(new Date(2024, 0, 1));
@@ -127,9 +128,11 @@ describe("transfer operation validation", () => {
 		const toSplits: PaymentSplit[] = []; // Empty toSplits for transfer
 
 		expect(() => {
-			ScheduledTransaction.createOneTime(
+			ScheduledTransaction.create(
 				new StringValueObject("Transfer Test"),
-				ScheduledTransactionDate.createNowDate(),
+				RecurrencePattern.oneTime(
+					ScheduledTransactionDate.createNowDate(),
+				),
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
@@ -137,9 +140,9 @@ describe("transfer operation validation", () => {
 					Category.create(new CategoryName("Test")),
 					SubCategory.create(
 						CategoryID.generate(),
-						new SubCategoryName("Test Subcategory")
-					)
-				)
+						new SubCategoryName("Test Subcategory"),
+					),
+				),
 			);
 		}).toThrow("Transfer operations must have a toSplits array");
 	});
@@ -155,9 +158,11 @@ describe("transfer operation validation", () => {
 		];
 
 		expect(() => {
-			ScheduledTransaction.createOneTime(
+			ScheduledTransaction.create(
 				new StringValueObject("Transfer Test"),
-				ScheduledTransactionDate.createNowDate(),
+				RecurrencePattern.oneTime(
+					ScheduledTransactionDate.createNowDate(),
+				),
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
@@ -165,9 +170,9 @@ describe("transfer operation validation", () => {
 					Category.create(new CategoryName("Test")),
 					SubCategory.create(
 						CategoryID.generate(),
-						new SubCategoryName("Test Subcategory")
-					)
-				)
+						new SubCategoryName("Test Subcategory"),
+					),
+				),
 			);
 		}).not.toThrow();
 	});
@@ -179,9 +184,9 @@ describe("transfer operation validation", () => {
 		];
 		const toSplits: PaymentSplit[] = []; // Empty toSplits
 
-		const item = ScheduledTransaction.createOneTime(
+		const item = ScheduledTransaction.create(
 			new StringValueObject("Test Item"),
-			ScheduledTransactionDate.createNowDate(),
+			RecurrencePattern.oneTime(ScheduledTransactionDate.createNowDate()),
 			fromSplits,
 			toSplits,
 			ItemOperation.expense(),
@@ -189,9 +194,9 @@ describe("transfer operation validation", () => {
 				Category.create(new CategoryName("Test")),
 				SubCategory.create(
 					CategoryID.generate(),
-					new SubCategoryName("Test Subcategory")
-				)
-			)
+					new SubCategoryName("Test Subcategory"),
+				),
+			),
 		);
 
 		expect(() => {
@@ -209,9 +214,9 @@ describe("transfer operation validation", () => {
 			new PaymentSplit(toAccount, new TransactionAmount(100)),
 		];
 
-		const item = ScheduledTransaction.createOneTime(
+		const item = ScheduledTransaction.create(
 			new StringValueObject("Test Item"),
-			ScheduledTransactionDate.createNowDate(),
+			RecurrencePattern.oneTime(ScheduledTransactionDate.createNowDate()),
 			fromSplits,
 			toSplits,
 			ItemOperation.expense(),
@@ -219,9 +224,9 @@ describe("transfer operation validation", () => {
 				Category.create(new CategoryName("Test")),
 				SubCategory.create(
 					CategoryID.generate(),
-					new SubCategoryName("Test Subcategory")
-				)
-			)
+					new SubCategoryName("Test Subcategory"),
+				),
+			),
 		);
 
 		expect(() => {
