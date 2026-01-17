@@ -437,8 +437,12 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 				{/* Validation Errors */}
 				{errors.length > 0 && (
 					<Box mt={2}>
-						{errors.map((error) => (
-							<Alert severity="error" key={error} sx={{ mb: 1 }}>
+						{errors.map((error, index) => (
+							<Alert
+								severity="error"
+								key={`${error}-${index}`}
+								sx={{ mb: 1 }}
+							>
 								{error}
 							</Alert>
 						))}
