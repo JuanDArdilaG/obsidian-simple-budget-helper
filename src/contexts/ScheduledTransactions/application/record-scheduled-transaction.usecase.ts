@@ -73,8 +73,9 @@ export class RecordScheduledTransactionUseCase
 		}
 
 		// Determine effective transaction data
-		const effectiveFromSplits = fromSplits ?? recurrenceInfo.fromSplits;
-		const effectiveToSplits = toSplits ?? recurrenceInfo.toSplits;
+		const effectiveFromSplits = fromSplits ?? recurrenceInfo.originAccounts;
+		const effectiveToSplits =
+			toSplits ?? recurrenceInfo.destinationAccounts;
 		const effectiveDate = date ?? recurrenceInfo.date;
 
 		// Create transaction from the effective data

@@ -9,6 +9,7 @@ import {
 import { PerCategoryItemsTab } from "./Tabs";
 import { AllScheduledTransactionsTab } from "./Tabs/AllScheduledTransactionsTab";
 import { CalendarItemsTab } from "./Tabs/CalendarItemsTab";
+import { ScheduledTransactionsSummary } from "./Tabs/ScheduledTransactionsSummary/ScheduledTransactionsSummary";
 
 export const ScheduledItemsSection = () => {
 	const { plugin } = useContext(AppContext);
@@ -47,6 +48,7 @@ export const ScheduledItemsSection = () => {
 
 			{sectionSelection === "calendar" && <CalendarItemsTab />}
 			{sectionSelection === "list" && <AllScheduledTransactionsTab />}
+			{sectionSelection === "summary" && <ScheduledTransactionsSummary />}
 			{sectionSelection === "perCategory" && <PerCategoryItemsTab />}
 		</RightSidebarReactTab>
 	);

@@ -35,8 +35,8 @@ export const EditItemRecurrencePanel = ({
 		recurrence.date
 	);
 
-	const [fromSplits, setFromSplits] = useState(
-		recurrence.fromSplits?.map((split) => ({
+	const [originAccounts, setOriginAccounts] = useState(
+		recurrence.originAccounts?.map((split) => ({
 			accountId: split.accountId.value,
 			amount: split.amount,
 		})) ??
@@ -45,8 +45,8 @@ export const EditItemRecurrencePanel = ({
 				amount: split.amount,
 			}))
 	);
-	const [toSplits, setToSplits] = useState(
-		recurrence.toSplits?.map((split) => ({
+	const [destinationAccounts, setDestinationAccounts] = useState(
+		recurrence.destinationAccounts?.map((split) => ({
 			accountId: split.accountId.value,
 			amount: split.amount,
 		})) ??
@@ -69,8 +69,8 @@ export const EditItemRecurrencePanel = ({
 
 			{/* Splits Editor */}
 			<div>
-				<h4>From Splits</h4>
-				{fromSplits.map((split, idx) => (
+				<h4>Origin Accounts</h4>
+				{originAccounts.map((split, idx) => (
 					<div
 						key={split.accountId}
 						style={{
@@ -87,9 +87,9 @@ export const EditItemRecurrencePanel = ({
 							getOptionLabel={(acc) => acc.name.value}
 							getOptionValue={(acc) => acc.id.value}
 							onChange={(val) => {
-								const newSplits = [...fromSplits];
+								const newSplits = [...originAccounts];
 								newSplits[idx].accountId = val;
-								setFromSplits(newSplits);
+								setOriginAccounts(newSplits);
 							}}
 						/>
 						<PriceInput
@@ -97,9 +97,9 @@ export const EditItemRecurrencePanel = ({
 							placeholder="Amount"
 							value={split.amount}
 							onChange={(val) => {
-								const newSplits = [...fromSplits];
-								newSplits[idx].amount = val;
-								setFromSplits(newSplits);
+								const newOriginAccounts = [...originAccounts];
+								newOriginAccounts[idx].amount = val;
+								setOriginAccounts(newOriginAccounts);
 							}}
 							prefix={
 								accounts.find(
@@ -109,8 +109,8 @@ export const EditItemRecurrencePanel = ({
 						/>
 						<button
 							onClick={() =>
-								setFromSplits(
-									fromSplits.filter((_, i) => i !== idx)
+								setOriginAccounts(
+									originAccounts.filter((_, i) => i !== idx)
 								)
 							}
 						>
@@ -120,8 +120,8 @@ export const EditItemRecurrencePanel = ({
 				))}
 				<button
 					onClick={() =>
-						setFromSplits([
-							...fromSplits,
+						setOriginAccounts([
+							...originAccounts,
 							{
 								accountId: accounts[0]?.id.value || "",
 								amount: new TransactionAmount(0),
@@ -129,12 +129,12 @@ export const EditItemRecurrencePanel = ({
 						])
 					}
 				>
-					Add Split
+					Add Accounts
 				</button>
 			</div>
 			<div>
-				<h4>To Splits</h4>
-				{toSplits.map((split, idx) => (
+				<h4>Destination Accounts</h4>
+				{destinationAccounts.map((split, idx) => (
 					<div
 						key={split.accountId}
 						style={{
@@ -151,9 +151,9 @@ export const EditItemRecurrencePanel = ({
 							getOptionLabel={(acc) => acc.name.value}
 							getOptionValue={(acc) => acc.id.value}
 							onChange={(val) => {
-								const newSplits = [...toSplits];
+								const newSplits = [...destinationAccounts];
 								newSplits[idx].accountId = val;
-								setToSplits(newSplits);
+								setDestinationAccounts(newSplits);
 							}}
 						/>
 						<PriceInput
@@ -161,9 +161,11 @@ export const EditItemRecurrencePanel = ({
 							placeholder="Amount"
 							value={split.amount}
 							onChange={(val) => {
-								const newSplits = [...toSplits];
-								newSplits[idx].amount = val;
-								setToSplits(newSplits);
+								const newDestinationAccounts = [
+									...destinationAccounts,
+								];
+								newDestinationAccounts[idx].amount = val;
+								setDestinationAccounts(newDestinationAccounts);
 							}}
 							prefix={
 								accounts.find(
@@ -173,8 +175,10 @@ export const EditItemRecurrencePanel = ({
 						/>
 						<button
 							onClick={() =>
-								setToSplits(
-									toSplits.filter((_, i) => i !== idx)
+								setDestinationAccounts(
+									destinationAccounts.filter(
+										(_, i) => i !== idx
+									)
 								)
 							}
 						>
@@ -184,8 +188,8 @@ export const EditItemRecurrencePanel = ({
 				))}
 				<button
 					onClick={() =>
-						setToSplits([
-							...toSplits,
+						setDestinationAccounts([
+							...destinationAccounts,
 							{
 								accountId: accounts[0]?.id.value || "",
 								amount: new TransactionAmount(0),
@@ -193,7 +197,7 @@ export const EditItemRecurrencePanel = ({
 						])
 					}
 				>
-					Add Split
+					Add Account
 				</button>
 			</div>
 			{/* End Splits Editor */}
@@ -201,14 +205,14 @@ export const EditItemRecurrencePanel = ({
 			<button
 				onClick={async () => {
 					// Create PaymentSplit objects from the UI state
-					const fromSplitObjs = fromSplits.map(
+					const fromSplitObjs = originAccounts.map(
 						(s) =>
 							new PaymentSplit(
 								new AccountID(s.accountId),
 								s.amount
 							)
 					);
-					const toSplitObjs = toSplits.map(
+					const toSplitObjs = destinationAccounts.map(
 						(s) =>
 							new PaymentSplit(
 								new AccountID(s.accountId),

@@ -1,9 +1,10 @@
-import { CalendarClock, List, Logs } from "lucide-react";
+import { BookText, CalendarClock, List, Logs } from "lucide-react";
 import { SectionButton } from "../../../components/SectionButtons";
 
 export type ScheduledItemsSectionSelection =
 	| "calendar"
 	| "list"
+	| "summary"
 	| "perCategory";
 
 export const ScheduledItemsSectionButtons = ({
@@ -35,6 +36,18 @@ export const ScheduledItemsSectionButtons = ({
 				}
 				selected={selected}
 				onClick={() => setSelected("list")}
+			/>
+			<SectionButton
+				type="summary"
+				label="Summary"
+				icon={
+					<BookText
+						size={16}
+						style={{ color: "var(--color-yellow)" }}
+					/>
+				}
+				selected={selected}
+				onClick={() => setSelected("summary")}
 			/>
 			<SectionButton
 				label="Per Category"

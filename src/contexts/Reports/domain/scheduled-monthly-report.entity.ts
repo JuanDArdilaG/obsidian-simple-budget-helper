@@ -4,7 +4,7 @@ import { ScheduledTransaction } from "../../ScheduledTransactions/domain";
 import { ReportBalance } from "./report-balance.valueobject";
 
 export class ScheduledMonthlyReport {
-	readonly _ = new Logger("ScheduledMonthlyReport");
+	readonly #logger = new Logger("ScheduledMonthlyReport");
 
 	readonly scheduledTransactionsWithAccounts: ScheduledTransactionsWithAccounts[];
 
@@ -12,25 +12,27 @@ export class ScheduledMonthlyReport {
 		scheduledTransactions: ScheduledTransaction[],
 		private readonly accounts: Account[]
 	) {
-		this.scheduledTransactionsWithAccounts = scheduledTransactions.map(
-			(scheduledTransaction) => ({
+		this.scheduledTransactionsWithAccounts = scheduledTransactions
+			.map((scheduledTransaction) => ({
 				scheduledTransaction,
-				account: this.accounts.find(
-					(account) =>
-						account.id ===
+				account: this.accounts.find((account) =>
+					account.id.equalTo(
 						scheduledTransaction.originAccounts[0].accountId
-				)!,
+					)
+				),
 				toAccount:
 					scheduledTransaction.destinationAccounts.length > 0
-						? accounts.find(
-								(account) =>
-									account.id ===
+						? accounts.find((account) =>
+								account.id.equalTo(
 									scheduledTransaction.destinationAccounts[0]
 										.accountId
+								)
 						  )
 						: undefined,
-			})
-		);
+			}))
+			.filter(
+				(item) => !!item.account
+			) as ScheduledTransactionsWithAccounts[];
 	}
 
 	onlyExpenses(): ScheduledMonthlyReport {

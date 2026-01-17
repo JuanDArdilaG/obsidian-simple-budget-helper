@@ -155,11 +155,11 @@ export const CalendarItemsList = ({
 
 			// Account filter
 			if (filters.selectedAccount) {
-				const hasFromAccount = recurrence.fromSplits.some((split) =>
+				const hasFromAccount = recurrence.originAccounts.some((split) =>
 					split.accountId.equalTo(filters.selectedAccount!)
 				);
-				const hasToAccount = recurrence.toSplits.some((split) =>
-					split.accountId.equalTo(filters.selectedAccount!)
+				const hasToAccount = recurrence.destinationAccounts.some(
+					(split) => split.accountId.equalTo(filters.selectedAccount!)
 				);
 				if (!hasFromAccount && !hasToAccount) {
 					return false;
@@ -187,9 +187,9 @@ export const CalendarItemsList = ({
 
 			// Price range filter - use the same logic as getItemSplitPrice
 			const accountId =
-				recurrence.fromSplits?.[0]?.accountId ??
-				recurrence.fromSplits[0]?.accountId;
-			const split = recurrence.fromSplits.find(
+				recurrence.originAccounts?.[0]?.accountId ??
+				recurrence.originAccounts[0]?.accountId;
+			const split = recurrence.originAccounts.find(
 				(split) => split.accountId.value === accountId.value
 			);
 			const itemPrice = split ? Math.abs(split.amount.value) : 0;
@@ -929,9 +929,11 @@ export const CalendarItemsList = ({
 											recurrence={recurrence}
 											accountName={
 												getAccountByID(
-													recurrence.fromSplits?.[0]
+													recurrence
+														.originAccounts?.[0]
 														?.accountId ??
-														recurrence.fromSplits[0]
+														recurrence
+															.originAccounts[0]
 															?.accountId
 												)?.name ?? AccountName.empty()
 											}
@@ -962,10 +964,10 @@ export const CalendarItemsList = ({
 													accountName={
 														getAccountByID(
 															recurrence
-																.toSplits?.[0]
+																.destinationAccounts?.[0]
 																?.accountId ??
 																recurrence
-																	.toSplits[0]
+																	.destinationAccounts[0]
 																	?.accountId
 														)?.name ??
 														AccountName.empty()
@@ -1091,7 +1093,7 @@ const CalendarItemsListItem = ({
 				accountName={accountName}
 				accountBalance={accountBalance}
 				accountPrevBalance={accountPrevBalance}
-				price={recurrence.fromAmount}
+				price={recurrence.originAmount}
 				isSelected={isSelectedForRecord}
 				setAction={setAction}
 				setSelectedItem={setSelectedItem}

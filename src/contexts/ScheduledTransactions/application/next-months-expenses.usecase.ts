@@ -1,6 +1,6 @@
 import {
-	DateValueObject,
 	NumberValueObject,
+	PriceValueObject,
 } from "@juandardilag/value-objects";
 import { QueryUseCase } from "../../Shared/domain";
 import { Logger } from "../../Shared/infrastructure/logger";
@@ -8,7 +8,11 @@ import { IScheduledTransactionsService, ItemRecurrenceInfo } from "../domain";
 import { NextPendingOccurrenceUseCase } from "./next-pending-occurrence.usecase";
 
 export class NextMonthsExpensesUseCase
-	implements QueryUseCase<undefined, ItemRecurrenceInfo[]>
+	implements
+		QueryUseCase<
+			undefined,
+			{ info: ItemRecurrenceInfo; monthAmount: PriceValueObject }[]
+		>
 {
 	readonly #logger = new Logger("NextMonthsExpensesUseCase");
 
@@ -17,7 +21,9 @@ export class NextMonthsExpensesUseCase
 		private readonly _scheduledTransactionsService: IScheduledTransactionsService
 	) {}
 
-	async execute(): Promise<ItemRecurrenceInfo[]> {
+	async execute(): Promise<
+		{ info: ItemRecurrenceInfo; monthAmount: PriceValueObject }[]
+	> {
 		this.#logger.debug(
 			"Fetching next month's occurrences for all scheduled transactions"
 		);
@@ -39,12 +45,24 @@ export class NextMonthsExpensesUseCase
 		const nextOccurrences = (
 			await Promise.all(
 				scheduledTransactions.map(async (scheduledTransaction) => {
-					return await this.nextPendingOccurrenceUseCase.execute(
-						scheduledTransaction.id
-					);
+					const info =
+						await this.nextPendingOccurrenceUseCase.execute(
+							scheduledTransaction.id
+						);
+					return {
+						info,
+						monthAmount: scheduledTransaction.pricePerMonth,
+					};
 				})
 			)
-		).filter((info): info is ItemRecurrenceInfo => info !== null);
+		).filter(
+			(
+				info
+			): info is {
+				info: ItemRecurrenceInfo;
+				monthAmount: PriceValueObject;
+			} => info.info !== null
+		);
 
 		this.#logger.debug(
 			"Retrieved next occurrences from scheduled transactions",
@@ -53,24 +71,6 @@ export class NextMonthsExpensesUseCase
 			}
 		);
 
-		const nextMonthFirstDay = new Date();
-		nextMonthFirstDay.setDate(1);
-		nextMonthFirstDay.setMonth(nextMonthFirstDay.getMonth() + 1);
-		nextMonthFirstDay.setHours(0, 0, 0, 0);
-
-		this.#logger.debug("Filtering occurrences", {
-			nextMonthFirstDay,
-		});
-
-		const nextMonthOccurrences = nextOccurrences.filter(
-			({ date }) =>
-				date.compareTo(new DateValueObject(nextMonthFirstDay)) >= 0
-		);
-
-		this.#logger.debug("Found occurrences in the next month", {
-			length: nextMonthOccurrences.length,
-		});
-
-		return nextMonthOccurrences;
+		return nextOccurrences;
 	}
 }

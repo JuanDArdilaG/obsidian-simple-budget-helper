@@ -285,6 +285,14 @@ export class ScheduledTransaction extends Entity<
 		return realPrice.times(monthlyFactor);
 	}
 
+	/**
+	 * Returns the price per month with account types consideration
+	 */
+	get pricePerMonth(): PriceValueObject {
+		const monthlyFactor = this.getMonthlyFrequencyFactor();
+		return this.realPrice.times(monthlyFactor);
+	}
+
 	// Basic property updates
 	updateName(name: StringValueObject): void {
 		if (this._name.equalTo(name)) return;
