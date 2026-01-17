@@ -237,9 +237,8 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : "Failed to create pattern";
 				console.error("Failed to create pattern:", error);
-				const updatedErrors = [errorMessage];
-				setErrors(updatedErrors);
-				onValidationChange?.(false, updatedErrors);
+				setErrors([errorMessage]);
+				onValidationChange?.(false, [errorMessage]);
 			}
 		}
 	}, [
