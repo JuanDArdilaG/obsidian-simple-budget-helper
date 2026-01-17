@@ -51,7 +51,7 @@ describe("EditItemRecurrencePanel Logic", () => {
 		const recurringStartDate = new ScheduledTransactionDate(
 			new Date("2024-01-01")
 		);
-		recurringItem = ScheduledTransaction.createInfinite(
+		recurringItem = ScheduledTransaction.create(
 			new StringValueObject("Recurring Item"),
 			recurringStartDate,
 			new ItemRecurrenceFrequency("monthly"),

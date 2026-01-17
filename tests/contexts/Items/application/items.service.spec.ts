@@ -336,7 +336,7 @@ describe("ScheduledTransactionsService", () => {
 			];
 			const toSplits: PaymentSplit[] = [];
 
-			const item = ScheduledTransaction.createInfinite(
+			const item = ScheduledTransaction.create(
 				new StringValueObject("Recurring Income Item"),
 				ScheduledTransactionDate.createNowDate(),
 				new ItemRecurrenceFrequency("1w"),

@@ -11,6 +11,7 @@ import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueob
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import {
 	ItemRecurrenceFrequency,
+	RecurrencePattern,
 	ScheduledTransaction,
 	ScheduledTransactionDate,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
@@ -99,7 +100,7 @@ export const buildTestItems = (
 					)
 				);
 				if (recurrence?.frequency) {
-					item = ScheduledTransaction.createInfinite(
+					item = ScheduledTransaction.create(
 						new StringValueObject("test"),
 						startDate,
 						new ItemRecurrenceFrequency(recurrence.frequency),
@@ -127,9 +128,13 @@ export const buildTestItems = (
 
 						item = ScheduledTransaction.createWithEndDate(
 							new StringValueObject("test"),
-							startDate,
-							new ItemRecurrenceFrequency(recurrence.frequency),
-							adjustedUntilDate,
+							RecurrencePattern.untilDate(
+								startDate,
+								new ItemRecurrenceFrequency(
+									recurrence.frequency
+								),
+								adjustedUntilDate
+							),
 							fromSplits,
 							finalToSplits,
 							operation ?? ItemOperation.expense(),

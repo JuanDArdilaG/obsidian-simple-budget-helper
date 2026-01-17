@@ -1,7 +1,6 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
 import { Box, Chip, TextField, Typography } from "@mui/material";
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
-import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
 import {
 	Select,
 	SelectWithCreation,
@@ -15,10 +14,7 @@ import {
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { AccountID } from "contexts/Accounts/domain";
 import { Nanoid, OperationType } from "contexts/Shared/domain";
-import {
-	TransactionAmount,
-	TransactionDate,
-} from "contexts/Transactions/domain";
+import { TransactionAmount } from "contexts/Transactions/domain";
 import {
 	PropsWithChildren,
 	useContext,
@@ -42,10 +38,7 @@ export const CreateScheduleTransactionForm = ({
 	onAttemptSubmit,
 }: PropsWithChildren<{
 	items: ScheduledTransaction[];
-	onSubmit: (
-		item: ScheduledTransaction,
-		date: TransactionDate
-	) => Promise<void>;
+	onSubmit: (item: ScheduledTransaction) => Promise<void>;
 	close: () => void;
 	isValid?: boolean;
 	showErrors: boolean;
@@ -80,9 +73,6 @@ export const CreateScheduleTransactionForm = ({
 	});
 	const [isFormValid, setIsFormValid] = useState(false);
 
-	const { DateInput, date } = useDateInput({
-		id: "date",
-	});
 	const accountNames = useMemo(
 		() =>
 			accounts
@@ -131,17 +121,17 @@ export const CreateScheduleTransactionForm = ({
 			fromSplits:
 				totalAmount <= 0 ? "Amount must be greater than 0" : undefined,
 			toSplits: undefined,
-			account: !(item.fromSplits && item.fromSplits[0]?.accountId)
-				? "Account is required"
-				: undefined,
+			account: item.fromSplits?.[0]?.accountId
+				? undefined
+				: "Account is required",
 			toAccount:
 				item.operation.type === "transfer" &&
-				!(item.toSplits && item.toSplits[0]?.accountId)
+				!item.toSplits?.[0]?.accountId
 					? "To account is required"
 					: undefined,
 		};
 		setErrors(newErrors);
-		setIsFormValid(!Object.values(newErrors).some((err) => err));
+		setIsFormValid(!Object.values(newErrors).some(Boolean));
 	}, [item]);
 
 	useEffect(() => {
@@ -247,7 +237,7 @@ export const CreateScheduleTransactionForm = ({
 			toSplits: item.toSplits,
 			operation: item.operation,
 		});
-		await onSubmit(itemToPersist, new TransactionDate(date));
+		await onSubmit(itemToPersist);
 		if (withClose) return close();
 		setSelectedItem(undefined);
 		setItem({
@@ -363,7 +353,6 @@ export const CreateScheduleTransactionForm = ({
 						marginTop: "16px",
 					}}
 				>
-					{DateInput}
 					<PriceInput
 						id="amount"
 						placeholder="Amount"
@@ -633,26 +622,7 @@ export const CreateScheduleTransactionForm = ({
 				</Box>
 			</Box>
 
-			{/* Recurrence Section */}
-			{children && (
-				<Box sx={{ marginBottom: "32px" }}>
-					<Typography
-						variant="h6"
-						sx={{
-							color: "var(--text-normal)",
-							fontWeight: 500,
-							marginBottom: "16px",
-							paddingBottom: "8px",
-							borderBottom:
-								"2px solid var(--background-modifier-border)",
-						}}
-					>
-						Recurrence Settings
-					</Typography>
-					{children}
-				</Box>
-			)}
-
+			{children}
 			{/* Action Buttons */}
 			<Box
 				sx={{

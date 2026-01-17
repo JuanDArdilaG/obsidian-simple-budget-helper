@@ -22,7 +22,6 @@ import {
 	TransactionCategory,
 	TransactionCategoryPrimitives,
 } from "../../Transactions/domain/transaction-category.vo";
-import { ItemRecurrenceFrequency } from "./item-recurrence-frequency.valueobject";
 import { ItemTag } from "./item-tag.valueobject";
 import { ItemTags } from "./item-tags.valueobject";
 import { ScheduledItem } from "./old/scheduled-item.entity";
@@ -53,98 +52,15 @@ export class ScheduledTransaction extends Entity<
 		this.validateTransferOperation();
 	}
 
-	static createOneTime(
+	static create(
 		name: StringValueObject,
-		date: ScheduledTransactionDate,
+		recurrencePattern: RecurrencePattern,
 		fromSplits: PaymentSplit[],
 		toSplits: PaymentSplit[],
 		operation: ItemOperation,
 		category: TransactionCategory,
 		store?: StringValueObject
 	): ScheduledTransaction {
-		const recurrencePattern = RecurrencePattern.oneTime(date);
-		return new ScheduledTransaction(
-			Nanoid.generate(),
-			name,
-			fromSplits,
-			toSplits,
-			operation,
-			category,
-			recurrencePattern,
-			store
-		);
-	}
-
-	static createInfinite(
-		name: StringValueObject,
-		startDate: ScheduledTransactionDate,
-		frequency: ItemRecurrenceFrequency,
-		fromSplits: PaymentSplit[],
-		toSplits: PaymentSplit[],
-		operation: ItemOperation,
-		category: TransactionCategory,
-		store?: StringValueObject
-	): ScheduledTransaction {
-		const recurrencePattern = RecurrencePattern.infinite(
-			startDate,
-			frequency
-		);
-		return new ScheduledTransaction(
-			Nanoid.generate(),
-			name,
-			fromSplits,
-			toSplits,
-			operation,
-			category,
-			recurrencePattern,
-			store
-		);
-	}
-
-	static createWithEndDate(
-		name: StringValueObject,
-		startDate: ScheduledTransactionDate,
-		frequency: ItemRecurrenceFrequency,
-		endDate: DateValueObject,
-		fromSplits: PaymentSplit[],
-		toSplits: PaymentSplit[],
-		operation: ItemOperation,
-		category: TransactionCategory,
-		store?: StringValueObject
-	): ScheduledTransaction {
-		const recurrencePattern = RecurrencePattern.untilDate(
-			startDate,
-			frequency,
-			endDate
-		);
-		return new ScheduledTransaction(
-			Nanoid.generate(),
-			name,
-			fromSplits,
-			toSplits,
-			operation,
-			category,
-			recurrencePattern,
-			store
-		);
-	}
-
-	static createWithMaxOccurrences(
-		name: StringValueObject,
-		startDate: ScheduledTransactionDate,
-		frequency: ItemRecurrenceFrequency,
-		maxOccurrences: NumberValueObject,
-		fromSplits: PaymentSplit[],
-		toSplits: PaymentSplit[],
-		operation: ItemOperation,
-		category: TransactionCategory,
-		store?: StringValueObject
-	): ScheduledTransaction {
-		const recurrencePattern = RecurrencePattern.untilNOccurrences(
-			startDate,
-			frequency,
-			maxOccurrences
-		);
 		return new ScheduledTransaction(
 			Nanoid.generate(),
 			name,

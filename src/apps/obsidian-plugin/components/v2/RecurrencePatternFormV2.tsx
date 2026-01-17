@@ -22,7 +22,7 @@ import {
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	ItemRecurrenceFrequency,
 	RecurrencePattern,
@@ -90,16 +90,16 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 			const validationErrors: string[] = [];
 
 			if (type !== RecurrenceType.ONE_TIME) {
-				if (!frequency) {
-					validationErrors.push(
-						"Frequency is required for recurring items"
-					);
-				} else {
+				if (frequency) {
 					try {
 						new ItemRecurrenceFrequency(frequency);
 					} catch {
 						validationErrors.push("Invalid frequency format");
 					}
+				} else {
+					validationErrors.push(
+						"Frequency is required for recurring items"
+					);
 				}
 			}
 
@@ -125,43 +125,37 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 	);
 
 	const createPattern = useCallback(() => {
-		try {
-			const startDateVO = new ScheduledTransactionDate(
-				startDate.toDate()
-			);
-			const effectiveFrequency = useCustomFrequency
-				? customFrequency
-				: frequencyPreset;
+		const startDateVO = new ScheduledTransactionDate(startDate.toDate());
+		const effectiveFrequency = useCustomFrequency
+			? customFrequency
+			: frequencyPreset;
 
-			switch (recurrenceType) {
-				case RecurrenceType.ONE_TIME:
-					return RecurrencePattern.oneTime(startDateVO);
+		switch (recurrenceType) {
+			case RecurrenceType.ONE_TIME:
+				return RecurrencePattern.oneTime(startDateVO);
 
-				case RecurrenceType.INFINITE:
-					return RecurrencePattern.infinite(
-						startDateVO,
-						new ItemRecurrenceFrequency(effectiveFrequency)
-					);
+			case RecurrenceType.INFINITE:
+				return RecurrencePattern.infinite(
+					startDateVO,
+					new ItemRecurrenceFrequency(effectiveFrequency)
+				);
 
-				case RecurrenceType.UNTIL_DATE:
-					return RecurrencePattern.untilDate(
-						startDateVO,
-						new ItemRecurrenceFrequency(effectiveFrequency),
-						new DateValueObject(endDate!.toDate())
-					);
+			case RecurrenceType.UNTIL_DATE:
+				return RecurrencePattern.untilDate(
+					startDateVO,
+					new ItemRecurrenceFrequency(effectiveFrequency),
+					new DateValueObject(endDate!.toDate())
+				);
 
-				case RecurrenceType.N_OCCURRENCES:
-					return RecurrencePattern.untilNOccurrences(
-						startDateVO,
-						new ItemRecurrenceFrequency(effectiveFrequency),
-						new NumberValueObject(maxOccurrences)
-					);
+			case RecurrenceType.N_OCCURRENCES:
+				return RecurrencePattern.untilNOccurrences(
+					startDateVO,
+					new ItemRecurrenceFrequency(effectiveFrequency),
+					new NumberValueObject(maxOccurrences)
+				);
 
-				default:
-					throw new Error("Invalid recurrence type");
-			}
-		} catch (error) {
-			throw error;
+			default:
+				throw new Error("Invalid recurrence type");
 		}
 	}, [
 		recurrenceType,
@@ -200,7 +194,8 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 				default:
 					return "Invalid pattern";
 			}
-		} catch {
+		} catch (error) {
+			console.error("Failed to create pattern preview:", error);
 			return "Invalid pattern configuration";
 		}
 	}, [
@@ -211,17 +206,18 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 		frequencyPreset,
 		customFrequency,
 		useCustomFrequency,
-		createPattern,
 	]);
 
 	// Effect to validate and emit changes
-	React.useEffect(() => {
-		const effectiveFrequency =
-			recurrenceType === RecurrenceType.ONE_TIME
-				? undefined
-				: useCustomFrequency
-				? customFrequency
-				: frequencyPreset;
+	useEffect(() => {
+		let effectiveFrequency: string | undefined;
+		if (recurrenceType === RecurrenceType.ONE_TIME) {
+			effectiveFrequency = undefined;
+		} else if (useCustomFrequency) {
+			effectiveFrequency = customFrequency;
+		} else {
+			effectiveFrequency = frequencyPreset;
+		}
 
 		const validationErrors = validatePattern(
 			recurrenceType,
@@ -239,7 +235,10 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 				const pattern = createPattern();
 				onChange(pattern);
 			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : "Failed to create pattern";
 				console.error("Failed to create pattern:", error);
+				setErrors([errorMessage]);
+				onValidationChange?.(false, [errorMessage]);
 			}
 		}
 	}, [
@@ -250,10 +249,6 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 		frequencyPreset,
 		customFrequency,
 		useCustomFrequency,
-		onChange,
-		onValidationChange,
-		validatePattern,
-		createPattern,
 	]);
 
 	const handleFrequencyPresetChange = (preset: string) => {
@@ -413,7 +408,9 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 							type="number"
 							value={maxOccurrences}
 							onChange={(e) =>
-								setMaxOccurrences(parseInt(e.target.value, 10))
+								setMaxOccurrences(
+									Number.parseInt(e.target.value, 10)
+								)
 							}
 							InputProps={{
 								endAdornment: (
@@ -445,7 +442,11 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 				{errors.length > 0 && (
 					<Box mt={2}>
 						{errors.map((error, index) => (
-							<Alert severity="error" key={index} sx={{ mb: 1 }}>
+							<Alert
+								severity="error"
+								key={`${error}-${index}`}
+								sx={{ mb: 1 }}
+							>
 								{error}
 							</Alert>
 						))}
