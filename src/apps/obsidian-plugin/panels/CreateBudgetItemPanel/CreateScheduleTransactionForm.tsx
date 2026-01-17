@@ -122,7 +122,7 @@ export const CreateScheduleTransactionForm = ({
 				totalAmount <= 0 ? "Amount must be greater than 0" : undefined,
 			toSplits: undefined,
 			account:
-				!item.fromSplits || !item.fromSplits[0]?.accountId
+				!item.fromSplits?.[0]?.accountId
 					? "Account is required"
 					: undefined,
 			toAccount:
