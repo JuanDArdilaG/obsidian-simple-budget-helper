@@ -35,6 +35,10 @@ import {
 import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { useContext, useState } from "react";
+import {
+	ITransactionsService,
+	Transaction,
+} from "../../../../../contexts/Transactions/domain";
 import { CategoriesContext } from "../Contexts";
 import { AppContext } from "../Contexts/AppContext";
 import { RightSidebarReactTab } from "../RightSidebarReactTab";
@@ -58,7 +62,7 @@ export const CategoriesList = () => {
 		useNotification();
 
 	const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-		new Set()
+		new Set(),
 	);
 
 	// Delete dialog states
@@ -94,7 +98,7 @@ export const CategoriesList = () => {
 			id: string;
 			name: string;
 			type: "category" | "subcategory";
-		}
+		},
 	) => {
 		setAnchorEl(event.currentTarget);
 		setSelectedItem(item);
@@ -107,23 +111,38 @@ export const CategoriesList = () => {
 
 	const getTransactionSummaries = async (
 		itemId: string,
-		itemType: "category" | "subcategory"
+		itemType: "category" | "subcategory",
 	): Promise<TransactionSummary[]> => {
 		try {
-			const transactionsService = container.resolve(
-				"transactionsService"
+			const transactionsService = container.resolve<ITransactionsService>(
+				"transactionsService",
 			);
+
+			const txToSummary = (tx: Transaction): TransactionSummary => ({
+				id: tx.id.value,
+				name: tx.name.value,
+				amount: tx.realOriginAmount.toNumber(),
+				date: tx.date.toISOString().split("T")[0],
+				operation: tx.operation.value,
+				account:
+					tx.originAccounts[0]?.accountId.value ||
+					tx.destinationAccounts[0]?.accountId.value,
+			});
 
 			if (itemType === "category") {
 				const categoryId = new CategoryID(itemId);
-				return await transactionsService.getTransactionSummariesByCategory(
-					categoryId
-				);
+				return (
+					await transactionsService.getTransactionsByCategory(
+						categoryId,
+					)
+				).map(txToSummary);
 			} else {
 				const subCategoryId = new SubCategoryID(itemId);
-				return await transactionsService.getTransactionSummariesBySubCategory(
-					subCategoryId
-				);
+				return (
+					await transactionsService.getTransactionsBySubCategory(
+						subCategoryId,
+					)
+				).map(txToSummary);
 			}
 		} catch (error) {
 			console.error("Error fetching related transactions:", error);
@@ -136,7 +155,7 @@ export const CategoriesList = () => {
 			// Fetch related transactions before showing dialog
 			const transactions = await getTransactionSummaries(
 				selectedItem.id,
-				selectedItem.type
+				selectedItem.type,
 			);
 			setRelatedTransactions(transactions);
 
@@ -154,7 +173,7 @@ export const CategoriesList = () => {
 		try {
 			if (deleteItem.type === "category") {
 				const deleteCategoryUseCase = container.resolve(
-					"deleteCategoryUseCase"
+					"deleteCategoryUseCase",
 				);
 				await deleteCategoryUseCase.execute(
 					new CategoryID(deleteItem.id),
@@ -163,20 +182,20 @@ export const CategoriesList = () => {
 						: undefined,
 					reassignment?.subcategoryId
 						? new SubCategoryID(reassignment.subcategoryId)
-						: undefined
+						: undefined,
 				);
 			} else if (deleteItem.type === "subcategory") {
 				const deleteSubCategoryUseCase = container.resolve(
-					"deleteSubCategoryUseCase"
+					"deleteSubCategoryUseCase",
 				);
 				await deleteSubCategoryUseCase.execute(
 					new SubCategoryID(deleteItem.id),
 					reassignment?.subcategoryId
 						? new SubCategoryID(reassignment.subcategoryId)
-						: undefined
+						: undefined,
 				);
 			}
-			await updateCategoriesWithSubcategories();
+			updateCategoriesWithSubcategories();
 			showNotification(
 				`${
 					deleteItem.type.charAt(0).toUpperCase() +
@@ -184,7 +203,7 @@ export const CategoriesList = () => {
 				} "${deleteItem.name}" deleted successfully${
 					reassignment ? " and related items reassigned" : ""
 				}`,
-				"success"
+				"success",
 			);
 		} catch (error) {
 			console.error("Error deleting item:", error);
@@ -192,7 +211,7 @@ export const CategoriesList = () => {
 				`Failed to delete ${deleteItem.type}: ${
 					error instanceof Error ? error.message : "Unknown error"
 				}`,
-				"error"
+				"error",
 			);
 		}
 	};
@@ -204,7 +223,7 @@ export const CategoriesList = () => {
 	};
 
 	const sortedCategories = categoriesWithSubcategories.toSorted(
-		(catA, catB) => catA.category.name.compareTo(catB.category.name)
+		(catA, catB) => catA.category.name.compareTo(catB.category.name),
 	);
 
 	// Prepare available reassignments for the delete dialog
@@ -408,12 +427,12 @@ export const CategoriesList = () => {
 															.subCategories
 															.length
 													}{" "}
-													subcategor
+													subcategory
 													{categoryWithSubCategories
 														.subCategories
-														.length !== 1
-														? "ies"
-														: "y"}
+														.length === 1
+														? "y"
+														: "ies"}
 												</Typography>
 											}
 										/>
@@ -490,8 +509,8 @@ export const CategoriesList = () => {
 													{categoryWithSubCategories.subCategories
 														.toSorted((a, b) =>
 															a.name.compareTo(
-																b.name
-															)
+																b.name,
+															),
 														)
 														.map((subCategory) => (
 															<ListItem
@@ -547,7 +566,7 @@ export const CategoriesList = () => {
 																	<IconButton
 																		size="small"
 																		onClick={(
-																			e
+																			e,
 																		) => {
 																			e.stopPropagation();
 																			handleMenuOpen(
@@ -558,7 +577,7 @@ export const CategoriesList = () => {
 																						.value,
 																					name: subCategory.name.toString(),
 																					type: "subcategory",
-																				}
+																				},
 																			);
 																		}}
 																		sx={{

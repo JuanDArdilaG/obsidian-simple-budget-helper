@@ -47,14 +47,14 @@ describe("update", () => {
 			accountsService as any,
 			transactionsRepository as any,
 			categoriesService as any,
-			subCategoriesService as any
+			subCategoriesService as any,
 		);
 
 		await service.update(mockTransaction as any);
 
 		expect(accountsService.getByID).toHaveBeenCalled();
 		expect(transactionsRepository.persist).toHaveBeenCalledWith(
-			mockTransaction
+			mockTransaction,
 		);
 	});
 });
@@ -88,14 +88,14 @@ describe("delete", () => {
 			accountsService as any,
 			transactionsRepository as any,
 			categoriesService as any,
-			subCategoriesService as any
+			subCategoriesService as any,
 		);
 
 		await service.delete(mockTransaction.id as any);
 
 		expect(accountsService.getByID).toHaveBeenCalled();
 		expect(transactionsRepository.deleteById).toHaveBeenCalledWith(
-			mockTransaction.id
+			mockTransaction.id,
 		);
 	});
 });
@@ -110,13 +110,11 @@ describe("TransactionsService extra methods", () => {
 				findByCriteria: vi.fn().mockResolvedValue([mockTransaction]),
 			} as any,
 			{} as any,
-			{} as any
+			{} as any,
 		);
 
 		const categoryId = CategoryID.generate();
-		const summaries = await service.getTransactionSummariesByCategory(
-			categoryId
-		);
+		const summaries = await service.getTransactionsByCategory(categoryId);
 
 		expect(summaries).toBeDefined();
 		expect(Array.isArray(summaries)).toBe(true);
@@ -132,13 +130,12 @@ describe("TransactionsService extra methods", () => {
 				findByCriteria: vi.fn().mockResolvedValue([mockTransaction]),
 			} as any,
 			{} as any,
-			{} as any
+			{} as any,
 		);
 
 		const subCategoryId = SubCategoryID.generate();
-		const summaries = await service.getTransactionSummariesBySubCategory(
-			subCategoryId
-		);
+		const summaries =
+			await service.getTransactionSummariesBySubCategory(subCategoryId);
 
 		expect(summaries).toBeDefined();
 		expect(Array.isArray(summaries)).toBe(true);
@@ -154,13 +151,11 @@ describe("TransactionsService extra methods", () => {
 				findByCriteria: vi.fn().mockResolvedValue([mockTransaction]),
 			} as any,
 			{} as any,
-			{} as any
+			{} as any,
 		);
 
 		const categoryId = CategoryID.generate();
-		const summaries = await service.getTransactionSummariesByCategory(
-			categoryId
-		);
+		const summaries = await service.getTransactionsByCategory(categoryId);
 
 		if (summaries.length > 0) {
 			const summary = summaries[0];
@@ -170,7 +165,7 @@ describe("TransactionsService extra methods", () => {
 			expect(summary).toHaveProperty("date");
 			expect(summary).toHaveProperty("operation");
 			expect(["income", "expense", "transfer"]).toContain(
-				summary.operation
+				summary.operation,
 			);
 		}
 	});
@@ -205,30 +200,30 @@ describe("reassignTransactionsSubCategory", () => {
 			{} as any,
 			transactionsRepository as any,
 			{} as any,
-			subCategoriesService as any
+			subCategoriesService as any,
 		);
 
 		await service.reassignTransactionsSubCategory(
 			oldSubCategoryId,
-			newSubCategoryId
+			newSubCategoryId,
 		);
 
 		// Verify that the subcategory service was called to get the new subcategory
 		expect(subCategoriesService.getByID).toHaveBeenCalledWith(
-			newSubCategoryId
+			newSubCategoryId,
 		);
 
 		// Verify that both update methods were called on the transaction
 		expect(mockTransaction.updateSubCategory).toHaveBeenCalledWith(
-			newSubCategoryId
+			newSubCategoryId,
 		);
 		expect(mockTransaction.updateCategory).toHaveBeenCalledWith(
-			newCategoryId
+			newCategoryId,
 		);
 
 		// Verify that the transaction was persisted
 		expect(transactionsRepository.persist).toHaveBeenCalledWith(
-			mockTransaction
+			mockTransaction,
 		);
 	});
 });

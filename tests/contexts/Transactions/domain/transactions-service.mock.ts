@@ -24,7 +24,7 @@ export class TransactionsServiceMock implements ITransactionsService {
 
 	async accountAdjustment(
 		accountID: AccountID,
-		newBalance: AccountBalance
+		newBalance: AccountBalance,
 	): Promise<void> {
 		throw new Error("not implemented");
 	}
@@ -42,21 +42,21 @@ export class TransactionsServiceMock implements ITransactionsService {
 	}
 
 	async hasTransactionsBySubCategory(
-		subCategory: SubCategoryID
+		subCategory: SubCategoryID,
 	): Promise<boolean> {
 		throw new Error("not implemented");
 	}
 
 	async reassignTransactionsCategory(
 		oldCategory: CategoryID,
-		newCategory: CategoryID
+		newCategory: CategoryID,
 	): Promise<void> {
 		throw new Error("not implemented");
 	}
 
 	async reassignTransactionsSubCategory(
 		oldSubCategory: SubCategoryID,
-		newSubCategory: SubCategoryID
+		newSubCategory: SubCategoryID,
 	): Promise<void> {
 		throw new Error("not implemented");
 	}
@@ -64,7 +64,7 @@ export class TransactionsServiceMock implements ITransactionsService {
 	async reassignTransactionsCategoryAndSubcategory(
 		oldCategory: CategoryID,
 		newCategory: CategoryID,
-		newSubCategory: SubCategoryID
+		newSubCategory: SubCategoryID,
 	): Promise<void> {
 		throw new Error("not implemented");
 	}
@@ -77,31 +77,15 @@ export class TransactionsServiceMock implements ITransactionsService {
 		throw new Error("not implemented");
 	}
 
-	async getTransactionSummariesByCategory(category: CategoryID): Promise<
-		Array<{
-			id: string;
-			name: string;
-			amount: number;
-			date: string;
-			operation: "income" | "expense" | "transfer";
-			account?: string;
-		}>
-	> {
+	async getTransactionsByCategory(
+		category: CategoryID,
+	): Promise<Array<Transaction>> {
 		throw new Error("not implemented");
 	}
 
-	async getTransactionSummariesBySubCategory(
-		subCategory: SubCategoryID
-	): Promise<
-		Array<{
-			id: string;
-			name: string;
-			amount: number;
-			date: string;
-			operation: "income" | "expense" | "transfer";
-			account?: string;
-		}>
-	> {
+	async getTransactionsBySubCategory(
+		subCategory: SubCategoryID,
+	): Promise<Array<Transaction>> {
 		throw new Error("not implemented");
 	}
 }

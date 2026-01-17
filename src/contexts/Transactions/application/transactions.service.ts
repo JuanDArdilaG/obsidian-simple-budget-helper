@@ -33,7 +33,7 @@ export class TransactionsService implements ITransactionsService {
 		private readonly _accountsService: IAccountsService,
 		private readonly _transactionsRepository: ITransactionsRepository,
 		private readonly categoriesService: ICategoriesService,
-		private readonly subCategoriesService: ISubCategoriesService
+		private readonly subCategoriesService: ISubCategoriesService,
 	) {}
 
 	async getAll(): Promise<Transaction[]> {
@@ -48,13 +48,13 @@ export class TransactionsService implements ITransactionsService {
 
 	async getByCategory(category: CategoryID): Promise<Transaction[]> {
 		return this._transactionsRepository.findByCriteria(
-			new TransactionCriteria().where("category", category.value)
+			new TransactionCriteria().where("category", category.value),
 		);
 	}
 
 	async getBySubCategory(subCategory: SubCategoryID): Promise<Transaction[]> {
 		return this._transactionsRepository.findByCriteria(
-			new TransactionCriteria().where("subCategory", subCategory.value)
+			new TransactionCriteria().where("subCategory", subCategory.value),
 		);
 	}
 
@@ -64,7 +64,7 @@ export class TransactionsService implements ITransactionsService {
 	}
 
 	async hasTransactionsBySubCategory(
-		subCategory: SubCategoryID
+		subCategory: SubCategoryID,
 	): Promise<boolean> {
 		const transactions = await this.getBySubCategory(subCategory);
 		return transactions.length > 0;
@@ -72,7 +72,7 @@ export class TransactionsService implements ITransactionsService {
 
 	async reassignTransactionsCategory(
 		oldCategory: CategoryID,
-		newCategory: CategoryID
+		newCategory: CategoryID,
 	): Promise<void> {
 		const transactions = await this.getByCategory(oldCategory);
 
@@ -84,14 +84,13 @@ export class TransactionsService implements ITransactionsService {
 
 	async reassignTransactionsSubCategory(
 		oldSubCategory: SubCategoryID,
-		newSubCategory: SubCategoryID
+		newSubCategory: SubCategoryID,
 	): Promise<void> {
 		const transactions = await this.getBySubCategory(oldSubCategory);
 
 		// Get the new subcategory to find its parent category
-		const newSubCategoryEntity = await this.subCategoriesService.getByID(
-			newSubCategory
-		);
+		const newSubCategoryEntity =
+			await this.subCategoriesService.getByID(newSubCategory);
 		const newCategory = newSubCategoryEntity.category;
 
 		for (const transaction of transactions) {
@@ -104,7 +103,7 @@ export class TransactionsService implements ITransactionsService {
 	async reassignTransactionsCategoryAndSubcategory(
 		oldCategory: CategoryID,
 		newCategory: CategoryID,
-		newSubCategory: SubCategoryID
+		newSubCategory: SubCategoryID,
 	): Promise<void> {
 		const transactions = await this.getByCategory(oldCategory);
 
@@ -128,7 +127,7 @@ export class TransactionsService implements ITransactionsService {
 
 	async accountAdjustment(
 		accountID: AccountID,
-		newBalance: AccountBalance
+		newBalance: AccountBalance,
 	): Promise<void> {
 		const account = await this._accountsService.getByID(accountID);
 		let amountDifference = account.balance.adjust(newBalance.value);
@@ -143,17 +142,17 @@ export class TransactionsService implements ITransactionsService {
 		if (amountDifference.isZero()) return;
 
 		const category = await this.categoriesService.getByNameWithCreation(
-			new CategoryName("Adjustment")
+			new CategoryName("Adjustment"),
 		);
 		const subCategory =
 			await this.subCategoriesService.getByNameWithCreation(
 				category.id,
-				new SubCategoryName("Adjustment")
+				new SubCategoryName("Adjustment"),
 			);
 
 		if (account.type.isLiability())
 			amountDifference = amountDifference.times(
-				new NumberValueObject(-1)
+				new NumberValueObject(-1),
 			);
 
 		const fromSplits = [
@@ -165,10 +164,10 @@ export class TransactionsService implements ITransactionsService {
 			[],
 			new TransactionName(`Adjustment for ${account.name}`),
 			new TransactionOperation(
-				amountDifference.isPositive() ? "income" : "expense"
+				amountDifference.isPositive() ? "income" : "expense",
 			),
 			category.id,
-			subCategory.id
+			subCategory.id,
 		);
 
 		await this.record(transaction);
@@ -181,11 +180,11 @@ export class TransactionsService implements ITransactionsService {
 			...transaction.destinationAccounts.map((s) => s.accountId.value),
 			...prevTransaction.originAccounts.map((s) => s.accountId.value),
 			...prevTransaction.destinationAccounts.map(
-				(s) => s.accountId.value
+				(s) => s.accountId.value,
 			),
 		];
 		const uniqueAccountIDs = Array.from(new Set(allAccountIDs)).map(
-			(id) => new AccountID(id)
+			(id) => new AccountID(id),
 		);
 
 		for (const accountID of uniqueAccountIDs) {
@@ -211,7 +210,7 @@ export class TransactionsService implements ITransactionsService {
 			...transaction.destinationAccounts.map((s) => s.accountId.value),
 		];
 		const uniqueAccountIDs = Array.from(new Set(allAccountIDs)).map(
-			(id) => new AccountID(id)
+			(id) => new AccountID(id),
 		);
 
 		for (const accountID of uniqueAccountIDs) {
@@ -221,61 +220,15 @@ export class TransactionsService implements ITransactionsService {
 		}
 	}
 
-	async getTransactionSummariesByCategory(category: CategoryID): Promise<
-		Array<{
-			id: string;
-			name: string;
-			amount: number;
-			date: string;
-			operation: "income" | "expense" | "transfer";
-			account?: string;
-		}>
-	> {
-		const transactions = await this.getByCategory(category);
-		return transactions.map((transaction) => ({
-			id: transaction.id.value,
-			name: transaction.name.toString(),
-			amount: transaction.operation.isIncome()
-				? transaction.originAmount.value
-				: -transaction.originAmount.value,
-			date: transaction.date.value.toISOString().split("T")[0],
-			operation: transaction.operation.value as
-				| "income"
-				| "expense"
-				| "transfer",
-			account:
-				transaction.originAccounts[0]?.accountId.value ||
-				transaction.destinationAccounts[0]?.accountId.value,
-		}));
+	async getTransactionsByCategory(
+		category: CategoryID,
+	): Promise<Array<Transaction>> {
+		return await this.getByCategory(category);
 	}
 
-	async getTransactionSummariesBySubCategory(
-		subCategory: SubCategoryID
-	): Promise<
-		Array<{
-			id: string;
-			name: string;
-			amount: number;
-			date: string;
-			operation: "income" | "expense" | "transfer";
-			account?: string;
-		}>
-	> {
-		const transactions = await this.getBySubCategory(subCategory);
-		return transactions.map((transaction) => ({
-			id: transaction.id.value,
-			name: transaction.name.toString(),
-			amount: transaction.operation.isIncome()
-				? transaction.originAmount.value
-				: -transaction.originAmount.value,
-			date: transaction.date.value.toISOString().split("T")[0],
-			operation: transaction.operation.value as
-				| "income"
-				| "expense"
-				| "transfer",
-			account:
-				transaction.originAccounts[0]?.accountId.value ||
-				transaction.destinationAccounts[0]?.accountId.value,
-		}));
+	async getTransactionsBySubCategory(
+		subCategory: SubCategoryID,
+	): Promise<Array<Transaction>> {
+		return await this.getBySubCategory(subCategory);
 	}
 }

@@ -8,7 +8,7 @@ export interface ITransactionsService {
 	record(transaction: Transaction): Promise<void>;
 	accountAdjustment(
 		accountID: AccountID,
-		newBalance: AccountBalance
+		newBalance: AccountBalance,
 	): Promise<void>;
 
 	getAll(): Promise<Transaction[]>;
@@ -19,37 +19,23 @@ export interface ITransactionsService {
 	hasTransactionsBySubCategory(subCategory: SubCategoryID): Promise<boolean>;
 	reassignTransactionsCategory(
 		oldCategory: CategoryID,
-		newCategory: CategoryID
+		newCategory: CategoryID,
 	): Promise<void>;
 	reassignTransactionsSubCategory(
 		oldSubCategory: SubCategoryID,
-		newSubCategory: SubCategoryID
+		newSubCategory: SubCategoryID,
 	): Promise<void>;
 	reassignTransactionsCategoryAndSubcategory(
 		oldCategory: CategoryID,
 		newCategory: CategoryID,
-		newSubCategory: SubCategoryID
+		newSubCategory: SubCategoryID,
 	): Promise<void>;
 	update(transaction: Transaction): Promise<void>;
 	delete(id: TransactionID): Promise<void>;
-	getTransactionSummariesByCategory(category: CategoryID): Promise<
-		Array<{
-			id: string;
-			name: string;
-			amount: number;
-			date: string;
-			operation: "income" | "expense" | "transfer";
-			account?: string;
-		}>
-	>;
-	getTransactionSummariesBySubCategory(subCategory: SubCategoryID): Promise<
-		Array<{
-			id: string;
-			name: string;
-			amount: number;
-			date: string;
-			operation: "income" | "expense" | "transfer";
-			account?: string;
-		}>
-	>;
+	getTransactionsByCategory(
+		category: CategoryID,
+	): Promise<Array<Transaction>>;
+	getTransactionsBySubCategory(
+		subCategory: SubCategoryID,
+	): Promise<Array<Transaction>>;
 }
