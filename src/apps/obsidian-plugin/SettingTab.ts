@@ -16,7 +16,7 @@ class IntegrityReportModal extends Modal {
 		app: App,
 		plugin: SimpleBudgetHelperPlugin,
 		report: IntegrityCheckReport,
-		allAccounts: Account[]
+		allAccounts: Account[],
 	) {
 		super(app);
 		this.report = report;
@@ -44,7 +44,7 @@ class IntegrityReportModal extends Modal {
 		});
 		summaryEl.createEl("p", {
 			text: `Execution date: ${new Date(
-				reportPrimitives.executionDate
+				reportPrimitives.executionDate,
 			).toLocaleString()}`,
 		});
 
@@ -65,23 +65,23 @@ class IntegrityReportModal extends Modal {
 						text: `Account: ${
 							this.allAccounts.find(
 								(account) =>
-									account.id.value === result.accountId
+									account.id.value === result.accountId,
 							)?.name || result.accountId
 						}`,
 					});
 					accountEl.createEl("p", {
 						text: `Expected Balance: ${new TransactionAmount(
-							result.expectedBalance
+							result.expectedBalance,
 						).toString()}`,
 					});
 					accountEl.createEl("p", {
 						text: `Actual Balance: ${new TransactionAmount(
-							result.actualBalance
+							result.actualBalance,
 						).toString()}`,
 					});
 					accountEl.createEl("p", {
 						text: `Discrepancy: ${new TransactionAmount(
-							result.discrepancy
+							result.discrepancy,
 						).toString()}`,
 						cls: "integrity-discrepancy",
 					});
@@ -96,7 +96,7 @@ class IntegrityReportModal extends Modal {
 						try {
 							const resolveUseCase =
 								this.plugin.container.resolve<ResolveAccountDiscrepancyUseCase>(
-									"resolveAccountDiscrepancyUseCase"
+									"resolveAccountDiscrepancyUseCase",
 								);
 							await resolveUseCase.execute(result.accountId);
 
@@ -108,7 +108,7 @@ class IntegrityReportModal extends Modal {
 						} catch (error) {
 							console.error(
 								"Failed to resolve discrepancy:",
-								error
+								error,
 							);
 							resolveButton.textContent = "Failed to resolve";
 							resolveButton.style.backgroundColor =
@@ -118,7 +118,7 @@ class IntegrityReportModal extends Modal {
 								"Failed to resolve discrepancy: " +
 									(error instanceof Error
 										? error.message
-										: String(error))
+										: String(error)),
 							);
 						}
 					};
@@ -186,19 +186,21 @@ export class SettingTab extends PluginSettingTab {
 			.setDesc("The preferred currency for accounts and transactions")
 			.addDropdown((dropdown) =>
 				dropdown
-					.setValue(this.plugin.settings.defaultCurrency)
 					.addOptions(
-						Object.keys(currencies).reduce((options, code) => {
-							options[
-								code
-							] = `${code} - ${currencies[code].name}`;
-							return options;
-						}, {} as Record<string, string>)
+						Object.keys(currencies).reduce(
+							(options, code) => {
+								options[code] =
+									`${code} - ${currencies[code].name}`;
+								return options;
+							},
+							{} as Record<string, string>,
+						),
 					)
+					.setValue(this.plugin.settings.defaultCurrency)
 					.onChange(async (value) => {
 						this.plugin.settings.defaultCurrency = value;
 						await this.plugin.saveSettings();
-					})
+					}),
 			);
 
 		new Setting(containerEl)
@@ -211,7 +213,7 @@ export class SettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.rootFolder = value;
 						await this.plugin.saveSettings();
-					})
+					}),
 			);
 
 		new Setting(containerEl)
@@ -223,7 +225,7 @@ export class SettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.debugMode = value;
 						await this.plugin.saveSettings();
-					})
+					}),
 			);
 
 		// Accounts Integrity Section
@@ -232,7 +234,7 @@ export class SettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Run Account Integrity Check")
 			.setDesc(
-				"Check all accounts for balance discrepancies based on transaction history"
+				"Check all accounts for balance discrepancies based on transaction history",
 			)
 			.addButton((button) =>
 				button.setButtonText("Run Check").onClick(async () => {
@@ -242,11 +244,11 @@ export class SettingTab extends PluginSettingTab {
 					try {
 						const integrityUseCase =
 							this.plugin.container.resolve<CalculateAllAccountsIntegrityUseCase>(
-								"calculateAllAccountsIntegrityUseCase"
+								"calculateAllAccountsIntegrityUseCase",
 							);
 						const getAllAccountsUseCase =
 							this.plugin.container.resolve<GetAllAccountsUseCase>(
-								"getAllAccountsUseCase"
+								"getAllAccountsUseCase",
 							);
 						const report = await integrityUseCase.execute();
 						const allAccounts =
@@ -257,7 +259,7 @@ export class SettingTab extends PluginSettingTab {
 							this.app,
 							this.plugin,
 							report,
-							allAccounts
+							allAccounts,
 						);
 						modal.open();
 					} catch (error) {
@@ -267,13 +269,13 @@ export class SettingTab extends PluginSettingTab {
 							"Integrity check failed: " +
 								(error instanceof Error
 									? error.message
-									: String(error))
+									: String(error)),
 						);
 					} finally {
 						button.setDisabled(false);
 						button.setButtonText("Run Check");
 					}
-				})
+				}),
 			);
 	}
 }
