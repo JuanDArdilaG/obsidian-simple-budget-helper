@@ -44,7 +44,7 @@ export const CreateScheduleTransactionForm = ({
 	items: ScheduledTransaction[];
 	onSubmit: (
 		item: ScheduledTransaction,
-		date?: TransactionDate
+		date: TransactionDate
 	) => Promise<void>;
 	close: () => void;
 	isValid?: boolean;

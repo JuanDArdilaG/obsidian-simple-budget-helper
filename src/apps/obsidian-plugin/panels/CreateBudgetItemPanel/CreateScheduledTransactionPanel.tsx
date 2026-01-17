@@ -46,8 +46,7 @@ export const CreateScheduledTransactionPanel = ({
 			onSubmit={async (baseScheduledTransaction, date) => {
 				let scheduledTransaction: ScheduledTransaction;
 				const startDate =
-					(date && new ScheduledTransactionDate(date?.value)) ||
-					ScheduledTransactionDate.createNowDate();
+					date && new ScheduledTransactionDate(date.value);
 				if (untilDate) {
 					scheduledTransaction =
 						ScheduledTransaction.createWithEndDate(
@@ -61,60 +60,56 @@ export const CreateScheduledTransactionPanel = ({
 							baseScheduledTransaction.category,
 							baseScheduledTransaction.store
 						);
-					if (baseScheduledTransaction.tags)
+					baseScheduledTransaction.tags &&
+						scheduledTransaction.updateTags(
+							baseScheduledTransaction.tags
+						);
+				} else if (recurrenceType === "oneTime") {
+					scheduledTransaction = ScheduledTransaction.createOneTime(
+						baseScheduledTransaction.name,
+						startDate,
+						baseScheduledTransaction.originAccounts,
+						baseScheduledTransaction.destinationAccounts,
+						baseScheduledTransaction.operation,
+						baseScheduledTransaction.category,
+						baseScheduledTransaction.store
+					);
+					baseScheduledTransaction.tags &&
+						scheduledTransaction.updateTags(
+							baseScheduledTransaction.tags
+						);
+				} else if (recurrenceType === "infinite") {
+					scheduledTransaction = ScheduledTransaction.createInfinite(
+						baseScheduledTransaction.name,
+						startDate,
+						new ItemRecurrenceFrequency(frequencyString),
+						baseScheduledTransaction.originAccounts,
+						baseScheduledTransaction.destinationAccounts,
+						baseScheduledTransaction.operation,
+						baseScheduledTransaction.category,
+						baseScheduledTransaction.store
+					);
+					baseScheduledTransaction.tags &&
 						scheduledTransaction.updateTags(
 							baseScheduledTransaction.tags
 						);
 				} else {
-					if (recurrenceType === "oneTime") {
-						scheduledTransaction =
-							ScheduledTransaction.createOneTime(
-								baseScheduledTransaction.name,
-								startDate,
-								baseScheduledTransaction.originAccounts,
-								baseScheduledTransaction.destinationAccounts,
-								baseScheduledTransaction.operation,
-								baseScheduledTransaction.category,
-								baseScheduledTransaction.store
-							);
-						if (baseScheduledTransaction.tags)
-							scheduledTransaction.updateTags(
-								baseScheduledTransaction.tags
-							);
-					} else if (recurrenceType === "infinite") {
-						scheduledTransaction =
-							ScheduledTransaction.createInfinite(
-								baseScheduledTransaction.name,
-								startDate,
-								new ItemRecurrenceFrequency(frequencyString),
-								baseScheduledTransaction.originAccounts,
-								baseScheduledTransaction.destinationAccounts,
-								baseScheduledTransaction.operation,
-								baseScheduledTransaction.category,
-								baseScheduledTransaction.store
-							);
-						if (baseScheduledTransaction.tags)
-							scheduledTransaction.updateTags(
-								baseScheduledTransaction.tags
-							);
-					} else {
-						scheduledTransaction =
-							ScheduledTransaction.createWithMaxOccurrences(
-								baseScheduledTransaction.name,
-								startDate,
-								new ItemRecurrenceFrequency(frequencyString),
-								new NumberValueObject(recurrences),
-								baseScheduledTransaction.originAccounts,
-								baseScheduledTransaction.destinationAccounts,
-								baseScheduledTransaction.operation,
-								baseScheduledTransaction.category,
-								baseScheduledTransaction.store
-							);
-						if (baseScheduledTransaction.tags)
-							scheduledTransaction.updateTags(
-								baseScheduledTransaction.tags
-							);
-					}
+					scheduledTransaction =
+						ScheduledTransaction.createWithMaxOccurrences(
+							baseScheduledTransaction.name,
+							startDate,
+							new ItemRecurrenceFrequency(frequencyString),
+							new NumberValueObject(recurrences),
+							baseScheduledTransaction.originAccounts,
+							baseScheduledTransaction.destinationAccounts,
+							baseScheduledTransaction.operation,
+							baseScheduledTransaction.category,
+							baseScheduledTransaction.store
+						);
+					baseScheduledTransaction.tags &&
+						scheduledTransaction.updateTags(
+							baseScheduledTransaction.tags
+						);
 				}
 				logger
 					.debugB("creating scheduled item", {
