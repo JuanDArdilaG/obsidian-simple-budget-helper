@@ -100,15 +100,16 @@ export const MonthlyProjectedChart = () => {
 			});
 		}
 
+		const calculateMonthIndex = (date: Date) =>
+			(date.getFullYear() - new Date().getFullYear()) * 12 +
+			date.getMonth() -
+			new Date().getMonth();
+
 		const processTransactions = () => {
 			for (const transaction of transactions) {
 				const transactionDate = new Date(transaction.date);
 
-				const monthIndex =
-					(transactionDate.getFullYear() - now.getFullYear()) * 12 +
-					transactionDate.getMonth() -
-					now.getMonth();
-
+				const monthIndex = calculateMonthIndex(transactionDate);
 				if (monthIndex >= 0 && monthIndex < 12) {
 					if (transaction.operation.isIncome()) {
 						const amount = transaction.originAmount;
@@ -142,10 +143,7 @@ export const MonthlyProjectedChart = () => {
 				recurrencesCount: recurrences.length,
 			});
 			for (const recurrence of recurrences) {
-				const monthIndex =
-					(recurrence.date.getFullYear() - now.getFullYear()) * 12 +
-					recurrence.date.getMonth() -
-					now.getMonth();
+				const monthIndex = calculateMonthIndex(recurrence.date.value);
 
 				logger.debug("Processing recurrence for month", {
 					recurrenceName: recurrence.name.value,
@@ -294,7 +292,6 @@ export const MonthlyProjectedChart = () => {
 						alignItems: "center",
 						zIndex: 1000,
 					}}
-					// onClick={() => setSelectedMonthData(null)}
 				>
 					<div
 						style={{
@@ -307,7 +304,6 @@ export const MonthlyProjectedChart = () => {
 							overflow: "auto",
 							position: "relative",
 						}}
-						// onClick={(e) => e.stopPropagation()}
 					>
 						<button
 							onClick={() => setSelectedMonthData(null)}
@@ -636,19 +632,8 @@ export const MonthlyProjectedChart = () => {
 													)
 													.join(", ");
 											const amount =
-												transaction.destinationAccounts.reduce(
-													(
-														sum: number,
-														s: PaymentSplit
-													) => sum + s.amount.value,
-													0
-												) -
-												transaction.originAccounts.reduce(
-													(
-														sum: number,
-														s: PaymentSplit
-													) => sum + s.amount.value,
-													0
+												transaction.destinationAmount.subtract(
+													transaction.originAmount
 												);
 
 											return (
