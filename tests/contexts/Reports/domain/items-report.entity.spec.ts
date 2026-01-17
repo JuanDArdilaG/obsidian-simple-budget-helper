@@ -9,17 +9,19 @@ import {
 import { Currency } from "../../../../src/contexts/Currencies/domain/currency.vo";
 import { ScheduledMonthlyReport } from "../../../../src/contexts/Reports/domain/scheduled-monthly-report.entity";
 import { ItemOperation } from "../../../../src/contexts/Shared/domain";
+import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 import { buildTestItems } from "../../Items/domain/buildTestItems";
 
 describe("ItemsReport", () => {
 	describe("basic filtering methods", () => {
 		it("should filter only expenses", () => {
+			const account = buildTestAccounts(1)[0];
 			const items = buildTestItems([
-				{ operation: ItemOperation.expense() },
-				{ operation: ItemOperation.income() },
-				{ operation: ItemOperation.expense() },
+				{ account: account.id, operation: ItemOperation.expense() },
+				{ account: account.id, operation: ItemOperation.income() },
+				{ account: account.id, operation: ItemOperation.expense() },
 			]);
-			const report = new ScheduledMonthlyReport(items, []);
+			const report = new ScheduledMonthlyReport(items, [account]);
 
 			const expensesReport = report.onlyExpenses();
 			expect(
@@ -35,13 +37,13 @@ describe("ItemsReport", () => {
 		});
 
 		it("should filter only incomes", () => {
+			const account = buildTestAccounts(1)[0];
 			const items = buildTestItems([
-				{ operation: ItemOperation.expense() },
-				{ operation: ItemOperation.income() },
-				{ operation: ItemOperation.income() },
+				{ account: account.id, operation: ItemOperation.expense() },
+				{ account: account.id, operation: ItemOperation.income() },
+				{ account: account.id, operation: ItemOperation.income() },
 			]);
-			const report = new ScheduledMonthlyReport(items, []);
-
+			const report = new ScheduledMonthlyReport(items, [account]);
 			const incomesReport = report.onlyIncomes();
 			expect(
 				incomesReport.scheduledTransactionsWithAccounts
@@ -56,17 +58,19 @@ describe("ItemsReport", () => {
 		});
 
 		it("should filter only infinite recurrent items", () => {
+			const account = buildTestAccounts(1)[0];
 			const items = buildTestItems([
-				{ recurrence: { frequency: "monthly" } }, // infinite
+				{ account: account.id, recurrence: { frequency: "monthly" } }, // infinite
 				{
+					account: account.id,
 					recurrence: {
 						frequency: "monthly",
 						untilDate: DateValueObject.createNowDate(),
 					},
 				}, // finite
-				{ recurrence: { frequency: "monthly" } }, // infinite
+				{ account: account.id, recurrence: { frequency: "monthly" } }, // infinite
 			]);
-			const report = new ScheduledMonthlyReport(items, []);
+			const report = new ScheduledMonthlyReport(items, [account]);
 
 			const infiniteReport = report.onlyInfiniteRecurrent();
 			expect(
@@ -82,22 +86,25 @@ describe("ItemsReport", () => {
 		});
 
 		it("should filter only finite recurrent items", () => {
+			const account = buildTestAccounts(1)[0];
 			const items = buildTestItems([
-				{ recurrence: { frequency: "monthly" } }, // infinite
+				{ account: account.id, recurrence: { frequency: "monthly" } }, // infinite
 				{
+					account: account.id,
 					recurrence: {
 						frequency: "monthly",
 						untilDate: DateValueObject.createNowDate(),
 					},
 				}, // finite
 				{
+					account: account.id,
 					recurrence: {
 						frequency: "monthly",
 						untilDate: DateValueObject.createNowDate(),
 					},
 				}, // finite
 			]);
-			const report = new ScheduledMonthlyReport(items, []);
+			const report = new ScheduledMonthlyReport(items, [account]);
 
 			const finiteReport = report.onlyFiniteRecurrent();
 			expect(finiteReport.scheduledTransactionsWithAccounts).toHaveLength(
@@ -115,12 +122,13 @@ describe("ItemsReport", () => {
 
 	describe("getter methods", () => {
 		it("should get expense items", () => {
+			const account = buildTestAccounts(1)[0];
 			const items = buildTestItems([
-				{ operation: ItemOperation.expense() },
-				{ operation: ItemOperation.income() },
-				{ operation: ItemOperation.expense() },
+				{ account: account.id, operation: ItemOperation.expense() },
+				{ account: account.id, operation: ItemOperation.income() },
+				{ account: account.id, operation: ItemOperation.expense() },
 			]);
-			const report = new ScheduledMonthlyReport(items, []);
+			const report = new ScheduledMonthlyReport(items, [account]);
 
 			const expenseItems = report.getExpenseItems();
 			expect(expenseItems).toHaveLength(2);
@@ -130,12 +138,13 @@ describe("ItemsReport", () => {
 		});
 
 		it("should get income items", () => {
+			const account = buildTestAccounts(1)[0];
 			const items = buildTestItems([
-				{ operation: ItemOperation.expense() },
-				{ operation: ItemOperation.income() },
-				{ operation: ItemOperation.income() },
+				{ account: account.id, operation: ItemOperation.expense() },
+				{ account: account.id, operation: ItemOperation.income() },
+				{ account: account.id, operation: ItemOperation.income() },
 			]);
-			const report = new ScheduledMonthlyReport(items, []);
+			const report = new ScheduledMonthlyReport(items, [account]);
 
 			const incomeItems = report.getIncomeItems();
 			expect(incomeItems).toHaveLength(2);
@@ -145,13 +154,14 @@ describe("ItemsReport", () => {
 		});
 
 		it("should get transfer items", () => {
+			const account = buildTestAccounts(1)[0];
 			const items = buildTestItems([
-				{ operation: ItemOperation.expense() },
-				{ operation: ItemOperation.transfer() },
-				{ operation: ItemOperation.income() },
-				{ operation: ItemOperation.transfer() },
+				{ account: account.id, operation: ItemOperation.expense() },
+				{ account: account.id, operation: ItemOperation.transfer() },
+				{ account: account.id, operation: ItemOperation.income() },
+				{ account: account.id, operation: ItemOperation.transfer() },
 			]);
-			const report = new ScheduledMonthlyReport(items, []);
+			const report = new ScheduledMonthlyReport(items, [account]);
 
 			const transferItems = report.getTransferItems();
 			expect(transferItems).toHaveLength(2);
@@ -161,22 +171,25 @@ describe("ItemsReport", () => {
 		});
 
 		it("should get finite recurrent items", () => {
+			const account = buildTestAccounts(1)[0];
 			const items = buildTestItems([
-				{ recurrence: { frequency: "monthly" } }, // infinite
+				{ account: account.id, recurrence: { frequency: "monthly" } }, // infinite
 				{
+					account: account.id,
 					recurrence: {
 						frequency: "monthly",
 						untilDate: DateValueObject.createNowDate(),
 					},
 				}, // finite
 				{
+					account: account.id,
 					recurrence: {
 						frequency: "monthly",
 						untilDate: DateValueObject.createNowDate(),
 					},
 				}, // finite
 			]);
-			const report = new ScheduledMonthlyReport(items, []);
+			const report = new ScheduledMonthlyReport(items, [account]);
 
 			const finiteItems = report.getFiniteRecurrentItems();
 			expect(finiteItems).toHaveLength(2);
@@ -188,13 +201,13 @@ describe("ItemsReport", () => {
 
 	describe("total calculations", () => {
 		it("should calculate total correctly", () => {
+			const account = buildTestAccounts(1)[0];
 			const items = buildTestItems([
-				{ price: new PriceValueObject(100) },
-				{ price: new PriceValueObject(200) },
-				{ price: new PriceValueObject(300) },
+				{ account: account.id, price: new PriceValueObject(100) },
+				{ account: account.id, price: new PriceValueObject(200) },
+				{ account: account.id, price: new PriceValueObject(300) },
 			]);
-			const report = new ScheduledMonthlyReport(items, []);
-
+			const report = new ScheduledMonthlyReport(items, [account]);
 			const total = report.getTotal();
 			expect(total.value).toBe(-600);
 		});
@@ -227,13 +240,14 @@ describe("ItemsReport", () => {
 
 	describe("complex filtering scenarios", () => {
 		it("should handle mixed item types correctly", () => {
+			const account = buildTestAccounts(1)[0];
 			const items = buildTestItems([
-				{ operation: ItemOperation.expense() },
-				{ operation: ItemOperation.income() },
-				{ operation: ItemOperation.transfer() },
-				{ operation: ItemOperation.expense() },
+				{ account: account.id, operation: ItemOperation.expense() },
+				{ account: account.id, operation: ItemOperation.income() },
+				{ account: account.id, operation: ItemOperation.transfer() },
+				{ account: account.id, operation: ItemOperation.expense() },
 			]);
-			const report = new ScheduledMonthlyReport(items, []);
+			const report = new ScheduledMonthlyReport(items, [account]);
 
 			expect(report.getExpenseItems()).toHaveLength(2);
 			expect(report.getIncomeItems()).toHaveLength(1);
@@ -243,12 +257,13 @@ describe("ItemsReport", () => {
 
 	describe("transfer filtering edge cases", () => {
 		it("should correctly identify transfer items", () => {
+			const account = buildTestAccounts(1)[0];
 			const items = buildTestItems([
-				{ operation: ItemOperation.transfer() },
-				{ operation: ItemOperation.transfer() },
-				{ operation: ItemOperation.expense() },
+				{ account: account.id, operation: ItemOperation.transfer() },
+				{ account: account.id, operation: ItemOperation.transfer() },
+				{ account: account.id, operation: ItemOperation.expense() },
 			]);
-			const report = new ScheduledMonthlyReport(items, []);
+			const report = new ScheduledMonthlyReport(items, [account]);
 
 			const transferItems = report.getTransferItems();
 			expect(transferItems).toHaveLength(2);
