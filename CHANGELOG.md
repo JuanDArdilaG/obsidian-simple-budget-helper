@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   Scheduled transaction name, amount, start date, and frequency can now be edited.
--   Fix and separate scheduled transactions summary section to show total expenses, total incomes, net balance, and savings recommendation for next months.
+-   Fix and separate the scheduled transactions summary section to show total expenses, total incomes, net balance, and savings recommendation for upcoming months.
 
 ## [0.18.0] - 2026-01-15
 
