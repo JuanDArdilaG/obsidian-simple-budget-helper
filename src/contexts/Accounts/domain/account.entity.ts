@@ -57,9 +57,10 @@ export class Account extends Entity<Nanoid, AccountPrimitives> {
 		const account = new Account(
 			new Nanoid(id),
 			new AccountType(type),
-			(subtype ?? type === "asset")
-				? AccountAssetSubtype.CASH
-				: AccountLiabilitySubtype.CREDIT_CARD,
+			subtype ??
+				(type === "asset"
+					? AccountAssetSubtype.CASH
+					: AccountLiabilitySubtype.CREDIT_CARD),
 			new StringValueObject(name),
 			new Currency(currency),
 			new AccountBalance(
