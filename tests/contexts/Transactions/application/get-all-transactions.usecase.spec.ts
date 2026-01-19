@@ -1,5 +1,5 @@
-import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
 import { TransactionName } from "contexts/Transactions/domain/item-name.valueobject";
@@ -34,8 +34,8 @@ describe("GetAllTransactionsUseCase", () => {
 	describe("account filtering", () => {
 		it("should filter transactions by account using splits", async () => {
 			// Arrange
-			const account1 = AccountID.generate();
-			const account2 = AccountID.generate();
+			const account1 = Nanoid.generate();
+			const account2 = Nanoid.generate();
 			const category = CategoryID.generate();
 			const subCategory = SubCategoryID.generate();
 
@@ -45,7 +45,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Transfer 1"),
 				new TransactionOperation("transfer"),
 				category,
-				subCategory
+				subCategory,
 			);
 
 			const transaction2 = Transaction.create(
@@ -54,7 +54,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Expense 1"),
 				new TransactionOperation("expense"),
 				category,
-				subCategory
+				subCategory,
 			);
 
 			const transaction3 = Transaction.create(
@@ -63,7 +63,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Expense 2"),
 				new TransactionOperation("expense"),
 				category,
-				subCategory
+				subCategory,
 			);
 
 			vi.mocked(mockRepository.findByCriteria).mockResolvedValue([
@@ -86,8 +86,8 @@ describe("GetAllTransactionsUseCase", () => {
 
 		it("should filter transactions by account in toSplits", async () => {
 			// Arrange
-			const account1 = AccountID.generate();
-			const account2 = AccountID.generate();
+			const account1 = Nanoid.generate();
+			const account2 = Nanoid.generate();
 			const category = CategoryID.generate();
 			const subCategory = SubCategoryID.generate();
 
@@ -97,7 +97,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Transfer to account1"),
 				new TransactionOperation("transfer"),
 				category,
-				subCategory
+				subCategory,
 			);
 
 			const transaction2 = Transaction.create(
@@ -106,7 +106,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Expense from account2"),
 				new TransactionOperation("expense"),
 				category,
-				subCategory
+				subCategory,
 			);
 
 			vi.mocked(mockRepository.findByCriteria).mockResolvedValue([
@@ -127,8 +127,8 @@ describe("GetAllTransactionsUseCase", () => {
 
 		it("should return all transactions when no account filter is provided", async () => {
 			// Arrange
-			const account1 = AccountID.generate();
-			const account2 = AccountID.generate();
+			const account1 = Nanoid.generate();
+			const account2 = Nanoid.generate();
 			const category = CategoryID.generate();
 			const subCategory = SubCategoryID.generate();
 
@@ -138,7 +138,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Transaction 1"),
 				new TransactionOperation("expense"),
 				category,
-				subCategory
+				subCategory,
 			);
 
 			const transaction2 = Transaction.create(
@@ -147,7 +147,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Transaction 2"),
 				new TransactionOperation("expense"),
 				category,
-				subCategory
+				subCategory,
 			);
 
 			vi.mocked(mockRepository.findByCriteria).mockResolvedValue([
@@ -168,7 +168,7 @@ describe("GetAllTransactionsUseCase", () => {
 	describe("category and subcategory filtering", () => {
 		it("should filter transactions by category", async () => {
 			// Arrange
-			const account = AccountID.generate();
+			const account = Nanoid.generate();
 			const category1 = CategoryID.generate();
 			const category2 = CategoryID.generate();
 			const subCategory = SubCategoryID.generate();
@@ -179,7 +179,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Transaction 1"),
 				new TransactionOperation("expense"),
 				category1,
-				subCategory
+				subCategory,
 			);
 
 			const transaction2 = Transaction.create(
@@ -188,7 +188,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Transaction 2"),
 				new TransactionOperation("expense"),
 				category2,
-				subCategory
+				subCategory,
 			);
 
 			vi.mocked(mockRepository.findByCriteria).mockResolvedValue([
@@ -209,7 +209,7 @@ describe("GetAllTransactionsUseCase", () => {
 
 		it("should filter transactions by subcategory", async () => {
 			// Arrange
-			const account = AccountID.generate();
+			const account = Nanoid.generate();
 			const category = CategoryID.generate();
 			const subCategory1 = SubCategoryID.generate();
 			const subCategory2 = SubCategoryID.generate();
@@ -220,7 +220,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Transaction 1"),
 				new TransactionOperation("expense"),
 				category,
-				subCategory1
+				subCategory1,
 			);
 
 			const transaction2 = Transaction.create(
@@ -229,7 +229,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Transaction 2"),
 				new TransactionOperation("expense"),
 				category,
-				subCategory2
+				subCategory2,
 			);
 
 			vi.mocked(mockRepository.findByCriteria).mockResolvedValue([
@@ -252,8 +252,8 @@ describe("GetAllTransactionsUseCase", () => {
 	describe("combined filtering", () => {
 		it("should filter transactions by account, category, and subcategory", async () => {
 			// Arrange
-			const account1 = AccountID.generate();
-			const account2 = AccountID.generate();
+			const account1 = Nanoid.generate();
+			const account2 = Nanoid.generate();
 			const category1 = CategoryID.generate();
 			const category2 = CategoryID.generate();
 			const subCategory1 = SubCategoryID.generate();
@@ -265,7 +265,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Transaction 1"),
 				new TransactionOperation("expense"),
 				category1,
-				subCategory1
+				subCategory1,
 			);
 
 			const transaction2 = Transaction.create(
@@ -274,7 +274,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Transaction 2"),
 				new TransactionOperation("expense"),
 				category2,
-				subCategory1
+				subCategory1,
 			);
 
 			const transaction3 = Transaction.create(
@@ -283,7 +283,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Transaction 3"),
 				new TransactionOperation("expense"),
 				category1,
-				subCategory2
+				subCategory2,
 			);
 
 			const transaction4 = Transaction.create(
@@ -292,7 +292,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Transaction 4"),
 				new TransactionOperation("expense"),
 				category1,
-				subCategory1
+				subCategory1,
 			);
 
 			vi.mocked(mockRepository.findByCriteria).mockResolvedValue([
@@ -322,7 +322,7 @@ describe("GetAllTransactionsUseCase", () => {
 		it("should create multiple transactions for the same item when quantity > 1", async () => {
 			// This test would be more appropriate for the CreateTransactionForm component
 			// but we can test the underlying logic here
-			const account = AccountID.generate();
+			const account = Nanoid.generate();
 			const category = CategoryID.generate();
 			const subCategory = SubCategoryID.generate();
 
@@ -337,13 +337,13 @@ describe("GetAllTransactionsUseCase", () => {
 					new TransactionName("Test Item"),
 					new TransactionOperation("expense"),
 					category,
-					subCategory
+					subCategory,
 				);
 				transactions.push(transaction);
 			}
 
 			vi.mocked(mockRepository.findByCriteria).mockResolvedValue(
-				transactions
+				transactions,
 			);
 
 			// Act
@@ -354,16 +354,16 @@ describe("GetAllTransactionsUseCase", () => {
 			// Assert
 			expect(result).toHaveLength(3);
 			expect(result.every((t) => t.name.value === "Test Item")).toBe(
-				true
+				true,
 			);
 			expect(result.every((t) => t.category.equalTo(category))).toBe(
-				true
+				true,
 			);
 		});
 
 		it("should handle edge cases for quantity values", async () => {
 			// Test that the system can handle various quantity scenarios
-			const account = AccountID.generate();
+			const account = Nanoid.generate();
 			const category = CategoryID.generate();
 			const subCategory = SubCategoryID.generate();
 
@@ -374,7 +374,7 @@ describe("GetAllTransactionsUseCase", () => {
 				new TransactionName("Single Item"),
 				new TransactionOperation("expense"),
 				category,
-				subCategory
+				subCategory,
 			);
 
 			vi.mocked(mockRepository.findByCriteria).mockResolvedValue([

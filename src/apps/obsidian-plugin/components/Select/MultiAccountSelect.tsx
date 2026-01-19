@@ -13,7 +13,6 @@ import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { PaymentSplitPrimitives } from "contexts/Transactions/domain";
 import { useContext, useMemo } from "react";
-import { WithLockField } from "../WithLockField";
 
 interface MultiAccountSelectProps {
 	id: string;
@@ -49,15 +48,15 @@ export const MultiAccountSelect = ({
 				balance:
 					typeof account.balance === "number"
 						? account.balance
-						: account.balance?.value ?? 0,
+						: (account.balance?.value ?? 0),
 				symbol: account.currency.symbol,
 			})),
-		[accounts]
+		[accounts],
 	);
 
 	const selectedIds = useMemo(
 		() => new Set(selectedAccounts.map((split) => split.accountId)),
-		[selectedAccounts]
+		[selectedAccounts],
 	);
 
 	const handleAccountToggle = (accountId: string, checked: boolean) => {
@@ -68,7 +67,7 @@ export const MultiAccountSelect = ({
 		} else {
 			// Remove account
 			newSplits = selectedAccounts.filter(
-				(split) => split.accountId !== accountId
+				(split) => split.accountId !== accountId,
 			);
 		}
 		onChange(newSplits);
@@ -78,14 +77,14 @@ export const MultiAccountSelect = ({
 		const updatedSplits = selectedAccounts.map((split) =>
 			split.accountId === accountId
 				? { ...split, amount: newAmount }
-				: split
+				: split,
 		);
 		onChange(updatedSplits);
 	};
 
 	const handleRemove = (accountId: string) => {
 		onChange(
-			selectedAccounts.filter((split) => split.accountId !== accountId)
+			selectedAccounts.filter((split) => split.accountId !== accountId),
 		);
 	};
 
@@ -103,257 +102,250 @@ export const MultiAccountSelect = ({
 		const newSplits = selectedAccounts.map((split) =>
 			split.accountId === accountId
 				? { ...split, amount: totalAmount }
-				: split
+				: split,
 		);
 		onChange(newSplits);
 	};
 
 	const totalDistributed = selectedAccounts.reduce(
 		(sum, split) => sum + split.amount,
-		0
+		0,
 	);
 	const remainingAmount = totalAmount - totalDistributed;
 
 	return (
-		<WithLockField
-			isLocked={isLocked}
-			setIsLocked={setIsLocked}
-			style={{ width: "100%" }}
-		>
-			<Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-				<Typography
-					variant="body2"
-					sx={{ color: "var(--text-muted)", mb: 1 }}
+		<Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+			<Typography
+				variant="body2"
+				sx={{ color: "var(--text-muted)", mb: 1 }}
+			>
+				{label}
+			</Typography>
+			{/* Account selection list */}
+			<Box
+				sx={{
+					display: "flex",
+					flexDirection: "column",
+					gap: 1,
+					mb: 1,
+				}}
+			>
+				{accountList.map((account) => (
+					<FormControlLabel
+						key={account.id}
+						control={
+							<Checkbox
+								checked={selectedIds.has(account.id)}
+								onChange={(e) =>
+									handleAccountToggle(
+										account.id,
+										e.target.checked,
+									)
+								}
+								disabled={isLocked}
+								slotProps={{
+									input: {
+										"aria-label": `Select account ${account.name}`,
+									},
+								}}
+								sx={{
+									color: "var(--interactive-accent)",
+									p: 0,
+									mr: 1,
+								}}
+							/>
+						}
+						label={
+							<Box
+								sx={{
+									display: "flex",
+									alignItems: "center",
+									gap: 1,
+								}}
+							>
+								{/* Account icon placeholder removed (icon not present) */}
+								<Typography
+									variant="body2"
+									sx={{
+										color: "var(--text-normal)",
+										minWidth: 80,
+									}}
+								>
+									{account.name}
+								</Typography>
+								{typeof account.balance === "number" && (
+									<Typography
+										variant="caption"
+										sx={{
+											color: "var(--text-faint)",
+											ml: 1,
+										}}
+									>
+										Balance: $
+										{Number(account.balance).toFixed(2)}
+									</Typography>
+								)}
+							</Box>
+						}
+						disabled={isLocked}
+					/>
+				))}
+			</Box>
+
+			{/* Split Evenly button */}
+			{selectedAccounts.length > 1 && (
+				<Button
+					variant="outlined"
+					onClick={handleSplitEvenly}
+					disabled={isLocked}
+					sx={{
+						alignSelf: "flex-start",
+						mb: 1,
+						color: "var(--interactive-accent)",
+						borderColor: "var(--interactive-accent)",
+					}}
 				>
-					{label}
-				</Typography>
-				{/* Account selection list */}
+					Split Evenly
+				</Button>
+			)}
+
+			{/* Selected accounts and amount inputs */}
+			{selectedAccounts.length > 0 && (
 				<Box
 					sx={{
 						display: "flex",
 						flexDirection: "column",
 						gap: 1,
-						mb: 1,
 					}}
 				>
-					{accountList.map((account) => (
-						<FormControlLabel
-							key={account.id}
-							control={
-								<Checkbox
-									checked={selectedIds.has(account.id)}
-									onChange={(e) =>
-										handleAccountToggle(
-											account.id,
-											e.target.checked
+					{selectedAccounts.map((split) => {
+						const account = accountList.find(
+							(a) => a.id === split.accountId,
+						);
+						if (!account) return null;
+						return (
+							<Box
+								key={split.accountId}
+								sx={{
+									display: "flex",
+									alignItems: "center",
+									gap: 1,
+									background: "var(--background-secondary)",
+									borderRadius: 1,
+									p: 1,
+								}}
+							>
+								<Typography
+									variant="body2"
+									sx={{
+										color: "var(--text-normal)",
+										minWidth: 80,
+									}}
+								>
+									{account.name}
+								</Typography>
+								{typeof account.balance === "number" && (
+									<Typography
+										variant="caption"
+										sx={{
+											color: "var(--text-faint)",
+											ml: 1,
+										}}
+									>
+										Balance: $
+										{Number(account.balance).toFixed(2)}
+									</Typography>
+								)}
+								<PriceInput
+									id={`amount-${split.accountId}`}
+									placeholder="Amount"
+									value={
+										new PriceValueObject(
+											split.amount || 0,
+											{ withSign: false, decimals: 2 },
 										)
 									}
-									disabled={isLocked}
-									slotProps={{
-										input: {
-											"aria-label": `Select account ${account.name}`,
-										},
-									}}
-									sx={{
-										color: "var(--interactive-accent)",
-										p: 0,
-										mr: 1,
-									}}
+									onChange={(val) =>
+										handleAmountChange(
+											split.accountId,
+											val.toNumber(),
+										)
+									}
+									prefix={account.symbol}
 								/>
-							}
-							label={
-								<Box
-									sx={{
-										display: "flex",
-										alignItems: "center",
-										gap: 1,
-									}}
-								>
-									{/* Account icon placeholder removed (icon not present) */}
-									<Typography
-										variant="body2"
-										sx={{
-											color: "var(--text-normal)",
-											minWidth: 80,
-										}}
-									>
-										{account.name}
-									</Typography>
-									{typeof account.balance === "number" && (
-										<Typography
-											variant="caption"
-											sx={{
-												color: "var(--text-faint)",
-												ml: 1,
-											}}
-										>
-											Balance: $
-											{Number(account.balance).toFixed(2)}
-										</Typography>
-									)}
-								</Box>
-							}
-							disabled={isLocked}
-						/>
-					))}
-				</Box>
-
-				{/* Split Evenly button */}
-				{selectedAccounts.length > 1 && (
-					<Button
-						variant="outlined"
-						onClick={handleSplitEvenly}
-						disabled={isLocked}
-						sx={{
-							alignSelf: "flex-start",
-							mb: 1,
-							color: "var(--interactive-accent)",
-							borderColor: "var(--interactive-accent)",
-						}}
-					>
-						Split Evenly
-					</Button>
-				)}
-
-				{/* Selected accounts and amount inputs */}
-				{selectedAccounts.length > 0 && (
-					<Box
-						sx={{
-							display: "flex",
-							flexDirection: "column",
-							gap: 1,
-						}}
-					>
-						{selectedAccounts.map((split) => {
-							const account = accountList.find(
-								(a) => a.id === split.accountId
-							);
-							if (!account) return null;
-							return (
-								<Box
-									key={split.accountId}
-									sx={{
-										display: "flex",
-										alignItems: "center",
-										gap: 1,
-										background:
-											"var(--background-secondary)",
-										borderRadius: 1,
-										p: 1,
-									}}
-								>
-									<Typography
-										variant="body2"
-										sx={{
-											color: "var(--text-normal)",
-											minWidth: 80,
-										}}
-									>
-										{account.name}
-									</Typography>
-									{typeof account.balance === "number" && (
-										<Typography
-											variant="caption"
-											sx={{
-												color: "var(--text-faint)",
-												ml: 1,
-											}}
-										>
-											Balance: $
-											{Number(account.balance).toFixed(2)}
-										</Typography>
-									)}
-									<PriceInput
-										id={`amount-${split.accountId}`}
-										placeholder="Amount"
-										value={
-											new PriceValueObject(
-												split.amount || 0,
-												{ withSign: false, decimals: 2 }
-											)
-										}
-										onChange={(val) =>
-											handleAmountChange(
-												split.accountId,
-												val.toNumber()
-											)
-										}
-										prefix={account.symbol}
-									/>
-									{/* Max button for single-account split */}
-									{selectedAccounts.length === 1 && (
-										<Button
-											variant="text"
-											size="small"
-											onClick={() =>
-												handleMax(split.accountId)
-											}
-											disabled={isLocked}
-											sx={{
-												color: "var(--interactive-accent)",
-												minWidth: 0,
-												px: 1,
-											}}
-										>
-											Max
-										</Button>
-									)}
-									<IconButton
+								{/* Max button for single-account split */}
+								{selectedAccounts.length === 1 && (
+									<Button
+										variant="text"
+										size="small"
 										onClick={() =>
-											handleRemove(split.accountId)
+											handleMax(split.accountId)
 										}
 										disabled={isLocked}
-										size="small"
-										sx={{ color: "var(--text-error)" }}
-										aria-label={`Remove account ${account.name}`}
+										sx={{
+											color: "var(--interactive-accent)",
+											minWidth: 0,
+											px: 1,
+										}}
 									>
-										<CloseIcon fontSize="small" />
-									</IconButton>
-								</Box>
-							);
-						})}
-					</Box>
-				)}
+										Max
+									</Button>
+								)}
+								<IconButton
+									onClick={() =>
+										handleRemove(split.accountId)
+									}
+									disabled={isLocked}
+									size="small"
+									sx={{ color: "var(--text-error)" }}
+									aria-label={`Remove account ${account.name}`}
+								>
+									<CloseIcon fontSize="small" />
+								</IconButton>
+							</Box>
+						);
+					})}
+				</Box>
+			)}
 
-				{/* Distribution feedback */}
-				{selectedAccounts.length > 0 && totalAmount > 0 && (
-					<Box
+			{/* Distribution feedback */}
+			{selectedAccounts.length > 0 && totalAmount > 0 && (
+				<Box
+					sx={{
+						mt: 1,
+						p: 1,
+						borderRadius: 1,
+						background:
+							remainingAmount === 0
+								? "var(--background-modifier-success, #22543d)"
+								: "var(--background-modifier-warning, #b7791f)",
+					}}
+				>
+					<Typography
+						variant="body2"
 						sx={{
-							mt: 1,
-							p: 1,
-							borderRadius: 1,
-							background:
+							fontWeight: "medium",
+							color:
 								remainingAmount === 0
-									? "var(--background-modifier-success, #22543d)"
-									: "var(--background-modifier-warning, #b7791f)",
+									? "var(--text-on-success, #fff)"
+									: "var(--text-on-warning, #222)",
+							letterSpacing: 0.5,
 						}}
 					>
-						<Typography
-							variant="body2"
-							sx={{
-								fontWeight: "medium",
-								color:
-									remainingAmount === 0
-										? "var(--text-on-success, #fff)"
-										: "var(--text-on-warning, #222)",
-								letterSpacing: 0.5,
-							}}
-						>
-							{remainingAmount === 0
-								? "✓ Amount fully distributed"
-								: `Remaining: $${remainingAmount.toFixed(2)}`}
-						</Typography>
-					</Box>
-				)}
+						{remainingAmount === 0
+							? "✓ Amount fully distributed"
+							: `Remaining: $${remainingAmount.toFixed(2)}`}
+					</Typography>
+				</Box>
+			)}
 
-				{error && (
-					<FormHelperText
-						style={{ color: "var(--text-error)", marginLeft: 0 }}
-					>
-						{error}
-					</FormHelperText>
-				)}
-			</Box>
-		</WithLockField>
+			{error && (
+				<FormHelperText
+					style={{ color: "var(--text-error)", marginLeft: 0 }}
+				>
+					{error}
+				</FormHelperText>
+			)}
+		</Box>
 	);
 };

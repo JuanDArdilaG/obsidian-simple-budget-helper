@@ -1,6 +1,6 @@
-import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
+import { Nanoid } from "../../Shared/domain";
 import { ReportBalance } from "./report-balance.valueobject";
 
 export type GroupByYearMonthDay = {
@@ -14,7 +14,7 @@ export type GroupByYearMonthDay = {
 export type TransactionWithAccumulatedBalance = {
 	transaction: Transaction;
 	accounts: {
-		id: AccountID;
+		id: Nanoid;
 		balance: ReportBalance;
 		prevBalance: ReportBalance;
 	}[];
@@ -29,25 +29,25 @@ export class TransactionsReport {
 
 	onlyIncomes(): TransactionsReport {
 		return new TransactionsReport(
-			this._transactions.filter((t) => t.operation.isIncome())
+			this._transactions.filter((t) => t.operation.isIncome()),
 		);
 	}
 
 	onlyExpenses(): TransactionsReport {
 		return new TransactionsReport(
-			this._transactions.filter((t) => t.operation.isExpense())
+			this._transactions.filter((t) => t.operation.isExpense()),
 		);
 	}
 
 	filterByYear(year: number): TransactionsReport {
 		return new TransactionsReport(
-			this._transactions.filter((t) => t.date.getFullYear() === year)
+			this._transactions.filter((t) => t.date.getFullYear() === year),
 		);
 	}
 
 	filterByMonth(month: number): TransactionsReport {
 		return new TransactionsReport(
-			this._transactions.filter((t) => t.date.getMonth() === month)
+			this._transactions.filter((t) => t.date.getMonth() === month),
 		);
 	}
 
@@ -56,8 +56,8 @@ export class TransactionsReport {
 			this._transactions.toSorted((a, b) =>
 				direction === "asc"
 					? a.date.compareTo(b.date)
-					: b.date.compareTo(a.date)
-			)
+					: b.date.compareTo(a.date),
+			),
 		);
 	}
 
@@ -66,12 +66,12 @@ export class TransactionsReport {
 			this._transactions.toSorted((a, b) =>
 				direction === "asc"
 					? PaymentSplit.totalAmount(a.originAccounts).compareTo(
-							PaymentSplit.totalAmount(b.originAccounts)
-					  )
+							PaymentSplit.totalAmount(b.originAccounts),
+						)
 					: PaymentSplit.totalAmount(b.originAccounts).compareTo(
-							PaymentSplit.totalAmount(a.originAccounts)
-					  )
-			)
+							PaymentSplit.totalAmount(a.originAccounts),
+						),
+			),
 		);
 	}
 
@@ -116,8 +116,8 @@ export class TransactionsReport {
 										accountID
 									].plus(
 										transaction.getRealAmountForAccount(
-											split.accountId
-										)
+											split.accountId,
+										),
 									);
 									return {
 										id: split.accountId,
@@ -125,7 +125,7 @@ export class TransactionsReport {
 											accumulated[split.accountId.value],
 										prevBalance,
 									};
-								}
+								},
 							),
 						},
 						{
@@ -141,26 +141,26 @@ export class TransactionsReport {
 										accountID
 									].plus(
 										transaction.getRealAmountForAccount(
-											toSplit.accountId
-										)
+											toSplit.accountId,
+										),
 									);
 									return {
 										id: toSplit.accountId,
 										balance: accumulated[accountID],
 										prevBalance,
 									};
-								}
+								},
 							),
-						}
+						},
 					);
 				} else {
 					// For non-transfer transactions, use the original logic
 					const allAccountIDs = [
 						...transaction.originAccounts.map(
-							(s) => s.accountId.value
+							(s) => s.accountId.value,
 						),
 						...transaction.destinationAccounts.map(
-							(s) => s.accountId.value
+							(s) => s.accountId.value,
 						),
 					];
 					const uniqueAccountIDs = Array.from(new Set(allAccountIDs));
@@ -174,11 +174,11 @@ export class TransactionsReport {
 								accountId
 							].plus(
 								transaction.getRealAmountForAccount(
-									new AccountID(accountId)
-								)
+									new Nanoid(accountId),
+								),
 							);
 							return {
-								id: new AccountID(accountId),
+								id: new Nanoid(accountId),
 								balance: accumulated[accountId],
 								prevBalance,
 							};

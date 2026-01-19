@@ -3,8 +3,8 @@ import {
 	NumberValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain";
 import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { ItemOperation } from "contexts/Shared/domain/Item/item-operation.valueobject";
 import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
@@ -121,7 +121,7 @@ describe("createRecurrences", () => {
 
 describe("transfer operation validation", () => {
 	it("should throw error when creating transfer operation without toSplits", () => {
-		const fromAccount = AccountID.generate();
+		const fromAccount = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(fromAccount, new TransactionAmount(100)),
 		];
@@ -148,8 +148,8 @@ describe("transfer operation validation", () => {
 	});
 
 	it("should allow transfer operation with valid toSplits", () => {
-		const fromAccount = AccountID.generate();
-		const toAccount = AccountID.generate();
+		const fromAccount = Nanoid.generate();
+		const toAccount = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(fromAccount, new TransactionAmount(100)),
 		];
@@ -178,7 +178,7 @@ describe("transfer operation validation", () => {
 	});
 
 	it("should throw error when updating operation to transfer without toSplits", () => {
-		const fromAccount = AccountID.generate();
+		const fromAccount = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(fromAccount, new TransactionAmount(100)),
 		];
@@ -205,8 +205,8 @@ describe("transfer operation validation", () => {
 	});
 
 	it("should allow updating operation to transfer with valid toSplits", () => {
-		const fromAccount = AccountID.generate();
-		const toAccount = AccountID.generate();
+		const fromAccount = Nanoid.generate();
+		const toAccount = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(fromAccount, new TransactionAmount(100)),
 		];

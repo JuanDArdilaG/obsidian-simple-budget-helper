@@ -1,5 +1,5 @@
 import { StringValueObject } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { IRepository } from "contexts/Shared/domain/persistence";
 import {
 	Transaction,
@@ -7,9 +7,12 @@ import {
 	TransactionPrimitives,
 } from "contexts/Transactions/domain";
 
-export interface ITransactionsRepository
-	extends IRepository<TransactionID, Transaction, TransactionPrimitives> {
+export interface ITransactionsRepository extends IRepository<
+	TransactionID,
+	Transaction,
+	TransactionPrimitives
+> {
 	findAllUniqueItemStores(): Promise<StringValueObject[]>;
-	hasTransactionsForAccount(accountId: AccountID): Promise<boolean>;
-	findByAccountId(accountId: AccountID): Promise<Transaction[]>;
+	hasTransactionsForAccount(accountId: Nanoid): Promise<boolean>;
+	findByAccountId(accountId: Nanoid): Promise<Transaction[]>;
 }

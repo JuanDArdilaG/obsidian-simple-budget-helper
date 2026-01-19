@@ -1,9 +1,9 @@
 import { StringValueObject } from "@juandardilag/value-objects";
 import {
 	Account,
-	AccountID,
+	AccountAssetSubtype,
+	AccountLiabilitySubtype,
 	AccountName,
-	AccountType,
 	IAccountsService,
 } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
@@ -49,8 +49,8 @@ describe("ScheduledTransactionsService", () => {
 			getByID: vi
 				.fn()
 				.mockResolvedValue(
-					Account.create(
-						AccountType.asset(),
+					Account.createAsset(
+						AccountAssetSubtype.CASH,
 						new AccountName("Test Account"),
 						new Currency("USD"),
 					),
@@ -99,7 +99,7 @@ describe("ScheduledTransactionsService", () => {
 	describe("getMonthlyPriceEstimate", () => {
 		it("should return correct price for income items", async () => {
 			const itemID = Nanoid.generate();
-			const accountID = AccountID.generate();
+			const accountID = Nanoid.generate();
 			const fromSplits = [
 				new PaymentSplit(accountID, new TransactionAmount(100)),
 			];
@@ -128,7 +128,7 @@ describe("ScheduledTransactionsService", () => {
 
 		it("should return correct price for expense items", async () => {
 			const itemID = Nanoid.generate();
-			const accountID = AccountID.generate();
+			const accountID = Nanoid.generate();
 			const fromSplits = [
 				new PaymentSplit(accountID, new TransactionAmount(100)),
 			];
@@ -157,8 +157,8 @@ describe("ScheduledTransactionsService", () => {
 
 		it("should return correct price for asset to liability transfers", async () => {
 			const itemID = Nanoid.generate();
-			const fromAccountID = AccountID.generate();
-			const toAccountID = AccountID.generate();
+			const fromAccountID = Nanoid.generate();
+			const toAccountID = Nanoid.generate();
 			const fromSplits = [
 				new PaymentSplit(fromAccountID, new TransactionAmount(100)),
 			];
@@ -177,13 +177,13 @@ describe("ScheduledTransactionsService", () => {
 				new TransactionCategory(category, subCategory),
 			);
 
-			const fromAccount = Account.create(
-				AccountType.asset(),
+			const fromAccount = Account.createAsset(
+				AccountAssetSubtype.CASH,
 				new AccountName("Asset Account"),
 				new Currency("USD"),
 			);
-			const toAccount = Account.create(
-				AccountType.liability(),
+			const toAccount = Account.createLiability(
+				AccountLiabilitySubtype.CREDIT_CARD,
 				new AccountName("Liability Account"),
 				new Currency("USD"),
 			);
@@ -203,8 +203,8 @@ describe("ScheduledTransactionsService", () => {
 
 		it("should return correct price for liability to asset transfers", async () => {
 			const itemID = Nanoid.generate();
-			const fromAccountID = AccountID.generate();
-			const toAccountID = AccountID.generate();
+			const fromAccountID = Nanoid.generate();
+			const toAccountID = Nanoid.generate();
 			const fromSplits = [
 				new PaymentSplit(fromAccountID, new TransactionAmount(100)),
 			];
@@ -223,13 +223,13 @@ describe("ScheduledTransactionsService", () => {
 				new TransactionCategory(category, subCategory),
 			);
 
-			const fromAccount = Account.create(
-				AccountType.liability(),
+			const fromAccount = Account.createLiability(
+				AccountLiabilitySubtype.CREDIT_CARD,
 				new AccountName("Liability Account"),
 				new Currency("USD"),
 			);
-			const toAccount = Account.create(
-				AccountType.asset(),
+			const toAccount = Account.createAsset(
+				AccountAssetSubtype.CASH,
 				new AccountName("Asset Account"),
 				new Currency("USD"),
 			);
@@ -249,8 +249,8 @@ describe("ScheduledTransactionsService", () => {
 
 		it("should return zero for asset to asset transfers", async () => {
 			const itemID = Nanoid.generate();
-			const fromAccountID = AccountID.generate();
-			const toAccountID = AccountID.generate();
+			const fromAccountID = Nanoid.generate();
+			const toAccountID = Nanoid.generate();
 			const fromSplits = [
 				new PaymentSplit(fromAccountID, new TransactionAmount(100)),
 			];
@@ -269,13 +269,13 @@ describe("ScheduledTransactionsService", () => {
 				new TransactionCategory(category, subCategory),
 			);
 
-			const fromAccount = Account.create(
-				AccountType.asset(),
+			const fromAccount = Account.createAsset(
+				AccountAssetSubtype.CASH,
 				new AccountName("Asset Account 1"),
 				new Currency("USD"),
 			);
-			const toAccount = Account.create(
-				AccountType.asset(),
+			const toAccount = Account.createAsset(
+				AccountAssetSubtype.CASH,
 				new AccountName("Asset Account 2"),
 				new Currency("USD"),
 			);
@@ -295,8 +295,8 @@ describe("ScheduledTransactionsService", () => {
 
 		it("should return zero for liability to liability transfers", async () => {
 			const scheduledTransactionId = Nanoid.generate();
-			const fromAccountID = AccountID.generate();
-			const toAccountID = AccountID.generate();
+			const fromAccountID = Nanoid.generate();
+			const toAccountID = Nanoid.generate();
 			const fromSplits = [
 				new PaymentSplit(fromAccountID, new TransactionAmount(100)),
 			];
@@ -315,13 +315,13 @@ describe("ScheduledTransactionsService", () => {
 				new TransactionCategory(category, subCategory),
 			);
 
-			const fromAccount = Account.create(
-				AccountType.liability(),
+			const fromAccount = Account.createLiability(
+				AccountLiabilitySubtype.CREDIT_CARD,
 				new AccountName("Liability Account 1"),
 				new Currency("USD"),
 			);
-			const toAccount = Account.create(
-				AccountType.liability(),
+			const toAccount = Account.createLiability(
+				AccountLiabilitySubtype.CREDIT_CARD,
 				new AccountName("Liability Account 2"),
 				new Currency("USD"),
 			);
@@ -343,7 +343,7 @@ describe("ScheduledTransactionsService", () => {
 
 		it("should calculate monthly price for recurring items", async () => {
 			const itemID = Nanoid.generate();
-			const accountID = AccountID.generate();
+			const accountID = Nanoid.generate();
 			const fromSplits = [
 				new PaymentSplit(accountID, new TransactionAmount(100)),
 			];

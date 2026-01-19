@@ -1,7 +1,6 @@
-import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
+import { Nanoid } from "contexts/Shared/domain";
 import { EntityNotFoundError } from "contexts/Shared/domain/errors/not-found.error";
 import { IScheduledTransactionsService } from "../../ScheduledTransactions/domain";
-import { Nanoid } from "../../Shared/domain";
 import { CommandUseCase } from "../../Shared/domain/command-use-case.interface";
 import { Logger } from "../../Shared/infrastructure/logger";
 import { ITransactionsService } from "../domain";
@@ -14,18 +13,16 @@ export type RecordScheduledItemUseCaseInput = {
 	id: Nanoid;
 	date?: TransactionDate;
 	amount?: TransactionAmount;
-	account?: AccountID;
-	toAccount?: AccountID;
+	account?: Nanoid;
+	toAccount?: Nanoid;
 	permanentChanges?: boolean;
 };
 
-export class RecordItemUseCase
-	implements CommandUseCase<RecordScheduledItemUseCaseInput>
-{
+export class RecordItemUseCase implements CommandUseCase<RecordScheduledItemUseCaseInput> {
 	readonly #logger = new Logger("RecordItemUseCase");
 	constructor(
 		private readonly _transactionsService: ITransactionsService,
-		private readonly _scheduledTransactionsService: IScheduledTransactionsService
+		private readonly _scheduledTransactionsService: IScheduledTransactionsService,
 	) {}
 
 	async execute({
@@ -47,7 +44,7 @@ export class RecordItemUseCase
 
 		const transaction = Transaction.fromScheduledTransaction(
 			item,
-			date ?? TransactionDate.createNowDate()
+			date ?? TransactionDate.createNowDate(),
 		);
 
 		this.#logger.debug("transaction from item", {

@@ -3,7 +3,7 @@ import {
 	ScheduledTransactionsContext,
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
+import { Nanoid } from "contexts/Shared/domain";
 import {
 	TransactionAmount,
 	TransactionDate,
@@ -38,13 +38,13 @@ export const RecordItemPanel = ({
 		recurrence.originAccounts.map((split) => ({
 			accountId: split.accountId.value,
 			amount: split.amount,
-		}))
+		})),
 	);
 	const [toSplits, setToSplits] = useState(
 		recurrence.destinationAccounts.map((split) => ({
 			accountId: split.accountId.value,
 			amount: split.amount,
-		}))
+		})),
 	);
 	const [date, setDate] = useState<Date>(recurrence.date.value);
 	const [isRecording, setIsRecording] = useState(false);
@@ -55,17 +55,11 @@ export const RecordItemPanel = ({
 			// Convert the split arrays to PaymentSplit objects
 			const paymentFromSplits = fromSplits.map(
 				(split) =>
-					new PaymentSplit(
-						new AccountID(split.accountId),
-						split.amount
-					)
+					new PaymentSplit(new Nanoid(split.accountId), split.amount),
 			);
 			const paymentToSplits = toSplits.map(
 				(split) =>
-					new PaymentSplit(
-						new AccountID(split.accountId),
-						split.amount
-					)
+					new PaymentSplit(new Nanoid(split.accountId), split.amount),
 			);
 
 			await recordItemRecurrence.execute({
@@ -186,21 +180,20 @@ export const RecordItemPanel = ({
 									const newSplits = [...fromSplits];
 									newSplits[idx].amount =
 										new TransactionAmount(
-											priceVO.toNumber()
+											priceVO.toNumber(),
 										);
 									setFromSplits(newSplits);
 								}}
 								prefix={
-									getAccountByID(
-										new AccountID(split.accountId)
-									)?.currency.symbol ?? "$"
+									getAccountByID(new Nanoid(split.accountId))
+										?.currency.symbol ?? "$"
 								}
 							/>
 						</div>
 						<button
 							onClick={() =>
 								setFromSplits(
-									fromSplits.filter((_, i) => i !== idx)
+									fromSplits.filter((_, i) => i !== idx),
 								)
 							}
 							style={{
@@ -296,21 +289,20 @@ export const RecordItemPanel = ({
 									const newSplits = [...toSplits];
 									newSplits[idx].amount =
 										new TransactionAmount(
-											priceVO.toNumber()
+											priceVO.toNumber(),
 										);
 									setToSplits(newSplits);
 								}}
 								prefix={
-									getAccountByID(
-										new AccountID(split.accountId)
-									)?.currency.symbol ?? "$"
+									getAccountByID(new Nanoid(split.accountId))
+										?.currency.symbol ?? "$"
 								}
 							/>
 						</div>
 						<button
 							onClick={() =>
 								setToSplits(
-									toSplits.filter((_, i) => i !== idx)
+									toSplits.filter((_, i) => i !== idx),
 								)
 							}
 							style={{

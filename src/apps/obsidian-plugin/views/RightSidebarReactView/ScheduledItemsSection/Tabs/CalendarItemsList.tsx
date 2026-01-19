@@ -19,13 +19,8 @@ import { ResponsiveScheduledItem } from "apps/obsidian-plugin/components/Respons
 import { useLogger } from "apps/obsidian-plugin/hooks";
 import { EditItemRecurrencePanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemRecurrencePanel";
 import { RecordItemPanel } from "apps/obsidian-plugin/panels/RecordItemPanel";
-import {
-	AccountBalance,
-	AccountID,
-	AccountName,
-} from "contexts/Accounts/domain";
+import { AccountBalance, AccountName } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
-import { AccountsReport } from "contexts/Reports/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { ItemWithAccumulatedBalance } from "../../../../../../contexts/ScheduledTransactions/application/items-with-accumulated-balance.usecase";
@@ -38,13 +33,14 @@ import {
 	CategoriesContext,
 	ScheduledTransactionsContext,
 } from "../../Contexts";
+import { CalendarScheduledTransactionsListSummary } from "./CalendarScheduledTransactionsListSummary";
 
 // Filter types
 interface FilterState {
 	searchText: string;
 	selectedCategory: CategoryID | null;
 	selectedSubCategory: SubCategoryID | null;
-	selectedAccount: AccountID | null;
+	selectedAccount: Nanoid | null;
 	selectedOperationType: "income" | "expense" | "transfer" | "all";
 	selectedTags: string[];
 	priceRange: {
@@ -84,8 +80,6 @@ export const CalendarItemsList = ({
 	const logger = useLogger("CalendarItemsList");
 	const { getAccountByID, accounts } = useContext(AccountsContext);
 	const { categories, subCategories } = useContext(CategoriesContext);
-	const report = useMemo(() => new AccountsReport(accounts), [accounts]);
-	const totalAssets = useMemo(() => report.getTotalForAssets(), [report]);
 	const [refreshItems, setRefreshItems] = useState(true);
 
 	const {
@@ -137,7 +131,7 @@ export const CalendarItemsList = ({
 			if (
 				filters.selectedCategory &&
 				!recurrence.category.category.id.equalTo(
-					filters.selectedCategory
+					filters.selectedCategory,
 				)
 			) {
 				return false;
@@ -147,7 +141,7 @@ export const CalendarItemsList = ({
 			if (
 				filters.selectedSubCategory &&
 				!recurrence.category.subCategory.id.equalTo(
-					filters.selectedSubCategory
+					filters.selectedSubCategory,
 				)
 			) {
 				return false;
@@ -156,10 +150,11 @@ export const CalendarItemsList = ({
 			// Account filter
 			if (filters.selectedAccount) {
 				const hasFromAccount = recurrence.originAccounts.some((split) =>
-					split.accountId.equalTo(filters.selectedAccount!)
+					split.accountId.equalTo(filters.selectedAccount!),
 				);
 				const hasToAccount = recurrence.destinationAccounts.some(
-					(split) => split.accountId.equalTo(filters.selectedAccount!)
+					(split) =>
+						split.accountId.equalTo(filters.selectedAccount!),
 				);
 				if (!hasFromAccount && !hasToAccount) {
 					return false;
@@ -178,7 +173,7 @@ export const CalendarItemsList = ({
 			if (filters.selectedTags.length > 0) {
 				const itemTags = recurrence.tags?.toArray() ?? [];
 				const hasSelectedTag = filters.selectedTags.some(
-					(selectedTag) => itemTags.includes(selectedTag)
+					(selectedTag) => itemTags.includes(selectedTag),
 				);
 				if (!hasSelectedTag) {
 					return false;
@@ -190,7 +185,7 @@ export const CalendarItemsList = ({
 				recurrence.originAccounts?.[0]?.accountId ??
 				recurrence.originAccounts[0]?.accountId;
 			const split = recurrence.originAccounts.find(
-				(split) => split.accountId.value === accountId.value
+				(split) => split.accountId.value === accountId.value,
 			);
 			const itemPrice = split ? Math.abs(split.amount.value) : 0;
 
@@ -237,7 +232,7 @@ export const CalendarItemsList = ({
 	// Filter handlers
 	const handleFilterChange = <K extends keyof FilterState>(
 		key: K,
-		value: FilterState[K]
+		value: FilterState[K],
 	) => {
 		setFilters((prev) => ({ ...prev, [key]: value }));
 	};
@@ -272,185 +267,10 @@ export const CalendarItemsList = ({
 
 	return (
 		<div>
-			<div
-				style={{
-					textAlign: "right",
-					marginTop: 10,
-					marginBottom: 10,
-					fontSize: "1.3em",
-					padding: "12px",
-					backgroundColor: "var(--background-secondary)",
-					borderRadius: "6px",
-					border: "1px solid var(--background-modifier-border)",
-				}}
-			>
-				{/* Scheduled Items Summary */}
-				<div
-					style={{
-						marginBottom: "12px",
-						paddingBottom: "8px",
-						borderBottom:
-							"1px solid var(--background-modifier-border)",
-					}}
-				>
-					<div
-						style={{
-							fontSize: "0.9em",
-							color: "var(--text-muted)",
-							marginBottom: "4px",
-						}}
-					>
-						Scheduled Items Summary
-						{activeFiltersCount > 0 && (
-							<span
-								style={{
-									fontSize: "0.8em",
-									color: "var(--text-muted)",
-									marginLeft: "8px",
-								}}
-							>
-								({filteredItems.length} of{" "}
-								{itemsWithAccountsBalance.length} items)
-							</span>
-						)}
-					</div>
-					{/*<div
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							marginBottom: "4px",
-						}}
-					>
-						<span
-							style={{
-								fontSize: "0.8em",
-								color: "var(--text-muted)",
-							}}
-						>
-							Incomes:
-						</span>
-						<span
-							style={{
-								color: "var(--color-green)",
-								fontWeight: "500",
-							}}
-						>
-							{totalIncomes.toString()}
-						</span>
-					</div>
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							marginBottom: "4px",
-						}}
-					>
-						<span
-							style={{
-								fontSize: "0.8em",
-								color: "var(--text-muted)",
-							}}
-						>
-							Expenses:
-						</span>
-						<span
-							style={{
-								color: "var(--color-red)",
-								fontWeight: "500",
-							}}
-						>
-							{totalExpenses.toString()}
-						</span>
-					</div>
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-						}}
-					>
-						<span
-							style={{
-								fontSize: "0.8em",
-								color: "var(--text-muted)",
-							}}
-						>
-							{total.isNegative() ? "Deficit" : "Surplus"}:
-						</span>
-						<span
-							style={{
-								fontWeight: "600",
-								color: total.isNegative()
-									? "var(--color-red)"
-									: "var(--color-green)",
-							}}
-						>
-							{total.toString()}
-						</span>
-					</div> */}
-				</div>
-
-				{/* Current Financial Position */}
-				<div>
-					<div
-						style={{
-							fontSize: "0.9em",
-							color: "var(--text-muted)",
-							marginBottom: "4px",
-						}}
-					>
-						Current Financial Position
-					</div>
-					<div
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-							marginBottom: "4px",
-						}}
-					>
-						<span
-							style={{
-								fontSize: "0.8em",
-								color: "var(--text-muted)",
-							}}
-						>
-							Current Assets:
-						</span>
-						<span style={{ fontWeight: "500" }}>
-							{totalAssets.toString()}
-						</span>
-					</div>
-					{/* <div
-						style={{
-							display: "flex",
-							justifyContent: "space-between",
-							alignItems: "center",
-						}}
-					>
-						<span
-							style={{
-								fontSize: "0.8em",
-								color: "var(--text-muted)",
-							}}
-						>
-							Projected Balance:
-						</span>
-						<span
-							style={{
-								fontWeight: "600",
-								color: totalAssets.plus(total).isNegative()
-									? "var(--color-red)"
-									: "var(--color-green)",
-							}}
-						>
-							{totalAssets.plus(total).toString()}
-						</span>
-					</div> */}
-				</div>
-			</div>
+			<CalendarScheduledTransactionsListSummary
+				date={untilDate}
+				recurrences={filteredItems.map((item) => item.recurrence)}
+			/>
 
 			{/* Filter Section */}
 			<Card
@@ -518,7 +338,7 @@ export const CalendarItemsList = ({
 								onChange={(e) =>
 									handleFilterChange(
 										"searchText",
-										e.target.value
+										e.target.value,
 									)
 								}
 								size="small"
@@ -556,12 +376,12 @@ export const CalendarItemsList = ({
 											: null;
 										handleFilterChange(
 											"selectedCategory",
-											categoryId
+											categoryId,
 										);
 										// Reset subcategory when category changes
 										handleFilterChange(
 											"selectedSubCategory",
-											null
+											null,
 										);
 									}}
 									label="Category"
@@ -606,7 +426,7 @@ export const CalendarItemsList = ({
 											: null;
 										handleFilterChange(
 											"selectedSubCategory",
-											subCategoryId
+											subCategoryId,
 										);
 									}}
 									label="Subcategory"
@@ -624,8 +444,8 @@ export const CalendarItemsList = ({
 										subCategories
 											.filter((sub) =>
 												sub.category.equalTo(
-													filters.selectedCategory!
-												)
+													filters.selectedCategory!,
+												),
 											)
 											.map((subCategory) => (
 												<MenuItem
@@ -655,11 +475,11 @@ export const CalendarItemsList = ({
 									value={filters.selectedAccount?.value || ""}
 									onChange={(e) => {
 										const accountId = e.target.value
-											? new AccountID(e.target.value)
+											? new Nanoid(e.target.value)
 											: null;
 										handleFilterChange(
 											"selectedAccount",
-											accountId
+											accountId,
 										);
 									}}
 									label="Account"
@@ -699,11 +519,7 @@ export const CalendarItemsList = ({
 									onChange={(e) =>
 										handleFilterChange(
 											"selectedOperationType",
-											e.target.value as
-												| "income"
-												| "expense"
-												| "transfer"
-												| "all"
+											e.target.value,
 										)
 									}
 									label="Type"
@@ -744,7 +560,7 @@ export const CalendarItemsList = ({
 											"selectedTags",
 											typeof value === "string"
 												? value.split(",")
-												: value
+												: value,
 										);
 									}}
 									label="Tags"
@@ -857,7 +673,7 @@ export const CalendarItemsList = ({
 							toAccountBalance,
 							toAccountPrevBalance,
 						},
-						index
+						index,
 					) => {
 						const monthKey =
 							recurrence.date.value.toLocaleDateString(
@@ -865,7 +681,7 @@ export const CalendarItemsList = ({
 								{
 									year: "numeric",
 									month: "long",
-								}
+								},
 							);
 
 						if (!groups[monthKey]) {
@@ -891,7 +707,7 @@ export const CalendarItemsList = ({
 							toAccountPrevBalance?: AccountBalance;
 							index: number;
 						}>
-					>
+					>,
 				);
 
 				return Object.entries(itemsByMonth).map(
@@ -934,7 +750,7 @@ export const CalendarItemsList = ({
 														?.accountId ??
 														recurrence
 															.originAccounts[0]
-															?.accountId
+															?.accountId,
 												)?.name ?? AccountName.empty()
 											}
 											accountBalance={accountBalance}
@@ -968,7 +784,7 @@ export const CalendarItemsList = ({
 																?.accountId ??
 																recurrence
 																	.destinationAccounts[0]
-																	?.accountId
+																	?.accountId,
 														)?.name ??
 														AccountName.empty()
 													}
@@ -990,10 +806,10 @@ export const CalendarItemsList = ({
 												/>
 											)}
 									</div>
-								)
+								),
 							)}
 						</List>
-					)
+					),
 				);
 			})()}
 		</div>
@@ -1065,7 +881,7 @@ const CalendarItemsListItem = ({
 		return (
 			showPanel?.action === "record" &&
 			showPanel.item.recurrence.scheduledTransactionId.equalTo(
-				recurrence.scheduledTransactionId
+				recurrence.scheduledTransactionId,
 			) &&
 			showPanel.item.recurrence.date.value.getTime() ===
 				recurrence.date.value.getTime()
@@ -1075,9 +891,9 @@ const CalendarItemsListItem = ({
 	const scheduledTransaction = useMemo(
 		() =>
 			scheduledItems.find((item) =>
-				item.id.equalTo(recurrence.scheduledTransactionId)
+				item.id.equalTo(recurrence.scheduledTransactionId),
 			),
-		[scheduledItems, recurrence]
+		[scheduledItems, recurrence],
 	);
 
 	if (!scheduledTransaction) {
@@ -1112,7 +928,7 @@ const CalendarItemsListItem = ({
 									recurrence,
 									scheduleTransactionId:
 										scheduledTransaction.id,
-							  }
+								},
 					);
 				}}
 				handleDelete={async () => {
@@ -1130,13 +946,13 @@ const CalendarItemsListItem = ({
 								n: recurrence.occurrenceIndex,
 							});
 							updateItems();
-						}
+						},
 					).open();
 				}}
 			/>
 			{showPanel &&
 				showPanel.item.scheduleTransactionId.equalTo(
-					scheduledTransaction.id
+					scheduledTransaction.id,
 				) &&
 				showPanel.item.recurrence.date.value.getTime() ===
 					recurrence.date.value.getTime() && (

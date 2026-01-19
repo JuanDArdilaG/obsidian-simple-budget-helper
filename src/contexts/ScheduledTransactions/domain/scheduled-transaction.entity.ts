@@ -24,11 +24,9 @@ import {
 } from "../../Transactions/domain/transaction-category.vo";
 import { ItemTag } from "./item-tag.valueobject";
 import { ItemTags } from "./item-tags.valueobject";
-import { ScheduledItem } from "./old/scheduled-item.entity";
 import {
 	RecurrencePattern,
 	RecurrencePatternPrimitives,
-	RecurrenceType,
 } from "./recurrence-pattern.vo";
 import { ScheduledTransactionDate } from "./scheduled-transaction-date.vo";
 
@@ -46,7 +44,7 @@ export class ScheduledTransaction extends Entity<
 		private _recurrencePattern: RecurrencePattern,
 		private readonly _store?: StringValueObject,
 		private _tags?: ItemTags,
-		updatedAt?: DateValueObject
+		updatedAt?: DateValueObject,
 	) {
 		super(id, updatedAt ?? DateValueObject.createNowDate());
 		this.validateTransferOperation();
@@ -59,7 +57,7 @@ export class ScheduledTransaction extends Entity<
 		toSplits: PaymentSplit[],
 		operation: ItemOperation,
 		category: TransactionCategory,
-		store?: StringValueObject
+		store?: StringValueObject,
 	): ScheduledTransaction {
 		return new ScheduledTransaction(
 			Nanoid.generate(),
@@ -69,30 +67,7 @@ export class ScheduledTransaction extends Entity<
 			operation,
 			category,
 			recurrencePattern,
-			store
-		);
-	}
-
-	static fromScheduledItemV1(
-		itemV1: ScheduledItem,
-		category: Category,
-		subCategory: SubCategory
-	): ScheduledTransaction {
-		return new ScheduledTransaction(
-			itemV1.id,
-			itemV1.name,
-			itemV1.fromSplits,
-			itemV1.toSplits,
-			itemV1.operation,
-			new TransactionCategory(category, subCategory),
-			RecurrencePattern.fromPrimitives({
-				startDate: new Date(itemV1.recurrence.startDate),
-				type: RecurrenceType.INFINITE,
-				frequency: itemV1.recurrence.frequency?.value ?? "1mo",
-			}),
-			itemV1.info?.store,
-			itemV1.tags,
-			DateValueObject.createNowDate()
+			store,
 		);
 	}
 
@@ -152,7 +127,7 @@ export class ScheduledTransaction extends Entity<
 	 */
 	getRealPriceWithAccountTypes(
 		fromAccountType: AccountType,
-		toAccountType?: AccountType
+		toAccountType?: AccountType,
 	): PriceValueObject {
 		if (this._operation.type.isIncome()) {
 			return this.originAmount;
@@ -191,11 +166,11 @@ export class ScheduledTransaction extends Entity<
 	 */
 	getPricePerMonthWithAccountTypes(
 		fromAccountType: AccountType,
-		toAccountType?: AccountType
+		toAccountType?: AccountType,
 	): PriceValueObject {
 		const realPrice = this.getRealPriceWithAccountTypes(
 			fromAccountType,
-			toAccountType
+			toAccountType,
 		);
 		const monthlyFactor = this.getMonthlyFrequencyFactor();
 		return realPrice.times(monthlyFactor);
@@ -281,17 +256,17 @@ export class ScheduledTransaction extends Entity<
 			this._id,
 			this._name,
 			this._originAccounts.map((split) =>
-				PaymentSplit.fromPrimitives(split.toPrimitives())
+				PaymentSplit.fromPrimitives(split.toPrimitives()),
 			),
 			this._destinationAccounts.map((split) =>
-				PaymentSplit.fromPrimitives(split.toPrimitives())
+				PaymentSplit.fromPrimitives(split.toPrimitives()),
 			),
 			this._operation,
 			this._category,
 			this._recurrencePattern,
 			this._store,
 			this._tags,
-			this.updatedAt
+			this.updatedAt,
 		);
 	}
 
@@ -299,7 +274,7 @@ export class ScheduledTransaction extends Entity<
 	 * Gets the date for a specific occurrence index
 	 */
 	getOccurrenceDate(
-		index: NumberValueObject
+		index: NumberValueObject,
 	): ScheduledTransactionDate | null {
 		return this._recurrencePattern.getNthOccurrence(index);
 	}
@@ -316,10 +291,10 @@ export class ScheduledTransaction extends Entity<
 			id: this.id.value,
 			name: this._name.value,
 			fromSplits: this._originAccounts.map((split) =>
-				split.toPrimitives()
+				split.toPrimitives(),
 			),
 			toSplits: this._destinationAccounts.map((split) =>
-				split.toPrimitives()
+				split.toPrimitives(),
 			),
 			operation: this._operation.toPrimitives(),
 			category: this._category.toPrimitives(),
@@ -330,16 +305,16 @@ export class ScheduledTransaction extends Entity<
 	}
 
 	static fromPrimitives(
-		primitives: ScheduledTransactionPrimitives
+		primitives: ScheduledTransactionPrimitives,
 	): ScheduledTransaction {
 		return new ScheduledTransaction(
 			new Nanoid(primitives.id),
 			new StringValueObject(primitives.name),
 			primitives.fromSplits.map((split) =>
-				PaymentSplit.fromPrimitives(split)
+				PaymentSplit.fromPrimitives(split),
 			),
 			primitives.toSplits.map((split) =>
-				PaymentSplit.fromPrimitives(split)
+				PaymentSplit.fromPrimitives(split),
 			),
 			ItemOperation.fromPrimitives(primitives.operation),
 			TransactionCategory.fromPrimitives(primitives.category),
@@ -350,7 +325,7 @@ export class ScheduledTransaction extends Entity<
 			primitives.tags
 				? ItemTags.fromPrimitives(primitives.tags)
 				: undefined,
-			new DateValueObject(new Date(primitives.updatedAt))
+			new DateValueObject(new Date(primitives.updatedAt)),
 		);
 	}
 
@@ -379,7 +354,7 @@ export class ScheduledTransaction extends Entity<
 			},
 			store: undefined,
 			recurrencePattern: RecurrencePattern.oneTime(
-				ScheduledTransactionDate.createNowDate()
+				ScheduledTransactionDate.createNowDate(),
 			).toPrimitives(),
 			updatedAt: "",
 		};

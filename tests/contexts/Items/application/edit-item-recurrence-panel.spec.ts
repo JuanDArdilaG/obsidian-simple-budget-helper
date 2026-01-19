@@ -1,7 +1,6 @@
 import { StringValueObject } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain";
 import { Category, CategoryName } from "contexts/Categories/domain";
-import { ItemOperation } from "contexts/Shared/domain";
+import { ItemOperation, Nanoid } from "contexts/Shared/domain";
 import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
@@ -29,18 +28,8 @@ describe("EditItemRecurrencePanel Logic", () => {
 		singleRecurrenceItem = ScheduledTransaction.create(
 			new StringValueObject("Single Item"),
 			RecurrencePattern.oneTime(singleRecurrenceDate),
-			[
-				new PaymentSplit(
-					AccountID.generate(),
-					new TransactionAmount(100),
-				),
-			],
-			[
-				new PaymentSplit(
-					AccountID.generate(),
-					new TransactionAmount(100),
-				),
-			],
+			[new PaymentSplit(Nanoid.generate(), new TransactionAmount(100))],
+			[new PaymentSplit(Nanoid.generate(), new TransactionAmount(100))],
 			ItemOperation.expense(),
 			new TransactionCategory(
 				cat,
@@ -58,8 +47,8 @@ describe("EditItemRecurrencePanel Logic", () => {
 				recurringStartDate,
 				new ItemRecurrenceFrequency("monthly"),
 			),
-			[new PaymentSplit(AccountID.generate(), new TransactionAmount(50))],
-			[new PaymentSplit(AccountID.generate(), new TransactionAmount(50))],
+			[new PaymentSplit(Nanoid.generate(), new TransactionAmount(50))],
+			[new PaymentSplit(Nanoid.generate(), new TransactionAmount(50))],
 			ItemOperation.expense(),
 			new TransactionCategory(
 				cat,

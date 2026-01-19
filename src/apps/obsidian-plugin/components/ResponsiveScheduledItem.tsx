@@ -11,13 +11,13 @@ import {
 	AccountName,
 	AccountType,
 } from "contexts/Accounts/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { Forward } from "lucide-react";
 import { useContext, useMemo } from "react";
 import {
 	ItemRecurrenceInfo,
 	ScheduledTransaction,
 } from "../../../contexts/ScheduledTransactions/domain";
-import { Nanoid } from "../../../contexts/Shared/domain";
 import { AccountsContext } from "../views";
 
 export const ResponsiveScheduledItem = ({
@@ -92,9 +92,9 @@ export const ResponsiveScheduledItem = ({
 			accounts.find(
 				(account) =>
 					account.id ===
-					scheduleTransaction.originAccounts[0].accountId
+					scheduleTransaction.originAccounts[0].accountId,
 			),
-		[scheduleTransaction, accounts]
+		[scheduleTransaction, accounts],
 	);
 	const toAccount = useMemo(
 		() =>
@@ -102,10 +102,11 @@ export const ResponsiveScheduledItem = ({
 				? accounts.find(
 						(account) =>
 							account.id ===
-							scheduleTransaction.destinationAccounts[0].accountId
-				  )
+							scheduleTransaction.destinationAccounts[0]
+								.accountId,
+					)
 				: undefined,
-		[scheduleTransaction, accounts]
+		[scheduleTransaction, accounts],
 	);
 
 	// Wide screen layout (≥1200px) - Multi-column table-like layout
@@ -272,7 +273,7 @@ export const ResponsiveScheduledItem = ({
 									.getPricePerMonthWithAccountTypes(
 										fromAccount?.type ??
 											AccountType.asset(),
-										toAccount?.type ?? AccountType.asset()
+										toAccount?.type ?? AccountType.asset(),
 									)
 									.toString()}
 							</div>
@@ -289,7 +290,7 @@ export const ResponsiveScheduledItem = ({
 								(context === "calendar"
 									? {
 											recurrence,
-									  }
+										}
 									: scheduleTransaction)
 							}
 							setAction={setAction}
@@ -454,7 +455,7 @@ export const ResponsiveScheduledItem = ({
 									.getPricePerMonthWithAccountTypes(
 										fromAccount?.type ??
 											AccountType.asset(),
-										toAccount?.type ?? AccountType.asset()
+										toAccount?.type ?? AccountType.asset(),
 									)
 									.toString()}
 							</div>
@@ -470,7 +471,7 @@ export const ResponsiveScheduledItem = ({
 								(context === "calendar"
 									? {
 											recurrence,
-									  }
+										}
 									: scheduleTransaction)
 							}
 							setAction={setAction}
@@ -585,7 +586,7 @@ export const ResponsiveScheduledItem = ({
 								(context === "calendar"
 									? {
 											recurrence,
-									  }
+										}
 									: scheduleTransaction)
 							}
 							setAction={setAction}
@@ -619,7 +620,7 @@ export const ResponsiveScheduledItem = ({
 									.getPricePerMonthWithAccountTypes(
 										fromAccount?.type ??
 											AccountType.asset(),
-										toAccount?.type ?? AccountType.asset()
+										toAccount?.type ?? AccountType.asset(),
 									)
 									.toString()}
 							</div>

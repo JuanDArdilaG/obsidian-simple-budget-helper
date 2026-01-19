@@ -3,21 +3,20 @@ import {
 	AccountIntegrityResult,
 	IntegrityCheckReport,
 } from "contexts/Accounts/domain";
-import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
+import { Nanoid } from "contexts/Shared/domain";
 
 describe("IntegrityCheckReport", () => {
 	const createMockIntegrityResult = (
 		accountId: string,
-		hasIntegrity: boolean,
-		discrepancy: number = 0
+		discrepancy: number = 0,
 	) => {
-		const accountIdObj = new AccountID(accountId);
+		const accountIdObj = new Nanoid(accountId);
 		const expectedBalance = new PriceValueObject(100);
 		const actualBalance = new PriceValueObject(100 + discrepancy);
 		return AccountIntegrityResult.create(
 			accountIdObj,
 			expectedBalance,
-			actualBalance
+			actualBalance,
 		);
 	};
 
@@ -25,12 +24,8 @@ describe("IntegrityCheckReport", () => {
 		it("should create a report with execution date", () => {
 			// Arrange
 			const results = [
-				createMockIntegrityResult(AccountID.generate().value, true),
-				createMockIntegrityResult(
-					AccountID.generate().value,
-					false,
-					50
-				),
+				createMockIntegrityResult(Nanoid.generate().value),
+				createMockIntegrityResult(Nanoid.generate().value, 50),
 			];
 
 			// Act
@@ -40,10 +35,10 @@ describe("IntegrityCheckReport", () => {
 			expect(report.results).toBe(results);
 			expect(report.executionDate).toBeInstanceOf(Date);
 			expect(report.executionDate.getTime()).toBeLessThanOrEqual(
-				Date.now()
+				Date.now(),
 			);
 			expect(report.executionDate.getTime()).toBeGreaterThan(
-				Date.now() - 1000
+				Date.now() - 1000,
 			); // Within last second
 		});
 	});
@@ -52,12 +47,8 @@ describe("IntegrityCheckReport", () => {
 		it("should return true when there are accounts with discrepancies", () => {
 			// Arrange
 			const results = [
-				createMockIntegrityResult(AccountID.generate().value, true),
-				createMockIntegrityResult(
-					AccountID.generate().value,
-					false,
-					50
-				),
+				createMockIntegrityResult(Nanoid.generate().value),
+				createMockIntegrityResult(Nanoid.generate().value, 50),
 			];
 			const report = IntegrityCheckReport.create(results);
 
@@ -68,8 +59,8 @@ describe("IntegrityCheckReport", () => {
 		it("should return false when all accounts have integrity", () => {
 			// Arrange
 			const results = [
-				createMockIntegrityResult(AccountID.generate().value, true),
-				createMockIntegrityResult(AccountID.generate().value, true),
+				createMockIntegrityResult(Nanoid.generate().value),
+				createMockIntegrityResult(Nanoid.generate().value),
 			];
 			const report = IntegrityCheckReport.create(results);
 
@@ -91,13 +82,11 @@ describe("IntegrityCheckReport", () => {
 		it("should return only accounts with discrepancies", () => {
 			// Arrange
 			const integrityResult = createMockIntegrityResult(
-				AccountID.generate().value,
-				true
+				Nanoid.generate().value,
 			);
 			const discrepancyResult = createMockIntegrityResult(
-				AccountID.generate().value,
-				false,
-				50
+				Nanoid.generate().value,
+				50,
 			);
 			const results = [integrityResult, discrepancyResult];
 			const report = IntegrityCheckReport.create(results);
@@ -115,13 +104,11 @@ describe("IntegrityCheckReport", () => {
 		it("should return only accounts with integrity", () => {
 			// Arrange
 			const integrityResult = createMockIntegrityResult(
-				AccountID.generate().value,
-				true
+				Nanoid.generate().value,
 			);
 			const discrepancyResult = createMockIntegrityResult(
-				AccountID.generate().value,
-				false,
-				50
+				Nanoid.generate().value,
+				50,
 			);
 			const results = [integrityResult, discrepancyResult];
 			const report = IntegrityCheckReport.create(results);
@@ -139,18 +126,10 @@ describe("IntegrityCheckReport", () => {
 		it("should calculate correct statistics", () => {
 			// Arrange
 			const results = [
-				createMockIntegrityResult(AccountID.generate().value, true),
-				createMockIntegrityResult(
-					AccountID.generate().value,
-					false,
-					50
-				),
-				createMockIntegrityResult(
-					AccountID.generate().value,
-					false,
-					-25
-				),
-				createMockIntegrityResult(AccountID.generate().value, true),
+				createMockIntegrityResult(Nanoid.generate().value),
+				createMockIntegrityResult(Nanoid.generate().value, 50),
+				createMockIntegrityResult(Nanoid.generate().value, -25),
+				createMockIntegrityResult(Nanoid.generate().value),
 			];
 			const report = IntegrityCheckReport.create(results);
 
@@ -163,11 +142,11 @@ describe("IntegrityCheckReport", () => {
 	describe("toPrimitives", () => {
 		it("should convert to primitives correctly", () => {
 			// Arrange
-			const accountId1 = AccountID.generate().value;
-			const accountId2 = AccountID.generate().value;
+			const accountId1 = Nanoid.generate().value;
+			const accountId2 = Nanoid.generate().value;
 			const results = [
-				createMockIntegrityResult(accountId1, true),
-				createMockIntegrityResult(accountId2, false, 50),
+				createMockIntegrityResult(accountId1),
+				createMockIntegrityResult(accountId2, 50),
 			];
 			const report = IntegrityCheckReport.create(results);
 
@@ -182,7 +161,7 @@ describe("IntegrityCheckReport", () => {
 			expect(primitives.totalAccountsChecked).toBe(2);
 			expect(primitives.totalDiscrepancies).toBe(1);
 			expect(primitives.executionDate).toBe(
-				report.executionDate.toISOString()
+				report.executionDate.toISOString(),
 			);
 		});
 	});

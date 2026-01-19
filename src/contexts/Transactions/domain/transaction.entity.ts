@@ -3,9 +3,8 @@ import {
 	NumberValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { CategoryID } from "contexts/Categories/domain";
-import { OperationType } from "contexts/Shared/domain";
+import { Nanoid, OperationType } from "contexts/Shared/domain";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { InvalidArgumentError } from "contexts/Shared/domain/errors/invalid-argument.error";
 import { SubCategoryID } from "contexts/Subcategories/domain";
@@ -199,7 +198,7 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		this.updateTimestamp();
 	}
 
-	getRealAmountForAccount(accountID: AccountID): TransactionAmount {
+	getRealAmountForAccount(accountID: Nanoid): TransactionAmount {
 		const originAccounts = this._originAccounts.filter((split) =>
 			split.accountId.equalTo(accountID),
 		);

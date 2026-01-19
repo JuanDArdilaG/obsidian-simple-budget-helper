@@ -68,24 +68,24 @@ export class DexieDB extends DB {
 	}
 
 	#initializeTables() {
-		this.db.version(1).stores({
+		this.db.version(2).stores({
 			[Config.accountsTableName]: Object.keys(
-				Account.emptyPrimitives()
+				Account.emptyPrimitives(),
 			).join(", "),
 			[Config.categoriesTableName]: Object.keys(
-				Category.emptyPrimitives()
+				Category.emptyPrimitives(),
 			).join(", "),
 			[Config.subCategoriesTableName]: Object.keys(
-				SubCategory.emptyPrimitives()
+				SubCategory.emptyPrimitives(),
 			).join(", "),
 			[Config.transactionsTableName]: Object.keys(
-				Transaction.emptyPrimitives()
+				Transaction.emptyPrimitives(),
 			).join(", "),
 			[Config.scheduledTransactionsTableName]: Object.keys(
-				ScheduledTransaction.emptyPrimitives()
+				ScheduledTransaction.emptyPrimitives(),
 			).join(", "),
 			[Config.scheduledTransactionsModificationsTableName]: Object.keys(
-				RecurrenceModification.emptyPrimitives()
+				RecurrenceModification.emptyPrimitives(),
 			).join(", "),
 		});
 	}

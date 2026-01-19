@@ -1,5 +1,5 @@
 import { StringValueObject } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
 import { LocalRepository } from "contexts/Shared/infrastructure/persistence/local/local.repository";
@@ -30,11 +30,11 @@ export class TransactionsLocalRepository
 		});
 
 		return Array.from(uniqueStores).map(
-			(store) => new StringValueObject(store)
+			(store) => new StringValueObject(store),
 		);
 	}
 
-	async hasTransactionsForAccount(accountId: AccountID): Promise<boolean> {
+	async hasTransactionsForAccount(accountId: Nanoid): Promise<boolean> {
 		const allRecords = await this.findAll();
 
 		return allRecords.some((transaction) => {
@@ -42,18 +42,18 @@ export class TransactionsLocalRepository
 			// Check if the account is involved in any splits
 			return (
 				(primitives.fromSplits?.some(
-					(split) => split.accountId === accountId.value
+					(split) => split.accountId === accountId.value,
 				) ??
 					false) ||
 				(primitives.toSplits?.some(
-					(split) => split.accountId === accountId.value
+					(split) => split.accountId === accountId.value,
 				) ??
 					false)
 			);
 		});
 	}
 
-	async findByAccountId(accountId: AccountID): Promise<Transaction[]> {
+	async findByAccountId(accountId: Nanoid): Promise<Transaction[]> {
 		const allRecords = await this.findAll();
 
 		return allRecords.filter((transaction) => {
@@ -61,11 +61,11 @@ export class TransactionsLocalRepository
 			// Check if the account is involved in any splits
 			return (
 				(primitives.fromSplits?.some(
-					(split) => split.accountId === accountId.value
+					(split) => split.accountId === accountId.value,
 				) ??
 					false) ||
 				(primitives.toSplits?.some(
-					(split) => split.accountId === accountId.value
+					(split) => split.accountId === accountId.value,
 				) ??
 					false)
 			);

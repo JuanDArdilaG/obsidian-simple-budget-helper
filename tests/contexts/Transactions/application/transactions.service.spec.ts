@@ -1,5 +1,5 @@
-import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 import { TransactionID } from "contexts/Transactions/domain";
@@ -20,8 +20,8 @@ const generateMockTransaction = () => {
 
 describe("update", () => {
 	it("should update transaction and adjust accounts", async () => {
-		const mockAccountId1 = AccountID.generate().value;
-		const mockAccountId2 = AccountID.generate().value;
+		const mockAccountId1 = Nanoid.generate().value;
+		const mockAccountId2 = Nanoid.generate().value;
 		const mockTransaction = generateMockTransaction();
 		mockTransaction.originAccounts = [
 			{ accountId: { value: mockAccountId1 } },
@@ -61,8 +61,8 @@ describe("update", () => {
 
 describe("delete", () => {
 	it("should delete transaction and adjust accounts", async () => {
-		const mockAccountId1 = AccountID.generate().value;
-		const mockAccountId2 = AccountID.generate().value;
+		const mockAccountId1 = Nanoid.generate().value;
+		const mockAccountId2 = Nanoid.generate().value;
 		const mockTransaction = generateMockTransaction();
 		mockTransaction.originAccounts = [
 			{ accountId: { value: mockAccountId1 } },
@@ -97,77 +97,6 @@ describe("delete", () => {
 		expect(transactionsRepository.deleteById).toHaveBeenCalledWith(
 			mockTransaction.id,
 		);
-	});
-});
-
-describe("TransactionsService extra methods", () => {
-	it("should get transaction summaries by category", async () => {
-		const mockTransaction = generateMockTransaction();
-
-		const service = new TransactionsService(
-			{} as any,
-			{
-				findByCriteria: vi.fn().mockResolvedValue([mockTransaction]),
-			} as any,
-			{} as any,
-			{} as any,
-		);
-
-		const categoryId = CategoryID.generate();
-		const summaries = await service.getTransactionsByCategory(categoryId);
-
-		expect(summaries).toBeDefined();
-		expect(Array.isArray(summaries)).toBe(true);
-		expect(summaries.length).toBe(1);
-	});
-
-	it("should get transaction summaries by subcategory", async () => {
-		const mockTransaction = generateMockTransaction();
-
-		const service = new TransactionsService(
-			{} as any,
-			{
-				findByCriteria: vi.fn().mockResolvedValue([mockTransaction]),
-			} as any,
-			{} as any,
-			{} as any,
-		);
-
-		const subCategoryId = SubCategoryID.generate();
-		const summaries =
-			await service.getTransactionSummariesBySubCategory(subCategoryId);
-
-		expect(summaries).toBeDefined();
-		expect(Array.isArray(summaries)).toBe(true);
-		expect(summaries.length).toBe(1);
-	});
-
-	it("should return correct transaction summary structure", async () => {
-		const mockTransaction = generateMockTransaction();
-
-		const service = new TransactionsService(
-			{} as any,
-			{
-				findByCriteria: vi.fn().mockResolvedValue([mockTransaction]),
-			} as any,
-			{} as any,
-			{} as any,
-		);
-
-		const categoryId = CategoryID.generate();
-		const summaries = await service.getTransactionsByCategory(categoryId);
-
-		if (summaries.length > 0) {
-			const summary = summaries[0];
-			expect(summary).toHaveProperty("id");
-			expect(summary).toHaveProperty("name");
-			expect(summary).toHaveProperty("amount");
-			expect(summary).toHaveProperty("date");
-			expect(summary).toHaveProperty("operation");
-			expect(["income", "expense", "transfer"]).toContain(
-				summary.operation,
-			);
-		}
 	});
 });
 

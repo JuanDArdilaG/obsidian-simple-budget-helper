@@ -1,5 +1,5 @@
-import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { Transaction, TransactionName } from "contexts/Transactions/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 
 describe("transfer operation validation", () => {
 	it("should throw error when creating transfer operation without toSplits", () => {
-		const fromAccount = AccountID.generate();
+		const fromAccount = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(fromAccount, new TransactionAmount(100)),
 		];
@@ -22,14 +22,14 @@ describe("transfer operation validation", () => {
 				new TransactionName("Transfer Test"),
 				TransactionOperation.transfer(),
 				CategoryID.generate(),
-				SubCategoryID.generate()
+				SubCategoryID.generate(),
 			);
 		}).toThrow("Transfer operations must have a toSplits array");
 	});
 
 	it("should allow transfer operation with valid toSplits", () => {
-		const fromAccount = AccountID.generate();
-		const toAccount = AccountID.generate();
+		const fromAccount = Nanoid.generate();
+		const toAccount = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(fromAccount, new TransactionAmount(100)),
 		];
@@ -44,14 +44,14 @@ describe("transfer operation validation", () => {
 				new TransactionName("Transfer Test"),
 				TransactionOperation.transfer(),
 				CategoryID.generate(),
-				SubCategoryID.generate()
+				SubCategoryID.generate(),
 			);
 		}).not.toThrow();
 	});
 
 	it("should throw error when setting empty toSplits for transfer operation", () => {
-		const fromAccount = AccountID.generate();
-		const toAccount = AccountID.generate();
+		const fromAccount = Nanoid.generate();
+		const toAccount = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(fromAccount, new TransactionAmount(100)),
 		];
@@ -65,7 +65,7 @@ describe("transfer operation validation", () => {
 			new TransactionName("Transfer Test"),
 			TransactionOperation.transfer(),
 			CategoryID.generate(),
-			SubCategoryID.generate()
+			SubCategoryID.generate(),
 		);
 
 		expect(() => {
@@ -74,7 +74,7 @@ describe("transfer operation validation", () => {
 	});
 
 	it("should throw error when updating operation to transfer without toSplits", () => {
-		const fromAccount = AccountID.generate();
+		const fromAccount = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(fromAccount, new TransactionAmount(100)),
 		];
@@ -86,7 +86,7 @@ describe("transfer operation validation", () => {
 			new TransactionName("Test Transaction"),
 			TransactionOperation.expense(),
 			CategoryID.generate(),
-			SubCategoryID.generate()
+			SubCategoryID.generate(),
 		);
 
 		expect(() => {
@@ -95,8 +95,8 @@ describe("transfer operation validation", () => {
 	});
 
 	it("should allow updating operation to transfer with valid toSplits", () => {
-		const fromAccount = AccountID.generate();
-		const toAccount = AccountID.generate();
+		const fromAccount = Nanoid.generate();
+		const toAccount = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(fromAccount, new TransactionAmount(100)),
 		];
@@ -110,7 +110,7 @@ describe("transfer operation validation", () => {
 			new TransactionName("Test Transaction"),
 			TransactionOperation.expense(),
 			CategoryID.generate(),
-			SubCategoryID.generate()
+			SubCategoryID.generate(),
 		);
 
 		expect(() => {
@@ -121,7 +121,7 @@ describe("transfer operation validation", () => {
 
 describe("getRealAmountForAccount", () => {
 	it("should return positive amount for income transaction (base amount)", () => {
-		const account = AccountID.generate();
+		const account = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(account, new TransactionAmount(100)),
 		];
@@ -133,7 +133,7 @@ describe("getRealAmountForAccount", () => {
 			new TransactionName("Income Transaction"),
 			TransactionOperation.income(),
 			CategoryID.generate(),
-			SubCategoryID.generate()
+			SubCategoryID.generate(),
 		);
 
 		// getRealAmountForAccount returns the base amount without considering account type
@@ -142,7 +142,7 @@ describe("getRealAmountForAccount", () => {
 	});
 
 	it("should return negative amount for expense transaction (base amount)", () => {
-		const account = AccountID.generate();
+		const account = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(account, new TransactionAmount(100)),
 		];
@@ -154,7 +154,7 @@ describe("getRealAmountForAccount", () => {
 			new TransactionName("Expense Transaction"),
 			TransactionOperation.expense(),
 			CategoryID.generate(),
-			SubCategoryID.generate()
+			SubCategoryID.generate(),
 		);
 
 		// getRealAmountForAccount returns the base amount without considering account type
@@ -163,8 +163,8 @@ describe("getRealAmountForAccount", () => {
 	});
 
 	it("should return correct amount for transfer transaction", () => {
-		const fromAccount = AccountID.generate();
-		const toAccount = AccountID.generate();
+		const fromAccount = Nanoid.generate();
+		const toAccount = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(fromAccount, new TransactionAmount(100)),
 		];
@@ -178,7 +178,7 @@ describe("getRealAmountForAccount", () => {
 			new TransactionName("Transfer Transaction"),
 			TransactionOperation.transfer(),
 			CategoryID.generate(),
-			SubCategoryID.generate()
+			SubCategoryID.generate(),
 		);
 
 		// For fromAccount: toAmount - fromAmount = 0 - 100 = -100

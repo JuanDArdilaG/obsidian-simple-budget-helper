@@ -13,8 +13,6 @@ export const useSubCategorySelect = ({
 	initialValueName,
 	initialValueID,
 	category,
-	lock,
-	setLock,
 	overrideSubCategoriesIDs,
 	error,
 }: {
@@ -22,8 +20,6 @@ export const useSubCategorySelect = ({
 	initialValueName?: SubCategoryName;
 	initialValueID?: string;
 	category?: Category;
-	lock?: boolean;
-	setLock?: (lock: boolean) => void;
 	overrideSubCategoriesIDs?: SubCategoryID[];
 	error?: string;
 }) => {
@@ -38,7 +34,7 @@ export const useSubCategorySelect = ({
 			// If a category is selected, show only subcategories for that category
 			try {
 				const categorySubCategories = getSubCategoriesByCategory(
-					category
+					category,
 				)
 					.map((subCat) => ({
 						id: subCat.id.value,
@@ -82,7 +78,7 @@ export const useSubCategorySelect = ({
 				.filter(
 					(sub) =>
 						!sub.name.includes("not found") &&
-						!sub.name.includes("Error loading")
+						!sub.name.includes("Error loading"),
 				) // Remove not found subcategories
 				.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -134,7 +130,7 @@ export const useSubCategorySelect = ({
 		if (subCategoryId && getSubCategoryByID) {
 			try {
 				setSubCategory(
-					getSubCategoryByID(new SubCategoryID(subCategoryId))
+					getSubCategoryByID(new SubCategoryID(subCategoryId)),
 				);
 			} catch {
 				setSubCategory(undefined);
@@ -152,8 +148,6 @@ export const useSubCategorySelect = ({
 				value={subCategoryId}
 				values={[{ id: "", name: "" }, ...subCategoriesList]}
 				onChange={(id) => setSubCategoryId(id)}
-				isLocked={lock}
-				setIsLocked={setLock ? (lock) => setLock(lock) : undefined}
 				error={error}
 				getOptionLabel={(option) => option.name}
 				getOptionValue={(option) => option.id}

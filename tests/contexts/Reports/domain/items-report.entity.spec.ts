@@ -2,6 +2,7 @@ import { DateValueObject, PriceValueObject } from "@juandardilag/value-objects";
 import { describe, expect, it } from "vitest";
 import {
 	Account,
+	AccountAssetSubtype,
 	AccountBalance,
 	AccountName,
 	AccountType,
@@ -25,14 +26,14 @@ describe("ItemsReport", () => {
 
 			const expensesReport = report.onlyExpenses();
 			expect(
-				expensesReport.scheduledTransactionsWithAccounts
+				expensesReport.scheduledTransactionsWithAccounts,
 			).toHaveLength(2);
 			expensesReport.scheduledTransactionsWithAccounts.forEach(
 				({ scheduledTransaction }) => {
 					expect(
-						scheduledTransaction.operation.type.isExpense()
+						scheduledTransaction.operation.type.isExpense(),
 					).toBe(true);
-				}
+				},
 			);
 		});
 
@@ -46,14 +47,14 @@ describe("ItemsReport", () => {
 			const report = new ScheduledMonthlyReport(items, [account]);
 			const incomesReport = report.onlyIncomes();
 			expect(
-				incomesReport.scheduledTransactionsWithAccounts
+				incomesReport.scheduledTransactionsWithAccounts,
 			).toHaveLength(2);
 			incomesReport.scheduledTransactionsWithAccounts.forEach(
 				({ scheduledTransaction }) => {
 					expect(scheduledTransaction.operation.type.isIncome()).toBe(
-						true
+						true,
 					);
-				}
+				},
 			);
 		});
 
@@ -74,14 +75,14 @@ describe("ItemsReport", () => {
 
 			const infiniteReport = report.onlyInfiniteRecurrent();
 			expect(
-				infiniteReport.scheduledTransactionsWithAccounts
+				infiniteReport.scheduledTransactionsWithAccounts,
 			).toHaveLength(2);
 			infiniteReport.scheduledTransactionsWithAccounts.forEach(
 				({ scheduledTransaction }) => {
 					expect(
-						scheduledTransaction.recurrencePattern.totalOccurrences
+						scheduledTransaction.recurrencePattern.totalOccurrences,
 					).toBe(-1);
-				}
+				},
 			);
 		});
 
@@ -108,14 +109,14 @@ describe("ItemsReport", () => {
 
 			const finiteReport = report.onlyFiniteRecurrent();
 			expect(finiteReport.scheduledTransactionsWithAccounts).toHaveLength(
-				2
+				2,
 			);
 			finiteReport.scheduledTransactionsWithAccounts.forEach(
 				({ scheduledTransaction }) => {
 					expect(
-						scheduledTransaction.recurrencePattern.totalOccurrences
+						scheduledTransaction.recurrencePattern.totalOccurrences,
 					).not.toBe(-1);
-				}
+				},
 			);
 		});
 	});
@@ -225,12 +226,13 @@ describe("ItemsReport", () => {
 						new Account(
 							item.originAccounts[0].accountId,
 							AccountType.asset(),
+							AccountAssetSubtype.CHECKING,
 							new AccountName("Test Account"),
 							new Currency("USD"),
 							AccountBalance.zero(),
-							DateValueObject.createNowDate()
-						)
-				)
+							DateValueObject.createNowDate(),
+						),
+				),
 			);
 
 			const totalPerMonth = report.getTotalPerMonth();

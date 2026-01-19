@@ -35,7 +35,6 @@ import {
 	ScheduledTransactionsContext,
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { AccountID } from "contexts/Accounts/domain";
 import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
 import { Nanoid, OperationType } from "contexts/Shared/domain";
 import {
@@ -63,6 +62,7 @@ import React, {
 	useState,
 } from "react";
 import { Store } from "../../../../contexts/Stores/domain";
+import { useMultiTransactionValidation } from "./useMultiTransactionValidation";
 
 // Transaction type colors
 const TRANSACTION_TYPE_COLORS = {
@@ -95,156 +95,6 @@ interface TransactionItem {
 	category: string;
 	subCategory: string;
 }
-
-// Validation interface
-interface ValidationErrors {
-	items?: string;
-	date?: string;
-	operation?: string;
-	fromSplits?: string;
-	toSplits?: string;
-	exchangeRate?: string;
-	general?: string;
-}
-
-// Validation hook
-const useMultiTransactionValidation = (
-	items: TransactionItem[],
-	date: Date,
-	operation: OperationType,
-	fromSplits: PaymentSplitPrimitives[],
-	toSplits: PaymentSplitPrimitives[],
-	exchangeRate?: number
-) => {
-	const [errors, setErrors] = useState<ValidationErrors>({});
-
-	const validate = (): boolean => {
-		const newErrors: ValidationErrors = {};
-
-		if (
-			operation === "transfer" &&
-			fromSplits.length > 0 &&
-			toSplits.length > 0 &&
-			(!exchangeRate || exchangeRate <= 0)
-		) {
-			newErrors.exchangeRate = "Exchange rate must be greater than zero";
-		}
-
-		// Items validation
-		if (!items || items.length === 0) {
-			newErrors.items = "At least one transaction item is required";
-		} else {
-			for (let i = 0; i < items.length; i++) {
-				const item = items[i];
-				if (!item.name || item.name.trim() === "") {
-					newErrors.items = `Transaction ${i + 1}: Name is required`;
-					break;
-				}
-				if (item.name.length < 2) {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Name must be at least 2 characters`;
-					break;
-				}
-				if (item.name.length > 100) {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Name must be less than 100 characters`;
-					break;
-				}
-				if (!item.category || item.category.trim() === "") {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Category is required`;
-					break;
-				}
-				if (!item.subCategory || item.subCategory.trim() === "") {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Subcategory is required`;
-					break;
-				}
-				if (item.amount <= 0) {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Amount must be greater than 0`;
-					break;
-				}
-				if (item.quantity < 1) {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Quantity must be at least 1`;
-					break;
-				}
-				if (!Number.isInteger(item.quantity)) {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Quantity must be a whole number`;
-					break;
-				}
-			}
-		}
-
-		// Date validation
-		if (!date || Number.isNaN(date.getTime())) {
-			newErrors.date = "Valid date is required";
-		} else {
-			const now = new Date();
-			const futureLimit = new Date(
-				now.getFullYear() + 10,
-				now.getMonth(),
-				now.getDate()
-			);
-			const pastLimit = new Date(
-				now.getFullYear() - 10,
-				now.getMonth(),
-				now.getDate()
-			);
-
-			if (date > futureLimit) {
-				newErrors.date =
-					"Date cannot be more than 10 years in the future";
-			} else if (date < pastLimit) {
-				newErrors.date =
-					"Date cannot be more than 10 years in the past";
-			}
-		}
-
-		// Operation validation
-		if (
-			!operation ||
-			!["expense", "income", "transfer"].includes(operation)
-		) {
-			newErrors.operation = "Valid operation type is required";
-		}
-
-		// FromSplits validation
-		if (!fromSplits || fromSplits.length === 0) {
-			newErrors.fromSplits = "At least one from account is required";
-		}
-
-		// ToSplits validation (only for transfers)
-		if (operation === "transfer" && (!toSplits || toSplits.length === 0)) {
-			newErrors.toSplits =
-				"At least one to account is required for transfers";
-		}
-
-		setErrors(newErrors);
-		return Object.keys(newErrors).length === 0;
-	};
-
-	const getFieldError = (
-		field: keyof ValidationErrors
-	): string | undefined => {
-		return errors[field];
-	};
-
-	const clearErrors = () => {
-		setErrors({});
-	};
-
-	return { validate, getFieldError, clearErrors, errors };
-};
 
 // Main component
 export const TransactionFormImproved = ({
@@ -314,8 +164,8 @@ export const TransactionFormImproved = ({
 						error instanceof Error
 							? error
 							: new Error(
-									"Error loading brands, stores, and providers"
-							  )
+									"Error loading brands, stores, and providers",
+								),
 					);
 				}
 			};
@@ -351,7 +201,7 @@ export const TransactionFormImproved = ({
 						?.name.value || "",
 				subCategory:
 					subCategories.find((s) =>
-						s.id.equalTo(transaction.subCategory)
+						s.id.equalTo(transaction.subCategory),
 					)?.name.value || "",
 			},
 		];
@@ -382,7 +232,7 @@ export const TransactionFormImproved = ({
 			operation: transaction.operation.value,
 			fromSplits: transaction.originAccounts.map((split) => {
 				const account = accounts.find((acc) =>
-					acc.id.equalTo(split.accountId)
+					acc.id.equalTo(split.accountId),
 				);
 				return {
 					accountId: split.accountId.value,
@@ -392,7 +242,7 @@ export const TransactionFormImproved = ({
 			}),
 			toSplits: transaction.destinationAccounts.map((split) => {
 				const account = accounts.find((acc) =>
-					acc.id.equalTo(split.accountId)
+					acc.id.equalTo(split.accountId),
 				);
 				return {
 					accountId: split.accountId.value,
@@ -406,7 +256,7 @@ export const TransactionFormImproved = ({
 
 	// State
 	const [transactionItems, setTransactionItems] = useState<TransactionItem[]>(
-		[]
+		[],
 	);
 	useEffect(() => {
 		getInitialTransactionItems().then((items) => {
@@ -470,7 +320,7 @@ export const TransactionFormImproved = ({
 			sharedProperties.operation,
 			sharedProperties.fromSplits,
 			sharedProperties.toSplits,
-			sharedProperties.exchangeRate
+			sharedProperties.exchangeRate,
 		);
 
 	// Calculate total amount
@@ -478,9 +328,9 @@ export const TransactionFormImproved = ({
 		() =>
 			transactionItems.reduce(
 				(sum, item) => sum + item.amount * item.quantity,
-				0
+				0,
 			),
-		[transactionItems]
+		[transactionItems],
 	);
 
 	// Helper function to reset form while preserving certain fields
@@ -518,13 +368,13 @@ export const TransactionFormImproved = ({
 	const getProportionalSplits = (
 		splits: PaymentSplitPrimitives[],
 		itemAmount: number,
-		totalAmount: number
+		totalAmount: number,
 	) => {
 		if (totalAmount === 0) return [];
 		return splits.map((split) => ({
 			accountId: split.accountId,
 			amount: Number(
-				((split.amount * itemAmount) / totalAmount).toFixed(2)
+				((split.amount * itemAmount) / totalAmount).toFixed(2),
 			),
 			currency: split.currency,
 		}));
@@ -536,7 +386,7 @@ export const TransactionFormImproved = ({
 			categories
 				.map((cat) => ({ id: cat.id.value, name: cat.name.value }))
 				.sort((a, b) => a.name.localeCompare(b.name)),
-		[categories]
+		[categories],
 	);
 
 	const subCategoryOptions = useCallback(
@@ -545,26 +395,26 @@ export const TransactionFormImproved = ({
 				? subCategories
 				: subCategories.filter((sub) => {
 						const cat = categories.find(
-							(c) => c.name.value === parentCategoryName
+							(c) => c.name.value === parentCategoryName,
 						);
 						if (!cat) return false;
 						return cat.id.value === sub.category.value;
-				  })
+					})
 			)
 				.map((sub) => ({ id: sub.id.value, name: sub.name.value }))
 				.sort((a, b) => a.name.localeCompare(b.name)),
-		[categories, subCategories]
+		[categories, subCategories],
 	);
 
 	// Update helpers
 	const updateTransactionItem = (
 		id: string,
-		updates: Partial<TransactionItem>
+		updates: Partial<TransactionItem>,
 	) => {
 		setTransactionItems(
 			transactionItems.map((item) =>
-				item.id === id ? { ...item, ...updates } : item
-			)
+				item.id === id ? { ...item, ...updates } : item,
+			),
 		);
 	};
 
@@ -578,7 +428,7 @@ export const TransactionFormImproved = ({
 
 		try {
 			await createCategory.execute(
-				Category.create(new CategoryName(newCategoryName.trim()))
+				Category.create(new CategoryName(newCategoryName.trim())),
 			);
 			logger.debug("Category created successfully");
 			updateCategories();
@@ -591,7 +441,7 @@ export const TransactionFormImproved = ({
 			setCategoryCreationError(
 				error instanceof Error
 					? error.message
-					: "Failed to create category"
+					: "Failed to create category",
 			);
 		} finally {
 			setIsCreatingCategory(false);
@@ -611,7 +461,7 @@ export const TransactionFormImproved = ({
 
 		try {
 			const parentCategory = categories.find(
-				(c) => c.name.value === selectedParentCategory
+				(c) => c.name.value === selectedParentCategory,
 			);
 			logger.debug("Found parent category", { parentCategory });
 			if (!parentCategory) {
@@ -621,8 +471,8 @@ export const TransactionFormImproved = ({
 			await createSubCategory.execute(
 				SubCategory.create(
 					parentCategory.id,
-					new SubCategoryName(newSubcategoryName.trim())
-				)
+					new SubCategoryName(newSubcategoryName.trim()),
+				),
 			);
 			logger.debug("Subcategory created successfully");
 			updateSubCategories();
@@ -638,7 +488,7 @@ export const TransactionFormImproved = ({
 			setSubcategoryCreationError(
 				error instanceof Error
 					? error.message
-					: "Failed to create subcategory"
+					: "Failed to create subcategory",
 			);
 		} finally {
 			setIsCreatingSubcategory(false);
@@ -648,9 +498,26 @@ export const TransactionFormImproved = ({
 	// Name select handler
 	const handleNameSelect = (transactionId: string, displayName: string) => {
 		const match = transactions.find(
-			(transaction) => transaction.name.value === displayName
+			(transaction) => transaction.name.value === displayName,
 		);
 		if (match) {
+			updateSharedProperties({
+				operation: match.operation.value,
+				fromSplits: match.originAccounts.map((split) => ({
+					accountId: split.accountId.value,
+					amount: split.amount.value,
+					currency:
+						accounts.find((acc) => acc.id.equalTo(split.accountId))
+							?.currency.value || "",
+				})),
+				toSplits: match.destinationAccounts.map((split) => ({
+					accountId: split.accountId.value,
+					amount: split.amount.value,
+					currency:
+						accounts.find((acc) => acc.id.equalTo(split.accountId))
+							?.currency.value || "",
+				})),
+			});
 			updateTransactionItem(transactionId, {
 				name: match.name.value,
 				amount: match.originAmount.price,
@@ -659,7 +526,7 @@ export const TransactionFormImproved = ({
 						?.name.value || "",
 				subCategory:
 					subCategories.find(
-						(s) => s.id.value === match.subCategory.value
+						(s) => s.id.value === match.subCategory.value,
 					)?.name.value || "",
 			});
 		} else {
@@ -678,21 +545,21 @@ export const TransactionFormImproved = ({
 						.map((store) => store.name.value)
 						.filter(
 							(t): t is string =>
-								typeof t === "string" && t.trim() !== ""
-						)
-				)
+								typeof t === "string" && t.trim() !== "",
+						),
+				),
 			),
-		[stores]
+		[stores],
 	);
 
 	const nameOptions = useMemo(
 		() =>
 			Array.from(
 				new Set(
-					transactions.map((transaction) => transaction.name.value)
-				)
+					transactions.map((transaction) => transaction.name.value),
+				),
 			),
-		[transactions]
+		[transactions],
 	);
 
 	// Calculator functions
@@ -745,7 +612,7 @@ export const TransactionFormImproved = ({
 	const removeTransactionItem = (id: string) => {
 		if (transactionItems.length > 1) {
 			setTransactionItems(
-				transactionItems.filter((item) => item.id !== id)
+				transactionItems.filter((item) => item.id !== id),
 			);
 		}
 	};
@@ -754,7 +621,7 @@ export const TransactionFormImproved = ({
 		(updates: Partial<typeof sharedProperties>) => {
 			setSharedProperties((prev) => ({ ...prev, ...updates }));
 		},
-		[]
+		[],
 	);
 
 	// Sync date changes with shared properties
@@ -768,7 +635,7 @@ export const TransactionFormImproved = ({
 		try {
 			const totalAmount = transactionItems.reduce(
 				(sum, item) => sum + item.amount * item.quantity,
-				0
+				0,
 			);
 
 			const allStores = [...stores];
@@ -781,25 +648,25 @@ export const TransactionFormImproved = ({
 				const fromSplits = sharedProperties.fromSplits.map(
 					(split) =>
 						new PaymentSplit(
-							new AccountID(split.accountId),
-							new TransactionAmount(split.amount)
-						)
+							new Nanoid(split.accountId),
+							new TransactionAmount(split.amount),
+						),
 				);
 				const toSplits = sharedProperties.toSplits.map(
 					(split) =>
 						new PaymentSplit(
-							new AccountID(split.accountId),
+							new Nanoid(split.accountId),
 							new TransactionAmount(
 								split.amount *
-									(sharedProperties.exchangeRate ?? 1)
-							)
-						)
+									(sharedProperties.exchangeRate ?? 1),
+							),
+						),
 				);
 				const categoryId = categories.find(
-					(c) => c.name.value === firstItem.category
+					(c) => c.name.value === firstItem.category,
 				)?.id;
 				const subCategoryId = subCategories.find(
-					(sc) => sc.name.value === firstItem.subCategory
+					(sc) => sc.name.value === firstItem.subCategory,
 				)?.id;
 				if (!categoryId || !subCategoryId) {
 					throw new Error("Category and subcategory are required");
@@ -807,7 +674,7 @@ export const TransactionFormImproved = ({
 				const transactionData = {
 					name: new TransactionName(firstItem.name),
 					operation: new TransactionOperation(
-						sharedProperties.operation
+						sharedProperties.operation,
 					),
 					category: new CategoryID(categoryId.value),
 					subCategory: new SubCategoryID(subCategoryId.value),
@@ -825,56 +692,56 @@ export const TransactionFormImproved = ({
 				transaction.setDestinationAccounts(transactionData.toSplits);
 				sharedProperties.exchangeRate &&
 					transaction.updateExchangeRate(
-						new NumberValueObject(sharedProperties.exchangeRate)
+						new NumberValueObject(sharedProperties.exchangeRate),
 					);
 				await updateTransaction.execute(transaction);
 			} else {
 				// Create a transaction for each item
 				for (const item of transactionItems) {
 					const categoryId = categories.find(
-						(c) => c.name.value === item.category
+						(c) => c.name.value === item.category,
 					)?.id;
 					const subCategoryId = subCategories.find(
-						(sc) => sc.name.value === item.subCategory
+						(sc) => sc.name.value === item.subCategory,
 					)?.id;
 					if (!categoryId || !subCategoryId) {
 						throw new Error(
-							"Category and subcategory are required"
+							"Category and subcategory are required",
 						);
 					}
 					const fromSplits = getProportionalSplits(
 						sharedProperties.fromSplits,
 						item.amount,
-						totalAmount
+						totalAmount,
 					).map(
 						(split) =>
 							new PaymentSplit(
-								new AccountID(split.accountId),
-								new TransactionAmount(split.amount)
-							)
+								new Nanoid(split.accountId),
+								new TransactionAmount(split.amount),
+							),
 					);
 					const toSplits =
 						sharedProperties.operation === "transfer"
 							? getProportionalSplits(
 									sharedProperties.toSplits,
 									item.amount,
-									totalAmount
-							  ).map(
+									totalAmount,
+								).map(
 									(split) =>
 										new PaymentSplit(
-											new AccountID(split.accountId),
-											new TransactionAmount(split.amount)
-										)
-							  )
+											new Nanoid(split.accountId),
+											new TransactionAmount(split.amount),
+										),
+								)
 							: [];
 					let store: Store | undefined = undefined;
 					if (sharedProperties.store) {
 						store = allStores.find(
-							(s) => s.name.value === sharedProperties.store
+							(s) => s.name.value === sharedProperties.store,
 						);
 						if (!store) {
 							const newStore = Store.create(
-								new StringValueObject(sharedProperties.store)
+								new StringValueObject(sharedProperties.store),
 							);
 							await createStore.execute(newStore);
 							allStores.push(newStore);
@@ -890,7 +757,7 @@ export const TransactionFormImproved = ({
 								toSplits,
 								new TransactionName(item.name),
 								new TransactionOperation(
-									sharedProperties.operation
+									sharedProperties.operation,
 								),
 								new CategoryID(categoryId.value),
 								new SubCategoryID(subCategoryId.value),
@@ -898,15 +765,15 @@ export const TransactionFormImproved = ({
 								DateValueObject.createNowDate(),
 								sharedProperties.store
 									? new StringValueObject(
-											sharedProperties.store
-									  )
+											sharedProperties.store,
+										)
 									: undefined,
 								sharedProperties.exchangeRate
 									? new NumberValueObject(
-											sharedProperties.exchangeRate
-									  )
-									: undefined
-							)
+											sharedProperties.exchangeRate,
+										)
+									: undefined,
+							),
 						);
 				}
 			}
@@ -924,7 +791,7 @@ export const TransactionFormImproved = ({
 				"Error saving transaction",
 				error instanceof Error
 					? error
-					: new Error("Error saving transaction")
+					: new Error("Error saving transaction"),
 			);
 		}
 	};
@@ -998,7 +865,7 @@ export const TransactionFormImproved = ({
 							>
 								{type.charAt(0).toUpperCase() + type.slice(1)}
 							</Button>
-						)
+						),
 					)}
 				</Box>
 			</Box>
@@ -1039,114 +906,6 @@ export const TransactionFormImproved = ({
 					)}
 				</Box>
 			</Box>
-
-			{/* Account Selection Section */}
-			<Box sx={{ mb: 3 }}>
-				<Typography
-					variant="h6"
-					sx={{ mb: 2, color: currentColors.primary }}
-				>
-					Account Distribution
-				</Typography>
-
-				{/* From Account Selection */}
-				<Box sx={{ mb: 2 }}>
-					<Typography
-						variant="body2"
-						sx={{ mb: 1, color: "var(--text-muted)" }}
-					>
-						{sharedProperties.operation === "transfer"
-							? "From Accounts *"
-							: "Accounts *"}
-					</Typography>
-					<MultiSelectDropdown
-						id="fromSplits"
-						label=""
-						placeholder="Select accounts..."
-						selectedAccounts={sharedProperties.fromSplits}
-						totalAmount={totalAmount}
-						onChange={(fromSplits) => {
-							updateSharedProperties({ fromSplits });
-						}}
-						error={getFieldError("fromSplits")}
-					/>
-					{getFieldError("fromSplits") && (
-						<Typography
-							variant="caption"
-							color="error"
-							sx={{ mt: 0.5, display: "block" }}
-						>
-							{getFieldError("fromSplits")}
-						</Typography>
-					)}
-				</Box>
-
-				{/* Transfer To Accounts */}
-				{sharedProperties.operation === "transfer" && (
-					<Box sx={{ mb: 2 }}>
-						<Typography
-							variant="body2"
-							sx={{ mb: 1, color: "var(--text-muted)" }}
-						>
-							To Accounts *
-						</Typography>
-						<MultiSelectDropdown
-							id="toSplits"
-							label=""
-							placeholder="Select to accounts..."
-							selectedAccounts={sharedProperties.toSplits}
-							totalAmount={totalAmount}
-							onChange={(toSplits) => {
-								updateSharedProperties({ toSplits });
-							}}
-							error={getFieldError("toSplits")}
-						/>
-						{getFieldError("toSplits") && (
-							<Typography
-								variant="caption"
-								color="error"
-								sx={{ mt: 0.5, display: "block" }}
-							>
-								{getFieldError("toSplits")}
-							</Typography>
-						)}
-					</Box>
-				)}
-			</Box>
-			{sharedProperties.operation === "transfer" &&
-				sharedProperties.fromSplits?.[0]?.currency !==
-					sharedProperties.toSplits?.[0]?.currency && (
-					<>
-						<PriceInput
-							id={"exchange-rate"}
-							key={"exchange-rate"}
-							label="Exchange Rate"
-							value={
-								new PriceValueObject(
-									sharedProperties.exchangeRate || 0,
-									{
-										decimals: 2,
-										withZeros: true,
-									}
-								)
-							}
-							onChange={(value) =>
-								updateSharedProperties({
-									exchangeRate: value.value,
-								})
-							}
-						/>
-						{getFieldError("exchangeRate") && (
-							<Typography
-								variant="caption"
-								color="error"
-								sx={{ mt: 0.5, display: "block" }}
-							>
-								{getFieldError("exchangeRate")}
-							</Typography>
-						)}
-					</>
-				)}
 
 			{/* Transaction Items Section */}
 			<Box sx={{ mb: 3 }}>
@@ -1221,8 +980,6 @@ export const TransactionFormImproved = ({
 									onChange={(name) =>
 										handleNameSelect(item.id, name)
 									}
-									isLocked={false}
-									setIsLocked={() => {}}
 								/>
 							</Box>
 
@@ -1255,10 +1012,12 @@ export const TransactionFormImproved = ({
 											? accounts.find((acc) =>
 													acc.id.equalTo(
 														new Nanoid(
-															sharedProperties.fromSplits[0].accountId
-														)
-													)
-											  )?.currency.symbol
+															sharedProperties
+																.fromSplits[0]
+																.accountId,
+														),
+													),
+												)?.currency.symbol
 											: "$"
 									}
 								/>
@@ -1267,7 +1026,7 @@ export const TransactionFormImproved = ({
 									onClick={() =>
 										openCalculator(
 											item.id,
-											item.amount || 0
+											item.amount || 0,
 										)
 									}
 									sx={{ mb: 1 }}
@@ -1319,7 +1078,7 @@ export const TransactionFormImproved = ({
 									label="Category *"
 									item={item.category || ""}
 									items={categoryOptions.map(
-										(opt) => opt.name
+										(opt) => opt.name,
 									)}
 									onChange={(categoryName) => {
 										logger.debug("Selected category", {
@@ -1329,7 +1088,7 @@ export const TransactionFormImproved = ({
 											categoryName &&
 											categoryOptions.some(
 												(opt) =>
-													opt.name === categoryName
+													opt.name === categoryName,
 											)
 										) {
 											updateTransactionItem(item.id, {
@@ -1337,15 +1096,13 @@ export const TransactionFormImproved = ({
 											});
 										}
 									}}
-									isLocked={false}
-									setIsLocked={() => {}}
 								/>
 								<Button
 									variant="text"
 									size="small"
 									onClick={() =>
 										setShowCategoryCreation(
-											!showCategoryCreation
+											!showCategoryCreation,
 										)
 									}
 									sx={{
@@ -1391,11 +1148,11 @@ export const TransactionFormImproved = ({
 											value={newCategoryName}
 											onChange={(e) => {
 												setNewCategoryName(
-													e.target.value
+													e.target.value,
 												);
 												if (categoryCreationError)
 													setCategoryCreationError(
-														null
+														null,
 													);
 											}}
 											size="small"
@@ -1426,7 +1183,7 @@ export const TransactionFormImproved = ({
 												size="small"
 												onClick={() =>
 													handleCreateCategory(
-														item.id
+														item.id,
 													)
 												}
 												disabled={
@@ -1459,10 +1216,10 @@ export const TransactionFormImproved = ({
 												onClick={() => {
 													setNewCategoryName("");
 													setCategoryCreationError(
-														null
+														null,
 													);
 													setShowCategoryCreation(
-														false
+														false,
 													);
 												}}
 												disabled={isCreatingCategory}
@@ -1481,16 +1238,17 @@ export const TransactionFormImproved = ({
 									label="Subcategory *"
 									item={item.subCategory || ""}
 									items={subCategoryOptions(
-										item.category
+										item.category,
 									).map((opt) => opt.name)}
 									onChange={(subCategoryName) => {
 										if (
 											subCategoryName &&
 											subCategoryOptions(
-												item.category
+												item.category,
 											).some(
 												(opt) =>
-													opt.name === subCategoryName
+													opt.name ===
+													subCategoryName,
 											)
 										) {
 											updateTransactionItem(item.id, {
@@ -1498,15 +1256,13 @@ export const TransactionFormImproved = ({
 											});
 										}
 									}}
-									isLocked={false}
-									setIsLocked={() => {}}
 								/>
 								<Button
 									variant="text"
 									size="small"
 									onClick={() =>
 										setShowSubcategoryCreation(
-											!showSubcategoryCreation
+											!showSubcategoryCreation,
 										)
 									}
 									sx={{
@@ -1550,19 +1306,17 @@ export const TransactionFormImproved = ({
 											label="Parent Category *"
 											value={selectedParentCategory}
 											values={categoryOptions.map(
-												(opt) => opt.name
+												(opt) => opt.name,
 											)}
 											onChange={(categoryName) => {
 												setSelectedParentCategory(
-													categoryName
+													categoryName,
 												);
 												if (subcategoryCreationError)
 													setSubcategoryCreationError(
-														null
+														null,
 													);
 											}}
-											isLocked={false}
-											setIsLocked={() => {}}
 										/>
 										<TextField
 											fullWidth
@@ -1571,11 +1325,11 @@ export const TransactionFormImproved = ({
 											value={newSubcategoryName}
 											onChange={(e) => {
 												setNewSubcategoryName(
-													e.target.value
+													e.target.value,
 												);
 												if (subcategoryCreationError)
 													setSubcategoryCreationError(
-														null
+														null,
 													);
 											}}
 											size="small"
@@ -1609,7 +1363,7 @@ export const TransactionFormImproved = ({
 												size="small"
 												onClick={() =>
 													handleCreateSubcategory(
-														item.id
+														item.id,
 													)
 												}
 												disabled={
@@ -1643,13 +1397,13 @@ export const TransactionFormImproved = ({
 												onClick={() => {
 													setNewSubcategoryName("");
 													setSelectedParentCategory(
-														""
+														"",
 													);
 													setSubcategoryCreationError(
-														null
+														null,
 													);
 													setShowSubcategoryCreation(
-														false
+														false,
 													);
 												}}
 												disabled={isCreatingSubcategory}
@@ -1756,11 +1510,117 @@ export const TransactionFormImproved = ({
 						item={sharedProperties.store}
 						items={storeOptions}
 						onChange={(store) => updateSharedProperties({ store })}
-						isLocked={false}
-						setIsLocked={() => {}}
 					/>
 				</Box>
 			)}
+
+			{/* Account Selection Section */}
+			<Box sx={{ mb: 3 }}>
+				<Typography
+					variant="h6"
+					sx={{ mb: 2, color: currentColors.primary }}
+				>
+					Account Distribution
+				</Typography>
+
+				{/* From Account Selection */}
+				<Box sx={{ mb: 2 }}>
+					<Typography
+						variant="body2"
+						sx={{ mb: 1, color: "var(--text-muted)" }}
+					>
+						{sharedProperties.operation === "transfer"
+							? "From Accounts *"
+							: "Accounts *"}
+					</Typography>
+					<MultiSelectDropdown
+						id="fromSplits"
+						label=""
+						placeholder="Select accounts..."
+						selectedAccounts={sharedProperties.fromSplits}
+						totalAmount={totalAmount}
+						onChange={(fromSplits) => {
+							updateSharedProperties({ fromSplits });
+						}}
+						error={getFieldError("fromSplits")}
+					/>
+					{getFieldError("fromSplits") && (
+						<Typography
+							variant="caption"
+							color="error"
+							sx={{ mt: 0.5, display: "block" }}
+						>
+							{getFieldError("fromSplits")}
+						</Typography>
+					)}
+				</Box>
+
+				{/* Transfer To Accounts */}
+				{sharedProperties.operation === "transfer" && (
+					<Box sx={{ mb: 2 }}>
+						<Typography
+							variant="body2"
+							sx={{ mb: 1, color: "var(--text-muted)" }}
+						>
+							To Accounts *
+						</Typography>
+						<MultiSelectDropdown
+							id="toSplits"
+							label=""
+							placeholder="Select to accounts..."
+							selectedAccounts={sharedProperties.toSplits}
+							totalAmount={totalAmount}
+							onChange={(toSplits) => {
+								updateSharedProperties({ toSplits });
+							}}
+							error={getFieldError("toSplits")}
+						/>
+						{getFieldError("toSplits") && (
+							<Typography
+								variant="caption"
+								color="error"
+								sx={{ mt: 0.5, display: "block" }}
+							>
+								{getFieldError("toSplits")}
+							</Typography>
+						)}
+					</Box>
+				)}
+			</Box>
+			{sharedProperties.operation === "transfer" &&
+				sharedProperties.fromSplits?.[0]?.currency !==
+					sharedProperties.toSplits?.[0]?.currency && (
+					<>
+						<PriceInput
+							id={"exchange-rate"}
+							key={"exchange-rate"}
+							label="Exchange Rate"
+							value={
+								new PriceValueObject(
+									sharedProperties.exchangeRate || 0,
+									{
+										decimals: 2,
+										withZeros: true,
+									},
+								)
+							}
+							onChange={(value) =>
+								updateSharedProperties({
+									exchangeRate: value.value,
+								})
+							}
+						/>
+						{getFieldError("exchangeRate") && (
+							<Typography
+								variant="caption"
+								color="error"
+								sx={{ mt: 0.5, display: "block" }}
+							>
+								{getFieldError("exchangeRate")}
+							</Typography>
+						)}
+					</>
+				)}
 
 			{children}
 

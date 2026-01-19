@@ -10,7 +10,6 @@ import {
 	RecurrenceModification,
 	ScheduledTransaction,
 } from "../../../../ScheduledTransactions/domain";
-import { ScheduledItem } from "../../../../ScheduledTransactions/domain/old/scheduled-item.entity";
 import { Store } from "../../../../Stores/domain";
 import { Logger } from "../../logger";
 import { DB } from "../db";
@@ -114,7 +113,7 @@ export class LocalDB extends DB {
 				// Check for conflicts and resolve them
 				const conflicts = await this.conflictResolver.detectConflicts(
 					this.db,
-					localData
+					localData,
 				);
 				let dataToImport = localData;
 
@@ -125,7 +124,7 @@ export class LocalDB extends DB {
 					const resolvedData =
 						await this.conflictResolver.resolveConflicts(
 							conflicts,
-							localData
+							localData,
 						);
 					await this.fileManager.saveData(resolvedData);
 					dataToImport = resolvedData;
@@ -183,10 +182,10 @@ export class LocalDB extends DB {
 					{
 						dataVersion: data.version,
 						currentVersion: currentVersion,
-					}
+					},
 				);
 				data = (await this.dataVersioning.migrateData(
-					data
+					data,
 				)) as typeof data;
 			}
 
@@ -215,7 +214,7 @@ export class LocalDB extends DB {
 			const hasData = await this.hasData();
 			if (!hasData) {
 				this.logger.debug(
-					"Skipping backup creation - no data in database"
+					"Skipping backup creation - no data in database",
 				);
 				return null;
 			}
@@ -224,7 +223,7 @@ export class LocalDB extends DB {
 			const backupInfo = await this.backupManager.createBackup(
 				this.db,
 				this.dbId,
-				backupName
+				backupName,
 			);
 			await this.backupManager.cleanupOldBackups();
 			return backupInfo;
@@ -273,31 +272,28 @@ export class LocalDB extends DB {
 	#initializeTables() {
 		this.db.version(6).stores({
 			[Config.accountsTableName]: Object.keys(
-				Account.emptyPrimitives()
+				Account.emptyPrimitives(),
 			).join(", "),
 			[Config.categoriesTableName]: Object.keys(
-				Category.emptyPrimitives()
-			).join(", "),
-			[Config.scheduledItemsTableOldName]: Object.keys(
-				ScheduledItem.emptyPrimitives()
+				Category.emptyPrimitives(),
 			).join(", "),
 			[Config.scheduledTransactionsTableName]: Object.keys(
-				ScheduledTransaction.emptyPrimitives()
+				ScheduledTransaction.emptyPrimitives(),
 			).join(", "),
 			[Config.scheduledTransactionsModificationsTableName]: Object.keys(
-				RecurrenceModification.emptyPrimitives()
+				RecurrenceModification.emptyPrimitives(),
 			).join(", "),
 			[Config.storesTableName]: Object.keys(Store.emptyPrimitives()).join(
-				", "
+				", ",
 			),
 			[Config.subCategoriesTableName]: Object.keys(
-				SubCategory.emptyPrimitives()
+				SubCategory.emptyPrimitives(),
 			).join(", "),
 			[Config.transactionsTableName]: Object.keys(
-				Transaction.emptyPrimitives()
+				Transaction.emptyPrimitives(),
 			).join(", "),
 			[Config.exchangeRatesTableName]: Object.keys(
-				ExchangeRate.emptyPrimitives()
+				ExchangeRate.emptyPrimitives(),
 			).join(", "),
 		});
 	}

@@ -1,5 +1,5 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { TransactionAmount } from "./transaction-amount.valueobject";
 
 export interface PaymentSplitPrimitives {
@@ -10,11 +10,11 @@ export interface PaymentSplitPrimitives {
 
 export class PaymentSplit {
 	constructor(
-		private readonly _accountId: AccountID,
-		private readonly _amount: TransactionAmount
+		private readonly _accountId: Nanoid,
+		private readonly _amount: TransactionAmount,
 	) {}
 
-	get accountId(): AccountID {
+	get accountId(): Nanoid {
 		return this._accountId;
 	}
 
@@ -42,14 +42,14 @@ export class PaymentSplit {
 
 	static fromPrimitives(primitives: PaymentSplitPrimitives): PaymentSplit {
 		return new PaymentSplit(
-			new AccountID(primitives.accountId),
-			new TransactionAmount(primitives.amount)
+			new Nanoid(primitives.accountId),
+			new TransactionAmount(primitives.amount),
 		);
 	}
 
 	static totalAmount(
 		splits: PaymentSplit[],
-		exchangeRate?: NumberValueObject
+		exchangeRate?: NumberValueObject,
 	): TransactionAmount {
 		return new TransactionAmount(
 			splits.reduce(
@@ -57,8 +57,8 @@ export class PaymentSplit {
 					sum +
 					split.amount.times(exchangeRate ?? new NumberValueObject(1))
 						.value,
-				0
-			)
+				0,
+			),
 		);
 	}
 }

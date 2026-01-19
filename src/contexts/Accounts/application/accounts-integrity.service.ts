@@ -5,7 +5,6 @@ import {
 import {
 	Account,
 	AccountBalance,
-	AccountID,
 	AccountIntegrityResult,
 	IAccountsIntegrityService,
 	IAccountsRepository,
@@ -16,17 +15,18 @@ import {
 	ITransactionsRepository,
 	Transaction,
 } from "contexts/Transactions/domain";
+import { Nanoid } from "../../Shared/domain";
 
 export class AccountsIntegrityService implements IAccountsIntegrityService {
 	private readonly _logger = new Logger("AccountsIntegrityService");
 
 	constructor(
 		private readonly _accountsRepository: IAccountsRepository,
-		private readonly _transactionsRepository: ITransactionsRepository
+		private readonly _transactionsRepository: ITransactionsRepository,
 	) {}
 
 	async calculateAccountIntegrity(
-		accountId: AccountID
+		accountId: Nanoid,
 	): Promise<AccountIntegrityResult> {
 		this._logger.debug("Calculating integrity for account", {
 			accountId: accountId.value,
@@ -39,14 +39,13 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 		}
 
 		// Get all transactions for this account
-		const transactions = await this._transactionsRepository.findByAccountId(
-			accountId
-		);
+		const transactions =
+			await this._transactionsRepository.findByAccountId(accountId);
 
 		// Calculate expected balance based on transactions
 		const expectedBalance = this._calculateExpectedBalance(
 			account,
-			transactions
+			transactions,
 		);
 
 		// Get actual balance
@@ -56,7 +55,7 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 		return AccountIntegrityResult.create(
 			accountId,
 			expectedBalance,
-			actualBalance
+			actualBalance,
 		);
 	}
 
@@ -80,8 +79,8 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 						: new Error(
 								`Failed to calculate integrity for account ${
 									account.id.value
-								}: ${String(error)}`
-						  )
+								}: ${String(error)}`,
+							),
 				);
 				// Continue with other accounts even if one fails
 			}
@@ -90,16 +89,15 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 		return IntegrityCheckReport.create(results);
 	}
 
-	async resolveDiscrepancy(accountId: AccountID): Promise<boolean> {
+	async resolveDiscrepancy(accountId: Nanoid): Promise<boolean> {
 		this._logger.debug("Resolving discrepancy for account", {
 			accountId: accountId.value,
 		});
 
 		try {
 			// First calculate the integrity to get the expected balance
-			const integrityResult = await this.calculateAccountIntegrity(
-				accountId
-			);
+			const integrityResult =
+				await this.calculateAccountIntegrity(accountId);
 
 			if (integrityResult.hasIntegrity) {
 				this._logger.debug("Account has no discrepancy to resolve", {
@@ -115,13 +113,12 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 			}
 
 			// Update the account balance to match the expected balance
-			const accountCopy = account.copy();
-			accountCopy.updateBalance(
-				new AccountBalance(integrityResult.expectedBalance)
+			account.updateBalance(
+				new AccountBalance(integrityResult.expectedBalance),
 			);
 
 			// Persist the updated account
-			await this._accountsRepository.persist(accountCopy);
+			await this._accountsRepository.persist(account);
 
 			this._logger.debug("Successfully resolved account discrepancy", {
 				accountId: accountId.value,
@@ -139,8 +136,8 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 					: new Error(
 							`Failed to resolve discrepancy for account ${
 								accountId.value
-							}: ${String(error)}`
-					  )
+							}: ${String(error)}`,
+						),
 			);
 			return false;
 		}
@@ -148,7 +145,7 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 
 	private _calculateExpectedBalance(
 		account: Account,
-		transactions: Transaction[]
+		transactions: Transaction[],
 	): PriceValueObject {
 		// Start with initial balance of zero (assuming all transactions reflect the full balance history)
 		let expectedBalance = new PriceValueObject(0, {
@@ -165,7 +162,7 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 		// Apply all transactions to calculate the expected balance
 		for (const transaction of transactions) {
 			const transactionAmount = transaction.getRealAmountForAccount(
-				account.id
+				account.id,
 			);
 
 			// For liability accounts, we need to invert the sign (same logic as in Account.adjustFromTransaction)

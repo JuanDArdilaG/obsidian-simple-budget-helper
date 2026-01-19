@@ -6,7 +6,6 @@ import {
 } from "@juandardilag/value-objects";
 import {
 	AccountBalance,
-	AccountID,
 	AccountType,
 	AccountTypeType,
 } from "contexts/Accounts/domain";
@@ -14,50 +13,107 @@ import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Transaction } from "contexts/Transactions/domain";
 import { Currency } from "../../Currencies/domain/currency.vo";
+import { Nanoid } from "../../Shared/domain";
 
 const logger: Logger = new Logger("Account");
 
-export class Account extends Entity<AccountID, AccountPrimitives> {
+export enum AccountAssetSubtype {
+	SAVINGS = "savings",
+	CHECKING = "checking",
+	INVESTMENT = "investment",
+	CASH = "cash",
+}
+
+export enum AccountLiabilitySubtype {
+	CREDIT_CARD = "credit card",
+	LOAN = "loan",
+}
+
+export type AccountSubtype = AccountAssetSubtype | AccountLiabilitySubtype;
+
+export class Account extends Entity<Nanoid, AccountPrimitives> {
 	constructor(
-		id: AccountID,
+		id: Nanoid,
 		private readonly _type: AccountType,
+		private _subtype: AccountSubtype,
 		private _name: StringValueObject,
 		private _currency: Currency,
 		private _balance: AccountBalance,
 		updatedAt: DateValueObject,
-		private _defaultCurrencyBalance?: AccountBalance
+		private _defaultCurrencyBalance?: AccountBalance,
 	) {
 		super(id, updatedAt);
 	}
 
-	static create(
-		type: AccountType,
+	static fromPrimitives({
+		id,
+		type,
+		subtype,
+		name,
+		currency,
+		balance,
+		updatedAt,
+	}: AccountPrimitives): Account {
+		const account = new Account(
+			new Nanoid(id),
+			new AccountType(type),
+			subtype ??
+				(type === "asset"
+					? AccountAssetSubtype.CASH
+					: AccountLiabilitySubtype.CREDIT_CARD),
+			new StringValueObject(name),
+			new Currency(currency),
+			new AccountBalance(
+				new PriceValueObject(balance, { decimals: 2, withSign: true }),
+			),
+			new DateValueObject(new Date(updatedAt)),
+		);
+		return account;
+	}
+
+	static createAsset(
+		subtype: AccountAssetSubtype,
 		name: StringValueObject,
-		currency: Currency
+		currency: Currency,
 	): Account {
 		return new Account(
-			AccountID.generate(),
-			type,
+			Nanoid.generate(),
+			AccountType.asset(),
+			subtype,
 			name,
 			currency,
 			AccountBalance.zero(),
-			DateValueObject.createNowDate()
+			DateValueObject.createNowDate(),
 		);
 	}
 
-	copy(): Account {
+	static createLiability(
+		subtype: AccountLiabilitySubtype,
+		name: StringValueObject,
+		currency: Currency,
+	): Account {
 		return new Account(
-			this._id,
-			this._type,
-			this._name,
-			this._currency,
-			this._balance,
-			this._updatedAt
+			Nanoid.generate(),
+			AccountType.liability(),
+			subtype,
+			name,
+			currency,
+			AccountBalance.zero(),
+			DateValueObject.createNowDate(),
 		);
 	}
 
 	get type(): AccountType {
 		return this._type;
+	}
+
+	get subtype(): AccountSubtype {
+		return this._subtype;
+	}
+
+	set subtype(subtype: AccountSubtype) {
+		this._subtype = subtype;
+		this.updateTimestamp();
 	}
 
 	get name(): StringValueObject {
@@ -92,7 +148,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 
 	get realBalance(): PriceValueObject {
 		return this._balance.value.times(
-			new NumberValueObject(this._type.isAsset() ? 1 : -1)
+			new NumberValueObject(this._type.isAsset() ? 1 : -1),
 		);
 	}
 
@@ -124,7 +180,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 
 	adjustOnTransactionUpdate(
 		prevTransaction: Transaction,
-		transaction: Transaction
+		transaction: Transaction,
 	) {
 		const prevAmount = this._type.isLiability()
 			? prevTransaction
@@ -159,6 +215,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		return {
 			id: this._id.value,
 			type: this._type.value,
+			subtype: this.subtype,
 			name: this._name.value,
 			currency: this._currency.value,
 			balance: this._balance.value.value,
@@ -166,31 +223,11 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 		};
 	}
 
-	static fromPrimitives({
-		id,
-		type,
-		name,
-		currency,
-		balance,
-		updatedAt,
-	}: AccountPrimitives): Account {
-		const account = new Account(
-			new AccountID(id),
-			new AccountType(type),
-			new StringValueObject(name),
-			new Currency(currency),
-			new AccountBalance(
-				new PriceValueObject(balance, { decimals: 2, withSign: true })
-			),
-			new DateValueObject(new Date(updatedAt))
-		);
-		return account;
-	}
-
 	static emptyPrimitives(): AccountPrimitives {
 		return {
 			id: "",
 			type: "asset",
+			subtype: AccountAssetSubtype.CASH,
 			name: "",
 			currency: "USD",
 			balance: 0,
@@ -202,6 +239,7 @@ export class Account extends Entity<AccountID, AccountPrimitives> {
 export type AccountPrimitives = {
 	id: string;
 	type: AccountTypeType;
+	subtype: AccountSubtype;
 	name: string;
 	currency: string;
 	balance: number;

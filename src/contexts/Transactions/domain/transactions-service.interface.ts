@@ -1,13 +1,14 @@
-import { AccountBalance, AccountID } from "contexts/Accounts/domain";
+import { AccountBalance } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
+import { Nanoid } from "../../Shared/domain";
 import { TransactionID } from "./transaction-id.valueobject";
 import { Transaction } from "./transaction.entity";
 
 export interface ITransactionsService {
 	record(transaction: Transaction): Promise<void>;
 	accountAdjustment(
-		accountID: AccountID,
+		accountID: Nanoid,
 		newBalance: AccountBalance,
 	): Promise<void>;
 

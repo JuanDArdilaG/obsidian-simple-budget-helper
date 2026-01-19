@@ -1,10 +1,10 @@
 import { StringValueObject } from "@juandardilag/value-objects";
 import { useTransactions } from "apps/obsidian-plugin/hooks";
 import { AwilixContainer } from "awilix";
-import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
 import { TransactionsReport } from "contexts/Reports/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { AdjustAccountUseCase } from "contexts/Transactions/application/adjust-account.usecase";
 import { DeleteTransactionUseCase } from "contexts/Transactions/application/delete-transaction.usecase";
@@ -34,9 +34,9 @@ export type TransactionsContextType = {
 	setFilters: React.Dispatch<
 		React.SetStateAction<
 			[
-				account?: AccountID | undefined,
+				account?: Nanoid | undefined,
 				category?: CategoryID | undefined,
-				subCategory?: SubCategoryID | undefined
+				subCategory?: SubCategoryID | undefined,
 			]
 		>
 	>;
@@ -71,27 +71,27 @@ export const TransactionsContext = createContext<TransactionsContextType>({
 });
 
 export const getTransactionsContextValues = (
-	container: AwilixContainer
+	container: AwilixContainer,
 ): TransactionsContextType => {
 	const getAllTransactions = container.resolve("getAllTransactionsUseCase");
 	const getAllUniqueTransactionsByNameUseCase = container.resolve(
-		"getAllUniqueTransactionsByNameUseCase"
+		"getAllUniqueTransactionsByNameUseCase",
 	);
 	const recordTransaction = container.resolve<RecordTransactionUseCase>(
-		"recordTransactionUseCase"
+		"recordTransactionUseCase",
 	);
 	const deleteTransaction = container.resolve<DeleteTransactionUseCase>(
-		"deleteTransactionUseCase"
+		"deleteTransactionUseCase",
 	);
 	const adjustAccount = container.resolve<AdjustAccountUseCase>(
-		"adjustAccountUseCase"
+		"adjustAccountUseCase",
 	);
 	const updateTransaction = container.resolve<UpdateTransactionUseCase>(
-		"updateTransactionUseCase"
+		"updateTransactionUseCase",
 	);
 
 	const getAllUniqueItemStores = container.resolve(
-		"getAllUniqueItemStoresUseCase"
+		"getAllUniqueItemStoresUseCase",
 	);
 
 	const {
@@ -109,12 +109,12 @@ export const getTransactionsContextValues = (
 
 	const transactionsReport = useMemo(
 		() => new TransactionsReport(transactions),
-		[transactions]
+		[transactions],
 	);
 
 	const filteredTransactionsReport = useMemo(
 		() => new TransactionsReport(filteredTransactions),
-		[filteredTransactions]
+		[filteredTransactions],
 	);
 
 	return {
@@ -127,7 +127,7 @@ export const getTransactionsContextValues = (
 			getAllUniqueTransactionsByNameUseCase,
 			getAllUniqueItemStores,
 			groupByCategoryWithAccumulatedBalance: container.resolve(
-				"groupByCategoryWithAccumulatedBalanceUseCase"
+				"groupByCategoryWithAccumulatedBalanceUseCase",
 			),
 		},
 		transactions,

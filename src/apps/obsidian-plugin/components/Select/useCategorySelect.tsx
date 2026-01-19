@@ -7,16 +7,12 @@ export const useCategorySelect = ({
 	label,
 	initialValueName,
 	initialValueID,
-	lock,
-	setLock,
 	overrideCategoriesIDs,
 	error,
 }: {
 	label?: string;
 	initialValueName?: CategoryName;
 	initialValueID?: string;
-	lock?: boolean;
-	setLock?: (lock: boolean) => void;
 	overrideCategoriesIDs?: CategoryID[];
 	error?: string;
 }) => {
@@ -64,7 +60,7 @@ export const useCategorySelect = ({
 				.filter(
 					(cat) =>
 						!cat.name.includes("not found") &&
-						!cat.name.includes("Error loading")
+						!cat.name.includes("Error loading"),
 				) // Remove not found categories
 				.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -103,8 +99,6 @@ export const useCategorySelect = ({
 				value={categoryId}
 				values={[{ id: "", name: "" }, ...categoriesList]}
 				onChange={(id) => setCategoryId(id)}
-				isLocked={lock}
-				setIsLocked={setLock ? (lock) => setLock(lock) : undefined}
 				error={error}
 				getOptionLabel={(option) => option.name}
 				getOptionValue={(option) => option.id}

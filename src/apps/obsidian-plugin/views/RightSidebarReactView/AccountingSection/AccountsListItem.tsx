@@ -11,7 +11,13 @@ import {
 } from "@mui/material";
 import { Button } from "apps/obsidian-plugin/components/Button";
 import { ConfirmationDialog } from "apps/obsidian-plugin/components/ConfirmationDialog";
-import { Account, AccountBalance } from "contexts/Accounts/domain";
+import {
+	Account,
+	AccountAssetSubtype,
+	AccountBalance,
+	AccountLiabilitySubtype,
+	AccountSubtype,
+} from "contexts/Accounts/domain";
 import {
 	CheckCircle,
 	CircleX,
@@ -23,13 +29,14 @@ import {
 import { useContext, useState } from "react";
 import { Input } from "../../../components/Input/Input";
 import { PriceInput } from "../../../components/Input/PriceInput";
+import { Select } from "../../../components/Select";
 import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
 
 export const AccountsListItem = ({ account }: { account: Account }) => {
 	const { plugin } = useContext(AppContext);
 	const {
 		updateAccounts,
-		useCases: { deleteAccount, changeAccountName },
+		useCases: { deleteAccount, changeAccountName, changeAccountSubtype },
 	} = useContext(AccountsContext);
 	const { updateTransactions } = useContext(TransactionsContext);
 	const {
@@ -42,20 +49,27 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 			decimals: 2,
 			withSign: true,
 			withZeros: true,
-		})
+		}),
 	);
 
-	const [changingName, setChangingName] = useState(false);
+	const [editing, setEditing] = useState(false);
 	const [newName, setNewName] = useState(account.name.toString());
+	const [newSubtype, setNewSubtype] = useState(account.subtype);
 
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-	const handleChangeName = async () => {
+	const handleEdit = async () => {
 		try {
-			await changeAccountName.execute({
-				id: account.id,
-				name: new StringValueObject(newName),
-			});
+			if (newName !== account.name.toString())
+				await changeAccountName.execute({
+					id: account.id,
+					name: new StringValueObject(newName),
+				});
+			if (newSubtype !== account.subtype)
+				await changeAccountSubtype.execute({
+					id: account.id,
+					subtype: newSubtype,
+				});
 			updateTransactions();
 			updateAccounts();
 		} catch (error) {
@@ -67,7 +81,7 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 				alert("Failed to change account name. Please try again.");
 			}
 		} finally {
-			setChangingName(false);
+			setEditing(false);
 		}
 	};
 
@@ -102,8 +116,33 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 					aria-controls={`account-${account.id}-content`}
 					id={`account-${account.id}-header`}
 				>
-					<Typography variant="body1">
-						{account.name.toString()}:{" "}
+					<Typography
+						variant="body1"
+						style={{
+							display: "flex",
+							gap: "10px",
+							alignItems: "center",
+						}}
+					>
+						<span>{account.name.toString()}</span>
+						<span
+							style={{
+								fontSize: "0.8em",
+								color: "var(--text-muted)",
+							}}
+						>
+							{account.subtype.toString()[0].toUpperCase() +
+								account.subtype.toString().slice(1)}
+						</span>
+					</Typography>
+					<Typography
+						variant="body2"
+						style={{
+							marginLeft: "auto",
+							marginRight: "10px",
+							fontWeight: "bold",
+						}}
+					>
 						{account.balance.value.toString()}{" "}
 						{account.currency.value ===
 						plugin.settings.defaultCurrency
@@ -112,7 +151,7 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 						{account.defaultCurrencyBalance
 							? `(≈ ${account.defaultCurrencyBalance.value.toString()} ${
 									plugin.settings.defaultCurrency
-							  })`
+								})`
 							: ""}
 					</Typography>
 				</AccordionSummary>
@@ -134,12 +173,12 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 							icon={<EqualNot />}
 							onClick={async () => {
 								setAdjustingBalance(!adjustingBalance);
-								setChangingName(false);
+								setEditing(false);
 							}}
 						/>
 						<IconButton
 							onClick={() => {
-								setChangingName(!changingName);
+								setEditing(!editing);
 								setAdjustingBalance(false);
 							}}
 							color="error"
@@ -186,7 +225,7 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 										await adjustAccount.execute({
 											accountID: account.id,
 											newBalance: new AccountBalance(
-												newBalance
+												newBalance,
 											),
 										});
 
@@ -203,7 +242,7 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 								/>
 							</div>
 						)}
-						{changingName && (
+						{editing && (
 							<div
 								style={{
 									display: "flex",
@@ -212,22 +251,37 @@ export const AccountsListItem = ({ account }: { account: Account }) => {
 							>
 								<Input<string>
 									id="newName"
-									label="New name"
+									label="Name"
 									value={newName}
 									onChange={setNewName}
+								/>
+								<Select<AccountSubtype>
+									id="newSubtype"
+									label="Subtype"
+									value={newSubtype}
+									values={
+										account.type.isAsset()
+											? Object.values(AccountAssetSubtype)
+											: Object.values(
+													AccountLiabilitySubtype,
+												)
+									}
+									onChange={(value) =>
+										setNewSubtype(value as AccountSubtype)
+									}
 								/>
 
 								<CheckCircle
 									style={{
 										color: "var(--text-normal)",
 									}}
-									onClick={handleChangeName}
+									onClick={handleEdit}
 								/>
 								<CircleX
 									style={{
 										color: "var(--text-normal)",
 									}}
-									onClick={() => setChangingName(false)}
+									onClick={() => setEditing(false)}
 								/>
 							</div>
 						)}

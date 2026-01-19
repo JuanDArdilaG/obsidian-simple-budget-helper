@@ -1,4 +1,4 @@
-import { AccountBalance, AccountID } from "contexts/Accounts/domain";
+import { AccountBalance } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import {
@@ -6,6 +6,7 @@ import {
 	Transaction,
 	TransactionID,
 } from "contexts/Transactions/domain";
+import { Nanoid } from "../../../../src/contexts/Shared/domain";
 
 export class TransactionsServiceMock implements ITransactionsService {
 	constructor(public transactions: Transaction[]) {}
@@ -23,7 +24,7 @@ export class TransactionsServiceMock implements ITransactionsService {
 	}
 
 	async accountAdjustment(
-		accountID: AccountID,
+		accountID: Nanoid,
 		newBalance: AccountBalance,
 	): Promise<void> {
 		throw new Error("not implemented");

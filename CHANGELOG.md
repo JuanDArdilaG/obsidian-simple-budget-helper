@@ -5,61 +5,75 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Subtype to accounts: Assets = Cash, Checking, Savings, Investment; Liabilities = Credit Card, Loans.
+
+### Changed
+
+- Sort options on Select component using localeCompare.
+
+### Fixed
+
+- Fix transaction form not updating the transaction type and accounts when selecting a previously used transaction name.
+
 ## [0.19.0] - 2026-01-16
 
 ### Added
 
--   Scheduled transaction name, amount, start date, and frequency can now be edited.
--   Fix and separate the scheduled transactions summary section to show total expenses, total incomes, net balance, and savings recommendation for upcoming months.
+- Scheduled transaction name, amount, start date, and frequency can now be edited.
+- Fix and separate the scheduled transactions summary section to show total expenses, total incomes, net balance, and savings recommendation for upcoming months.
 
 ## [0.18.0] - 2026-01-15
 
 ### Added
 
--   EUR and GDP currency symbols.
--   Exchange rate fetching for all supported currencies.
--   Show account balance in default currency in accounts list and account's totals.
--   Add exchange rate field to transaction form when creating transfer transactions between different currencies.
+- EUR and GDP currency symbols.
+- Exchange rate fetching for all supported currencies.
+- Show account balance in default currency in accounts list and account's totals.
+- Add exchange rate field to transaction form when creating transfer transactions between different currencies.
 
 ## [0.17.0] - 2026-01-13
 
 ### Added
 
--   Add decimals to the amount field in the transaction form.
--   Add currency field to accounts.
--   Add savings calculation for next month's expenses in scheduled transactions list.
--   Option to change account name in accounts list.
+- Add decimals to the amount field in the transaction form.
+- Add currency field to accounts.
+- Add savings calculation for next month's expenses in scheduled transactions list.
+- Option to change account name in accounts list.
 
 ### Changed
 
--   Create successive transactions doesn't preserve the date in the transaction form anymore.
+- Create successive transactions doesn't preserve the date in the transaction form anymore.
 
 ### Fixed
 
--   Transactions form was reset when creating a new category or subcategory from the form.
--   Fix bug that avoids deleting a category.
--   Fix backup listing to not consider macOS metadata files (.\_\*.json) as valid backups.
--   Next occurrence calculation for scheduled transactions list was not considering modifications properly, leading to incorrect next occurrence dates.
--   Bug when reloading the plugin causes account currencies to be set as COP.
+- Transactions form was reset when creating a new category or subcategory from the form.
+- Fix bug that avoids deleting a category.
+- Fix backup listing to not consider macOS metadata files (.\_\*.json) as valid backups.
+- Next occurrence calculation for scheduled transactions list was not considering modifications properly, leading to incorrect next occurrence dates.
+- Bug when reloading the plugin causes account currencies to be set as COP.
 
 ## [0.14.2] - 2025-09-21
 
 ### Fixed
 
--   Transactions in accounting list is showing zero amount for the incoming account.
--   Form is not loading any info when trying to edit a transaction that comes from a scheduled item.
+- Transactions in accounting list is showing zero amount for the incoming account.
+- Form is not loading any info when trying to edit a transaction that comes from a scheduled item.
 
 ## [0.14.1] - 2025-09-21
 
 ### Fixed
 
--   Fixed account details formatting in integrity report modal: account ID replaced with account name for better clarity, and price values are now displayed using the PriceValueObject format (from 10 to $10.00).
+- Fixed account details formatting in integrity report modal: account ID replaced with account name for better clarity, and price values are now displayed using the PriceValueObject format (from 10 to $10.00).
 
 ## [0.14.0] - 2025-09-21
 
 ### Added
 
--   Introduced a new feature for automatic account balance adjustments using integrity checks: [Link to Feature Documentation](./docs/ACCOUNTS_INTEGRITY_CALCULATION.md).
+- Introduced a new feature for automatic account balance adjustments using integrity checks: [Link to Feature Documentation](./docs/ACCOUNTS_INTEGRITY_CALCULATION.md).
 
 ## [0.13.14] - 2025-08-18
 
@@ -67,8 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Accounting
 
--   Increase accounting item height to accomodate multiaccount transactions.
--   Load brand name in transaction form when creating a new transaction.
+- Increase accounting item height to accomodate multiaccount transactions.
+- Load brand name in transaction form when creating a new transaction.
 
 ## [0.13.13] - 2025-08-18
 
@@ -76,20 +90,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Accounting
 
--   Display multiaccount transactions as one item with the information for every account.
+- Display multiaccount transactions as one item with the information for every account.
 
 ## [0.13.12] - 2025-08-16
 
 ### Added
 
--   Add search input component to accounting list.
+- Add search input component to accounting list.
 
 ### Changed
 
--   Transfer transactions doesn't require quantity, type, brand, nor store.
+- Transfer transactions doesn't require quantity, type, brand, nor store.
 
 ## [0.13.11] - 2025-08-14
 
 ### Changed
 
--   Replace atob implementation for a more browser-compatible method.
+- Replace atob implementation for a more browser-compatible method.
