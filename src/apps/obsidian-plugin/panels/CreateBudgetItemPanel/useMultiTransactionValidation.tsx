@@ -38,6 +38,7 @@ export const useMultiTransactionValidation = (
 			operation === "transfer" &&
 			fromSplits.length > 0 &&
 			toSplits.length > 0 &&
+			fromSplits[0].currency !== toSplits[0].currency &&
 			(!exchangeRate || exchangeRate <= 0)
 		) {
 			newErrors.exchangeRate = "Exchange rate must be greater than zero";
