@@ -132,55 +132,53 @@ const useMultiTransactionValidation = (
 		// Items validation
 		if (!items || items.length === 0) {
 			newErrors.items = "At least one transaction item is required";
-		} else {
-			for (let i = 0; i < items.length; i++) {
-				const item = items[i];
-				if (!item.name || item.name.trim() === "") {
-					newErrors.items = `Transaction ${i + 1}: Name is required`;
-					break;
-				}
-				if (item.name.length < 2) {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Name must be at least 2 characters`;
-					break;
-				}
-				if (item.name.length > 100) {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Name must be less than 100 characters`;
-					break;
-				}
-				if (!item.category || item.category.trim() === "") {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Category is required`;
-					break;
-				}
-				if (!item.subCategory || item.subCategory.trim() === "") {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Subcategory is required`;
-					break;
-				}
-				if (item.amount <= 0) {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Amount must be greater than 0`;
-					break;
-				}
-				if (item.quantity < 1) {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Quantity must be at least 1`;
-					break;
-				}
-				if (!Number.isInteger(item.quantity)) {
-					newErrors.items = `Transaction ${
-						i + 1
-					}: Quantity must be a whole number`;
-					break;
-				}
+		}
+
+		for (let i = 0; i < items.length; i++) {
+			const item = items[i];
+			if (!item.name || item.name.trim() === "") {
+				newErrors.items = `Transaction ${i + 1}: Name is required`;
+				break;
+			}
+			if (item.name.length < 2) {
+				newErrors.items = `Transaction ${
+					i + 1
+				}: Name must be at least 2 characters`;
+				break;
+			}
+			if (item.name.length > 100) {
+				newErrors.items = `Transaction ${
+					i + 1
+				}: Name must be less than 100 characters`;
+				break;
+			}
+			if (!item.category || item.category.trim() === "") {
+				newErrors.items = `Transaction ${i + 1}: Category is required`;
+				break;
+			}
+			if (!item.subCategory || item.subCategory.trim() === "") {
+				newErrors.items = `Transaction ${
+					i + 1
+				}: Subcategory is required`;
+				break;
+			}
+			if (item.amount <= 0) {
+				newErrors.items = `Transaction ${
+					i + 1
+				}: Amount must be greater than 0`;
+				break;
+			}
+			if (item.quantity < 1) {
+				newErrors.items = `Transaction ${
+					i + 1
+				}: Quantity must be at least 1`;
+				break;
+			}
+			if (!Number.isInteger(item.quantity)) {
+				newErrors.items = `Transaction ${
+					i + 1
+				}: Quantity must be a whole number`;
+				break;
 			}
 		}
 
@@ -1039,114 +1037,6 @@ export const TransactionFormImproved = ({
 				</Box>
 			</Box>
 
-			{/* Account Selection Section */}
-			<Box sx={{ mb: 3 }}>
-				<Typography
-					variant="h6"
-					sx={{ mb: 2, color: currentColors.primary }}
-				>
-					Account Distribution
-				</Typography>
-
-				{/* From Account Selection */}
-				<Box sx={{ mb: 2 }}>
-					<Typography
-						variant="body2"
-						sx={{ mb: 1, color: "var(--text-muted)" }}
-					>
-						{sharedProperties.operation === "transfer"
-							? "From Accounts *"
-							: "Accounts *"}
-					</Typography>
-					<MultiSelectDropdown
-						id="fromSplits"
-						label=""
-						placeholder="Select accounts..."
-						selectedAccounts={sharedProperties.fromSplits}
-						totalAmount={totalAmount}
-						onChange={(fromSplits) => {
-							updateSharedProperties({ fromSplits });
-						}}
-						error={getFieldError("fromSplits")}
-					/>
-					{getFieldError("fromSplits") && (
-						<Typography
-							variant="caption"
-							color="error"
-							sx={{ mt: 0.5, display: "block" }}
-						>
-							{getFieldError("fromSplits")}
-						</Typography>
-					)}
-				</Box>
-
-				{/* Transfer To Accounts */}
-				{sharedProperties.operation === "transfer" && (
-					<Box sx={{ mb: 2 }}>
-						<Typography
-							variant="body2"
-							sx={{ mb: 1, color: "var(--text-muted)" }}
-						>
-							To Accounts *
-						</Typography>
-						<MultiSelectDropdown
-							id="toSplits"
-							label=""
-							placeholder="Select to accounts..."
-							selectedAccounts={sharedProperties.toSplits}
-							totalAmount={totalAmount}
-							onChange={(toSplits) => {
-								updateSharedProperties({ toSplits });
-							}}
-							error={getFieldError("toSplits")}
-						/>
-						{getFieldError("toSplits") && (
-							<Typography
-								variant="caption"
-								color="error"
-								sx={{ mt: 0.5, display: "block" }}
-							>
-								{getFieldError("toSplits")}
-							</Typography>
-						)}
-					</Box>
-				)}
-			</Box>
-			{sharedProperties.operation === "transfer" &&
-				sharedProperties.fromSplits?.[0]?.currency !==
-					sharedProperties.toSplits?.[0]?.currency && (
-					<>
-						<PriceInput
-							id={"exchange-rate"}
-							key={"exchange-rate"}
-							label="Exchange Rate"
-							value={
-								new PriceValueObject(
-									sharedProperties.exchangeRate || 0,
-									{
-										decimals: 2,
-										withZeros: true,
-									},
-								)
-							}
-							onChange={(value) =>
-								updateSharedProperties({
-									exchangeRate: value.value,
-								})
-							}
-						/>
-						{getFieldError("exchangeRate") && (
-							<Typography
-								variant="caption"
-								color="error"
-								sx={{ mt: 0.5, display: "block" }}
-							>
-								{getFieldError("exchangeRate")}
-							</Typography>
-						)}
-					</>
-				)}
-
 			{/* Transaction Items Section */}
 			<Box sx={{ mb: 3 }}>
 				<Typography
@@ -1220,8 +1110,6 @@ export const TransactionFormImproved = ({
 									onChange={(name) =>
 										handleNameSelect(item.id, name)
 									}
-									isLocked={false}
-									setIsLocked={() => {}}
 								/>
 							</Box>
 
@@ -1338,8 +1226,6 @@ export const TransactionFormImproved = ({
 											});
 										}
 									}}
-									isLocked={false}
-									setIsLocked={() => {}}
 								/>
 								<Button
 									variant="text"
@@ -1500,8 +1386,6 @@ export const TransactionFormImproved = ({
 											});
 										}
 									}}
-									isLocked={false}
-									setIsLocked={() => {}}
 								/>
 								<Button
 									variant="text"
@@ -1563,8 +1447,6 @@ export const TransactionFormImproved = ({
 														null,
 													);
 											}}
-											isLocked={false}
-											setIsLocked={() => {}}
 										/>
 										<TextField
 											fullWidth
@@ -1758,11 +1640,117 @@ export const TransactionFormImproved = ({
 						item={sharedProperties.store}
 						items={storeOptions}
 						onChange={(store) => updateSharedProperties({ store })}
-						isLocked={false}
-						setIsLocked={() => {}}
 					/>
 				</Box>
 			)}
+
+			{/* Account Selection Section */}
+			<Box sx={{ mb: 3 }}>
+				<Typography
+					variant="h6"
+					sx={{ mb: 2, color: currentColors.primary }}
+				>
+					Account Distribution
+				</Typography>
+
+				{/* From Account Selection */}
+				<Box sx={{ mb: 2 }}>
+					<Typography
+						variant="body2"
+						sx={{ mb: 1, color: "var(--text-muted)" }}
+					>
+						{sharedProperties.operation === "transfer"
+							? "From Accounts *"
+							: "Accounts *"}
+					</Typography>
+					<MultiSelectDropdown
+						id="fromSplits"
+						label=""
+						placeholder="Select accounts..."
+						selectedAccounts={sharedProperties.fromSplits}
+						totalAmount={totalAmount}
+						onChange={(fromSplits) => {
+							updateSharedProperties({ fromSplits });
+						}}
+						error={getFieldError("fromSplits")}
+					/>
+					{getFieldError("fromSplits") && (
+						<Typography
+							variant="caption"
+							color="error"
+							sx={{ mt: 0.5, display: "block" }}
+						>
+							{getFieldError("fromSplits")}
+						</Typography>
+					)}
+				</Box>
+
+				{/* Transfer To Accounts */}
+				{sharedProperties.operation === "transfer" && (
+					<Box sx={{ mb: 2 }}>
+						<Typography
+							variant="body2"
+							sx={{ mb: 1, color: "var(--text-muted)" }}
+						>
+							To Accounts *
+						</Typography>
+						<MultiSelectDropdown
+							id="toSplits"
+							label=""
+							placeholder="Select to accounts..."
+							selectedAccounts={sharedProperties.toSplits}
+							totalAmount={totalAmount}
+							onChange={(toSplits) => {
+								updateSharedProperties({ toSplits });
+							}}
+							error={getFieldError("toSplits")}
+						/>
+						{getFieldError("toSplits") && (
+							<Typography
+								variant="caption"
+								color="error"
+								sx={{ mt: 0.5, display: "block" }}
+							>
+								{getFieldError("toSplits")}
+							</Typography>
+						)}
+					</Box>
+				)}
+			</Box>
+			{sharedProperties.operation === "transfer" &&
+				sharedProperties.fromSplits?.[0]?.currency !==
+					sharedProperties.toSplits?.[0]?.currency && (
+					<>
+						<PriceInput
+							id={"exchange-rate"}
+							key={"exchange-rate"}
+							label="Exchange Rate"
+							value={
+								new PriceValueObject(
+									sharedProperties.exchangeRate || 0,
+									{
+										decimals: 2,
+										withZeros: true,
+									},
+								)
+							}
+							onChange={(value) =>
+								updateSharedProperties({
+									exchangeRate: value.value,
+								})
+							}
+						/>
+						{getFieldError("exchangeRate") && (
+							<Typography
+								variant="caption"
+								color="error"
+								sx={{ mt: 0.5, display: "block" }}
+							>
+								{getFieldError("exchangeRate")}
+							</Typography>
+						)}
+					</>
+				)}
 
 			{children}
 

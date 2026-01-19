@@ -16,7 +16,6 @@ import {
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { WithLockField } from "../WithLockField";
 
 interface MultiSelectDropdownProps {
 	id: string;
@@ -32,7 +31,7 @@ interface MultiSelectDropdownProps {
 			accountId: string;
 			amount: number;
 			currency: string;
-		}[]
+		}[],
 	) => void;
 	totalAmount?: number;
 	error?: string;
@@ -65,16 +64,16 @@ export const MultiSelectDropdown = ({
 					balance:
 						typeof account.balance === "number"
 							? account.balance
-							: account.balance?.value ?? 0,
+							: (account.balance?.value ?? 0),
 					currency: account.currency,
 				}))
 				.sort((a, b) => a.name.localeCompare(b.name)),
-		[accounts]
+		[accounts],
 	);
 
 	const selectedIds: Set<string> = useMemo(
 		() => new Set(selectedAccounts.map((split) => split.accountId)),
-		[selectedAccounts]
+		[selectedAccounts],
 	);
 
 	const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -90,7 +89,7 @@ export const MultiSelectDropdown = ({
 	const handleAccountToggle = (
 		accountId: string,
 		currency: string,
-		checked: boolean
+		checked: boolean,
 	) => {
 		let newSplits: {
 			accountId: string;
@@ -106,7 +105,7 @@ export const MultiSelectDropdown = ({
 		} else {
 			// Remove account
 			newSplits = selectedAccounts.filter(
-				(split) => split.accountId !== accountId
+				(split) => split.accountId !== accountId,
 			);
 		}
 		onChange(newSplits);
@@ -116,14 +115,14 @@ export const MultiSelectDropdown = ({
 		const updatedSplits = selectedAccounts.map((split) =>
 			split.accountId === accountId
 				? { ...split, amount: newAmount }
-				: split
+				: split,
 		);
 		onChange(updatedSplits);
 	};
 
 	const handleRemove = (accountId: string) => {
 		onChange(
-			selectedAccounts.filter((split) => split.accountId !== accountId)
+			selectedAccounts.filter((split) => split.accountId !== accountId),
 		);
 	};
 
@@ -142,11 +141,11 @@ export const MultiSelectDropdown = ({
 			const newSplits = selectedAccounts.map((split) =>
 				split.accountId === accountId
 					? { ...split, amount: totalAmount }
-					: split
+					: split,
 			);
 			onChange(newSplits);
 		},
-		[selectedAccounts, totalAmount, onChange]
+		[selectedAccounts, totalAmount, onChange],
 	);
 
 	useEffect(() => {
@@ -161,7 +160,7 @@ export const MultiSelectDropdown = ({
 
 	const totalDistributed = selectedAccounts.reduce(
 		(sum, split) => sum + split.amount,
-		0
+		0,
 	);
 	const remainingAmount = totalAmount - totalDistributed;
 
@@ -172,7 +171,7 @@ export const MultiSelectDropdown = ({
 		}
 		if (selectedAccounts.length === 1) {
 			const account = accountList.find(
-				(a) => a.id === selectedAccounts[0].accountId
+				(a) => a.id === selectedAccounts[0].accountId,
 			);
 			return account?.name || "Selected account";
 		}
@@ -180,82 +179,113 @@ export const MultiSelectDropdown = ({
 	};
 
 	return (
-		<WithLockField
-			isLocked={isLocked}
-			setIsLocked={setIsLocked}
-			style={{ width: "100%" }}
-		>
-			<Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-				{/* Multiselect Dropdown */}
-				<FormControl fullWidth error={!!error}>
-					<InputLabel id={`${id}-label`}>{label}</InputLabel>
-					<Select
-						labelId={`${id}-label`}
-						id={id}
-						value=""
-						onClick={handleClick}
-						onClose={handleClose}
-						open={open}
-						displayEmpty
-						disabled={isLocked}
-						IconComponent={KeyboardArrowDownIcon}
-						renderValue={() => (
-							<Typography
-								variant="body2"
-								sx={{
-									color:
-										selectedAccounts.length === 0
-											? "var(--text-muted)"
-											: "var(--text-normal)",
-								}}
-							>
-								{getDisplayText()}
-							</Typography>
-						)}
+		<Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+			{/* Multiselect Dropdown */}
+			<FormControl fullWidth error={!!error}>
+				<InputLabel id={`${id}-label`}>{label}</InputLabel>
+				<Select
+					labelId={`${id}-label`}
+					id={id}
+					value=""
+					onClick={handleClick}
+					onClose={handleClose}
+					open={open}
+					displayEmpty
+					disabled={isLocked}
+					IconComponent={KeyboardArrowDownIcon}
+					renderValue={() => (
+						<Typography
+							variant="body2"
+							sx={{
+								color:
+									selectedAccounts.length === 0
+										? "var(--text-muted)"
+										: "var(--text-normal)",
+							}}
+						>
+							{getDisplayText()}
+						</Typography>
+					)}
+					sx={{
+						"& .MuiSelect-select": {
+							padding: "8px 12px",
+						},
+					}}
+				>
+					{/* Select All Option */}
+					<MenuItem
+						onClick={(e) => {
+							e.stopPropagation();
+							if (
+								selectedAccounts.length === accountList.length
+							) {
+								// Deselect all
+								onChange([]);
+							} else {
+								// Select all
+								const allSplits = accountList.map(
+									(account) => ({
+										accountId: account.id,
+										amount: 0,
+										currency: account.currency.value,
+									}),
+								);
+								onChange(allSplits);
+							}
+						}}
 						sx={{
-							"& .MuiSelect-select": {
-								padding: "8px 12px",
-							},
+							borderBottom:
+								"1px solid var(--background-modifier-border)",
+							backgroundColor: "var(--background-secondary)",
 						}}
 					>
-						{/* Select All Option */}
+						<Checkbox
+							checked={
+								selectedAccounts.length ===
+									accountList.length && accountList.length > 0
+							}
+							indeterminate={
+								selectedAccounts.length > 0 &&
+								selectedAccounts.length < accountList.length
+							}
+							sx={{
+								color: "var(--interactive-accent)",
+								"&.Mui-checked": {
+									color: "var(--interactive-accent)",
+								},
+							}}
+						/>
+						<Typography variant="body2" sx={{ fontWeight: 600 }}>
+							{selectedAccounts.length === accountList.length &&
+							accountList.length > 0
+								? "Deselect All"
+								: "Select All"}
+						</Typography>
+					</MenuItem>
+
+					{/* Account Options */}
+					{accountList.map((account) => (
 						<MenuItem
+							key={account.id}
 							onClick={(e) => {
 								e.stopPropagation();
-								if (
-									selectedAccounts.length ===
-									accountList.length
-								) {
-									// Deselect all
-									onChange([]);
-								} else {
-									// Select all
-									const allSplits = accountList.map(
-										(account) => ({
-											accountId: account.id,
-											amount: 0,
-											currency: account.currency.value,
-										})
-									);
-									onChange(allSplits);
-								}
+								handleAccountToggle(
+									account.id,
+									account.currency.value,
+									!selectedIds.has(account.id),
+								);
 							}}
 							sx={{
-								borderBottom:
-									"1px solid var(--background-modifier-border)",
-								backgroundColor: "var(--background-secondary)",
+								py: 1,
+								px: 2,
+								"&:hover": {
+									backgroundColor:
+										"var(--background-modifier-hover)",
+								},
 							}}
 						>
 							<Checkbox
-								checked={
-									selectedAccounts.length ===
-										accountList.length &&
-									accountList.length > 0
-								}
-								indeterminate={
-									selectedAccounts.length > 0 &&
-									selectedAccounts.length < accountList.length
-								}
+								checked={selectedIds.has(account.id)}
 								sx={{
 									color: "var(--interactive-accent)",
 									"&.Mui-checked": {
@@ -263,230 +293,187 @@ export const MultiSelectDropdown = ({
 									},
 								}}
 							/>
-							<Typography
-								variant="body2"
-								sx={{ fontWeight: 600 }}
-							>
-								{selectedAccounts.length ===
-									accountList.length && accountList.length > 0
-									? "Deselect All"
-									: "Select All"}
-							</Typography>
-						</MenuItem>
-
-						{/* Account Options */}
-						{accountList.map((account) => (
-							<MenuItem
-								key={account.id}
-								onClick={(e) => {
-									e.stopPropagation();
-									handleAccountToggle(
-										account.id,
-										account.currency.value,
-										!selectedIds.has(account.id)
-									);
-								}}
+							<Box
 								sx={{
-									py: 1,
-									px: 2,
-									"&:hover": {
-										backgroundColor:
-											"var(--background-modifier-hover)",
-									},
+									display: "flex",
+									flexDirection: "column",
+									ml: 1,
 								}}
 							>
-								<Checkbox
-									checked={selectedIds.has(account.id)}
-									sx={{
-										color: "var(--interactive-accent)",
-										"&.Mui-checked": {
-											color: "var(--interactive-accent)",
-										},
-									}}
-								/>
-								<Box
-									sx={{
-										display: "flex",
-										flexDirection: "column",
-										ml: 1,
-									}}
+								<Typography
+									variant="body2"
+									sx={{ fontWeight: 500 }}
 								>
+									{account.name}
+								</Typography>
+								{typeof account.balance === "number" && (
 									<Typography
-										variant="body2"
-										sx={{ fontWeight: 500 }}
+										variant="caption"
+										sx={{ color: "var(--text-faint)" }}
 									>
-										{account.name}
+										Balance: $
+										{Number(account.balance).toFixed(2)}
 									</Typography>
-									{typeof account.balance === "number" && (
-										<Typography
-											variant="caption"
-											sx={{ color: "var(--text-faint)" }}
-										>
-											Balance: $
-											{Number(account.balance).toFixed(2)}
-										</Typography>
-									)}
-								</Box>
-							</MenuItem>
-						))}
-					</Select>
-					{error && (
-						<FormHelperText
-							sx={{ color: "var(--text-error)", marginLeft: 0 }}
-						>
-							{error}
-						</FormHelperText>
-					)}
-				</FormControl>
-
-				{/* Split Evenly button */}
-				{selectedAccounts.length > 1 && (
-					<Button
-						variant="outlined"
-						onClick={handleSplitEvenly}
-						disabled={isLocked}
-						sx={{
-							alignSelf: "flex-start",
-							mb: 1,
-							color: "var(--interactive-accent)",
-							borderColor: "var(--interactive-accent)",
-						}}
+								)}
+							</Box>
+						</MenuItem>
+					))}
+				</Select>
+				{error && (
+					<FormHelperText
+						sx={{ color: "var(--text-error)", marginLeft: 0 }}
 					>
-						Split Evenly
-					</Button>
+						{error}
+					</FormHelperText>
 				)}
+			</FormControl>
 
-				{/* Selected accounts and amount inputs */}
-				{selectedAccounts.length > 0 && (
-					<Box
-						sx={{
-							display: "flex",
-							flexDirection: "column",
-							gap: 1,
-						}}
-					>
-						{selectedAccounts.map((split) => {
-							const account = accountList.find(
-								(a) => a.id === split.accountId
-							);
-							if (!account) return null;
-							return (
-								<Box
-									key={split.accountId}
+			{/* Split Evenly button */}
+			{selectedAccounts.length > 1 && (
+				<Button
+					variant="outlined"
+					onClick={handleSplitEvenly}
+					disabled={isLocked}
+					sx={{
+						alignSelf: "flex-start",
+						mb: 1,
+						color: "var(--interactive-accent)",
+						borderColor: "var(--interactive-accent)",
+					}}
+				>
+					Split Evenly
+				</Button>
+			)}
+
+			{/* Selected accounts and amount inputs */}
+			{selectedAccounts.length > 0 && (
+				<Box
+					sx={{
+						display: "flex",
+						flexDirection: "column",
+						gap: 1,
+					}}
+				>
+					{selectedAccounts.map((split) => {
+						const account = accountList.find(
+							(a) => a.id === split.accountId,
+						);
+						if (!account) return null;
+						return (
+							<Box
+								key={split.accountId}
+								sx={{
+									display: "flex",
+									alignItems: "center",
+									gap: 1,
+									background: "var(--background-secondary)",
+									borderRadius: 1,
+									p: 1,
+								}}
+							>
+								<Typography
+									variant="body2"
 									sx={{
-										display: "flex",
-										alignItems: "center",
-										gap: 1,
-										background:
-											"var(--background-secondary)",
-										borderRadius: 1,
-										p: 1,
+										color: "var(--text-normal)",
+										minWidth: 80,
 									}}
 								>
+									{account.name}
+								</Typography>
+								{typeof account.balance === "number" && (
 									<Typography
-										variant="body2"
+										variant="caption"
 										sx={{
-											color: "var(--text-normal)",
-											minWidth: 80,
+											color: "var(--text-faint)",
+											ml: 1,
 										}}
 									>
-										{account.name}
+										Balance: $
+										{Number(account.balance).toFixed(2)}
 									</Typography>
-									{typeof account.balance === "number" && (
-										<Typography
-											variant="caption"
-											sx={{
-												color: "var(--text-faint)",
-												ml: 1,
-											}}
-										>
-											Balance: $
-											{Number(account.balance).toFixed(2)}
-										</Typography>
-									)}
-									<PriceInput
-										id={`amount-${split.accountId}`}
-										placeholder="Amount"
-										value={
-											new PriceValueObject(
-												split.amount || 0,
-												{ withSign: false, decimals: 2 }
-											)
-										}
-										onChange={(val) =>
-											handleAmountChange(
-												split.accountId,
-												val.toNumber()
-											)
-										}
-										prefix={account.currency.symbol}
-									/>
-									{/* Max button for single-account split */}
-									{selectedAccounts.length === 1 && (
-										<Button
-											variant="text"
-											size="small"
-											onClick={() =>
-												handleMax(split.accountId)
-											}
-											disabled={isLocked}
-											sx={{
-												color: "var(--interactive-accent)",
-												minWidth: 0,
-												px: 1,
-											}}
-										>
-											Max
-										</Button>
-									)}
-									<IconButton
+								)}
+								<PriceInput
+									id={`amount-${split.accountId}`}
+									placeholder="Amount"
+									value={
+										new PriceValueObject(
+											split.amount || 0,
+											{ withSign: false, decimals: 2 },
+										)
+									}
+									onChange={(val) =>
+										handleAmountChange(
+											split.accountId,
+											val.toNumber(),
+										)
+									}
+									prefix={account.currency.symbol}
+								/>
+								{/* Max button for single-account split */}
+								{selectedAccounts.length === 1 && (
+									<Button
+										variant="text"
+										size="small"
 										onClick={() =>
-											handleRemove(split.accountId)
+											handleMax(split.accountId)
 										}
 										disabled={isLocked}
-										size="small"
-										sx={{ color: "var(--text-error)" }}
-										aria-label={`Remove account ${account.name}`}
+										sx={{
+											color: "var(--interactive-accent)",
+											minWidth: 0,
+											px: 1,
+										}}
 									>
-										<CloseIcon fontSize="small" />
-									</IconButton>
-								</Box>
-							);
-						})}
-					</Box>
-				)}
+										Max
+									</Button>
+								)}
+								<IconButton
+									onClick={() =>
+										handleRemove(split.accountId)
+									}
+									disabled={isLocked}
+									size="small"
+									sx={{ color: "var(--text-error)" }}
+									aria-label={`Remove account ${account.name}`}
+								>
+									<CloseIcon fontSize="small" />
+								</IconButton>
+							</Box>
+						);
+					})}
+				</Box>
+			)}
 
-				{/* Distribution feedback */}
-				{selectedAccounts.length > 0 && totalAmount > 0 && (
-					<Box
+			{/* Distribution feedback */}
+			{selectedAccounts.length > 0 && totalAmount > 0 && (
+				<Box
+					sx={{
+						mt: 1,
+						p: 1,
+						borderRadius: 1,
+						background:
+							remainingAmount === 0
+								? "var(--background-modifier-success, #22543d)"
+								: "var(--background-modifier-warning, #b7791f)",
+					}}
+				>
+					<Typography
+						variant="body2"
 						sx={{
-							mt: 1,
-							p: 1,
-							borderRadius: 1,
-							background:
+							fontWeight: "medium",
+							color:
 								remainingAmount === 0
-									? "var(--background-modifier-success, #22543d)"
-									: "var(--background-modifier-warning, #b7791f)",
+									? "var(--text-on-success, #fff)"
+									: "var(--text-on-warning, #222)",
+							letterSpacing: 0.5,
 						}}
 					>
-						<Typography
-							variant="body2"
-							sx={{
-								fontWeight: "medium",
-								color:
-									remainingAmount === 0
-										? "var(--text-on-success, #fff)"
-										: "var(--text-on-warning, #222)",
-								letterSpacing: 0.5,
-							}}
-						>
-							{remainingAmount === 0
-								? "✓ Amount fully distributed"
-								: `Remaining: $${remainingAmount.toFixed(2)}`}
-						</Typography>
-					</Box>
-				)}
-			</Box>
-		</WithLockField>
+						{remainingAmount === 0
+							? "✓ Amount fully distributed"
+							: `Remaining: $${remainingAmount.toFixed(2)}`}
+					</Typography>
+				</Box>
+			)}
+		</Box>
 	);
 };
