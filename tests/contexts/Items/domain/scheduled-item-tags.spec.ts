@@ -1,5 +1,4 @@
 import { StringValueObject } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain";
 import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
 import { ItemOperation, Nanoid } from "contexts/Shared/domain";
 import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
@@ -30,7 +29,7 @@ describe("ScheduledTransaction Tags", () => {
 	const createTestItem = (tags: ItemTags = ItemTags.empty()) => {
 		const startDate = new ScheduledTransactionDate(new Date(2024, 0, 1));
 		const frequency = new ItemRecurrenceFrequency("monthly");
-		const accountId = AccountID.generate();
+		const accountId = Nanoid.generate();
 		const fromSplits = [
 			new PaymentSplit(accountId, new TransactionAmount(100)),
 		];

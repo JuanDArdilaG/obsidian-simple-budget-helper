@@ -10,9 +10,9 @@ export class AccountsReport {
 			.reduce(
 				(total, acc) =>
 					total.plus(
-						acc.defaultCurrencyBalance?.value ?? acc.balance.value
+						acc.defaultCurrencyBalance?.value ?? acc.balance.value,
 					),
-				ReportBalance.zero()
+				ReportBalance.zero(),
 			);
 	}
 
@@ -22,9 +22,9 @@ export class AccountsReport {
 			.reduce(
 				(total, acc) =>
 					total.plus(
-						acc.defaultCurrencyBalance?.value ?? acc.balance.value
+						acc.defaultCurrencyBalance?.value ?? acc.balance.value,
 					),
-				ReportBalance.zero()
+				ReportBalance.zero(),
 			);
 	}
 

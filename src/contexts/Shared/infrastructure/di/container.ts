@@ -46,6 +46,7 @@ import { TransactionsService } from "contexts/Transactions/application/transacti
 import { UpdateTransactionUseCase } from "contexts/Transactions/application/update-transaction.usecase";
 import { TransactionsLocalRepository } from "contexts/Transactions/infrastructure/persistence/local/transactions-local.repository";
 import { ChangeAccountNameUseCase } from "../../../Accounts/application/change-account-name.usecase";
+import { ChangeAccountSubtypeUseCase } from "../../../Accounts/application/change-account-subtype.usecase";
 import { GetExchangeRateUseCase } from "../../../Currencies/application/get-exchange-rate.usecase";
 import { ErExchangeRateGetter } from "../../../Currencies/infrastructure/er-exchange-rate-getter";
 import { ExchangeRateLocalRepository } from "../../../Currencies/infrastructure/persistence/exchange-rate-local.repository";
@@ -83,59 +84,59 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 			.singleton()
 			.inject(() => ({ _db: localDB })),
 		_scheduledTransactionsRepository: asClass(
-			ScheduledTransactionsLocalRepository
+			ScheduledTransactionsLocalRepository,
 		)
 			.singleton()
 			.inject(() => ({ _db: localDB })),
 		_scheduledTransactionsService: asClass(
-			ScheduledTransactionsService
+			ScheduledTransactionsService,
 		).singleton(),
 		_recurrenceModificationsRepository: asClass(
-			RecurrenceModificationsLocalRepository
+			RecurrenceModificationsLocalRepository,
 		)
 			.singleton()
 			.inject(() => ({ _db: localDB })),
 		_recurrenceModificationsService: asClass(
-			RecurrenceModificationsService
+			RecurrenceModificationsService,
 		).singleton(),
 		getAllScheduledTransactionsUseCase: asClass(
-			GetAllScheduledTransactionsUseCase
+			GetAllScheduledTransactionsUseCase,
 		).singleton(),
 		createItemUseCase: asClass(CreateScheduledItemUseCase).singleton(),
 		deleteScheduledTransactionUseCase: asClass(
-			DeleteScheduledTransactionUseCase
+			DeleteScheduledTransactionUseCase,
 		).singleton(),
 		createStoreUseCase: asClass(CreateStoreUseCase).singleton(),
 		getAllStoresUseCase: asClass(GetAllStoresUseCase).singleton(),
 		deleteItemRecurrenceUseCase: asClass(
-			DeleteItemRecurrenceUseCase
+			DeleteItemRecurrenceUseCase,
 		).singleton(),
 		editScheduledTransactionNameUseCase: asClass(
-			EditScheduledTransactionNameUseCase
+			EditScheduledTransactionNameUseCase,
 		).singleton(),
 		editScheduledTransactionAmountUseCase: asClass(
-			EditScheduledTransactionAmountUseCase
+			EditScheduledTransactionAmountUseCase,
 		).singleton(),
 		editScheduledTransactionStartDateUseCase: asClass(
-			EditScheduledTransactionStartDateUseCase
+			EditScheduledTransactionStartDateUseCase,
 		).singleton(),
 		editScheduledTransactionFrequencyUseCase: asClass(
-			EditScheduledTransactionFrequencyUseCase
+			EditScheduledTransactionFrequencyUseCase,
 		).singleton(),
 		modifyNItemRecurrenceUseCase: asClass(
-			ModifyNItemRecurrenceUseCase
+			ModifyNItemRecurrenceUseCase,
 		).singleton(),
 		getScheduledTransactionsUntilDateUseCase: asClass(
-			GetScheduledTransactionsUntilDateUseCase
+			GetScheduledTransactionsUntilDateUseCase,
 		).singleton(),
 		itemsWithAccumulatedBalanceUseCase: asClass(
-			ScheduledTransactionsWithAccumulatedBalanceUseCase
+			ScheduledTransactionsWithAccumulatedBalanceUseCase,
 		).singleton(),
 		nextPendingOccurrenceUseCase: asClass(
-			NextPendingOccurrenceUseCase
+			NextPendingOccurrenceUseCase,
 		).singleton(),
 		nextMonthOccurrencesUseCase: asClass(
-			NextMonthsExpensesUseCase
+			NextMonthsExpensesUseCase,
 		).singleton(),
 	});
 
@@ -146,24 +147,27 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 			.inject(() => ({ _db: localDB })),
 		_accountsService: asClass(AccountsService).singleton(),
 		_accountsIntegrityService: asClass(
-			AccountsIntegrityService
+			AccountsIntegrityService,
 		).singleton(),
 		createAccountUseCase: asClass(CreateAccountUseCase).singleton(),
 		deleteAccountUseCase: asClass(DeleteAccountUseCase).singleton(),
 		getAllAccountNamesUseCase: asClass(
-			GetAllAccountNamesUseCase
+			GetAllAccountNamesUseCase,
 		).singleton(),
 		getAllAccountsUseCase: asClass(GetAllAccountsUseCase).singleton(),
 		calculateAccountIntegrityUseCase: asClass(
-			CalculateAccountIntegrityUseCase
+			CalculateAccountIntegrityUseCase,
 		).singleton(),
 		calculateAllAccountsIntegrityUseCase: asClass(
-			CalculateAllAccountsIntegrityUseCase
+			CalculateAllAccountsIntegrityUseCase,
 		).singleton(),
 		resolveAccountDiscrepancyUseCase: asClass(
-			ResolveAccountDiscrepancyUseCase
+			ResolveAccountDiscrepancyUseCase,
 		).singleton(),
 		changeAccountNameUseCase: asClass(ChangeAccountNameUseCase).singleton(),
+		changeAccountSubtypeUseCase: asClass(
+			ChangeAccountSubtypeUseCase,
+		).singleton(),
 	});
 
 	// TRANSACTIONS
@@ -173,18 +177,18 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 			.inject(() => ({ _db: localDB })),
 		_transactionsService: asClass(TransactionsService).singleton(),
 		getAllTransactionsUseCase: asClass(
-			GetAllTransactionsUseCase
+			GetAllTransactionsUseCase,
 		).singleton(),
 		getAllUniqueTransactionsByNameUseCase: asClass(
-			GetAllUniqueTransactionsByNameUseCase
+			GetAllUniqueTransactionsByNameUseCase,
 		),
 		getAllUniqueItemStoresUseCase: asClass(
-			GetAllUniqueItemStoresUseCase
+			GetAllUniqueItemStoresUseCase,
 		).singleton(),
 		recordTransactionUseCase: asClass(RecordTransactionUseCase).singleton(),
 		recordItemUseCase: asClass(RecordItemUseCase).singleton(),
 		recordItemRecurrenceUseCase: asClass(
-			RecordScheduledTransactionUseCase
+			RecordScheduledTransactionUseCase,
 		).singleton(),
 		deleteTransactionUseCase: asClass(DeleteTransactionUseCase).singleton(),
 		updateTransactionUseCase: asClass(UpdateTransactionUseCase).singleton(),
@@ -205,11 +209,11 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		createCategoryUseCase: asClass(CreateCategoryUseCase).singleton(),
 		createSubCategoryUseCase: asClass(CreateSubCategoryUseCase).singleton(),
 		getAllCategoriesWithSubCategoriesUseCase: asClass(
-			GetAllCategoriesWithSubCategoriesUseCase
+			GetAllCategoriesWithSubCategoriesUseCase,
 		).singleton(),
 		getAllCategoriesUseCase: asClass(GetAllCategoriesUseCase).singleton(),
 		getAllSubCategoriesUseCase: asClass(
-			GetAllSubcategoriesUseCase
+			GetAllSubcategoriesUseCase,
 		).singleton(),
 		deleteCategoryUseCase: asClass(DeleteCategoryUseCase).singleton(),
 		deleteSubCategoryUseCase: asClass(DeleteSubCategoryUseCase).singleton(),
@@ -221,7 +225,7 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		getTotalPerMonthUseCase: asClass(GetTotalPerMonthUseCase).singleton(),
 		getTotalUseCase: asClass(GetTotalUseCase).singleton(),
 		groupByCategoryWithAccumulatedBalanceUseCase: asClass(
-			GroupByCategoryWithAccumulatedBalanceUseCase
+			GroupByCategoryWithAccumulatedBalanceUseCase,
 		).singleton(),
 	});
 

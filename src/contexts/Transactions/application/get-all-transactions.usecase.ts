@@ -1,6 +1,5 @@
-import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
-import { QueryUseCase } from "contexts/Shared/domain";
+import { Nanoid, QueryUseCase } from "contexts/Shared/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import {
@@ -10,19 +9,16 @@ import {
 } from "contexts/Transactions/domain";
 
 export type GetAllTransactionsUseCaseInput = {
-	accountFilter?: AccountID;
+	accountFilter?: Nanoid;
 	categoryFilter?: CategoryID;
 	subCategoryFilter?: SubCategoryID;
 };
 export type GetAllTransactionsUseCaseOutput = Transaction[];
 
-export class GetAllTransactionsUseCase
-	implements
-		QueryUseCase<
-			GetAllTransactionsUseCaseInput,
-			GetAllTransactionsUseCaseOutput
-		>
-{
+export class GetAllTransactionsUseCase implements QueryUseCase<
+	GetAllTransactionsUseCaseInput,
+	GetAllTransactionsUseCaseOutput
+> {
 	#logger = new Logger("GetAllTransactionsUseCase");
 	constructor(private _transactionsRepository: ITransactionsRepository) {}
 
@@ -34,7 +30,7 @@ export class GetAllTransactionsUseCase
 		// Get all transactions first
 		const allTransactions =
 			await this._transactionsRepository.findByCriteria(
-				new TransactionCriteria()
+				new TransactionCriteria(),
 			);
 
 		// Filter transactions based on the provided filters
@@ -43,14 +39,14 @@ export class GetAllTransactionsUseCase
 		// Filter by category
 		if (categoryFilter) {
 			filteredTransactions = filteredTransactions.filter((transaction) =>
-				transaction.category.equalTo(categoryFilter)
+				transaction.category.equalTo(categoryFilter),
 			);
 		}
 
 		// Filter by subcategory
 		if (subCategoryFilter) {
 			filteredTransactions = filteredTransactions.filter((transaction) =>
-				transaction.subCategory.equalTo(subCategoryFilter)
+				transaction.subCategory.equalTo(subCategoryFilter),
 			);
 		}
 
@@ -59,17 +55,17 @@ export class GetAllTransactionsUseCase
 			filteredTransactions = filteredTransactions.filter(
 				(transaction) => {
 					const fromAccountIds = transaction.originAccounts.map(
-						(split) => split.accountId
+						(split) => split.accountId,
 					);
 					const toAccountIds = transaction.destinationAccounts.map(
-						(split) => split.accountId
+						(split) => split.accountId,
 					);
 					const allAccountIds = [...fromAccountIds, ...toAccountIds];
 
 					return allAccountIds.some((accountId) =>
-						accountId.equalTo(accountFilter)
+						accountId.equalTo(accountFilter),
 					);
-				}
+				},
 			);
 		}
 

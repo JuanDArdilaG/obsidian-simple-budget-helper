@@ -4,7 +4,7 @@ import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { Select } from "apps/obsidian-plugin/components/Select";
 import { ScheduledTransactionsContext } from "apps/obsidian-plugin/views";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts/AccountsContext";
-import { AccountID } from "contexts/Accounts/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { useContext, useState } from "react";
@@ -32,7 +32,7 @@ export const EditItemRecurrencePanel = ({
 	const { accounts } = useContext(AccountsContext);
 
 	const [date, setDate] = useState<DateValueObject | undefined>(
-		recurrence.date
+		recurrence.date,
 	);
 
 	const [originAccounts, setOriginAccounts] = useState(
@@ -43,7 +43,7 @@ export const EditItemRecurrencePanel = ({
 			scheduledTransaction.originAccounts.map((split) => ({
 				accountId: split.accountId.value,
 				amount: split.amount,
-			}))
+			})),
 	);
 	const [destinationAccounts, setDestinationAccounts] = useState(
 		recurrence.destinationAccounts?.map((split) => ({
@@ -53,7 +53,7 @@ export const EditItemRecurrencePanel = ({
 			scheduledTransaction.destinationAccounts.map((split) => ({
 				accountId: split.accountId.value,
 				amount: split.amount,
-			}))
+			})),
 	);
 
 	return (
@@ -103,14 +103,14 @@ export const EditItemRecurrencePanel = ({
 							}}
 							prefix={
 								accounts.find(
-									(acc) => acc.id.value === split.accountId
+									(acc) => acc.id.value === split.accountId,
 								)?.currency.symbol || ""
 							}
 						/>
 						<button
 							onClick={() =>
 								setOriginAccounts(
-									originAccounts.filter((_, i) => i !== idx)
+									originAccounts.filter((_, i) => i !== idx),
 								)
 							}
 						>
@@ -169,7 +169,7 @@ export const EditItemRecurrencePanel = ({
 							}}
 							prefix={
 								accounts.find(
-									(acc) => acc.id.value === split.accountId
+									(acc) => acc.id.value === split.accountId,
 								)?.currency.symbol || ""
 							}
 						/>
@@ -177,8 +177,8 @@ export const EditItemRecurrencePanel = ({
 							onClick={() =>
 								setDestinationAccounts(
 									destinationAccounts.filter(
-										(_, i) => i !== idx
-									)
+										(_, i) => i !== idx,
+									),
 								)
 							}
 						>
@@ -207,17 +207,11 @@ export const EditItemRecurrencePanel = ({
 					// Create PaymentSplit objects from the UI state
 					const fromSplitObjs = originAccounts.map(
 						(s) =>
-							new PaymentSplit(
-								new AccountID(s.accountId),
-								s.amount
-							)
+							new PaymentSplit(new Nanoid(s.accountId), s.amount),
 					);
 					const toSplitObjs = destinationAccounts.map(
 						(s) =>
-							new PaymentSplit(
-								new AccountID(s.accountId),
-								s.amount
-							)
+							new PaymentSplit(new Nanoid(s.accountId), s.amount),
 					);
 
 					await modifyNItemRecurrence.execute({

@@ -1,4 +1,4 @@
-import { AccountID } from "./account-id.valueobject";
+import { Nanoid } from "../../Shared/domain";
 import { AccountIntegrityResult } from "./account-integrity-result.valueobject";
 import { IntegrityCheckReport } from "./integrity-check-report.valueobject";
 
@@ -9,7 +9,7 @@ export interface IAccountsIntegrityService {
 	 * @returns The integrity result for the account
 	 */
 	calculateAccountIntegrity(
-		accountId: AccountID
+		accountId: Nanoid,
 	): Promise<AccountIntegrityResult>;
 
 	/**
@@ -23,5 +23,5 @@ export interface IAccountsIntegrityService {
 	 * @param accountId The account with discrepancy
 	 * @returns True if resolution was successful
 	 */
-	resolveDiscrepancy(accountId: AccountID): Promise<boolean>;
+	resolveDiscrepancy(accountId: Nanoid): Promise<boolean>;
 }

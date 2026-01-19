@@ -1,10 +1,11 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
-import { AccountID, AccountType } from "contexts/Accounts/domain";
+import { AccountType } from "contexts/Accounts/domain";
 import { GetAllCategoriesWithSubCategoriesUseCaseOutput } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 import { Category } from "contexts/Categories/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { SubCategory } from "contexts/Subcategories/domain";
 import { ScheduledTransaction } from "../../ScheduledTransactions/domain";
+import { Nanoid } from "../../Shared/domain";
 import { ReportBalance } from "./report-balance.valueobject";
 
 export class ScheduledCategoriesReport {
@@ -18,16 +19,16 @@ export class ScheduledCategoriesReport {
 	onlyExpenses(): ScheduledCategoriesReport {
 		return new ScheduledCategoriesReport(
 			this.scheduledTransactions.filter((item) =>
-				item.operation.type.isExpense()
-			)
+				item.operation.type.isExpense(),
+			),
 		);
 	}
 
 	onlyIncomes(): ScheduledCategoriesReport {
 		return new ScheduledCategoriesReport(
 			this.scheduledTransactions.filter((item) =>
-				item.operation.type.isIncome()
-			)
+				item.operation.type.isIncome(),
+			),
 		);
 	}
 
@@ -36,7 +37,7 @@ export class ScheduledCategoriesReport {
 	 */
 	getExpenseItems(): ScheduledTransaction[] {
 		return this.scheduledTransactions.filter((item) =>
-			item.operation.type.isExpense()
+			item.operation.type.isExpense(),
 		);
 	}
 
@@ -45,7 +46,7 @@ export class ScheduledCategoriesReport {
 	 */
 	getIncomeItems(): ScheduledTransaction[] {
 		return this.scheduledTransactions.filter((item) =>
-			item.operation.type.isIncome()
+			item.operation.type.isIncome(),
 		);
 	}
 
@@ -54,7 +55,7 @@ export class ScheduledCategoriesReport {
 	 */
 	getTransferItems(): ScheduledTransaction[] {
 		return this.scheduledTransactions.filter((item) =>
-			item.operation.type.isTransfer()
+			item.operation.type.isTransfer(),
 		);
 	}
 
@@ -63,7 +64,7 @@ export class ScheduledCategoriesReport {
 	 */
 	getInfiniteRecurrentItems(): ScheduledTransaction[] {
 		return this.scheduledTransactions.filter(
-			(item) => item.recurrencePattern.totalOccurrences === -1
+			(item) => item.recurrencePattern.totalOccurrences === -1,
 		);
 	}
 
@@ -72,19 +73,19 @@ export class ScheduledCategoriesReport {
 	 */
 	getFiniteRecurrentItems(): ScheduledTransaction[] {
 		return this.scheduledTransactions.filter(
-			(item) => item.recurrencePattern.totalOccurrences !== -1
+			(item) => item.recurrencePattern.totalOccurrences !== -1,
 		);
 	}
 
 	getTotal(): ReportBalance {
 		return this.scheduledTransactions.reduce(
 			(total, item) => total.plus(item.realPrice),
-			ReportBalance.zero()
+			ReportBalance.zero(),
 		);
 	}
 
 	getTotalPerMonth(
-		accountTypeLookup?: (id: AccountID) => AccountType
+		accountTypeLookup?: (id: Nanoid) => AccountType,
 	): ReportBalance {
 		const lookup =
 			accountTypeLookup ||
@@ -96,16 +97,16 @@ export class ScheduledCategoriesReport {
 						lookup(item.originAccounts[0].accountId),
 						item.destinationAccounts.length > 0
 							? lookup(item.destinationAccounts[0].accountId)
-							: undefined
-					)
+							: undefined,
+					),
 				),
-			ReportBalance.zero()
+			ReportBalance.zero(),
 		);
 	}
 
 	groupPerCategory(
 		categoriesWithSubcategories: GetAllCategoriesWithSubCategoriesUseCaseOutput,
-		accountTypeLookup?: (id: AccountID) => AccountType
+		accountTypeLookup?: (id: Nanoid) => AccountType,
 	): {
 		perMonthExpensesPercentage: NumberValueObject;
 		perMonthInverseOperationPercentage: NumberValueObject;
@@ -126,11 +127,11 @@ export class ScheduledCategoriesReport {
 			.forEach((item) => {
 				const categoryWithSubCategories =
 					categoriesWithSubcategories.find(({ category }) =>
-						category.id.equalTo(item.category.category.id)
+						category.id.equalTo(item.category.category.id),
 					);
 				if (!categoryWithSubCategories) return;
 				let r = res.find((r) =>
-					r.category.category.id.equalTo(item.category.category.id)
+					r.category.category.id.equalTo(item.category.category.id),
 				);
 				if (!r) {
 					res.push({
@@ -148,22 +149,22 @@ export class ScheduledCategoriesReport {
 					lookup(item.originAccounts[0].accountId),
 					item.destinationAccounts.length > 0
 						? lookup(item.destinationAccounts[0].accountId)
-						: undefined
+						: undefined,
 				);
 				if (r?.category.percentageOperation !== undefined)
 					r.category.percentageOperation =
 						r.category.percentageOperation.plus(
-							itemPricePerMonth.abs()
+							itemPricePerMonth.abs(),
 						);
 				let rS = r?.subCategoriesItems.find(({ subCategory }) =>
 					subCategory.subCategory.id.equalTo(
-						item.category.subCategory.id
-					)
+						item.category.subCategory.id,
+					),
 				);
 				if (!rS) {
 					const subCategory =
 						categoryWithSubCategories.subCategories.find((sub) =>
-							sub.id.equalTo(item.category.subCategory.id)
+							sub.id.equalTo(item.category.subCategory.id),
 						);
 					if (!subCategory) return;
 					r?.subCategoriesItems.push({
@@ -180,7 +181,7 @@ export class ScheduledCategoriesReport {
 				if (rS?.subCategory.percentageOperation !== undefined)
 					rS.subCategory.percentageOperation =
 						rS.subCategory.percentageOperation.plus(
-							itemPricePerMonth.abs()
+							itemPricePerMonth.abs(),
 						);
 				rS?.items.push({
 					item,
@@ -226,7 +227,7 @@ export class ScheduledCategoriesReport {
 									subCategory,
 								},
 								items,
-							})
+							}),
 						),
 						category: {
 							category,
@@ -239,12 +240,12 @@ export class ScheduledCategoriesReport {
 								.times(new NumberValueObject(100))
 								.fixed(2),
 						},
-					})
+					}),
 				)
 				.sort((rA, rB) =>
 					rA.category.category.name.compareTo(
-						rB.category.category.name
-					)
+						rB.category.category.name,
+					),
 				),
 		};
 	}

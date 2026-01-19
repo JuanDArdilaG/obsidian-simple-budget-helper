@@ -3,9 +3,11 @@ import { AwilixContainer } from "awilix";
 import { CreateAccountUseCase } from "contexts/Accounts/application/create-account.usecase";
 import { DeleteAccountUseCase } from "contexts/Accounts/application/delete-account.usecase";
 import { GetAllAccountsUseCase } from "contexts/Accounts/application/get-all-accounts.usecase";
-import { Account, AccountID, AccountName } from "contexts/Accounts/domain";
+import { Account, AccountName } from "contexts/Accounts/domain";
 import { createContext } from "react";
 import { ChangeAccountNameUseCase } from "../../../../../contexts/Accounts/application/change-account-name.usecase";
+import { ChangeAccountSubtypeUseCase } from "../../../../../contexts/Accounts/application/change-account-subtype.usecase";
+import { Nanoid } from "../../../../../contexts/Shared/domain";
 
 export type AccountsContextType = {
 	useCases: {
@@ -13,10 +15,11 @@ export type AccountsContextType = {
 		createAccount: CreateAccountUseCase;
 		deleteAccount: DeleteAccountUseCase;
 		changeAccountName: ChangeAccountNameUseCase;
+		changeAccountSubtype: ChangeAccountSubtypeUseCase;
 	};
 	accounts: Account[];
 	updateAccounts: () => void;
-	getAccountByID: (id: AccountID) => Account | undefined;
+	getAccountByID: (id: Nanoid) => Account | undefined;
 	getAccountByName: (name: AccountName) => Account | undefined;
 };
 
@@ -26,6 +29,7 @@ export const AccountsContext = createContext<AccountsContextType>({
 		createAccount: {} as CreateAccountUseCase,
 		deleteAccount: {} as DeleteAccountUseCase,
 		changeAccountName: {} as ChangeAccountNameUseCase,
+		changeAccountSubtype: {} as ChangeAccountSubtypeUseCase,
 	},
 	accounts: [],
 	updateAccounts: () => {},
@@ -34,16 +38,16 @@ export const AccountsContext = createContext<AccountsContextType>({
 });
 
 export const getAccountsContextValues = (
-	container: AwilixContainer
+	container: AwilixContainer,
 ): AccountsContextType => {
 	const createAccount = container.resolve<CreateAccountUseCase>(
-		"createAccountUseCase"
+		"createAccountUseCase",
 	);
 	const getAllAccounts = container.resolve<GetAllAccountsUseCase>(
-		"getAllAccountsUseCase"
+		"getAllAccountsUseCase",
 	);
 	const deleteAccount = container.resolve<DeleteAccountUseCase>(
-		"deleteAccountUseCase"
+		"deleteAccountUseCase",
 	);
 
 	const { accounts, updateAccounts, getAccountByID, getAccountByName } =
@@ -57,8 +61,12 @@ export const getAccountsContextValues = (
 			getAllAccounts,
 			deleteAccount,
 			changeAccountName: container.resolve<ChangeAccountNameUseCase>(
-				"changeAccountNameUseCase"
+				"changeAccountNameUseCase",
 			),
+			changeAccountSubtype:
+				container.resolve<ChangeAccountSubtypeUseCase>(
+					"changeAccountSubtypeUseCase",
+				),
 		},
 		accounts,
 		updateAccounts,

@@ -1,7 +1,7 @@
-import { AccountID } from "contexts/Accounts/domain";
 import { Category, CategoryName } from "contexts/Categories/domain";
 import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
 import { TransactionsReport } from "contexts/Reports/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
 import { describe, expect, it } from "vitest";
 import { CategoriesServiceMock } from "../../Categories/application/categories-service.mock";
@@ -16,16 +16,16 @@ describe("execute", () => {
 		const subCategoriesService = new SubcategoriesServiceMock([
 			SubCategory.create(
 				categoriesService.categories[0].id,
-				new SubCategoryName("test")
+				new SubCategoryName("test"),
 			),
 			SubCategory.create(
 				categoriesService.categories[0].id,
-				new SubCategoryName("test2")
+				new SubCategoryName("test2"),
 			),
 		]);
 		const useCase = new GroupByCategoryWithAccumulatedBalanceUseCase(
 			categoriesService,
-			subCategoriesService
+			subCategoriesService,
 		);
 		const transactions = buildTestTransactions([
 			{
@@ -33,14 +33,14 @@ describe("execute", () => {
 				category: categoriesService.categories[0].id.value,
 				subcategory: subCategoriesService.subcategories[0].id.value,
 				operation: "expense",
-				account: AccountID.generate().value,
+				account: Nanoid.generate().value,
 			},
 			{
 				amount: 200,
 				category: categoriesService.categories[0].id.value,
 				subcategory: subCategoriesService.subcategories[1].id.value,
 				operation: "income",
-				account: AccountID.generate().value,
+				account: Nanoid.generate().value,
 			},
 		]);
 		const report = new TransactionsReport(transactions);
@@ -48,17 +48,17 @@ describe("execute", () => {
 		const result = await useCase.execute(report);
 
 		expect(
-			result[categoriesService.categories[0].id.value].balance.value
+			result[categoriesService.categories[0].id.value].balance.value,
 		).toBe(100);
 		expect(
 			result[categoriesService.categories[0].id.value].subCategories[
 				subCategoriesService.subcategories[0].id.value
-			].balance.value
+			].balance.value,
 		).toBe(-100);
 		expect(
 			result[categoriesService.categories[0].id.value].subCategories[
 				subCategoriesService.subcategories[1].id.value
-			].balance.value
+			].balance.value,
 		).toBe(200);
 	});
 });

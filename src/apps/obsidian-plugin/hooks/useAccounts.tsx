@@ -1,5 +1,6 @@
 import { GetAllAccountsUseCase } from "contexts/Accounts/application/get-all-accounts.usecase";
-import { Account, AccountID, AccountName } from "contexts/Accounts/domain";
+import { Account, AccountName } from "contexts/Accounts/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { useCallback, useEffect, useState } from "react";
 import { useLogger } from "./useLogger";
 
@@ -24,13 +25,13 @@ export const useAccounts = ({
 	}, [updateAccounts]);
 
 	const getAccountByID = useCallback(
-		(id: AccountID) => accounts.find((acc) => acc.id.equalTo(id)),
-		[accounts]
+		(id: Nanoid) => accounts.find((acc) => acc.id.equalTo(id)),
+		[accounts],
 	);
 
 	const getAccountByName = useCallback(
 		(name: AccountName) => accounts.find((acc) => acc.name.equalTo(name)),
-		[accounts]
+		[accounts],
 	);
 
 	return {

@@ -1,12 +1,11 @@
 import { DateValueObject } from "@juandardilag/value-objects";
 import { useDateInput } from "apps/obsidian-plugin/components/Input/useDateInput";
 import { useLogger } from "apps/obsidian-plugin/hooks";
-import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { useEffect, useState } from "react";
 import { ItemRecurrenceInfo } from "../../../../../../contexts/ScheduledTransactions/domain";
-import { Nanoid } from "../../../../../../contexts/Shared/domain";
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
 import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
 import { CalendarItemsList } from "./CalendarItemsList";
@@ -16,7 +15,7 @@ interface FilterState {
 	searchText: string;
 	selectedCategory: CategoryID | null;
 	selectedSubCategory: SubCategoryID | null;
-	selectedAccount: AccountID | null;
+	selectedAccount: Nanoid | null;
 	selectedOperationType: "income" | "expense" | "transfer" | "all";
 	selectedTags: string[];
 	priceRange: {
@@ -95,19 +94,19 @@ export const CalendarItemsTab = () => {
 			date = DateValueObject.createNowDate().addDays(14);
 		if (timeframe === "month")
 			date = DateValueObject.createNowDate().updateMonth(
-				new Date().getMonth() + 1
+				new Date().getMonth() + 1,
 			);
 		if (timeframe === "3months")
 			date = DateValueObject.createNowDate().updateMonth(
-				new Date().getMonth() + 3
+				new Date().getMonth() + 3,
 			);
 		if (timeframe === "year")
 			date = DateValueObject.createNowDate().updateMonth(
-				new Date().getMonth() + 12
+				new Date().getMonth() + 12,
 			);
 		if (timeframe === "3years")
 			date = DateValueObject.createNowDate().updateMonth(
-				new Date().getMonth() + 36
+				new Date().getMonth() + 36,
 			);
 
 		// Set the time to 23:59:59 for the calculated date

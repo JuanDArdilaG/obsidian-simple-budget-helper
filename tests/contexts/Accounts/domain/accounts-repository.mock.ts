@@ -1,14 +1,14 @@
 import {
 	Account,
-	AccountID,
 	AccountName,
 	AccountPrimitives,
 	IAccountsRepository,
 } from "contexts/Accounts/domain";
+import { Nanoid } from "../../../../src/contexts/Shared/domain";
 import { RepositoryMock } from "../../../contexts/Shared/domain/repository.mock";
 
 export class AccountsRepositoryMock
-	extends RepositoryMock<AccountID, Account, AccountPrimitives>
+	extends RepositoryMock<Nanoid, Account, AccountPrimitives>
 	implements IAccountsRepository
 {
 	async findByName(name: AccountName): Promise<Account | null> {

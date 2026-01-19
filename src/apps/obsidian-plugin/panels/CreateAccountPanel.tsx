@@ -6,8 +6,9 @@ import {
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import {
 	Account,
+	AccountAssetSubtype,
+	AccountLiabilitySubtype,
 	AccountName,
-	AccountType,
 	AccountTypeType,
 } from "contexts/Accounts/domain";
 import { useContext, useState } from "react";
@@ -23,16 +24,27 @@ export const CreateAccountPanel = ({ onCreate }: { onCreate: () => void }) => {
 	} = useContext(AccountsContext);
 
 	const [type, setType] = useState("asset" as AccountTypeType);
+	const [assetSubType, setAssetSubType] = useState<AccountAssetSubtype>(
+		AccountAssetSubtype.CASH,
+	);
+	const [liabilitySubType, setLiabilitySubType] =
+		useState<AccountLiabilitySubtype>(AccountLiabilitySubtype.CREDIT_CARD);
 	const [accountName, setAccountName] = useState("");
 	const [currency, setCurrency] = useState(plugin.settings.defaultCurrency);
 
 	const handleSubmit = () => async () => {
 		await createAccount.execute(
-			Account.create(
-				new AccountType(type),
-				new AccountName(accountName),
-				new Currency(currency)
-			)
+			type === "asset"
+				? Account.createAsset(
+						assetSubType,
+						new AccountName(accountName),
+						new Currency(currency),
+					)
+				: Account.createLiability(
+						liabilitySubType,
+						new AccountName(accountName),
+						new Currency(currency),
+					),
 		);
 
 		onCreate();
@@ -55,6 +67,27 @@ export const CreateAccountPanel = ({ onCreate }: { onCreate: () => void }) => {
 				values={["asset", "liability"]}
 				onChange={(type) => setType(type as AccountTypeType)}
 			/>
+			{type === "asset" ? (
+				<Select
+					id="subtype"
+					label="Subtype"
+					value={assetSubType}
+					values={Object.values(AccountAssetSubtype)}
+					onChange={(subtype) =>
+						setAssetSubType(subtype as AccountAssetSubtype)
+					}
+				/>
+			) : (
+				<Select
+					id="subtype"
+					label="Subtype"
+					value={liabilitySubType}
+					values={Object.values(AccountLiabilitySubtype)}
+					onChange={(subtype) =>
+						setLiabilitySubType(subtype as AccountLiabilitySubtype)
+					}
+				/>
+			)}
 			<Select
 				id="currency"
 				label="Currency"

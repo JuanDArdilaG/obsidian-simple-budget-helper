@@ -12,7 +12,6 @@ import {
 	AccountsContext,
 	TransactionsContext,
 } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { AccountID } from "contexts/Accounts/domain";
 import { Nanoid, OperationType } from "contexts/Shared/domain";
 import { TransactionAmount } from "contexts/Transactions/domain";
 import {
@@ -78,7 +77,7 @@ export const CreateScheduleTransactionForm = ({
 			accounts
 				.map((acc) => acc.name.value)
 				.toSorted((a, b) => a.localeCompare(b)),
-		[accounts]
+		[accounts],
 	);
 	const fromAccountName = useMemo(() => {
 		const id =
@@ -86,7 +85,7 @@ export const CreateScheduleTransactionForm = ({
 				? item.fromSplits[0].accountId
 				: undefined;
 		if (!id) return "";
-		return getAccountByID(new AccountID(id))?.name.value ?? "";
+		return getAccountByID(new Nanoid(id))?.name.value ?? "";
 	}, [item.fromSplits, getAccountByID]);
 	const { CategorySelect, category } = useCategorySelect({
 		initialValueID: item.category.category.id,
@@ -107,14 +106,14 @@ export const CreateScheduleTransactionForm = ({
 				? item.toSplits[0].accountId
 				: undefined;
 		if (!id) return "";
-		return getAccountByID(new AccountID(id))?.name.value ?? "";
+		return getAccountByID(new Nanoid(id))?.name.value ?? "";
 	}, [item.toSplits, getAccountByID]);
 
 	useEffect(() => {
 		// Calculate total from fromSplits
 		const totalAmount = (item.fromSplits || []).reduce(
 			(sum, split) => sum + (split.amount || 0),
-			0
+			0,
 		);
 		const newErrors = {
 			name: item.name.trim() === "" ? "Name is required" : undefined,
@@ -306,34 +305,34 @@ export const CreateScheduleTransactionForm = ({
 							items
 								.map((item) => item.toPrimitives())
 								.filter((item) => item?.name)
-								.sort((a, b) => a.name.localeCompare(b.name))
+								.sort((a, b) => a.name.localeCompare(b.name)),
 						),
 					]}
 					getLabel={(item) => {
 						const labelStr = `${item.name} - ${
 							getAccountByID(
-								new AccountID(
-									item.fromSplits?.[0]?.accountId || ""
-								)
+								new Nanoid(
+									item.fromSplits?.[0]?.accountId || "",
+								),
 							)?.name.value
 						}${
 							item.operation?.type === "transfer" &&
 							item.toSplits?.[0]?.accountId
 								? ` -> ${
 										getAccountByID(
-											new AccountID(
-												item.toSplits[0].accountId
-											)
+											new Nanoid(
+												item.toSplits[0].accountId,
+											),
 										)?.name.value
-								  } - `
+									} - `
 								: ""
 						}${
 							item.fromSplits?.[0]?.amount === 0
 								? ""
 								: "  " +
-								  new TransactionAmount(
-										item.fromSplits?.[0]?.amount ?? 0
-								  ).toString()
+									new TransactionAmount(
+										item.fromSplits?.[0]?.amount ?? 0,
+									).toString()
 						}`;
 						return labelStr;
 					}}
@@ -360,12 +359,12 @@ export const CreateScheduleTransactionForm = ({
 							new PriceValueObject(
 								item.fromSplits?.reduce(
 									(sum, split) => sum + split.amount,
-									0
+									0,
 								) ?? 0,
 								{
 									withSign: false,
 									decimals: 2,
-								}
+								},
 							)
 						}
 						onChange={(amount) =>
@@ -383,10 +382,10 @@ export const CreateScheduleTransactionForm = ({
 						prefix={
 							item.fromSplits?.[0].accountId
 								? getAccountByID(
-										new AccountID(
-											item.fromSplits[0].accountId
-										)
-								  )?.currency.symbol
+										new Nanoid(
+											item.fromSplits[0].accountId,
+										),
+									)?.currency.symbol
 								: "$"
 						}
 					/>
@@ -442,7 +441,7 @@ export const CreateScheduleTransactionForm = ({
 						values={["", ...accountNames]}
 						onChange={(accountName) => {
 							const selectedAccount = accounts.find(
-								(acc) => acc.name.value === accountName
+								(acc) => acc.name.value === accountName,
 							);
 							update({
 								fromSplits: selectedAccount
@@ -454,7 +453,7 @@ export const CreateScheduleTransactionForm = ({
 													item.fromSplits?.[0]
 														?.amount ?? 0,
 											},
-									  ]
+										]
 									: [
 											{
 												accountId: "",
@@ -462,7 +461,7 @@ export const CreateScheduleTransactionForm = ({
 													item.fromSplits?.[0]
 														?.amount ?? 0,
 											},
-									  ],
+										],
 							});
 						}}
 						error={showErrors ? errors.account : undefined}
@@ -487,7 +486,7 @@ export const CreateScheduleTransactionForm = ({
 							values={["", ...accountNames]}
 							onChange={(accountName) => {
 								const selectedAccount = accounts.find(
-									(acc) => acc.name.value === accountName
+									(acc) => acc.name.value === accountName,
 								);
 								update({
 									toSplits: selectedAccount
@@ -498,7 +497,7 @@ export const CreateScheduleTransactionForm = ({
 															.value,
 													amount: 0,
 												},
-										  ]
+											]
 										: [],
 								});
 							}}

@@ -1,6 +1,6 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
-import { AccountID, AccountType } from "contexts/Accounts/domain";
-import { ItemOperation } from "contexts/Shared/domain";
+import { AccountType } from "contexts/Accounts/domain";
+import { ItemOperation, Nanoid } from "contexts/Shared/domain";
 import { describe, expect, it } from "vitest";
 import { buildTestItems } from "./buildTestItems";
 
@@ -11,8 +11,8 @@ describe("Item Price Calculations", () => {
 				{
 					price: new PriceValueObject(100),
 					operation: ItemOperation.income(),
-					account: AccountID.generate(),
-					toAccount: AccountID.generate(),
+					account: Nanoid.generate(),
+					toAccount: Nanoid.generate(),
 				},
 			]);
 			const item = items[0];
@@ -25,8 +25,8 @@ describe("Item Price Calculations", () => {
 				{
 					price: new PriceValueObject(100),
 					operation: ItemOperation.expense(),
-					account: AccountID.generate(),
-					toAccount: AccountID.generate(),
+					account: Nanoid.generate(),
+					toAccount: Nanoid.generate(),
 				},
 			]);
 			const item = items[0];
@@ -39,8 +39,8 @@ describe("Item Price Calculations", () => {
 				{
 					price: new PriceValueObject(100),
 					operation: ItemOperation.transfer(),
-					account: AccountID.generate(),
-					toAccount: AccountID.generate(),
+					account: Nanoid.generate(),
+					toAccount: Nanoid.generate(),
 				},
 			]);
 			const item = items[0];
@@ -56,8 +56,8 @@ describe("Item Price Calculations", () => {
 					{
 						price: new PriceValueObject(100),
 						operation: ItemOperation.income(),
-						account: AccountID.generate(),
-						toAccount: AccountID.generate(),
+						account: Nanoid.generate(),
+						toAccount: Nanoid.generate(),
 					},
 				]);
 				const item = items[0];
@@ -65,8 +65,8 @@ describe("Item Price Calculations", () => {
 				expect(
 					item.getPricePerMonthWithAccountTypes(
 						new AccountType("asset"),
-						new AccountType("asset")
-					).value
+						new AccountType("asset"),
+					).value,
 				).toBe(100);
 			});
 
@@ -75,8 +75,8 @@ describe("Item Price Calculations", () => {
 					{
 						price: new PriceValueObject(100),
 						operation: ItemOperation.expense(),
-						account: AccountID.generate(),
-						toAccount: AccountID.generate(),
+						account: Nanoid.generate(),
+						toAccount: Nanoid.generate(),
 					},
 				]);
 				const item = items[0];
@@ -84,8 +84,8 @@ describe("Item Price Calculations", () => {
 				expect(
 					item.getPricePerMonthWithAccountTypes(
 						new AccountType("asset"),
-						new AccountType("asset")
-					).value
+						new AccountType("asset"),
+					).value,
 				).toBe(-100);
 			});
 
@@ -94,8 +94,8 @@ describe("Item Price Calculations", () => {
 					{
 						price: new PriceValueObject(100),
 						operation: ItemOperation.transfer(),
-						account: AccountID.generate(),
-						toAccount: AccountID.generate(),
+						account: Nanoid.generate(),
+						toAccount: Nanoid.generate(),
 					},
 				]);
 				const item = items[0];
@@ -104,8 +104,8 @@ describe("Item Price Calculations", () => {
 				expect(
 					item.getPricePerMonthWithAccountTypes(
 						new AccountType("asset"),
-						new AccountType("asset")
-					).value
+						new AccountType("asset"),
+					).value,
 				).toBe(0);
 			});
 		});
@@ -117,8 +117,8 @@ describe("Item Price Calculations", () => {
 						price: new PriceValueObject(100),
 						operation: ItemOperation.income(),
 						recurrence: { frequency: "1w" },
-						account: AccountID.generate(),
-						toAccount: AccountID.generate(),
+						account: Nanoid.generate(),
+						toAccount: Nanoid.generate(),
 					},
 				]);
 				const item = items[0];
@@ -127,8 +127,8 @@ describe("Item Price Calculations", () => {
 				expect(
 					item.getPricePerMonthWithAccountTypes(
 						new AccountType("asset"),
-						new AccountType("asset")
-					).value
+						new AccountType("asset"),
+					).value,
 				).toBeCloseTo(435, 0);
 			});
 
@@ -138,8 +138,8 @@ describe("Item Price Calculations", () => {
 						price: new PriceValueObject(100),
 						operation: ItemOperation.expense(),
 						recurrence: { frequency: "1w" },
-						account: AccountID.generate(),
-						toAccount: AccountID.generate(),
+						account: Nanoid.generate(),
+						toAccount: Nanoid.generate(),
 					},
 				]);
 				const item = items[0];
@@ -148,8 +148,8 @@ describe("Item Price Calculations", () => {
 				expect(
 					item.getPricePerMonthWithAccountTypes(
 						new AccountType("asset"),
-						new AccountType("asset")
-					).value
+						new AccountType("asset"),
+					).value,
 				).toBeCloseTo(-435, 0);
 			});
 
@@ -159,8 +159,8 @@ describe("Item Price Calculations", () => {
 						price: new PriceValueObject(100),
 						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1w" },
-						account: AccountID.generate(),
-						toAccount: AccountID.generate(),
+						account: Nanoid.generate(),
+						toAccount: Nanoid.generate(),
 					},
 				]);
 				const item = items[0];
@@ -170,8 +170,8 @@ describe("Item Price Calculations", () => {
 				expect(
 					item.getPricePerMonthWithAccountTypes(
 						new AccountType("asset"),
-						new AccountType("asset")
-					).value
+						new AccountType("asset"),
+					).value,
 				).toBe(0);
 			});
 
@@ -181,8 +181,8 @@ describe("Item Price Calculations", () => {
 						price: new PriceValueObject(100),
 						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1mo" },
-						account: AccountID.generate(),
-						toAccount: AccountID.generate(),
+						account: Nanoid.generate(),
+						toAccount: Nanoid.generate(),
 					},
 				]);
 				const item = items[0];
@@ -192,8 +192,8 @@ describe("Item Price Calculations", () => {
 				expect(
 					item.getPricePerMonthWithAccountTypes(
 						new AccountType("asset"),
-						new AccountType("asset")
-					).value
+						new AccountType("asset"),
+					).value,
 				).toBe(0);
 			});
 
@@ -203,8 +203,8 @@ describe("Item Price Calculations", () => {
 						price: new PriceValueObject(10),
 						operation: ItemOperation.transfer(),
 						recurrence: { frequency: "1d" },
-						account: AccountID.generate(),
-						toAccount: AccountID.generate(),
+						account: Nanoid.generate(),
+						toAccount: Nanoid.generate(),
 					},
 				]);
 				const item = items[0];
@@ -214,16 +214,16 @@ describe("Item Price Calculations", () => {
 				expect(
 					item.getPricePerMonthWithAccountTypes(
 						new AccountType("asset"),
-						new AccountType("asset")
-					).value
+						new AccountType("asset"),
+					).value,
 				).toBe(0);
 			});
 		});
 
 		describe("transfer with different account types", () => {
 			it("should handle asset to liability transfers correctly", () => {
-				const fromAccount = AccountID.generate();
-				const toAccount = AccountID.generate();
+				const fromAccount = Nanoid.generate();
+				const toAccount = Nanoid.generate();
 				const items = buildTestItems([
 					{
 						price: new PriceValueObject(100),
@@ -239,14 +239,14 @@ describe("Item Price Calculations", () => {
 				expect(
 					item.getPricePerMonthWithAccountTypes(
 						new AccountType("asset"),
-						new AccountType("liability")
-					).value
+						new AccountType("liability"),
+					).value,
 				).toBe(-100);
 			});
 
 			it("should handle liability to asset transfers correctly", () => {
-				const fromAccount = AccountID.generate();
-				const toAccount = AccountID.generate();
+				const fromAccount = Nanoid.generate();
+				const toAccount = Nanoid.generate();
 				const items = buildTestItems([
 					{
 						price: new PriceValueObject(100),
@@ -261,8 +261,8 @@ describe("Item Price Calculations", () => {
 				expect(
 					item.getPricePerMonthWithAccountTypes(
 						new AccountType("liability"),
-						new AccountType("asset")
-					).value
+						new AccountType("asset"),
+					).value,
 				).toBe(100);
 			});
 		});

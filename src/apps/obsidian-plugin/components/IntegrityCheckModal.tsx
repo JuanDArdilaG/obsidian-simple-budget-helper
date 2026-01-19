@@ -1,4 +1,5 @@
-import { AccountID, IntegrityCheckReport } from "contexts/Accounts/domain";
+import { IntegrityCheckReport } from "contexts/Accounts/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import React, { useContext, useState } from "react";
 import { TransactionAmount } from "../../../contexts/Transactions/domain";
 import { AccountsContext } from "../views";
@@ -167,7 +168,7 @@ export const IntegrityCheckModal: React.FC<IntegrityCheckModalProps> = ({
 							>
 								Execution date:{" "}
 								{new Date(
-									reportPrimitives.executionDate
+									reportPrimitives.executionDate,
 								).toLocaleString()}
 							</p>
 						</div>
@@ -185,7 +186,7 @@ export const IntegrityCheckModal: React.FC<IntegrityCheckModalProps> = ({
 											result={result}
 											onResolve={() =>
 												confirmResolveDiscrepancy(
-													result.accountId
+													result.accountId,
 												)
 											}
 											isResolving={isResolving}
@@ -206,7 +207,7 @@ export const IntegrityCheckModal: React.FC<IntegrityCheckModalProps> = ({
 						)}
 
 						{reportPrimitives.results.some(
-							(result) => result.hasIntegrity
+							(result) => result.hasIntegrity,
 						) && (
 							<div style={{ marginTop: "24px" }}>
 								<h3 style={{ color: "var(--text-success)" }}>
@@ -296,8 +297,8 @@ const AccountIntegrityItem: React.FC<AccountIntegrityItemProps> = ({
 						}}
 					>
 						Account:{" "}
-						{getAccountByID(new AccountID(result.accountId))
-							?.name ?? result.accountId}
+						{getAccountByID(new Nanoid(result.accountId))?.name ??
+							result.accountId}
 					</p>
 					<p style={{ margin: "2px 0", color: "var(--text-normal)" }}>
 						Expected Balance:{" "}

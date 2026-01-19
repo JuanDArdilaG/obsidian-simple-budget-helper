@@ -2,11 +2,12 @@ import { PriceValueObject } from "@juandardilag/value-objects";
 import { AccountsIntegrityService } from "contexts/Accounts/application/accounts-integrity.service";
 import {
 	Account,
-	AccountID,
+	AccountAssetSubtype,
 	AccountIntegrityResult,
 } from "contexts/Accounts/domain";
 import { Transaction, TransactionID } from "contexts/Transactions/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Nanoid } from "../../../../src/contexts/Shared/domain";
 import { buildTestAccounts } from "../domain/buildTestAccounts";
 
 // Mock repositories
@@ -36,7 +37,7 @@ const mockTransactionsRepository = {
 const currency = "USD";
 
 // Mock transaction that behaves like a real transaction
-const createMockTransaction = (testAccountId: AccountID, amount: number) => {
+const createMockTransaction = (testAccountId: Nanoid, amount: number) => {
 	const mockTransaction = {
 		id: { value: TransactionID.generate().value },
 		getRealAmountForAccount: vi
@@ -50,22 +51,23 @@ const createMockTransaction = (testAccountId: AccountID, amount: number) => {
 describe("AccountsIntegrityService", () => {
 	let service: AccountsIntegrityService;
 	let mockAccount: Account;
-	let testAccountId: AccountID;
+	let testAccountId: Nanoid;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
 		service = new AccountsIntegrityService(
 			mockAccountsRepository as any,
-			mockTransactionsRepository as any
+			mockTransactionsRepository as any,
 		);
 
-		// Create a proper AccountID
-		testAccountId = AccountID.generate();
+		// Create a proper Nanoid
+		testAccountId = Nanoid.generate();
 
 		// Create a mock account
 		mockAccount = Account.fromPrimitives({
 			id: testAccountId.value,
 			type: "asset",
+			subtype: AccountAssetSubtype.CHECKING,
 			name: "Test Account",
 			currency,
 			balance: 100,
@@ -84,23 +86,22 @@ describe("AccountsIntegrityService", () => {
 
 			mockAccountsRepository.findById.mockResolvedValue(mockAccount);
 			mockTransactionsRepository.findByAccountId.mockResolvedValue(
-				transactions
+				transactions,
 			);
 
 			// Act
-			const result = await service.calculateAccountIntegrity(
-				testAccountId
-			);
+			const result =
+				await service.calculateAccountIntegrity(testAccountId);
 
 			// Assert
 			expect(result).toBeInstanceOf(AccountIntegrityResult);
 			expect(result.accountId).toBe(testAccountId);
 			expect(result.hasIntegrity).toBe(true);
 			expect(mockAccountsRepository.findById).toHaveBeenCalledWith(
-				testAccountId
+				testAccountId,
 			);
 			expect(
-				mockTransactionsRepository.findByAccountId
+				mockTransactionsRepository.findByAccountId,
 			).toHaveBeenCalledWith(testAccountId);
 		});
 
@@ -112,32 +113,31 @@ describe("AccountsIntegrityService", () => {
 
 			mockAccountsRepository.findById.mockResolvedValue(mockAccount);
 			mockTransactionsRepository.findByAccountId.mockResolvedValue(
-				transactions
+				transactions,
 			);
 
 			// Act
-			const result = await service.calculateAccountIntegrity(
-				testAccountId
-			);
+			const result =
+				await service.calculateAccountIntegrity(testAccountId);
 
 			// Assert
 			expect(result.hasIntegrity).toBe(false);
 			expect(result.hasDiscrepancy).toBe(true);
 			expect(result.discrepancy.equalTo(new PriceValueObject(25))).toBe(
-				true
+				true,
 			); // 100 - 75 = 25
 		});
 
 		it("should throw error when account is not found", async () => {
 			// Arrange
-			const nonExistentAccountId = AccountID.generate();
+			const nonExistentAccountId = Nanoid.generate();
 			mockAccountsRepository.findById.mockResolvedValue(null);
 
 			// Act & Assert
 			await expect(
-				service.calculateAccountIntegrity(nonExistentAccountId)
+				service.calculateAccountIntegrity(nonExistentAccountId),
 			).rejects.toThrow(
-				`Account with ID ${nonExistentAccountId.value} not found`
+				`Account with ID ${nonExistentAccountId.value} not found`,
 			);
 		});
 
@@ -148,16 +148,15 @@ describe("AccountsIntegrityService", () => {
 			mockTransactionsRepository.findByAccountId.mockResolvedValue([]);
 
 			// Act
-			const result = await service.calculateAccountIntegrity(
-				testAccountId
-			);
+			const result =
+				await service.calculateAccountIntegrity(testAccountId);
 
 			// Assert
 			expect(
-				result.expectedBalance.equalTo(new PriceValueObject(0))
+				result.expectedBalance.equalTo(new PriceValueObject(0)),
 			).toBe(true);
 			expect(
-				result.actualBalance.equalTo(new PriceValueObject(100))
+				result.actualBalance.equalTo(new PriceValueObject(100)),
 			).toBe(true);
 			expect(result.hasDiscrepancy).toBe(true);
 		});
@@ -188,7 +187,7 @@ describe("AccountsIntegrityService", () => {
 			expect(report.hasDiscrepancies).toBe(true);
 			expect(mockAccountsRepository.findAll).toHaveBeenCalledTimes(1);
 			expect(
-				mockTransactionsRepository.findByAccountId
+				mockTransactionsRepository.findByAccountId,
 			).toHaveBeenCalledTimes(2);
 		});
 
@@ -223,7 +222,7 @@ describe("AccountsIntegrityService", () => {
 
 			mockAccountsRepository.findById.mockResolvedValue(mockAccount);
 			mockTransactionsRepository.findByAccountId.mockResolvedValue(
-				transactions
+				transactions,
 			);
 			mockAccountsRepository.persist.mockResolvedValue(undefined);
 
@@ -237,7 +236,9 @@ describe("AccountsIntegrityService", () => {
 			const persistedAccount = mockAccountsRepository.persist.mock
 				.calls[0][0] as Account;
 			expect(
-				persistedAccount.balance.value.equalTo(new PriceValueObject(75))
+				persistedAccount.balance.value.equalTo(
+					new PriceValueObject(75),
+				),
 			).toBe(true);
 		});
 
@@ -248,7 +249,7 @@ describe("AccountsIntegrityService", () => {
 
 			mockAccountsRepository.findById.mockResolvedValue(mockAccount);
 			mockTransactionsRepository.findByAccountId.mockResolvedValue(
-				transactions
+				transactions,
 			);
 
 			// Act
@@ -266,10 +267,10 @@ describe("AccountsIntegrityService", () => {
 
 			mockAccountsRepository.findById.mockResolvedValue(mockAccount);
 			mockTransactionsRepository.findByAccountId.mockResolvedValue(
-				transactions
+				transactions,
 			);
 			mockAccountsRepository.persist.mockRejectedValue(
-				new Error("Persistence error")
+				new Error("Persistence error"),
 			);
 
 			// Act
@@ -281,13 +282,12 @@ describe("AccountsIntegrityService", () => {
 
 		it("should return false when account is not found", async () => {
 			// Arrange
-			const nonExistentAccountId = AccountID.generate();
+			const nonExistentAccountId = Nanoid.generate();
 			mockAccountsRepository.findById.mockResolvedValue(null);
 
 			// Act
-			const success = await service.resolveDiscrepancy(
-				nonExistentAccountId
-			);
+			const success =
+				await service.resolveDiscrepancy(nonExistentAccountId);
 
 			// Assert
 			expect(success).toBe(false);

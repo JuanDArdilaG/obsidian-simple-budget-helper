@@ -1,6 +1,7 @@
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { Account, AccountID, AccountName } from "contexts/Accounts/domain";
+import { Account, AccountName } from "contexts/Accounts/domain";
 import { useContext, useEffect, useMemo, useState } from "react";
+import { Nanoid } from "../../../../contexts/Shared/domain";
 import { Select } from "./Select";
 
 export const useAccountSelect = ({
@@ -19,7 +20,7 @@ export const useAccountSelect = ({
 	error?: string;
 }) => {
 	const [accountName, setAccountName] = useState(
-		initialValueName?.value ?? ""
+		initialValueName?.value ?? "",
 	);
 	const [account, setAccount] = useState<Account>();
 
@@ -29,15 +30,14 @@ export const useAccountSelect = ({
 			accounts
 				.map((acc) => acc.name.value)
 				.toSorted((a, b) => a.localeCompare(b)),
-		[accounts]
+		[accounts],
 	);
 
 	useEffect(() => {
 		setAccountName(
 			initialValueID
-				? getAccountByID(new AccountID(initialValueID))?.name.value ??
-						""
-				: ""
+				? (getAccountByID(new Nanoid(initialValueID))?.name.value ?? "")
+				: "",
 		);
 	}, [initialValueID]);
 
@@ -45,9 +45,9 @@ export const useAccountSelect = ({
 		setAccount(
 			accountName
 				? accounts.find((acc) =>
-						acc.name.equalTo(new AccountName(accountName))
-				  )
-				: undefined
+						acc.name.equalTo(new AccountName(accountName)),
+					)
+				: undefined,
 		);
 	}, [accountName]);
 

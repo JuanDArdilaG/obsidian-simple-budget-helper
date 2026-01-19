@@ -2,12 +2,14 @@ import { DateValueObject, PriceValueObject } from "@juandardilag/value-objects";
 import { describe, expect, it } from "vitest";
 import {
 	Account,
+	AccountAssetSubtype,
 	AccountBalance,
-	AccountID,
+	AccountLiabilitySubtype,
 	AccountName,
 	AccountType,
 } from "../../../../src/contexts/Accounts/domain";
 import { Currency } from "../../../../src/contexts/Currencies/domain/currency.vo";
+import { Nanoid } from "../../../../src/contexts/Shared/domain";
 import { buildTestTransactions } from "../../Reports/domain/buildTestTransactions";
 
 describe("adjustOnTransactionDeletion", () => {
@@ -136,22 +138,24 @@ describe("adjustFromTransaction with liability accounts", () => {
 
 const buildTestAccount = (): Account => {
 	return new Account(
-		AccountID.generate(),
+		Nanoid.generate(),
 		AccountType.asset(),
+		AccountAssetSubtype.CHECKING,
 		new AccountName("name"),
 		new Currency("USD"),
 		new AccountBalance(PriceValueObject.zero()),
-		DateValueObject.createNowDate()
+		DateValueObject.createNowDate(),
 	);
 };
 
 const buildTestLiabilityAccount = (): Account => {
 	return new Account(
-		AccountID.generate(),
+		Nanoid.generate(),
 		AccountType.liability(),
+		AccountLiabilitySubtype.CREDIT_CARD,
 		new AccountName("Liability Account"),
 		new Currency("USD"),
 		new AccountBalance(PriceValueObject.zero()),
-		DateValueObject.createNowDate()
+		DateValueObject.createNowDate(),
 	);
 };

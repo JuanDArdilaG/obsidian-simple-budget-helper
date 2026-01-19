@@ -1,5 +1,4 @@
 export const Config = {
-	scheduledItemsTableOldName: "scheduledItems",
 	scheduledTransactionsTableName: "scheduledTransactions",
 	scheduledTransactionsModificationsTableName:
 		"scheduledTransactionsModifications",

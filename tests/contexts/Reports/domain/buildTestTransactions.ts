@@ -1,6 +1,6 @@
 import { DateValueObject } from "@juandardilag/value-objects";
-import { AccountID } from "../../../../src/contexts/Accounts/domain/account-id.valueobject";
 import { CategoryID } from "../../../../src/contexts/Categories/domain/category-id.valueobject";
+import { Nanoid } from "../../../../src/contexts/Shared/domain";
 import { OperationType } from "../../../../src/contexts/Shared/domain/value-objects/operation.valueobject";
 import { SubCategoryID } from "../../../../src/contexts/Subcategories/domain/subcategory-id.valueobject";
 import { TransactionName } from "../../../../src/contexts/Transactions/domain/item-name.valueobject";
@@ -22,10 +22,10 @@ type TestBudgetSimpleConfig = {
 };
 
 export const buildTestTransactions = (
-	transactionsConfig: number | TestBudgetSimpleConfig[]
+	transactionsConfig: number | TestBudgetSimpleConfig[],
 ): Transaction[] => {
 	const testTransactions: Transaction[] = [];
-	if (transactionsConfig instanceof Array) {
+	if (Array.isArray(transactionsConfig)) {
 		transactionsConfig.forEach(
 			({
 				date,
@@ -39,18 +39,18 @@ export const buildTestTransactions = (
 				const fromSplits = account
 					? [
 							new PaymentSplit(
-								new AccountID(account),
-								new TransactionAmount(amount ?? 100)
+								new Nanoid(account),
+								new TransactionAmount(amount ?? 100),
 							),
-					  ]
+						]
 					: [];
 				const toSplits = toAccount
 					? [
 							new PaymentSplit(
-								new AccountID(toAccount),
-								new TransactionAmount(amount ?? 100)
+								new Nanoid(toAccount),
+								new TransactionAmount(amount ?? 100),
 							),
-					  ]
+						]
 					: [];
 				const transaction = new Transaction(
 					TransactionID.generate(),
@@ -63,18 +63,15 @@ export const buildTestTransactions = (
 						? new SubCategoryID(subcategory)
 						: SubCategoryID.generate(),
 					new TransactionDate(date ?? new Date()),
-					DateValueObject.createNowDate()
+					DateValueObject.createNowDate(),
 				);
 				testTransactions.push(transaction);
-			}
+			},
 		);
 	} else {
 		for (let i = 0; i < transactionsConfig; i++) {
 			const fromSplits = [
-				new PaymentSplit(
-					AccountID.generate(),
-					new TransactionAmount(100)
-				),
+				new PaymentSplit(Nanoid.generate(), new TransactionAmount(100)),
 			];
 			const toSplits: PaymentSplit[] = [];
 			const transaction = new Transaction(
@@ -86,7 +83,7 @@ export const buildTestTransactions = (
 				CategoryID.generate(),
 				SubCategoryID.generate(),
 				new TransactionDate(new Date()),
-				DateValueObject.createNowDate()
+				DateValueObject.createNowDate(),
 			);
 			testTransactions.push(transaction);
 		}

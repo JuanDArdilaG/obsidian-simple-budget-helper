@@ -2,9 +2,8 @@ import {
 	DateValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain/account-id.valueobject";
 import { CategoryID } from "contexts/Categories/domain";
-import { OperationType } from "contexts/Shared/domain";
+import { Nanoid, OperationType } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import {
 	Transaction,
@@ -39,7 +38,7 @@ export interface SharedPropertiesInput {
 export function getProportionalSplits(
 	splits: PaymentSplitPrimitives[],
 	itemAmount: number,
-	totalAmount: number
+	totalAmount: number,
 ) {
 	if (totalAmount === 0) return [];
 	return splits.map((split) => ({
@@ -61,7 +60,7 @@ export function createTransactionsForItems({
 }) {
 	const totalAmount = transactionItems.reduce(
 		(sum, item) => sum + item.amount * item.quantity,
-		0
+		0,
 	);
 	return transactionItems.map((item) => {
 		const categoryId = getCategoryIdByName(item.category);
@@ -73,27 +72,27 @@ export function createTransactionsForItems({
 		const fromSplits = getProportionalSplits(
 			sharedProperties.fromSplits,
 			itemTotal,
-			totalAmount
+			totalAmount,
 		).map(
 			(split) =>
 				new PaymentSplit(
-					new AccountID(split.accountId),
-					new TransactionAmount(split.amount)
-				)
+					new Nanoid(split.accountId),
+					new TransactionAmount(split.amount),
+				),
 		);
 		const toSplits =
 			sharedProperties.operation === "transfer"
 				? getProportionalSplits(
 						sharedProperties.toSplits,
 						itemTotal,
-						totalAmount
-				  ).map(
+						totalAmount,
+					).map(
 						(split) =>
 							new PaymentSplit(
-								new AccountID(split.accountId),
-								new TransactionAmount(split.amount)
-							)
-				  )
+								new Nanoid(split.accountId),
+								new TransactionAmount(split.amount),
+							),
+					)
 				: [];
 		return new Transaction(
 			TransactionID.generate(),
@@ -101,7 +100,7 @@ export function createTransactionsForItems({
 			toSplits,
 			new TransactionName(item.name),
 			new TransactionOperation(
-				sharedProperties.operation as OperationType
+				sharedProperties.operation as OperationType,
 			),
 			new CategoryID(categoryId.value),
 			new SubCategoryID(subCategoryId.value),
@@ -109,7 +108,7 @@ export function createTransactionsForItems({
 			DateValueObject.createNowDate(),
 			sharedProperties.store
 				? new StringValueObject(sharedProperties.store)
-				: undefined
+				: undefined,
 		);
 	});
 }

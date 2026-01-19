@@ -1,21 +1,20 @@
 import {
 	Account,
-	AccountID,
 	AccountName,
 	AccountPrimitives,
 	IAccountsService,
 } from "contexts/Accounts/domain";
-import { Criteria } from "contexts/Shared/domain";
+import { Criteria, Nanoid } from "contexts/Shared/domain";
 import { Transaction } from "contexts/Transactions/domain";
 
 export class AccountsServiceMock implements IAccountsService {
 	constructor(private _accounts: Account[]) {}
 
-	delete(id: AccountID): Promise<void> {
+	delete(id: Nanoid): Promise<void> {
 		throw new Error("Method not implemented.");
 	}
 
-	exists(id: AccountID): Promise<boolean> {
+	exists(id: Nanoid): Promise<boolean> {
 		throw new Error("Method not implemented.");
 	}
 
@@ -31,7 +30,7 @@ export class AccountsServiceMock implements IAccountsService {
 		throw new Error("Method not implemented.");
 	}
 
-	async getByID(id: AccountID): Promise<Account> {
+	async getByID(id: Nanoid): Promise<Account> {
 		const account = this._accounts.find((a) => a.id.equalTo(id));
 		if (!account) throw new Error("account not found on get");
 		return account;
@@ -43,7 +42,7 @@ export class AccountsServiceMock implements IAccountsService {
 
 	async update(account: Account): Promise<void> {
 		const existingAccount = this._accounts.findIndex((a) =>
-			a.id.equalTo(account.id)
+			a.id.equalTo(account.id),
 		);
 		if (existingAccount === -1)
 			throw new Error("account not found on update");

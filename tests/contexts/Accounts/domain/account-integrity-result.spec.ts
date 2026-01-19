@@ -1,11 +1,12 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
-import { AccountID, AccountIntegrityResult } from "contexts/Accounts/domain";
+import { AccountIntegrityResult } from "contexts/Accounts/domain";
+import { Nanoid } from "../../../../src/contexts/Shared/domain";
 
 describe("AccountIntegrityResult", () => {
 	describe("create", () => {
 		it("should create an integrity result with no discrepancy when balances match", () => {
 			// Arrange
-			const accountId = AccountID.generate();
+			const accountId = Nanoid.generate();
 			const expectedBalance = new PriceValueObject(100);
 			const actualBalance = new PriceValueObject(100);
 
@@ -13,7 +14,7 @@ describe("AccountIntegrityResult", () => {
 			const result = AccountIntegrityResult.create(
 				accountId,
 				expectedBalance,
-				actualBalance
+				actualBalance,
 			);
 
 			// Assert
@@ -23,13 +24,13 @@ describe("AccountIntegrityResult", () => {
 			expect(result.hasIntegrity).toBe(true);
 			expect(result.hasDiscrepancy).toBe(false);
 			expect(result.discrepancy.equalTo(new PriceValueObject(0))).toBe(
-				true
+				true,
 			);
 		});
 
 		it("should create an integrity result with discrepancy when balances don't match", () => {
 			// Arrange
-			const accountId = AccountID.generate();
+			const accountId = Nanoid.generate();
 			const expectedBalance = new PriceValueObject(100);
 			const actualBalance = new PriceValueObject(150);
 
@@ -37,7 +38,7 @@ describe("AccountIntegrityResult", () => {
 			const result = AccountIntegrityResult.create(
 				accountId,
 				expectedBalance,
-				actualBalance
+				actualBalance,
 			);
 
 			// Assert
@@ -47,13 +48,13 @@ describe("AccountIntegrityResult", () => {
 			expect(result.hasIntegrity).toBe(false);
 			expect(result.hasDiscrepancy).toBe(true);
 			expect(result.discrepancy.equalTo(new PriceValueObject(50))).toBe(
-				true
+				true,
 			); // 150 - 100 = 50
 		});
 
 		it("should create an integrity result with negative discrepancy", () => {
 			// Arrange
-			const accountId = AccountID.generate();
+			const accountId = Nanoid.generate();
 			const expectedBalance = new PriceValueObject(200);
 			const actualBalance = new PriceValueObject(150);
 
@@ -61,14 +62,14 @@ describe("AccountIntegrityResult", () => {
 			const result = AccountIntegrityResult.create(
 				accountId,
 				expectedBalance,
-				actualBalance
+				actualBalance,
 			);
 
 			// Assert
 			expect(result.hasIntegrity).toBe(false);
 			expect(result.hasDiscrepancy).toBe(true);
 			expect(result.discrepancy.equalTo(new PriceValueObject(-50))).toBe(
-				true
+				true,
 			); // 150 - 200 = -50
 		});
 	});
@@ -76,13 +77,13 @@ describe("AccountIntegrityResult", () => {
 	describe("toPrimitives", () => {
 		it("should convert to primitives correctly", () => {
 			// Arrange
-			const accountId = AccountID.generate();
+			const accountId = Nanoid.generate();
 			const expectedBalance = new PriceValueObject(100);
 			const actualBalance = new PriceValueObject(150);
 			const result = AccountIntegrityResult.create(
 				accountId,
 				expectedBalance,
-				actualBalance
+				actualBalance,
 			);
 
 			// Act

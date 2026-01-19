@@ -1,18 +1,16 @@
-import { CommandUseCase } from "contexts/Shared/domain";
-import { AccountBalance, AccountID } from "contexts/Accounts/domain";
-import { TransactionsService } from "contexts/Transactions/application/transactions.service";
+import { AccountBalance } from "contexts/Accounts/domain";
+import { CommandUseCase, Nanoid } from "contexts/Shared/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
+import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 
 export type AdjustAccountUseCaseInput = {
-	accountID: AccountID;
+	accountID: Nanoid;
 	newBalance: AccountBalance;
 };
 
-export class AdjustAccountUseCase
-	implements CommandUseCase<AdjustAccountUseCaseInput>
-{
-	#logger = new Logger("AdjustAccountUseCase");
-	constructor(private _transactionsService: TransactionsService) {}
+export class AdjustAccountUseCase implements CommandUseCase<AdjustAccountUseCaseInput> {
+	readonly #logger = new Logger("AdjustAccountUseCase");
+	constructor(private readonly _transactionsService: TransactionsService) {}
 
 	async execute({
 		accountID,
@@ -26,7 +24,7 @@ export class AdjustAccountUseCase
 			.log();
 		await this._transactionsService.accountAdjustment(
 			accountID,
-			newBalance
+			newBalance,
 		);
 	}
 }

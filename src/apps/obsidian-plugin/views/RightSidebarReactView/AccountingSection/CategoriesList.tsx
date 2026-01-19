@@ -427,7 +427,7 @@ export const CategoriesList = () => {
 															.subCategories
 															.length
 													}{" "}
-													subcategory
+													subcategor
 													{categoryWithSubCategories
 														.subCategories
 														.length === 1

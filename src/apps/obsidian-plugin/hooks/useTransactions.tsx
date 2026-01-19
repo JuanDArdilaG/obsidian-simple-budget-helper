@@ -1,6 +1,6 @@
 import { StringValueObject } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
 import { GetAllUniqueItemStoresUseCase } from "contexts/Transactions/application/get-all-unique-item-stores.usecase";
@@ -23,11 +23,7 @@ export const useTransactions = ({
 	>([]);
 	const [updateTransactions, setUpdateTransactions] = useState(true);
 	const [filters, setFilters] = useState<
-		[
-			account?: AccountID,
-			category?: CategoryID,
-			subCategory?: SubCategoryID
-		]
+		[account?: Nanoid, category?: CategoryID, subCategory?: SubCategoryID]
 	>([undefined, undefined, undefined]);
 	const [updateFilteredTransactions, setUpdateFilteredTransactions] =
 		useState(true);

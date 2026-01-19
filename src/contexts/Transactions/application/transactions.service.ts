@@ -1,15 +1,11 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
-import {
-	AccountBalance,
-	AccountID,
-	IAccountsService,
-} from "contexts/Accounts/domain";
+import { AccountBalance, IAccountsService } from "contexts/Accounts/domain";
 import {
 	CategoryID,
 	CategoryName,
 	ICategoriesService,
 } from "contexts/Categories/domain";
-import { EntityNotFoundError } from "contexts/Shared/domain";
+import { EntityNotFoundError, Nanoid } from "contexts/Shared/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import {
 	ISubCategoriesService,
@@ -126,7 +122,7 @@ export class TransactionsService implements ITransactionsService {
 	}
 
 	async accountAdjustment(
-		accountID: AccountID,
+		accountID: Nanoid,
 		newBalance: AccountBalance,
 	): Promise<void> {
 		const account = await this._accountsService.getByID(accountID);
@@ -184,7 +180,7 @@ export class TransactionsService implements ITransactionsService {
 			),
 		];
 		const uniqueAccountIDs = Array.from(new Set(allAccountIDs)).map(
-			(id) => new AccountID(id),
+			(id) => new Nanoid(id),
 		);
 
 		for (const accountID of uniqueAccountIDs) {
@@ -210,7 +206,7 @@ export class TransactionsService implements ITransactionsService {
 			...transaction.destinationAccounts.map((s) => s.accountId.value),
 		];
 		const uniqueAccountIDs = Array.from(new Set(allAccountIDs)).map(
-			(id) => new AccountID(id),
+			(id) => new Nanoid(id),
 		);
 
 		for (const accountID of uniqueAccountIDs) {

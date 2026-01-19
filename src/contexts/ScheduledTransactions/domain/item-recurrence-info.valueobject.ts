@@ -27,16 +27,16 @@ export class ItemRecurrenceInfo {
 		private readonly _operation: ItemOperation,
 		private readonly _category: TransactionCategory,
 		private _state: RecurrenceModificationState,
-		private _fromSplits: PaymentSplit[],
-		private _toSplits: PaymentSplit[],
+		private _originAccounts: PaymentSplit[],
+		private _destinationAccounts: PaymentSplit[],
 		private _store?: StringValueObject,
-		private readonly _tags?: ItemTags
+		private readonly _tags?: ItemTags,
 	) {}
 
 	static fromScheduledTransaction(
 		scheduledTransaction: ScheduledTransaction,
 		occurrenceIndex: NumberValueObject,
-		date: ScheduledTransactionDate
+		date: ScheduledTransactionDate,
 	) {
 		return new ItemRecurrenceInfo(
 			scheduledTransaction.id,
@@ -49,20 +49,20 @@ export class ItemRecurrenceInfo {
 			scheduledTransaction.originAccounts,
 			scheduledTransaction.destinationAccounts,
 			scheduledTransaction.store,
-			scheduledTransaction.tags
+			scheduledTransaction.tags,
 		);
 	}
 
 	static fromModification(
 		scheduledTransaction: ScheduledTransaction,
-		modification: RecurrenceModification
+		modification: RecurrenceModification,
 	) {
 		return new ItemRecurrenceInfo(
 			scheduledTransaction.id,
 			modification.index,
 			scheduledTransaction.name,
 			new ScheduledTransactionDate(
-				modification.date ?? modification.originalDate
+				modification.date ?? modification.originalDate,
 			),
 			scheduledTransaction.operation,
 			scheduledTransaction.category,
@@ -70,7 +70,7 @@ export class ItemRecurrenceInfo {
 			modification.fromSplits ?? scheduledTransaction.originAccounts,
 			modification.toSplits ?? scheduledTransaction.destinationAccounts,
 			scheduledTransaction.store,
-			scheduledTransaction.tags
+			scheduledTransaction.tags,
 		);
 	}
 
@@ -111,33 +111,41 @@ export class ItemRecurrenceInfo {
 	}
 
 	get originAccounts(): PaymentSplit[] {
-		return this._fromSplits;
+		return this._originAccounts;
 	}
 
 	updateFromSplits(fromSplits: PaymentSplit[]): void {
-		this._fromSplits = fromSplits;
+		this._originAccounts = fromSplits;
 	}
 
 	get originAmount(): TransactionAmount {
-		return this._fromSplits.reduce(
+		return this._originAccounts.reduce(
 			(sum, split) => split.amount.plus(sum),
-			TransactionAmount.zero()
+			TransactionAmount.zero(),
 		);
 	}
 
+	get realOriginAmount(): PriceValueObject {
+		const amount = this.originAmount;
+		if (this.operation.type.isExpense()) {
+			return new PriceValueObject(-amount.value);
+		}
+		return new PriceValueObject(amount.value);
+	}
+
 	get destinationAmount(): TransactionAmount {
-		return this._toSplits.reduce(
+		return this._destinationAccounts.reduce(
 			(sum, split) => split.amount.plus(sum),
-			TransactionAmount.zero()
+			TransactionAmount.zero(),
 		);
 	}
 
 	get destinationAccounts(): PaymentSplit[] {
-		return this._toSplits;
+		return this._destinationAccounts;
 	}
 
 	updateToSplits(toSplits: PaymentSplit[]): void {
-		this._toSplits = toSplits;
+		this._destinationAccounts = toSplits;
 	}
 
 	get store(): StringValueObject | undefined {
@@ -156,26 +164,26 @@ export class ItemRecurrenceInfo {
 		operation: ItemOperation,
 		account: Account,
 		itemFromSplits: PaymentSplit[],
-		itemToSplits?: PaymentSplit[]
+		itemToSplits?: PaymentSplit[],
 	): PriceValueObject {
 		let multiplier = 1;
-		const amount = (this._fromSplits ?? itemFromSplits).reduce(
+		const amount = (this._originAccounts ?? itemFromSplits).reduce(
 			(sum, split) => sum + split.amount.value,
-			0
+			0,
 		);
 
 		if (operation.type.isTransfer()) {
 			// Check if account is in fromSplits (negative multiplier)
-			const fromSplit = (this._fromSplits ?? itemFromSplits).find(
-				(split) => split.accountId.equalTo(account.id)
+			const fromSplit = (this._originAccounts ?? itemFromSplits).find(
+				(split) => split.accountId.equalTo(account.id),
 			);
 			if (fromSplit) {
 				multiplier = -1;
 			} else {
 				// Check if account is in toSplits (positive multiplier)
-				const toSplit = (this._toSplits ?? itemToSplits)?.find(
-					(split) => split.accountId.equalTo(account.id)
-				);
+				const toSplit = (
+					this._destinationAccounts ?? itemToSplits
+				)?.find((split) => split.accountId.equalTo(account.id));
 				if (!toSplit) {
 					multiplier = 0;
 				}

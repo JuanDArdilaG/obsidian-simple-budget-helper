@@ -1,5 +1,5 @@
 import { StringValueObject } from "@juandardilag/value-objects";
-import { AccountID } from "contexts/Accounts/domain";
+import { Nanoid } from "contexts/Shared/domain";
 import {
 	ITransactionsRepository,
 	Transaction,
@@ -12,7 +12,7 @@ export class TransactionsRepositoryMock
 	extends RepositoryMock<TransactionID, Transaction, TransactionPrimitives>
 	implements ITransactionsRepository
 {
-	findByAccountId(accountId: AccountID): Promise<Transaction[]> {
+	findByAccountId(accountId: Nanoid): Promise<Transaction[]> {
 		throw new Error("Method not implemented.");
 	}
 
@@ -20,7 +20,7 @@ export class TransactionsRepositoryMock
 		return [];
 	}
 
-	async hasTransactionsForAccount(accountId: AccountID): Promise<boolean> {
+	async hasTransactionsForAccount(accountId: Nanoid): Promise<boolean> {
 		return false; // Default mock behavior - no transactions
 	}
 }
