@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Sort options on Select component using localeCompare.
 
+### Fixed
+
+- Fix transaction form not updating the transaction type and accounts when selecting a previously used transaction name.
+
 ## [0.19.0] - 2026-01-16
 
 ### Added
