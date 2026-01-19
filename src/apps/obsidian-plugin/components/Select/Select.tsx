@@ -28,16 +28,26 @@ export const Select = <T,>({
 }) => {
 	const [options, setOptions] = useState<JSX.Element[]>([]);
 	useEffect(() => {
-		setOptions(
-			values.map((v) => (
-				<MenuItem
-					key={getOptionValue ? getOptionValue(v) : String(v)}
-					value={getOptionValue ? getOptionValue(v) : String(v)}
-				>
-					{getOptionLabel ? getOptionLabel(v) : String(v)}
-				</MenuItem>
-			)),
-		);
+		setOptions([
+			<MenuItem key="" value=""></MenuItem>,
+			...values
+				.toSorted((a, b) =>
+					(getOptionLabel
+						? getOptionLabel(a)
+						: String(a)
+					).localeCompare(
+						getOptionLabel ? getOptionLabel(b) : String(b),
+					),
+				)
+				.map((v) => (
+					<MenuItem
+						key={getOptionValue ? getOptionValue(v) : String(v)}
+						value={getOptionValue ? getOptionValue(v) : String(v)}
+					>
+						{getOptionLabel ? getOptionLabel(v) : String(v)}
+					</MenuItem>
+				)),
+		]);
 	}, [values, getOptionLabel, getOptionValue]);
 
 	return (

@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Subtype to accounts: Assets = Cash, Checking, Savings, Investment; Liabilities = Credit Card, Loans.
 
+### Changed
+
+- Sort options on Select component using localeCompare.
+
 ## [0.19.0] - 2026-01-16
 
 ### Added
