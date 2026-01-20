@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Sort options on Select component using localeCompare.
+- Merge scheduled transactions single recurrence and general recurrence edition into one form to avoid confusion when editing scheduled transactions.
 
 ### Fixed
 

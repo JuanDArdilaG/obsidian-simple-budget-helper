@@ -7,7 +7,7 @@ import {
 	ScheduledTransaction,
 } from "../../../../../../contexts/ScheduledTransactions/domain";
 import { ConfirmationModal } from "../../../../components/ConfirmationModal";
-import { EditScheduleTransactionPanel } from "../../../../panels/CreateBudgetItemPanel/EditScheduleTransactionPanel";
+import { EditScheduledTransactionPanel } from "../../../../panels/CreateBudgetItemPanel/EditScheduledTransactionPanel";
 import {
 	AccountsContext,
 	AppContext,
@@ -92,7 +92,7 @@ export const AllScheduledTransactionsList = ({
 						try {
 							const recurrence =
 								await nextPendingOccurrenceUseCase.execute(
-									scheduledTransaction.id
+									scheduledTransaction.id,
 								);
 							logger.debug("Fetched next occurrence", {
 								scheduledTransactionId: scheduledTransaction.id,
@@ -102,14 +102,14 @@ export const AllScheduledTransactionsList = ({
 						} catch (error) {
 							logger.error(
 								"Error fetching next occurrence",
-								error
+								error,
 							);
 							return {
 								scheduledTransaction,
 								recurrence: undefined,
 							};
 						}
-					})
+					}),
 				)
 			).filter((result) => !!result.recurrence) as Array<{
 				scheduledTransaction: ScheduledTransaction;
@@ -140,14 +140,14 @@ export const AllScheduledTransactionsList = ({
 						.map(({ scheduledTransaction, recurrence }) => {
 							const account = getAccountByID(
 								scheduledTransaction.originAccounts[0]
-									?.accountId
+									?.accountId,
 							);
 							const toAccount = scheduledTransaction
 								.destinationAccounts[0]?.accountId
 								? getAccountByID(
 										scheduledTransaction
-											.destinationAccounts[0]?.accountId
-								  )
+											.destinationAccounts[0]?.accountId,
+									)
 								: undefined;
 							const accountName =
 								account?.name ??
@@ -155,8 +155,8 @@ export const AllScheduledTransactionsList = ({
 							const toAccountName = toAccount?.name;
 							const fullAccountName = toAccountName
 								? new AccountName(
-										`${accountName.toString()} -> ${toAccountName.toString()}`
-								  )
+										`${accountName.toString()} -> ${toAccountName.toString()}`,
+									)
 								: accountName;
 
 							return (
@@ -182,21 +182,21 @@ export const AllScheduledTransactionsList = ({
 												{
 													scheduledTransactionId:
 														scheduledTransaction.id,
-												}
+												},
 											);
 											setTransactionToEdit(
-												scheduledTransaction
+												scheduledTransaction,
 											);
 										}}
 										handleDelete={async (
-											_: React.MouseEvent
+											_: React.MouseEvent,
 										) => {
 											logger.debug(
 												"Deleting scheduled transaction",
 												{
 													scheduledTransactionId:
 														scheduledTransaction.id,
-												}
+												},
 											);
 											new ConfirmationModal(
 												plugin.app,
@@ -205,28 +205,30 @@ export const AllScheduledTransactionsList = ({
 														await deleteScheduledTransaction.execute(
 															{
 																id: scheduledTransaction.id,
-															}
+															},
 														);
 														updateScheduledTransactions();
 													}
 													setSelectedItem(undefined);
-												}
+												},
 											).open();
 										}}
 									/>
 									{transactionToEdit?.id.equalTo(
-										scheduledTransaction.id
+										scheduledTransaction.id,
 									) && (
-										<EditScheduleTransactionPanel
+										<EditScheduledTransactionPanel
 											scheduledTransaction={
 												transactionToEdit
 											}
+											recurrence={recurrence}
 											onClose={() =>
 												setTransactionToEdit(null)
 											}
 											updateItems={
 												updateScheduledTransactions
 											}
+											initialScope="all"
 										/>
 									)}
 								</div>
