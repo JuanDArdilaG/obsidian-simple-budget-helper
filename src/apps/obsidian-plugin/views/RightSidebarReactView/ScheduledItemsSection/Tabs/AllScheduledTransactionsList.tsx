@@ -8,6 +8,7 @@ import {
 } from "../../../../../../contexts/ScheduledTransactions/domain";
 import { ConfirmationModal } from "../../../../components/ConfirmationModal";
 import { EditScheduledTransactionPanel } from "../../../../panels/CreateBudgetItemPanel/EditScheduledTransactionPanel";
+import { RecordItemPanel } from "../../../../panels/RecordItemPanel";
 import {
 	AccountsContext,
 	AppContext,
@@ -15,13 +16,13 @@ import {
 } from "../../Contexts";
 
 export const AllScheduledTransactionsList = ({
-	selectedItem,
-	setSelectedItem,
+	selectedTransaction,
+	setSelectedTransaction,
 	action,
 	setAction,
 }: {
-	selectedItem?: ScheduledTransaction;
-	setSelectedItem: React.Dispatch<
+	selectedTransaction?: ScheduledTransaction;
+	setSelectedTransaction: React.Dispatch<
 		React.SetStateAction<ScheduledTransaction | undefined>
 	>;
 	action?: "record";
@@ -54,16 +55,16 @@ export const AllScheduledTransactionsList = ({
 
 	useEffect(() => {
 		logger.debug("item selected for action", {
-			selectedItem,
+			selectedTransaction,
 			action,
 		});
-		if (selectedItem) {
-			setShowPanel({ item: selectedItem, action });
+		if (selectedTransaction) {
+			setShowPanel({ item: selectedTransaction, action });
 		} else {
 			// Clear the panel when selectedItem is undefined
 			setShowPanel(undefined);
 		}
-	}, [action, selectedItem]);
+	}, [action, selectedTransaction]);
 
 	useEffect(() => {
 		if (!showPanel) {
@@ -173,7 +174,7 @@ export const AllScheduledTransactionsList = ({
 										isSelected={false}
 										showBalanceInfo={false}
 										setAction={setAction}
-										setSelectedItem={setSelectedItem}
+										setSelectedItem={setSelectedTransaction}
 										context="all-items"
 										currentAction={showPanel?.action}
 										handleEdit={async () => {
@@ -209,7 +210,9 @@ export const AllScheduledTransactionsList = ({
 														);
 														updateScheduledTransactions();
 													}
-													setSelectedItem(undefined);
+													setSelectedTransaction(
+														undefined,
+													);
 												},
 											).open();
 										}}
@@ -231,6 +234,23 @@ export const AllScheduledTransactionsList = ({
 											initialScope="all"
 										/>
 									)}
+									{action === "record" &&
+										selectedTransaction?.id.value ===
+											scheduledTransaction.id.value && (
+											<RecordItemPanel
+												recurrence={recurrence}
+												onClose={() => {
+													setShowPanel(undefined);
+													setSelectedTransaction(
+														undefined,
+													);
+													setAction(undefined);
+												}}
+												updateItems={
+													updateScheduledTransactions
+												}
+											/>
+										)}
 								</div>
 							);
 						});

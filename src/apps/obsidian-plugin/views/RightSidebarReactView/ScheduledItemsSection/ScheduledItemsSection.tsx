@@ -8,17 +8,17 @@ import {
 } from "./ScheduledItemsSectionButtons";
 import { PerCategoryItemsTab } from "./Tabs";
 import { AllScheduledTransactionsTab } from "./Tabs/AllScheduledTransactionsTab";
-import { CalendarItemsTab } from "./Tabs/CalendarItemsTab";
+import { CalendarScheduledTransactionsTab } from "./Tabs/CalendarScheduledTransactionsTab";
 import { ScheduledTransactionsSummary } from "./Tabs/ScheduledTransactionsSummary/ScheduledTransactionsSummary";
 
 export const ScheduledItemsSection = () => {
 	const { plugin } = useContext(AppContext);
 	const { updateScheduledTransactions } = useContext(
-		ScheduledTransactionsContext
+		ScheduledTransactionsContext,
 	);
 	const [sectionSelection, setSectionSelection] =
 		useState<ScheduledItemsSectionSelection>(
-			plugin.settings.lastTab.scheduled
+			plugin.settings.lastTab.scheduled,
 		);
 	const [showCreateForm, setShowCreateForm] = useState(false);
 
@@ -46,7 +46,9 @@ export const ScheduledItemsSection = () => {
 				setSelected={setSectionSelection}
 			/>
 
-			{sectionSelection === "calendar" && <CalendarItemsTab />}
+			{sectionSelection === "calendar" && (
+				<CalendarScheduledTransactionsTab />
+			)}
 			{sectionSelection === "list" && <AllScheduledTransactionsTab />}
 			{sectionSelection === "summary" && <ScheduledTransactionsSummary />}
 			{sectionSelection === "perCategory" && <PerCategoryItemsTab />}

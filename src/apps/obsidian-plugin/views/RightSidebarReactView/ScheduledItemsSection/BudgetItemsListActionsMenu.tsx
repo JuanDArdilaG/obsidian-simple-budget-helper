@@ -1,14 +1,14 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { Box, IconButton } from "@mui/material";
+import { BanknoteArrowDown } from "lucide-react";
 import {
 	ItemRecurrenceInfo,
 	ScheduledTransaction,
 } from "../../../../../contexts/ScheduledTransactions/domain";
 
-export const BudgetItemsListContextMenu = ({
+export const BudgetItemsListActionsMenu = ({
 	recurrent,
 	setAction,
 	setSelectedItem,
@@ -53,15 +53,13 @@ export const BudgetItemsListContextMenu = ({
 
 	return (
 		<Box sx={{ display: "flex", gap: "4px" }}>
-			{!(recurrent instanceof ScheduledTransaction) && (
-				<IconButton
-					onClick={handleRecord}
-					size="small"
-					color={currentAction === "record" ? "primary" : "default"}
-				>
-					<PlayArrowIcon fontSize="small" />
-				</IconButton>
-			)}
+			<IconButton
+				onClick={handleRecord}
+				size="small"
+				color={currentAction === "record" ? "primary" : "default"}
+			>
+				<BanknoteArrowDown size="small" />
+			</IconButton>
 			{handleEdit !== undefined && (
 				<IconButton
 					onClick={handleEdit}

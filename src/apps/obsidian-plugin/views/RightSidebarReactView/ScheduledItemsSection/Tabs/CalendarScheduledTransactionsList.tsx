@@ -49,7 +49,7 @@ interface FilterState {
 	};
 }
 
-export const CalendarItemsList = ({
+export const CalendarScheduledTransactionsList = ({
 	untilDate,
 	selectedItem,
 	setSelectedItem,
@@ -77,7 +77,7 @@ export const CalendarItemsList = ({
 	showFilters: boolean;
 	setShowFilters: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-	const logger = useLogger("CalendarItemsList");
+	const logger = useLogger("CalendarScheduledTransactionsList");
 	const { getAccountByID, accounts } = useContext(AccountsContext);
 	const { categories, subCategories } = useContext(CategoriesContext);
 	const [refreshItems, setRefreshItems] = useState(true);
@@ -162,11 +162,12 @@ export const CalendarItemsList = ({
 			}
 
 			// Operation type filter
-			if (filters.selectedOperationType !== "all") {
-				const operationType = recurrence.operation.type.value;
-				if (operationType !== filters.selectedOperationType) {
-					return false;
-				}
+			if (
+				filters.selectedOperationType !== "all" &&
+				recurrence.operation.type.value !==
+					filters.selectedOperationType
+			) {
+				return false;
 			}
 
 			// Tags filter

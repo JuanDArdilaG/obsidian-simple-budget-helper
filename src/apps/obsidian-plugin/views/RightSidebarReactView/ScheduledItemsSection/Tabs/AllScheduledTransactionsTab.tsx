@@ -13,8 +13,8 @@ export const AllScheduledTransactionsTab = () => {
 			<AllScheduledTransactionsList
 				action={action}
 				setAction={setAction}
-				selectedItem={selectedScheduledTransaction}
-				setSelectedItem={setSelectedScheduledTransaction}
+				selectedTransaction={selectedScheduledTransaction}
+				setSelectedTransaction={setSelectedScheduledTransaction}
 			/>
 		</RightSidebarReactTab>
 	);

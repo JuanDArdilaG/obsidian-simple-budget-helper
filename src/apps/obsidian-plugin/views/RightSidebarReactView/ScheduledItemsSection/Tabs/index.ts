@@ -2,6 +2,6 @@
 
 export * from "./AllScheduledTransactionsList";
 export * from "./AllScheduledTransactionsTab";
-export * from "./CalendarItemsList";
-export * from "./CalendarItemsTab";
+export * from "./CalendarScheduledTransactionsList";
+export * from "./CalendarScheduledTransactionsTab";
 export * from "./PerCategoryScheduledItemsTab";
