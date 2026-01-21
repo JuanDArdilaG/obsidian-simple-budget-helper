@@ -2,20 +2,12 @@ import {
 	NumberValueObject,
 	PriceValueObject,
 } from "@juandardilag/value-objects";
-import {
-	Box,
-	CircularProgress,
-	List,
-	ListItem,
-	ListSubheader,
-	useMediaQuery,
-} from "@mui/material";
+import { Box, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { SearchInput } from "apps/obsidian-plugin/components/Search";
 import { useAccountSelect } from "apps/obsidian-plugin/components/Select/useAccountSelect";
 import { useCategorySelect } from "apps/obsidian-plugin/components/Select/useCategorySelect";
 import { useSubCategorySelect } from "apps/obsidian-plugin/components/Select/useSubCategorySelect";
-import { useLazyLoading } from "apps/obsidian-plugin/hooks/useLazyLoading";
 import { useLogger } from "apps/obsidian-plugin/hooks/useLogger";
 import {
 	AccountsContext,
@@ -29,21 +21,17 @@ import {
 } from "contexts/Reports/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { Transaction, TransactionAmount } from "contexts/Transactions/domain";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { List as VirtualList } from "react-window";
 import {
-	useCallback,
-	useContext,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
-import AutoSizer from "react-virtualized-auto-sizer";
-import { VariableSizeList as VirtualList } from "react-window";
-import { AccountingListItem } from "./AccountingListItem";
+	AccountingListItem,
+	AccountingListItemProps,
+} from "./AccountingListItem";
 
 export type DisplayableTransactionWithAccumulatedBalance =
 	TransactionWithAccumulatedBalance & {
 		display: {
+			id: string;
 			accounts: {
 				name: string;
 				truncatedName: string;
@@ -51,6 +39,7 @@ export type DisplayableTransactionWithAccumulatedBalance =
 			}[];
 			categoryName: string;
 			subCategoryName: string;
+			formattedDate: string;
 			formattedTime: string;
 			transactionName: string;
 			truncatedTransactionName: string;
@@ -58,13 +47,6 @@ export type DisplayableTransactionWithAccumulatedBalance =
 			truncatedSubCategoryName: string;
 		};
 	};
-
-// Configuration for lazy loading
-const ITEMS_PER_PAGE = 20;
-const INITIAL_ITEMS = 10;
-const BASE_ITEM_HEIGHT = 60; // Base height for date header
-const TRANSACTION_HEIGHT = 120; // Height per transaction
-const MOBILE_TRANSACTION_HEIGHT = 130; // Increased height for mobile to accommodate action buttons
 
 export function AccountingList({
 	selection,
@@ -80,21 +62,25 @@ export function AccountingList({
 	const theme = useTheme();
 	const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
+	const rowHeight = useCallback(
+		(index: number, { transactionsList }: AccountingListItemProps) => {
+			if (String.isString(transactionsList[index])) {
+				return 40;
+			}
+			return isMobile ? 120 : 80;
+		},
+		[isMobile],
+	);
+
 	const { logger } = useLogger("AccountingList");
-	const {
-		setFilters,
-		filteredTransactionsReport,
-		updateFilteredTransactions,
-	} = useContext(TransactionsContext);
+	const { setFilters, filteredTransactionsReport } =
+		useContext(TransactionsContext);
 	const { getAccountByID } = useContext(AccountsContext);
 	const { getCategoryByID, getSubCategoryByID } =
 		useContext(CategoriesContext);
 
 	// Search state
 	const [searchTerm, setSearchTerm] = useState<string>("");
-
-	// Virtual list ref for resetting cache
-	const virtualListRef = useRef<VirtualList>(null);
 
 	const { AccountSelect, account } = useAccountSelect({});
 	const { CategorySelect, category } = useCategorySelect({
@@ -103,10 +89,10 @@ export function AccountingList({
 				? [
 						...new Set(
 							filteredTransactionsReport.transactions.map(
-								(t) => t.category.value
-							)
+								(t) => t.category.value,
+							),
 						),
-				  ].map((id) => new CategoryID(id))
+					].map((id) => new CategoryID(id))
 				: undefined,
 	});
 	const { SubCategorySelect, subCategory } = useSubCategorySelect({
@@ -116,10 +102,10 @@ export function AccountingList({
 				? [
 						...new Set(
 							filteredTransactionsReport.transactions.map(
-								(t) => t.subCategory.value
-							)
+								(t) => t.subCategory.value,
+							),
 						),
-				  ].map((id) => new SubCategoryID(id))
+					].map((id) => new SubCategoryID(id))
 				: undefined,
 	});
 
@@ -127,7 +113,7 @@ export function AccountingList({
 		setSelection((prev: Transaction[]) =>
 			prev.includes(transaction)
 				? prev.filter((item) => item !== transaction)
-				: [...prev, transaction]
+				: [...prev, transaction],
 		);
 	};
 
@@ -185,11 +171,14 @@ export function AccountingList({
 		getSubCategoryByID,
 	]);
 
-	const withAccumulatedBalanceTransactionsGrouped = useMemo(() => {
-		const res: [
-			date: string,
-			DisplayableTransactionWithAccumulatedBalance[]
-		][] = [];
+	const transactionsList = useMemo(() => {
+		const res: (DisplayableTransactionWithAccumulatedBalance | string)[] =
+			[];
+
+		// Create a new TransactionsReport with search filtered transactions
+		const searchFilteredReport = new TransactionsReport(
+			searchFilteredTransactions,
+		);
 
 		// Helper for truncation
 		const truncateText = (text: string, maxLength: number) => {
@@ -198,32 +187,51 @@ export function AccountingList({
 				: text;
 		};
 
-		// Create a new TransactionsReport with search filtered transactions
-		const searchFilteredReport = new TransactionsReport(
-			searchFilteredTransactions
-		);
+		let prevDate: string | undefined = undefined;
+
 		searchFilteredReport
 			.withAccumulatedBalance()
 			.forEach((withBalanceTransaction) => {
 				const { transaction, accounts } = withBalanceTransaction;
+				const date = transaction.date.toLocaleDateString();
+
+				if (date !== prevDate) {
+					res.push(date);
+					prevDate = date;
+				}
 
 				const category = getCategoryByID(transaction.category);
 				const subCategory = getSubCategoryByID(transaction.subCategory);
+				const formattedDate = transaction.date.toLocaleDateString(
+					"default",
+					{
+						day: "2-digit",
+						month: "short",
+					},
+				);
 				const formattedTime = transaction.date.toLocaleTimeString(
 					"default",
 					{
 						hour: "2-digit",
 						minute: "2-digit",
-					}
+					},
 				);
 				const transactionName = transaction.name.toString();
 				const categoryName = category?.name.toString() ?? "";
 				const subCategoryName = subCategory?.name.value ?? "";
 
+				let id = transaction.id.toString();
+				if (transaction.operation.isTransfer()) {
+					id = `${id}-${accounts
+						.map((acc) => acc.id.toString())
+						.join("-")}`;
+				}
+
 				const displayableTransaction: DisplayableTransactionWithAccumulatedBalance =
 					{
 						...withBalanceTransaction,
 						display: {
+							id,
 							accounts: accounts.map(({ id }) => {
 								const name =
 									getAccountByID(id)?.name.value ?? "";
@@ -233,29 +241,32 @@ export function AccountingList({
 								let realAmount = TransactionAmount.zero();
 
 								if (transaction.operation.isTransfer()) {
-									// Check fromSplits (outgoing) and toSplits (incoming) for transfers
 									const originAccount =
 										transaction.originAccounts.find(
-											(split) =>
-												split.accountId.equalTo(id)
+											(originAccount) =>
+												originAccount.accountId.equalTo(
+													id,
+												),
 										);
 									const destinationAccount =
 										transaction.destinationAccounts.find(
-											(split) =>
-												split.accountId.equalTo(id)
+											(destinationAccount) =>
+												destinationAccount.accountId.equalTo(
+													id,
+												),
 										);
 
 									if (originAccount) {
 										// Money going out of this account (negative)
 										realAmount = new TransactionAmount(
-											originAccount.amount.value * -1
+											originAccount.amount.value * -1,
 										);
 									} else if (destinationAccount) {
 										// Money coming into this account (positive)
 										realAmount =
 											destinationAccount.amount.times(
 												transaction.exchangeRate ??
-													new NumberValueObject(1)
+													new NumberValueObject(1),
 											);
 									}
 								} else {
@@ -264,7 +275,7 @@ export function AccountingList({
 									const originAccount =
 										transaction.originAccounts.find(
 											(split) =>
-												split.accountId.equalTo(id)
+												split.accountId.equalTo(id),
 										);
 									realAmount =
 										originAccount?.amount ||
@@ -279,33 +290,26 @@ export function AccountingList({
 							}),
 							categoryName,
 							subCategoryName,
+							formattedDate,
 							formattedTime,
 							transactionName,
 							truncatedTransactionName: truncateText(
 								transactionName,
-								30
+								30,
 							),
 							truncatedCategoryName: truncateText(
 								categoryName,
-								20
+								20,
 							),
 							truncatedSubCategoryName: truncateText(
 								subCategoryName,
-								15
+								15,
 							),
 						},
 					};
 
-				const date = transaction.date.toLocaleDateString();
-				if (!res.some((r) => r[0] === date)) res.push([date, []]);
-				const lastGroup = res.at(-1);
-				if (lastGroup) {
-					lastGroup[1].push(displayableTransaction);
-				}
+				res.push(displayableTransaction);
 			});
-		logger.debug("withAccumulatedBalanceTransactionsGrouped", {
-			res,
-		});
 		return res;
 	}, [
 		filteredTransactionsReport,
@@ -316,154 +320,17 @@ export function AccountingList({
 		searchFilteredTransactions,
 	]);
 
-	// Use lazy loading hook
-	const { visibleItems, isLoading, hasMoreItems, loadMoreItems, resetItems } =
-		useLazyLoading({
-			initialItems: INITIAL_ITEMS,
-			itemsPerPage: ITEMS_PER_PAGE,
-			totalItems: withAccumulatedBalanceTransactionsGrouped.length,
-		});
-
-	// Reset items when filters change
-	useEffect(() => {
-		resetItems();
-	}, [account, category, subCategory, resetItems]);
-
-	// Get visible transactions for virtual list
-	const visibleTransactions = withAccumulatedBalanceTransactionsGrouped.slice(
-		0,
-		visibleItems
-	);
-
-	// Reset virtual list cache when data changes
-	useEffect(() => {
-		if (virtualListRef.current) {
-			virtualListRef.current.resetAfterIndex(0);
-		}
-	}, [visibleTransactions]);
-
-	// Virtual list item renderer
-	const renderVirtualItem = useCallback(
-		({ index, style }: { index: number; style: React.CSSProperties }) => {
-			const [date, withBalanceTransactions] = visibleTransactions[index];
-
-			return (
-				<div style={style} data-date-group={index}>
-					<div>
-						<List style={{ width: "100%" }}>
-							<ListSubheader
-								style={{
-									backgroundColor:
-										"var(--background-primary-alt)",
-									color: "var(--text-normal)",
-								}}
-							>
-								{new Date(date).toLocaleDateString("default", {
-									year: "numeric",
-									month: "short",
-									day: "2-digit",
-									weekday: "short",
-								})}
-							</ListSubheader>
-							{withBalanceTransactions.map(
-								(transactionWithBalance, index) => {
-									// Create unique key for transfer transactions
-									const isTransfer =
-										transactionWithBalance.transaction.operation.isTransfer();
-									let uniqueKey;
-
-									if (isTransfer) {
-										// For transfers, include account info to make keys unique
-										const accountName =
-											transactionWithBalance.display.accounts.join(
-												";"
-											);
-										uniqueKey = `${transactionWithBalance.transaction.id.toString()}-${accountName}-${index}`;
-									} else {
-										// For non-transfers, use the original key logic
-										uniqueKey = `${transactionWithBalance.transaction.id.toString()}-${index}`;
-									}
-
-									return (
-										<ListItem
-											key={uniqueKey}
-											onAuxClick={() =>
-												handleAuxClick(
-													transactionWithBalance.transaction
-												)
-											}
-											style={{
-												padding: isMobile
-													? "2px"
-													: "8px",
-												minHeight: "auto",
-											}}
-										>
-											<AccountingListItem
-												onEditTransaction={
-													onEditTransaction
-												}
-												transactionWithBalance={
-													transactionWithBalance
-												}
-												selection={selection}
-												setSelection={setSelection}
-											/>
-										</ListItem>
-									);
-								}
-							)}
-						</List>
-					</div>
-				</div>
-			);
-		},
-		[
-			visibleTransactions,
-			selection,
-			setSelection,
-			isMobile,
-			onEditTransaction,
-			updateFilteredTransactions,
-		]
-	);
-
-	const getItemSize = (index: number) => {
-		const [, withBalanceTransactions] = visibleTransactions[index];
-		return (
-			BASE_ITEM_HEIGHT +
-			(isMobile ? MOBILE_TRANSACTION_HEIGHT : TRANSACTION_HEIGHT) *
-				(withBalanceTransactions.length ?? 1)
-		);
-	};
-
-	const onItemsRendered = ({
-		visibleStopIndex,
-	}: {
-		visibleStartIndex: number;
-		visibleStopIndex: number;
-	}) => {
-		const lastVisibleIndex = visibleStopIndex;
-		if (
-			!isLoading &&
-			hasMoreItems &&
-			lastVisibleIndex >= visibleTransactions.length - 1
-		) {
-			loadMoreItems();
-		}
-	};
-
 	useEffect(() => {
 		logger.debug("selection changed", { selection });
 		statusBarAddText(
 			selection.length > 0
 				? `${
 						selection.length
-				  } transactions selected. Total: ${selection.reduce(
+					} transactions selected. Total: ${selection.reduce(
 						(acc, curr) => curr.originAmount.plus(acc),
-						PriceValueObject.zero()
-				  )}`
-				: ""
+						PriceValueObject.zero(),
+					)}`
+				: "",
 		);
 	}, [selection]);
 
@@ -505,31 +372,18 @@ export function AccountingList({
 			</Box>
 
 			<Box sx={{ flex: 1, overflow: "auto", paddingBottom: "50px" }}>
-				<AutoSizer>
-					{({ height, width }) => (
-						<VirtualList
-							ref={virtualListRef}
-							height={height} // Adjust as needed
-							itemCount={visibleTransactions.length}
-							itemSize={getItemSize}
-							onItemsRendered={onItemsRendered}
-							width={width}
-						>
-							{renderVirtualItem}
-						</VirtualList>
-					)}
-				</AutoSizer>
-				{isLoading && (
-					<Box
-						sx={{
-							display: "flex",
-							justifyContent: "center",
-							py: 2,
-						}}
-					>
-						<CircularProgress />
-					</Box>
-				)}
+				<VirtualList
+					rowHeight={rowHeight}
+					rowCount={transactionsList.length}
+					rowComponent={AccountingListItem}
+					rowProps={{
+						handleAuxClick,
+						selection,
+						setSelection,
+						onEditTransaction,
+						transactionsList,
+					}}
+				/>
 			</Box>
 		</Box>
 	);
