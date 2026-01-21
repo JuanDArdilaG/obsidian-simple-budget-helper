@@ -146,9 +146,9 @@ _push-version:
 	# Commit the version change
 	git add manifest.json
 	git commit -m "chore: bump version to $current_version"
-    
-    # Push changes
-    git push
+	
+	# Push changes
+	git push
 	
 	echo "✅ Committed version $current_version successfully!"
 
