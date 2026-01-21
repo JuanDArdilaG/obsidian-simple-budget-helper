@@ -6,12 +6,13 @@ import {
 	Legend,
 	Line,
 	LineChart,
+	MouseHandlerDataParam,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
 	YAxis,
 } from "recharts";
-import { Payload } from "recharts/types/component/DefaultLegendContent";
+import { LegendPayload } from "recharts/types/component/DefaultLegendContent";
 import { ItemRecurrenceInfo } from "../../../../../../../contexts/ScheduledTransactions/domain";
 import {
 	PaymentSplit,
@@ -58,7 +59,7 @@ export const MonthlyProjectedChart = () => {
 	const [selectedMonthData, setSelectedMonthData] =
 		useState<MonthlyData | null>(null);
 
-	const handleLegendClick = (data: Payload) => {
+	const handleLegendClick = (data: LegendPayload) => {
 		const { dataKey } = data;
 		if (dataKey) {
 			setLineVisibility((prev) => ({
@@ -68,13 +69,21 @@ export const MonthlyProjectedChart = () => {
 		}
 	};
 
-	const handleChartClick = (data: {
-		activePayload?: Array<{ payload: MonthlyData }>;
-	}) => {
-		if (data?.activePayload?.[0]) {
-			const monthData = data.activePayload[0].payload;
-			setSelectedMonthData(monthData);
+	const handleChartClick = (nextState: MouseHandlerDataParam) => {
+		if (
+			!nextState.activeLabel ||
+			nextState.activeIndex === null ||
+			nextState.activeIndex === undefined
+		) {
+			return;
 		}
+		const i = Number.parseInt(nextState.activeIndex.toString());
+		const data = chartData[i];
+		console.log("Chart clicked", {
+			nextState,
+			data,
+		});
+		setSelectedMonthData(data);
 	};
 
 	useEffect(() => {
@@ -121,7 +130,7 @@ export const MonthlyProjectedChart = () => {
 						months[monthIndex].expense =
 							months[monthIndex].expense.plus(amount);
 						months[monthIndex].expenseTransactions.push(
-							transaction
+							transaction,
 						);
 					}
 				}
@@ -133,12 +142,11 @@ export const MonthlyProjectedChart = () => {
 		const processScheduledTransactions = async (months: MonthlyData[]) => {
 			logger.debug("Processing scheduled transactions for chart");
 			const endDate = new DateValueObject(
-				new Date(now.getFullYear(), now.getMonth() + 13, 0)
+				new Date(now.getFullYear(), now.getMonth() + 13, 0),
 			);
 			logger.debug("End date for scheduled transactions", { endDate });
-			const recurrences = await getScheduledTransactionsUntilDate.execute(
-				endDate
-			);
+			const recurrences =
+				await getScheduledTransactionsUntilDate.execute(endDate);
 			logger.debug("Recurrences fetched for scheduled transactions", {
 				recurrencesCount: recurrences.length,
 			});
@@ -162,13 +170,13 @@ export const MonthlyProjectedChart = () => {
 						months[monthIndex].income =
 							months[monthIndex].income.plus(amount);
 						months[monthIndex].incomeScheduledTransactions.push(
-							recurrence
+							recurrence,
 						);
 					} else if (recurrence.operation.type.isExpense()) {
 						months[monthIndex].expense =
 							months[monthIndex].expense.plus(amount);
 						months[monthIndex].expenseScheduledTransactions.push(
-							recurrence
+							recurrence,
 						);
 					}
 				}
@@ -430,11 +438,16 @@ export const MonthlyProjectedChart = () => {
 										overflow: "auto",
 									}}
 								>
-									{selectedMonthData.incomeScheduledTransactions.map(
-										(item, index) => {
+									{selectedMonthData.incomeScheduledTransactions
+										.toSorted(
+											(a, b) =>
+												b.originAmount.value -
+												a.originAmount.value,
+										)
+										.map((item, index) => {
 											const account = getAccountByID(
 												item.originAccounts[0]
-													?.accountId
+													?.accountId,
 											);
 											const toAccount = item
 												.destinationAccounts[0]
@@ -442,8 +455,8 @@ export const MonthlyProjectedChart = () => {
 												? getAccountByID(
 														item
 															.destinationAccounts[0]
-															?.accountId
-												  )
+															?.accountId,
+													)
 												: undefined;
 											const price = item.originAmount;
 
@@ -492,8 +505,7 @@ export const MonthlyProjectedChart = () => {
 													</div>
 												</div>
 											);
-										}
-									)}
+										})}
 								</div>
 							</div>
 						)}
@@ -521,11 +533,16 @@ export const MonthlyProjectedChart = () => {
 										overflow: "auto",
 									}}
 								>
-									{selectedMonthData.expenseScheduledTransactions.map(
-										(item, index) => {
+									{selectedMonthData.expenseScheduledTransactions
+										.toSorted(
+											(a, b) =>
+												b.originAmount.value -
+												a.originAmount.value,
+										)
+										.map((item, index) => {
 											const account = getAccountByID(
 												item.originAccounts[0]
-													?.accountId
+													?.accountId,
 											);
 											const toAccount = item
 												.destinationAccounts[0]
@@ -533,8 +550,8 @@ export const MonthlyProjectedChart = () => {
 												? getAccountByID(
 														item
 															.destinationAccounts[0]
-															?.accountId
-												  )
+															?.accountId,
+													)
 												: undefined;
 											const price = item.originAmount;
 
@@ -583,8 +600,7 @@ export const MonthlyProjectedChart = () => {
 													</div>
 												</div>
 											);
-										}
-									)}
+										})}
 								</div>
 							</div>
 						)}
@@ -618,8 +634,8 @@ export const MonthlyProjectedChart = () => {
 													.map(
 														(s: PaymentSplit) =>
 															getAccountByID(
-																s.accountId
-															)?.name.value || ""
+																s.accountId,
+															)?.name.value || "",
 													)
 													.join(", ");
 											const toAccounts =
@@ -627,13 +643,13 @@ export const MonthlyProjectedChart = () => {
 													.map(
 														(s: PaymentSplit) =>
 															getAccountByID(
-																s.accountId
-															)?.name.value || ""
+																s.accountId,
+															)?.name.value || "",
 													)
 													.join(", ");
 											const amount =
 												transaction.destinationAmount.subtract(
-													transaction.originAmount
+													transaction.originAmount,
 												);
 
 											return (
@@ -671,7 +687,7 @@ export const MonthlyProjectedChart = () => {
 															{`${fromAccounts}${
 																toAccounts
 																	? " → " +
-																	  toAccounts
+																		toAccounts
 																	: ""
 															}`}
 														</div>
@@ -686,7 +702,7 @@ export const MonthlyProjectedChart = () => {
 													</div>
 												</div>
 											);
-										}
+										},
 									)}
 								</div>
 							</div>
@@ -721,8 +737,8 @@ export const MonthlyProjectedChart = () => {
 													.map(
 														(s: PaymentSplit) =>
 															getAccountByID(
-																s.accountId
-															)?.name.value || ""
+																s.accountId,
+															)?.name.value || "",
 													)
 													.join(", ");
 											const toAccounts =
@@ -730,24 +746,24 @@ export const MonthlyProjectedChart = () => {
 													.map(
 														(s: PaymentSplit) =>
 															getAccountByID(
-																s.accountId
-															)?.name.value || ""
+																s.accountId,
+															)?.name.value || "",
 													)
 													.join(", ");
 											const amount =
 												transaction.destinationAccounts.reduce(
 													(
 														sum: number,
-														s: PaymentSplit
+														s: PaymentSplit,
 													) => sum + s.amount.value,
-													0
+													0,
 												) -
 												transaction.originAccounts.reduce(
 													(
 														sum: number,
-														s: PaymentSplit
+														s: PaymentSplit,
 													) => sum + s.amount.value,
-													0
+													0,
 												);
 
 											return (
@@ -785,7 +801,7 @@ export const MonthlyProjectedChart = () => {
 															{`${fromAccounts}${
 																toAccounts
 																	? " → " +
-																	  toAccounts
+																		toAccounts
 																	: ""
 															}`}
 														</div>
@@ -800,7 +816,7 @@ export const MonthlyProjectedChart = () => {
 													</div>
 												</div>
 											);
-										}
+										},
 									)}
 								</div>
 							</div>
