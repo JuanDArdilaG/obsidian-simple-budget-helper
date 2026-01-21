@@ -61,12 +61,47 @@ debug-info:
     echo "  • just debug-chrome      - Open Chrome DevTools"
     echo "  • just debug-info        - Show this information"
 
+# Internal: Get current version from manifest.json
+_get-version:
+    @node -p "require('./manifest.json').version"
+
+# Internal: Update manifest.json with new version
+_update-version version:
+    #!/usr/bin/env bash
+    node -e "
+        const fs = require('fs');
+        const manifest = JSON.parse(fs.readFileSync('./manifest.json', 'utf8'));
+        manifest.version = '{{version}}';
+        fs.writeFileSync('./manifest.json', JSON.stringify(manifest, null, '\t') + '\n');
+    "
+
+# Internal: Show confirmation dialog
+_confirm-bump current_version new_version bump_type:
+    #!/usr/bin/env bash
+    echo ""
+    echo "════════════════════════════════════════"
+    echo "  📦 Version Bump Confirmation"
+    echo "════════════════════════════════════════"
+    echo "  Current version: {{current_version}}"
+    echo "  New version:     {{new_version}}"
+    echo "  Bump type:       {{bump_type}}"
+    echo "════════════════════════════════════════"
+    echo ""
+    read -p "Proceed with version bump? (y/N): " -n 1 -r
+    echo ""
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Version bump cancelled"
+        exit 1
+    fi
+
 # Bump version in manifest.json
 bump type="patch":
     #!/usr/bin/env bash
-    # Read current version from manifest.json
-    current_version=$(node -p "require('./manifest.json').version")
-    echo "Current version: $current_version"
+    set -euo pipefail
+    
+    # Read current version
+    current_version=$(just _get-version)
     
     # Parse version components
     IFS='.' read -ra VERSION_PARTS <<< "$current_version"
@@ -89,21 +124,16 @@ bump type="patch":
             patch=$((patch + 1))
             ;;
         *)
-            echo "Error: Invalid version type. Use 'major', 'minor', or 'patch'/'fix'"
+            echo "❌ Error: Invalid version type. Use 'major', 'minor', or 'patch'/'fix'"
             exit 1
             ;;
     esac
     
     new_version="$major.$minor.$patch"
-    echo "New version: $new_version"
     
-    # Update manifest.json
-    node -e "
-        const fs = require('fs');
-        const manifest = JSON.parse(fs.readFileSync('./manifest.json', 'utf8'));
-        manifest.version = '$new_version';
-        fs.writeFileSync('./manifest.json', JSON.stringify(manifest, null, '\t') + '\n');
-    "
+    # Show confirmation and update
+    just _confirm-bump "$current_version" "$new_version" "{{type}}"
+    just _update-version "$new_version"
     
     echo "✅ Version bumped to $new_version in manifest.json"
 
@@ -129,8 +159,10 @@ deploy type="patch": check-git build test (bump type)
 # Bump beta version in manifest.json (format: x.y.z-beta.a)
 bump-beta type="beta":
     #!/usr/bin/env bash
-    # Read current version from manifest.json
-    current_version=$(node -p "require('./manifest.json').version")
+    set -euo pipefail
+    
+    # Read current version
+    current_version=$(just _get-version)
     
     # Parse version components (handle beta versions)
     if [[ $current_version =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-beta\.([0-9]+))?$ ]]; then
@@ -152,29 +184,24 @@ bump-beta type="beta":
     # Update version based on type
     case "{{type}}" in
         "major")
-            # Increment major, reset minor and patch, start with beta.1
             major=$((major + 1))
             minor=0
             patch=0
             beta_num=1
             ;;
         "minor")
-            # Increment minor, reset patch, start with beta.1
             minor=$((minor + 1))
             patch=0
             beta_num=1
             ;;
         "patch"|"fix")
-            # Increment patch, start with beta.1
             patch=$((patch + 1))
             beta_num=1
             ;;
         "beta"|"")
-            # Just increment beta counter
             if [ "$is_beta" = true ]; then
                 beta_num=$((beta_num + 1))
             else
-                # If not a beta version, start with beta.1
                 beta_num=1
             fi
             ;;
@@ -186,31 +213,9 @@ bump-beta type="beta":
     
     new_version="$major.$minor.$patch-beta.$beta_num"
     
-    # Display confirmation dialog
-    echo ""
-    echo "════════════════════════════════════════"
-    echo "  📦 Version Bump Confirmation"
-    echo "════════════════════════════════════════"
-    echo "  Current version: $current_version"
-    echo "  New version:     $new_version"
-    echo "  Bump type:       {{type}}"
-    echo "════════════════════════════════════════"
-    echo ""
-    read -p "Proceed with version bump? (y/N): " -n 1 -r
-    echo ""
-    
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "❌ Version bump cancelled"
-        exit 1
-    fi
-    
-    # Update manifest.json
-    node -e "
-        const fs = require('fs');
-        const manifest = JSON.parse(fs.readFileSync('./manifest.json', 'utf8'));
-        manifest.version = '$new_version';
-        fs.writeFileSync('./manifest.json', JSON.stringify(manifest, null, '\t') + '\n');
-    "
+    # Show confirmation and update
+    just _confirm-bump "$current_version" "$new_version" "{{type}}"
+    just _update-version "$new_version"
     
     echo "✅ Version bumped to $new_version in manifest.json"
 
