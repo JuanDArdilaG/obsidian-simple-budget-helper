@@ -106,11 +106,22 @@ bump type="patch":
     # Read current version
     current_version=$(just _get-version)
 
-    # Parse version components
-    IFS='.' read -ra VERSION_PARTS <<< "$current_version"
-    major="${VERSION_PARTS[0]}"
-    minor="${VERSION_PARTS[1]}"
-    patch="${VERSION_PARTS[2]}"
+    # Parse version components (handle beta versions)
+    if [[ $current_version =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-beta\.([0-9]+))?$ ]]; then
+        major="${BASH_REMATCH[1]}"
+        minor="${BASH_REMATCH[2]}"
+        patch="${BASH_REMATCH[3]}"
+        beta_num="${BASH_REMATCH[5]:-0}"
+    else
+        echo "❌ Error: Invalid version format: $current_version"
+        exit 1
+    fi
+
+    # Determine if current version is a beta
+    is_beta=false
+    if [[ $current_version =~ -beta\. ]]; then
+        is_beta=true
+    fi
 
     # Update version based on type
     case "{{ type }}" in
@@ -126,8 +137,15 @@ bump type="patch":
         "patch"|"fix")
             patch=$((patch + 1))
             ;;
+        "release"|"stable")
+            if [ "$is_beta" = false ]; then
+                echo "❌ Error: Current version is not a beta version"
+                exit 1
+            fi
+            # Keep version numbers as-is, just remove beta suffix
+            ;;
         *)
-            echo "❌ Error: Invalid version type. Use 'major', 'minor', or 'patch'/'fix'"
+            echo "❌ Error: Invalid version type. Use 'major', 'minor', 'patch'/'fix', or 'release'/'stable'"
             exit 1
             ;;
     esac
