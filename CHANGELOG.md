@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix transaction form not updating the transaction type and accounts when selecting a previously used transaction name.
 
+### Security
+
+- Update dependencies to fix security vulnerabilities.
+
 ## [0.19.0] - 2026-01-16
 
 ### Added
