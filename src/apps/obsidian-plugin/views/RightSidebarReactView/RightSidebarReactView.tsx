@@ -1,6 +1,6 @@
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
 import {
-	AccountsList,
+	AccountsDashboard,
 	ScheduledItemsSection,
 } from "apps/obsidian-plugin/views";
 import { AppProviders } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
@@ -30,7 +30,7 @@ export const RightSidebarReactView = ({
 		userAgent: navigator.userAgent,
 		isMobile:
 			/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-				navigator.userAgent
+				navigator.userAgent,
 			),
 	});
 
@@ -52,7 +52,7 @@ export const RightSidebarReactView = ({
 			{sectionSelection === "accounting" && (
 				<AccountingSection statusBarAddText={statusBarAddText} />
 			)}
-			{sectionSelection === "accounts" && <AccountsList />}
+			{sectionSelection === "accounts" && <AccountsDashboard />}
 			{sectionSelection === "categories" && <CategoriesList />}
 			{sectionSelection === "localPersistence" && (
 				<LocalPersistenceSettings plugin={plugin} />

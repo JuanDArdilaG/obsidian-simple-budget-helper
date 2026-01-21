@@ -6,7 +6,6 @@ import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/a
 import { TransactionsReport } from "contexts/Reports/domain";
 import { Nanoid } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
-import { AdjustAccountUseCase } from "contexts/Transactions/application/adjust-account.usecase";
 import { DeleteTransactionUseCase } from "contexts/Transactions/application/delete-transaction.usecase";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
 import { GetAllUniqueItemStoresUseCase } from "contexts/Transactions/application/get-all-unique-item-stores.usecase";
@@ -24,7 +23,6 @@ export type TransactionsContextType = {
 		getAllTransactions: GetAllTransactionsUseCase;
 		getAllUniqueTransactionsByNameUseCase: GetAllUniqueTransactionsByNameUseCase;
 		getAllUniqueItemStores: GetAllUniqueItemStoresUseCase;
-		adjustAccount: AdjustAccountUseCase;
 		groupByCategoryWithAccumulatedBalance: GroupByCategoryWithAccumulatedBalanceUseCase;
 	};
 	transactions: Transaction[];
@@ -55,7 +53,6 @@ export const TransactionsContext = createContext<TransactionsContextType>({
 		getAllUniqueTransactionsByNameUseCase:
 			{} as GetAllUniqueTransactionsByNameUseCase,
 		getAllUniqueItemStores: {} as GetAllUniqueItemStoresUseCase,
-		adjustAccount: {} as AdjustAccountUseCase,
 		groupByCategoryWithAccumulatedBalance:
 			{} as GroupByCategoryWithAccumulatedBalanceUseCase,
 	},
@@ -82,9 +79,6 @@ export const getTransactionsContextValues = (
 	);
 	const deleteTransaction = container.resolve<DeleteTransactionUseCase>(
 		"deleteTransactionUseCase",
-	);
-	const adjustAccount = container.resolve<AdjustAccountUseCase>(
-		"adjustAccountUseCase",
 	);
 	const updateTransaction = container.resolve<UpdateTransactionUseCase>(
 		"updateTransactionUseCase",
@@ -122,7 +116,6 @@ export const getTransactionsContextValues = (
 			recordTransaction,
 			deleteTransaction,
 			updateTransaction,
-			adjustAccount,
 			getAllTransactions,
 			getAllUniqueTransactionsByNameUseCase,
 			getAllUniqueItemStores,

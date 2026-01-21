@@ -8,6 +8,7 @@ import { createContext } from "react";
 import { ChangeAccountNameUseCase } from "../../../../../contexts/Accounts/application/change-account-name.usecase";
 import { ChangeAccountSubtypeUseCase } from "../../../../../contexts/Accounts/application/change-account-subtype.usecase";
 import { Nanoid } from "../../../../../contexts/Shared/domain";
+import { AdjustAccountUseCase } from "../../../../../contexts/Transactions/application/adjust-account.usecase";
 
 export type AccountsContextType = {
 	useCases: {
@@ -16,6 +17,7 @@ export type AccountsContextType = {
 		deleteAccount: DeleteAccountUseCase;
 		changeAccountName: ChangeAccountNameUseCase;
 		changeAccountSubtype: ChangeAccountSubtypeUseCase;
+		adjustAccount: AdjustAccountUseCase;
 	};
 	accounts: Account[];
 	updateAccounts: () => void;
@@ -30,6 +32,7 @@ export const AccountsContext = createContext<AccountsContextType>({
 		deleteAccount: {} as DeleteAccountUseCase,
 		changeAccountName: {} as ChangeAccountNameUseCase,
 		changeAccountSubtype: {} as ChangeAccountSubtypeUseCase,
+		adjustAccount: {} as AdjustAccountUseCase,
 	},
 	accounts: [],
 	updateAccounts: () => {},
@@ -67,6 +70,9 @@ export const getAccountsContextValues = (
 				container.resolve<ChangeAccountSubtypeUseCase>(
 					"changeAccountSubtypeUseCase",
 				),
+			adjustAccount: container.resolve<AdjustAccountUseCase>(
+				"adjustAccountUseCase",
+			),
 		},
 		accounts,
 		updateAccounts,
