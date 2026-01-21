@@ -4,6 +4,7 @@ import {
 	IntegrityCheckReport,
 } from "contexts/Accounts/domain";
 import { Nanoid } from "contexts/Shared/domain";
+import { describe, expect, it } from "vitest";
 
 describe("IntegrityCheckReport", () => {
 	const createMockIntegrityResult = (

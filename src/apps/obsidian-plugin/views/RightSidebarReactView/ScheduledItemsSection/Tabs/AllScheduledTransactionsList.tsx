@@ -7,7 +7,8 @@ import {
 	ScheduledTransaction,
 } from "../../../../../../contexts/ScheduledTransactions/domain";
 import { ConfirmationModal } from "../../../../components/ConfirmationModal";
-import { EditScheduleTransactionPanel } from "../../../../panels/CreateBudgetItemPanel/EditScheduleTransactionPanel";
+import { EditScheduledTransactionPanel } from "../../../../panels/CreateBudgetItemPanel/EditScheduledTransactionPanel";
+import { RecordItemPanel } from "../../../../panels/RecordItemPanel";
 import {
 	AccountsContext,
 	AppContext,
@@ -15,13 +16,13 @@ import {
 } from "../../Contexts";
 
 export const AllScheduledTransactionsList = ({
-	selectedItem,
-	setSelectedItem,
+	selectedTransaction,
+	setSelectedTransaction,
 	action,
 	setAction,
 }: {
-	selectedItem?: ScheduledTransaction;
-	setSelectedItem: React.Dispatch<
+	selectedTransaction?: ScheduledTransaction;
+	setSelectedTransaction: React.Dispatch<
 		React.SetStateAction<ScheduledTransaction | undefined>
 	>;
 	action?: "record";
@@ -47,30 +48,6 @@ export const AllScheduledTransactionsList = ({
 		updateScheduledTransactions();
 	}, []);
 
-	const [showPanel, setShowPanel] = useState<{
-		item: ScheduledTransaction;
-		action?: "record";
-	}>();
-
-	useEffect(() => {
-		logger.debug("item selected for action", {
-			selectedItem,
-			action,
-		});
-		if (selectedItem) {
-			setShowPanel({ item: selectedItem, action });
-		} else {
-			// Clear the panel when selectedItem is undefined
-			setShowPanel(undefined);
-		}
-	}, [action, selectedItem]);
-
-	useEffect(() => {
-		if (!showPanel) {
-			if (action) setAction(undefined);
-		}
-	}, [setAction, showPanel]);
-
 	const [
 		scheduledTransactionsWithNextOccurrence,
 		setScheduledTransactionsWithNextOccurrence,
@@ -92,7 +69,7 @@ export const AllScheduledTransactionsList = ({
 						try {
 							const recurrence =
 								await nextPendingOccurrenceUseCase.execute(
-									scheduledTransaction.id
+									scheduledTransaction.id,
 								);
 							logger.debug("Fetched next occurrence", {
 								scheduledTransactionId: scheduledTransaction.id,
@@ -102,14 +79,14 @@ export const AllScheduledTransactionsList = ({
 						} catch (error) {
 							logger.error(
 								"Error fetching next occurrence",
-								error
+								error,
 							);
 							return {
 								scheduledTransaction,
 								recurrence: undefined,
 							};
 						}
-					})
+					}),
 				)
 			).filter((result) => !!result.recurrence) as Array<{
 				scheduledTransaction: ScheduledTransaction;
@@ -140,14 +117,14 @@ export const AllScheduledTransactionsList = ({
 						.map(({ scheduledTransaction, recurrence }) => {
 							const account = getAccountByID(
 								scheduledTransaction.originAccounts[0]
-									?.accountId
+									?.accountId,
 							);
 							const toAccount = scheduledTransaction
 								.destinationAccounts[0]?.accountId
 								? getAccountByID(
 										scheduledTransaction
-											.destinationAccounts[0]?.accountId
-								  )
+											.destinationAccounts[0]?.accountId,
+									)
 								: undefined;
 							const accountName =
 								account?.name ??
@@ -155,8 +132,8 @@ export const AllScheduledTransactionsList = ({
 							const toAccountName = toAccount?.name;
 							const fullAccountName = toAccountName
 								? new AccountName(
-										`${accountName.toString()} -> ${toAccountName.toString()}`
-								  )
+										`${accountName.toString()} -> ${toAccountName.toString()}`,
+									)
 								: accountName;
 
 							return (
@@ -173,30 +150,40 @@ export const AllScheduledTransactionsList = ({
 										isSelected={false}
 										showBalanceInfo={false}
 										setAction={setAction}
-										setSelectedItem={setSelectedItem}
+										setSelectedItem={setSelectedTransaction}
 										context="all-items"
-										currentAction={showPanel?.action}
+										currentAction={action}
 										handleEdit={async () => {
 											logger.debug(
 												"Editing scheduled transaction",
 												{
 													scheduledTransactionId:
 														scheduledTransaction.id,
-												}
+												},
 											);
+											if (
+												transactionToEdit &&
+												scheduledTransaction.id.equalTo(
+													transactionToEdit?.id,
+												)
+											) {
+												setTransactionToEdit(null);
+												setAction(undefined);
+												return;
+											}
 											setTransactionToEdit(
-												scheduledTransaction
+												scheduledTransaction,
 											);
 										}}
 										handleDelete={async (
-											_: React.MouseEvent
+											_: React.MouseEvent,
 										) => {
 											logger.debug(
 												"Deleting scheduled transaction",
 												{
 													scheduledTransactionId:
 														scheduledTransaction.id,
-												}
+												},
 											);
 											new ConfirmationModal(
 												plugin.app,
@@ -205,30 +192,50 @@ export const AllScheduledTransactionsList = ({
 														await deleteScheduledTransaction.execute(
 															{
 																id: scheduledTransaction.id,
-															}
+															},
 														);
 														updateScheduledTransactions();
 													}
-													setSelectedItem(undefined);
-												}
+													setSelectedTransaction(
+														undefined,
+													);
+												},
 											).open();
 										}}
 									/>
 									{transactionToEdit?.id.equalTo(
-										scheduledTransaction.id
+										scheduledTransaction.id,
 									) && (
-										<EditScheduleTransactionPanel
+										<EditScheduledTransactionPanel
 											scheduledTransaction={
 												transactionToEdit
 											}
+											recurrence={recurrence}
 											onClose={() =>
 												setTransactionToEdit(null)
 											}
 											updateItems={
 												updateScheduledTransactions
 											}
+											initialScope="all"
 										/>
 									)}
+									{action === "record" &&
+										selectedTransaction?.id.value ===
+											scheduledTransaction.id.value && (
+											<RecordItemPanel
+												recurrence={recurrence}
+												onClose={() => {
+													setSelectedTransaction(
+														undefined,
+													);
+													setAction(undefined);
+												}}
+												updateItems={
+													updateScheduledTransactions
+												}
+											/>
+										)}
 								</div>
 							);
 						});

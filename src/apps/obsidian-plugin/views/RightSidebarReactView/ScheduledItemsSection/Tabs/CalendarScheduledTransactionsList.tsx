@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { ResponsiveScheduledItem } from "apps/obsidian-plugin/components/ResponsiveScheduledItem";
 import { useLogger } from "apps/obsidian-plugin/hooks";
-import { EditItemRecurrencePanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditItemRecurrencePanel";
+import { EditScheduledTransactionPanel } from "apps/obsidian-plugin/panels/CreateBudgetItemPanel/EditScheduledTransactionPanel";
 import { RecordItemPanel } from "apps/obsidian-plugin/panels/RecordItemPanel";
 import { AccountBalance, AccountName } from "contexts/Accounts/domain";
 import { CategoryID } from "contexts/Categories/domain";
@@ -49,7 +49,7 @@ interface FilterState {
 	};
 }
 
-export const CalendarItemsList = ({
+export const CalendarScheduledTransactionsList = ({
 	untilDate,
 	selectedItem,
 	setSelectedItem,
@@ -77,7 +77,7 @@ export const CalendarItemsList = ({
 	showFilters: boolean;
 	setShowFilters: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-	const logger = useLogger("CalendarItemsList");
+	const logger = useLogger("CalendarScheduledTransactionsList");
 	const { getAccountByID, accounts } = useContext(AccountsContext);
 	const { categories, subCategories } = useContext(CategoriesContext);
 	const [refreshItems, setRefreshItems] = useState(true);
@@ -162,11 +162,12 @@ export const CalendarItemsList = ({
 			}
 
 			// Operation type filter
-			if (filters.selectedOperationType !== "all") {
-				const operationType = recurrence.operation.type.value;
-				if (operationType !== filters.selectedOperationType) {
-					return false;
-				}
+			if (
+				filters.selectedOperationType !== "all" &&
+				recurrence.operation.type.value !==
+					filters.selectedOperationType
+			) {
+				return false;
 			}
 
 			// Tags filter
@@ -958,17 +959,16 @@ const CalendarItemsListItem = ({
 					recurrence.date.value.getTime() && (
 					<>
 						{showPanel.action === "edit" && (
-							<EditItemRecurrencePanel
+							<EditScheduledTransactionPanel
 								scheduledTransaction={scheduledTransaction}
-								recurrence={{
-									recurrence: showPanel.item.recurrence,
-								}}
+								recurrence={showPanel.item.recurrence}
 								onClose={() => {
 									setShowPanel(undefined);
 									setSelectedItem(undefined);
 									setAction(undefined);
 								}}
 								updateItems={updateItems}
+								initialScope="single"
 							/>
 						)}
 						{showPanel.action === "record" && (

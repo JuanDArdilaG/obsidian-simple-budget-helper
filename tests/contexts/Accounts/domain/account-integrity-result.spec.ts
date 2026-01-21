@@ -1,5 +1,6 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
 import { AccountIntegrityResult } from "contexts/Accounts/domain";
+import { describe, expect, it } from "vitest";
 import { Nanoid } from "../../../../src/contexts/Shared/domain";
 
 describe("AccountIntegrityResult", () => {

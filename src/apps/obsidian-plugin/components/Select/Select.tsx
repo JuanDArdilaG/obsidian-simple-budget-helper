@@ -65,7 +65,7 @@ export const Select = <T,>({
 			<MuiSelect
 				labelId={`${id}-label`}
 				id={id}
-				value={value || ""}
+				value={values.length > 0 ? value || "" : ""}
 				label={label}
 				variant="standard"
 				onChange={(e) => onChange(e.target.value)}

@@ -1,12 +1,15 @@
 alias d := dev
+
 dev: test
     npm run dev
 
 alias b := build
+
 build:
     npm run build
 
 alias t := test
+
 test:
     npm run test
 
@@ -61,21 +64,67 @@ debug-info:
     echo "  • just debug-chrome      - Open Chrome DevTools"
     echo "  • just debug-info        - Show this information"
 
+# Internal: Get current version from manifest.json
+_get-version:
+    @node -p "require('./manifest.json').version"
+
+# Internal: Update manifest.json with new version
+_update-version version:
+    #!/usr/bin/env bash
+    node -e "
+        const fs = require('fs');
+        const manifest = JSON.parse(fs.readFileSync('./manifest.json', 'utf8'));
+        manifest.version = '{{ version }}';
+        fs.writeFileSync('./manifest.json', JSON.stringify(manifest, null, '\t') + '\n');
+    "
+
+# Internal: Show confirmation dialog
+_confirm-bump current_version new_version bump_type:
+    #!/usr/bin/env bash
+    echo ""
+    echo "════════════════════════════════════════"
+    echo "  📦 Version Bump Confirmation"
+    echo "════════════════════════════════════════"
+    echo "  Current version: {{ current_version }}"
+    echo "  New version:     {{ new_version }}"
+    echo "  Bump type:       {{ bump_type }}"
+    echo "════════════════════════════════════════"
+    echo ""
+    read -p "Proceed with version bump? (y/N): " -n 1 -r
+    echo ""
+
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Version bump cancelled"
+        exit 1
+    fi
+
 # Bump version in manifest.json
 bump type="patch":
     #!/usr/bin/env bash
-    # Read current version from manifest.json
-    current_version=$(node -p "require('./manifest.json').version")
-    echo "Current version: $current_version"
-    
-    # Parse version components
-    IFS='.' read -ra VERSION_PARTS <<< "$current_version"
-    major="${VERSION_PARTS[0]}"
-    minor="${VERSION_PARTS[1]}"
-    patch="${VERSION_PARTS[2]}"
-    
+    set -euo pipefail
+
+    # Read current version
+    current_version=$(just _get-version)
+
+    # Parse version components (handle beta versions)
+    if [[ $current_version =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-beta\.([0-9]+))?$ ]]; then
+        major="${BASH_REMATCH[1]}"
+        minor="${BASH_REMATCH[2]}"
+        patch="${BASH_REMATCH[3]}"
+        beta_num="${BASH_REMATCH[5]:-0}"
+    else
+        echo "❌ Error: Invalid version format: $current_version"
+        exit 1
+    fi
+
+    # Determine if current version is a beta
+    is_beta=false
+    if [[ $current_version =~ -beta\. ]]; then
+        is_beta=true
+    fi
+
     # Update version based on type
-    case "{{type}}" in
+    case "{{ type }}" in
         "major")
             major=$((major + 1))
             minor=0
@@ -88,56 +137,141 @@ bump type="patch":
         "patch"|"fix")
             patch=$((patch + 1))
             ;;
+        "release"|"stable")
+            if [ "$is_beta" = false ]; then
+                echo "❌ Error: Current version is not a beta version"
+                exit 1
+            fi
+            # Keep version numbers as-is, just remove beta suffix
+            ;;
         *)
-            echo "Error: Invalid version type. Use 'major', 'minor', or 'patch'/'fix'"
+            echo "❌ Error: Invalid version type. Use 'major', 'minor', 'patch'/'fix', or 'release'/'stable'"
             exit 1
             ;;
     esac
-    
+
     new_version="$major.$minor.$patch"
-    echo "New version: $new_version"
-    
-    # Update manifest.json
-    node -e "
-        const fs = require('fs');
-        const manifest = JSON.parse(fs.readFileSync('./manifest.json', 'utf8'));
-        manifest.version = '$new_version';
-        fs.writeFileSync('./manifest.json', JSON.stringify(manifest, null, '\t') + '\n');
-    "
-    
+
+    # Show confirmation and update
+    just _confirm-bump "$current_version" "$new_version" "{{ type }}"
+    just _update-version "$new_version"
+
     echo "✅ Version bumped to $new_version in manifest.json"
 
-alias de := deploy
-deploy type="patch": check-git build test (bump type)
+# Internal: Commit and push version change
+_push-version:
     #!/usr/bin/env bash
     # Get the new version from manifest.json
-    new_version=$(node -p "require('./manifest.json').version")
-    
+    current_version=$(just _get-version)
+
     # Commit the version change
     git add manifest.json
-    git commit -m "chore: bump version to $new_version"
-    
+    git commit -m "chore: bump version to $current_version"
+
     # Push changes
     git push
-    
+
+    echo "✅ Committed version $current_version successfully!"
+
+# Internal: Create and push git tag for new version
+_tag-version:
+    #!/usr/bin/env bash
+    current_version=$(just _get-version)
+
     # Create and push tag
-    git tag -a $new_version -m "$new_version"
-    git push origin $new_version
-    
-    echo "✅ Deployed version $new_version successfully!"
+    git tag -a $current_version -m "$current_version"
+    git push origin $current_version
+
+    echo "✅ Tagged version $current_version successfully!"
+
+alias de := deploy
+
+deploy type="patch": check-git build test (bump type)
+    #!/usr/bin/env bash
+    echo "🚀 Deploying version..."
+
+    just _push-version
+    just _tag-version
+
+    current_version=$(just _get-version)
+
+    echo "✅ Deployed version $current_version successfully!"
+
+# Bump beta version in manifest.json (format: x.y.z-beta.a)
+bump-beta type="beta":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Read current version
+    current_version=$(just _get-version)
+
+    # Parse version components (handle beta versions)
+    if [[ $current_version =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-beta\.([0-9]+))?$ ]]; then
+        major="${BASH_REMATCH[1]}"
+        minor="${BASH_REMATCH[2]}"
+        patch="${BASH_REMATCH[3]}"
+        beta_num="${BASH_REMATCH[5]:-0}"
+    else
+        echo "❌ Error: Invalid version format: $current_version"
+        exit 1
+    fi
+
+    # Determine if current version is a beta
+    is_beta=false
+    if [[ $current_version =~ -beta\. ]]; then
+        is_beta=true
+    fi
+
+    # Update version based on type
+    case "{{ type }}" in
+        "major")
+            major=$((major + 1))
+            minor=0
+            patch=0
+            beta_num=1
+            ;;
+        "minor")
+            minor=$((minor + 1))
+            patch=0
+            beta_num=1
+            ;;
+        "patch"|"fix")
+            patch=$((patch + 1))
+            beta_num=1
+            ;;
+        "beta"|"")
+            if [ "$is_beta" = true ]; then
+                beta_num=$((beta_num + 1))
+            else
+                beta_num=1
+            fi
+            ;;
+        *)
+            echo "❌ Error: Invalid version type. Use 'major', 'minor', 'patch'/'fix', or 'beta'"
+            exit 1
+            ;;
+    esac
+
+    new_version="$major.$minor.$patch-beta.$beta_num"
+
+    # Show confirmation and update
+    just _confirm-bump "$current_version" "$new_version" "{{ type }}"
+    just _update-version "$new_version"
+
+    echo "✅ Version bumped to $new_version in manifest.json"
 
 alias de-b := deploy-beta
-deploy-beta: check-git build test
+
+deploy-beta type="beta": check-git build test (bump-beta type)
     #!/usr/bin/env bash
     echo "🚀 Deploying beta version..."
-    # Delete existing beta tag if it exists
-    git tag -d beta 2>/dev/null || true  
-    git push origin --delete beta 2>/dev/null || true
-    # Create and push tag
-    git tag -a beta -m "beta"
-    git push origin beta
-    
-    echo "✅ Deployed version beta successfully!"
+
+    just _push-version
+    just _tag-version
+
+    current_version=$(just _get-version)
+
+    echo "✅ Deployed version $current_version successfully!"
 
 check-git:
     #!/usr/bin/env bash

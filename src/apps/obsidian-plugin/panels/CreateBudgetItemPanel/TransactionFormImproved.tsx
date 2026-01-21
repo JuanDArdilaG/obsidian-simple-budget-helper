@@ -350,7 +350,6 @@ export const TransactionFormImproved = ({
 			},
 		]);
 
-		// Reset shared properties but preserve certain fields
 		setSharedProperties({
 			date: new Date(),
 			operation: preservedOperation,
@@ -627,7 +626,7 @@ export const TransactionFormImproved = ({
 	// Sync date changes with shared properties
 	useEffect(() => {
 		updateSharedProperties({ date });
-	}, [date, updateSharedProperties]);
+	}, [date]);
 
 	// Submit handler
 	const handleSubmit = async (withClose: boolean) => {

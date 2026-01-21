@@ -31,12 +31,20 @@ export const Input = <T extends NonNullable<InputValue>>({
 			error={!!error}
 			helperText={error}
 			slotProps={{
+				htmlInput: {
+					style: {
+						padding: 10,
+						paddingLeft: 15,
+						color: "var(--text-normal)",
+						border: "none",
+					},
+				},
 				inputLabel: {
 					style: {
 						zIndex: 1,
+						padding: 10,
 						paddingLeft: 15,
-						paddingTop: 5,
-						color: "var(--text-normal)",
+						color: "var(--text-muted)",
 					},
 				},
 			}}

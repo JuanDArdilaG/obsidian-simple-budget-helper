@@ -4,7 +4,6 @@ import { Config } from "contexts/Shared/infrastructure/config/config";
 import { SubCategory } from "contexts/Subcategories/domain";
 import { Transaction } from "contexts/Transactions/domain";
 import Dexie from "dexie";
-import dexieCloud from "dexie-cloud-addon";
 import {
 	RecurrenceModification,
 	ScheduledTransaction,
@@ -23,16 +22,9 @@ export class DexieDB extends DB {
 	async init(dbId: string) {
 		try {
 			this.logger.debug("initializing dexie");
-			this.db = new Dexie(`BudgetHelper-${dbId}`, {
-				addons: [dexieCloud],
-			});
+			this.db = new Dexie(`BudgetHelper-${dbId}`);
 			this.logger.debug("configuring dexie");
 
-			this.db.cloud.configure({
-				databaseUrl: "https://zwigj72e8.dexie.cloud",
-				requireAuth: true,
-				// periodicSync: { minInterval: 60 },
-			});
 			this.logger.debug("initializing tables");
 			this.#initializeTables();
 
@@ -49,9 +41,6 @@ export class DexieDB extends DB {
 			// 	acceptNameDiff: true,
 			// 	acceptVersionDiff: true,
 			// });
-
-			this.logger.debug("pulling sync");
-			this.db.cloud.sync({ wait: false, purpose: "pull" });
 		} catch (error) {
 			this.logger.error("DexieDB initialization error", error);
 		}

@@ -4,7 +4,7 @@ import { ItemOperation, Nanoid } from "contexts/Shared/domain";
 import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
 import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
 	ItemRecurrenceFrequency,
 	RecurrencePattern,
@@ -14,18 +14,13 @@ import {
 import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
 
 describe("EditItemRecurrencePanel Logic", () => {
-	let singleRecurrenceItem: ScheduledTransaction;
-	let recurringItem: ScheduledTransaction;
-	let mockUpdateItem: { execute: ReturnType<typeof vi.fn> };
-	let mockModifyNItemRecurrence: { execute: ReturnType<typeof vi.fn> };
-
-	beforeEach(() => {
+	it("should identify single recurrence items correctly", () => {
 		// Create a single recurrence item (one-time)
 		const singleRecurrenceDate = new ScheduledTransactionDate(
 			new Date("2024-01-15"),
 		);
 		const cat = Category.create(new CategoryName("Food"));
-		singleRecurrenceItem = ScheduledTransaction.create(
+		const singleRecurrenceItem = ScheduledTransaction.create(
 			new StringValueObject("Single Item"),
 			RecurrencePattern.oneTime(singleRecurrenceDate),
 			[new PaymentSplit(Nanoid.generate(), new TransactionAmount(100))],
@@ -41,7 +36,7 @@ describe("EditItemRecurrencePanel Logic", () => {
 		const recurringStartDate = new ScheduledTransactionDate(
 			new Date("2024-01-01"),
 		);
-		recurringItem = ScheduledTransaction.create(
+		const recurringItem = ScheduledTransaction.create(
 			new StringValueObject("Recurring Item"),
 			RecurrencePattern.infinite(
 				recurringStartDate,
@@ -56,37 +51,7 @@ describe("EditItemRecurrencePanel Logic", () => {
 			),
 		);
 
-		// Mock the use cases
-		mockUpdateItem = {
-			execute: vi.fn().mockResolvedValue(undefined),
-		};
-
-		mockModifyNItemRecurrence = {
-			execute: vi.fn().mockResolvedValue(undefined),
-		};
-	});
-
-	it("should identify single recurrence items correctly", () => {
 		expect(singleRecurrenceItem.recurrencePattern.isOneTime).toBe(true);
 		expect(recurringItem.recurrencePattern.isOneTime).toBe(false);
-	});
-
-	it("should use updateItem for single recurrence items", async () => {
-		// Simulate the logic that would be used in the component
-		const isSingleRecurrence =
-			singleRecurrenceItem.recurrencePattern.isOneTime;
-
-		if (isSingleRecurrence) {
-			// This is the logic that should be executed for single recurrence items
-			const updatedItem = singleRecurrenceItem.copy();
-			updatedItem.updateName(
-				new StringValueObject("Updated Single Item"),
-			);
-
-			await mockUpdateItem.execute(updatedItem);
-
-			expect(mockUpdateItem.execute).toHaveBeenCalledWith(updatedItem);
-			expect(mockModifyNItemRecurrence.execute).not.toHaveBeenCalled();
-		}
 	});
 });

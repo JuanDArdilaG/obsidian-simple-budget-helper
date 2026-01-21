@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { ItemRecurrenceInfo } from "../../../../../../contexts/ScheduledTransactions/domain";
 import { RightSidebarReactTab } from "../../RightSidebarReactTab";
 import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
-import { CalendarItemsList } from "./CalendarItemsList";
+import { CalendarScheduledTransactionsList } from "./CalendarScheduledTransactionsList";
 
 // Filter types
 interface FilterState {
@@ -37,8 +37,8 @@ const initialFilterState: FilterState = {
 	},
 };
 
-export const CalendarItemsTab = () => {
-	const { logger } = useLogger("CalendarRightSidebarReactTab");
+export const CalendarScheduledTransactionsTab = () => {
+	const { logger } = useLogger("CalendarScheduledTransactionsTab");
 
 	// Filter state - lifted up to persist across timeframe/date changes
 	const [filters, setFilters] = useState<FilterState>(initialFilterState);
@@ -123,7 +123,7 @@ export const CalendarItemsTab = () => {
 				{UntilDateFilterInput}
 			</div>
 			<TimeframeButtons selected={timeframe} setSelected={setTimeframe} />
-			<CalendarItemsList
+			<CalendarScheduledTransactionsList
 				untilDate={untilDate}
 				selectedItem={selectedItem}
 				setSelectedItem={setSelectedItem}

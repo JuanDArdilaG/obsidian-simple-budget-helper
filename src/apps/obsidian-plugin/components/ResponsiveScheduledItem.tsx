@@ -5,7 +5,7 @@ import {
 import { Chip, useMediaQuery } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { PriceLabel } from "apps/obsidian-plugin/components/PriceLabel";
-import { BudgetItemsListContextMenu } from "apps/obsidian-plugin/views/RightSidebarReactView/ScheduledItemsSection/BudgetItemsListContextMenu";
+import { BudgetItemsListActionsMenu } from "apps/obsidian-plugin/views/RightSidebarReactView/ScheduledItemsSection/BudgetItemsListActionsMenu";
 import {
 	AccountBalance,
 	AccountName,
@@ -282,7 +282,7 @@ export const ResponsiveScheduledItem = ({
 
 					{/* Actions */}
 					<div>
-						<BudgetItemsListContextMenu
+						<BudgetItemsListActionsMenu
 							handleEdit={handleEdit}
 							handleDelete={handleDelete}
 							recurrent={
@@ -464,7 +464,7 @@ export const ResponsiveScheduledItem = ({
 
 					{/* Actions */}
 					<div>
-						<BudgetItemsListContextMenu
+						<BudgetItemsListActionsMenu
 							handleEdit={handleEdit}
 							recurrent={
 								recurrentContextMenu ??
@@ -578,7 +578,7 @@ export const ResponsiveScheduledItem = ({
 							}}
 							size={19}
 						/>
-						<BudgetItemsListContextMenu
+						<BudgetItemsListActionsMenu
 							handleEdit={handleEdit}
 							handleDelete={handleDelete}
 							recurrent={

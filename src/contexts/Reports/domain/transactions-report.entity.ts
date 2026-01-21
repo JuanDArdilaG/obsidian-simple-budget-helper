@@ -106,23 +106,27 @@ export class TransactionsReport {
 						{
 							transaction,
 							accounts: transaction.originAccounts.map(
-								(split) => {
-									const accountID = split.accountId.value;
-									if (!accumulated[accountID])
-										accumulated[accountID] =
+								(originAccount) => {
+									const originAccountID =
+										originAccount.accountId.value;
+									if (!accumulated[originAccountID])
+										accumulated[originAccountID] =
 											new ReportBalance(0);
-									const prevBalance = accumulated[accountID];
-									accumulated[accountID] = accumulated[
-										accountID
+									const prevBalance =
+										accumulated[originAccountID];
+									accumulated[originAccountID] = accumulated[
+										originAccountID
 									].plus(
 										transaction.getRealAmountForAccount(
-											split.accountId,
+											originAccount.accountId,
 										),
 									);
 									return {
-										id: split.accountId,
+										id: originAccount.accountId,
 										balance:
-											accumulated[split.accountId.value],
+											accumulated[
+												originAccount.accountId.value
+											],
 										prevBalance,
 									};
 								},
@@ -131,22 +135,24 @@ export class TransactionsReport {
 						{
 							transaction,
 							accounts: transaction.destinationAccounts.map(
-								(toSplit) => {
-									const accountID = toSplit.accountId.value;
-									if (!accumulated[accountID])
-										accumulated[accountID] =
+								(destinationAccount) => {
+									const destinationAccountID =
+										destinationAccount.accountId.value;
+									if (!accumulated[destinationAccountID])
+										accumulated[destinationAccountID] =
 											new ReportBalance(0);
-									const prevBalance = accumulated[accountID];
-									accumulated[accountID] = accumulated[
-										accountID
-									].plus(
-										transaction.getRealAmountForAccount(
-											toSplit.accountId,
-										),
-									);
+									const prevBalance =
+										accumulated[destinationAccountID];
+									accumulated[destinationAccountID] =
+										accumulated[destinationAccountID].plus(
+											transaction.getRealAmountForAccount(
+												destinationAccount.accountId,
+											),
+										);
 									return {
-										id: toSplit.accountId,
-										balance: accumulated[accountID],
+										id: destinationAccount.accountId,
+										balance:
+											accumulated[destinationAccountID],
 										prevBalance,
 									};
 								},

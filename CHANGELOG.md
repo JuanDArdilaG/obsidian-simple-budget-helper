@@ -5,19 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.20.0] - 2026-01-21
 
 ### Added
 
 - Subtype to accounts: Assets = Cash, Checking, Savings, Investment; Liabilities = Credit Card, Loans.
+- On the all scheduled transactions list, add an option to record a scheduled transaction directly from the list.
+- Now the recurrence pattern could be edited when modifying a scheduled transaction.
 
 ### Changed
 
-- Sort options on Select component using localeCompare.
+- Sort options on the Select component using localeCompare.
+- Merge scheduled transactions' single recurrence and general recurrence editions into one form to avoid confusion when editing scheduled transactions.
+- Change the way accounting list is rendered to improve performance and styling issues.
 
 ### Fixed
 
 - Fix transaction form not updating the transaction type and accounts when selecting a previously used transaction name.
+
+### Security
+
+- Update dependencies to fix security vulnerabilities.
 
 ## [0.19.0] - 2026-01-16
 
