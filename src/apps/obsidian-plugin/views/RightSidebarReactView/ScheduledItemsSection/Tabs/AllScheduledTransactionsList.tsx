@@ -48,30 +48,6 @@ export const AllScheduledTransactionsList = ({
 		updateScheduledTransactions();
 	}, []);
 
-	const [showPanel, setShowPanel] = useState<{
-		item: ScheduledTransaction;
-		action?: "record";
-	}>();
-
-	useEffect(() => {
-		logger.debug("item selected for action", {
-			selectedTransaction,
-			action,
-		});
-		if (selectedTransaction) {
-			setShowPanel({ item: selectedTransaction, action });
-		} else {
-			// Clear the panel when selectedItem is undefined
-			setShowPanel(undefined);
-		}
-	}, [action, selectedTransaction]);
-
-	useEffect(() => {
-		if (!showPanel) {
-			if (action) setAction(undefined);
-		}
-	}, [setAction, showPanel]);
-
 	const [
 		scheduledTransactionsWithNextOccurrence,
 		setScheduledTransactionsWithNextOccurrence,
@@ -176,7 +152,7 @@ export const AllScheduledTransactionsList = ({
 										setAction={setAction}
 										setSelectedItem={setSelectedTransaction}
 										context="all-items"
-										currentAction={showPanel?.action}
+										currentAction={action}
 										handleEdit={async () => {
 											logger.debug(
 												"Editing scheduled transaction",
@@ -185,6 +161,16 @@ export const AllScheduledTransactionsList = ({
 														scheduledTransaction.id,
 												},
 											);
+											if (
+												transactionToEdit &&
+												scheduledTransaction.id.equalTo(
+													transactionToEdit?.id,
+												)
+											) {
+												setTransactionToEdit(null);
+												setAction(undefined);
+												return;
+											}
 											setTransactionToEdit(
 												scheduledTransaction,
 											);
@@ -240,7 +226,6 @@ export const AllScheduledTransactionsList = ({
 											<RecordItemPanel
 												recurrence={recurrence}
 												onClose={() => {
-													setShowPanel(undefined);
 													setSelectedTransaction(
 														undefined,
 													);

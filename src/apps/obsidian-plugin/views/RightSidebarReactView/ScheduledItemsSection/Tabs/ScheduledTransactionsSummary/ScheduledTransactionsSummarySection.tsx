@@ -14,7 +14,7 @@ export const ScheduledTransactionsSummarySection = ({
 	id?: string;
 	title: string;
 	color?: "blue" | "green" | "red";
-	items: { name: string; amount: PriceValueObject }[];
+	items: { id: string; name: string; amount: PriceValueObject }[];
 }) => {
 	return (
 		<div>
@@ -67,11 +67,11 @@ export const ScheduledTransactionsSummarySection = ({
 				<AccordionDetails>
 					{items
 						.toSorted((a, b) =>
-							b.amount.abs().compareTo(a.amount.abs())
+							b.amount.abs().compareTo(a.amount.abs()),
 						)
 						.map((item, index) => (
 							<div
-								key={item.name}
+								key={item.id}
 								style={{
 									display: "flex",
 									justifyContent: "space-between",

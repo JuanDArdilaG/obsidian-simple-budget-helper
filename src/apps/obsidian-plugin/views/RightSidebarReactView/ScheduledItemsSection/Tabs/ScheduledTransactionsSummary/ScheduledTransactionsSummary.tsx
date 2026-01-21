@@ -60,6 +60,7 @@ export const ScheduledTransactionsSummary = () => {
 				title="Savings for Next Month's Expenses"
 				color="blue"
 				items={nextMonthExpenses.map((transaction) => ({
+					id: transaction.info.scheduledTransactionId.value,
 					name: transaction.info.name.value,
 					amount: transaction.monthAmount.abs(),
 				}))}
@@ -72,12 +73,13 @@ export const ScheduledTransactionsSummary = () => {
 					.onlyIncomes()
 					.scheduledTransactionsWithAccounts.map(
 						({ scheduledTransaction, account, toAccount }) => ({
+							id: scheduledTransaction.id.value,
 							name: scheduledTransaction.name.value,
 							amount: scheduledTransaction.getPricePerMonthWithAccountTypes(
 								account.type,
-								toAccount?.type
+								toAccount?.type,
 							),
-						})
+						}),
 					)}
 			/>
 
@@ -88,12 +90,13 @@ export const ScheduledTransactionsSummary = () => {
 					.onlyExpenses()
 					.scheduledTransactionsWithAccounts.map(
 						({ scheduledTransaction, account, toAccount }) => ({
+							id: scheduledTransaction.id.value,
 							name: scheduledTransaction.name.value,
 							amount: scheduledTransaction.getPricePerMonthWithAccountTypes(
 								account.type,
-								toAccount?.type
+								toAccount?.type,
 							),
-						})
+						}),
 					)}
 			/>
 
@@ -105,12 +108,13 @@ export const ScheduledTransactionsSummary = () => {
 					.onlyExpenses()
 					.scheduledTransactionsWithAccounts.map(
 						({ scheduledTransaction, account, toAccount }) => ({
+							id: scheduledTransaction.id.value,
 							name: scheduledTransaction.name.value,
 							amount: scheduledTransaction.getPricePerMonthWithAccountTypes(
 								account.type,
-								toAccount?.type
+								toAccount?.type,
 							),
-						})
+						}),
 					)}
 			/>
 
@@ -122,12 +126,13 @@ export const ScheduledTransactionsSummary = () => {
 					.onlyExpenses()
 					.scheduledTransactionsWithAccounts.map(
 						({ scheduledTransaction, account, toAccount }) => ({
+							id: scheduledTransaction.id.value,
 							name: scheduledTransaction.name.value,
 							amount: scheduledTransaction.getPricePerMonthWithAccountTypes(
 								account.type,
-								toAccount?.type
+								toAccount?.type,
 							),
-						})
+						}),
 					)}
 			/>
 
@@ -136,12 +141,13 @@ export const ScheduledTransactionsSummary = () => {
 				color="blue"
 				items={displayedItemsReport.scheduledTransactionsWithAccounts.map(
 					({ scheduledTransaction, account, toAccount }) => ({
+						id: scheduledTransaction.id.value,
 						name: scheduledTransaction.name.value,
 						amount: scheduledTransaction.getPricePerMonthWithAccountTypes(
 							account.type,
-							toAccount?.type
+							toAccount?.type,
 						),
-					})
+					}),
 				)}
 			/>
 		</div>

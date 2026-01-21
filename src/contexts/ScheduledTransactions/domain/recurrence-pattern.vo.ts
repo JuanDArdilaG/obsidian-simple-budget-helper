@@ -22,7 +22,7 @@ export class RecurrencePattern {
 		private _startDate: ScheduledTransactionDate,
 		private _frequency?: ItemRecurrenceFrequency,
 		private readonly _endDate?: DateValueObject,
-		private readonly _maxOccurrences?: NumberValueObject
+		private readonly _maxOccurrences?: NumberValueObject,
 	) {
 		this.validator.validate();
 	}
@@ -33,39 +33,39 @@ export class RecurrencePattern {
 
 	static infinite(
 		startDate: ScheduledTransactionDate,
-		frequency: ItemRecurrenceFrequency
+		frequency: ItemRecurrenceFrequency,
 	): RecurrencePattern {
 		return new RecurrencePattern(
 			RecurrenceType.INFINITE,
 			startDate,
-			frequency
+			frequency,
 		);
 	}
 
 	static untilDate(
 		startDate: ScheduledTransactionDate,
 		frequency: ItemRecurrenceFrequency,
-		endDate: DateValueObject
+		endDate: DateValueObject,
 	): RecurrencePattern {
 		return new RecurrencePattern(
 			RecurrenceType.UNTIL_DATE,
 			startDate,
 			frequency,
-			endDate
+			endDate,
 		);
 	}
 
 	static untilNOccurrences(
 		startDate: ScheduledTransactionDate,
 		frequency: ItemRecurrenceFrequency,
-		maxOccurrences: NumberValueObject
+		maxOccurrences: NumberValueObject,
 	): RecurrencePattern {
 		return new RecurrencePattern(
 			RecurrenceType.N_OCCURRENCES,
 			startDate,
 			frequency,
 			undefined,
-			maxOccurrences
+			maxOccurrences,
 		);
 	}
 
@@ -119,7 +119,7 @@ export class RecurrencePattern {
 	 * @return An array of DateValueObject representing the occurrences dates
 	 */
 	generateOccurrencesUntil(
-		untilDate: DateValueObject
+		untilDate: DateValueObject,
 	): ScheduledTransactionDate[] {
 		const occurrences: ScheduledTransactionDate[] = [];
 
@@ -230,8 +230,12 @@ export class RecurrencePattern {
 		}
 
 		return ItemRecurrenceFrequency.MONTH_DAYS_RELATION.divide(
-			this._frequency.toNumberOfDays()
+			this._frequency.toNumberOfDays(),
 		);
+	}
+
+	equalTo(other: RecurrencePattern): boolean {
+		return this.isEqualTo(other);
 	}
 
 	toPrimitives(): RecurrencePatternPrimitives {
@@ -245,7 +249,7 @@ export class RecurrencePattern {
 	}
 
 	static fromPrimitives(
-		primitives: RecurrencePatternPrimitives
+		primitives: RecurrencePatternPrimitives,
 	): RecurrencePattern {
 		return new RecurrencePattern(
 			primitives.type,
@@ -258,7 +262,7 @@ export class RecurrencePattern {
 				: undefined,
 			primitives.maxOccurrences
 				? new NumberValueObject(primitives.maxOccurrences)
-				: undefined
+				: undefined,
 		);
 	}
 

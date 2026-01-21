@@ -58,7 +58,7 @@ export const BudgetItemsListActionsMenu = ({
 				size="small"
 				color={currentAction === "record" ? "primary" : "default"}
 			>
-				<BanknoteArrowDown size="small" />
+				<BanknoteArrowDown fontSize="small" />
 			</IconButton>
 			{handleEdit !== undefined && (
 				<IconButton

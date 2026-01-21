@@ -7,7 +7,7 @@ import { RecordItemUseCase } from "contexts/Transactions/application/record-item
 import { createContext } from "react";
 import { DeleteScheduledTransactionUseCase } from "../../../../../contexts/ScheduledTransactions/application/delete-scheduled-transaction.usecase";
 import { EditScheduledTransactionAmountUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-amount.usecase";
-import { EditScheduledTransactionFrequencyUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-frequency.usecase";
+import { EditScheduledTransactionRecurrencePatternUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-frequency.usecase";
 import { EditScheduledTransactionNameUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-name.usecase";
 import { EditScheduledTransactionStartDateUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-start-date.usecase";
 import { GetScheduledTransactionsUntilDateUseCase } from "../../../../../contexts/ScheduledTransactions/application/get-items-until-date.usecase";
@@ -27,7 +27,7 @@ export type ScheduledTransactionsContextType = {
 		deleteItemRecurrence: DeleteItemRecurrenceUseCase;
 		editScheduledTransactionName: EditScheduledTransactionNameUseCase;
 		editScheduledTransactionAmount: EditScheduledTransactionAmountUseCase;
-		editScheduledTransactionFrequency: EditScheduledTransactionFrequencyUseCase;
+		editScheduledTransactionRecurrencePattern: EditScheduledTransactionRecurrencePatternUseCase;
 		editScheduledTransactionStartDate: EditScheduledTransactionStartDateUseCase;
 		recordItem: RecordItemUseCase;
 		recordItemRecurrence: RecordScheduledTransactionUseCase;
@@ -58,8 +58,8 @@ export const ScheduledTransactionsContext =
 				{} as EditScheduledTransactionNameUseCase,
 			editScheduledTransactionAmount:
 				{} as EditScheduledTransactionAmountUseCase,
-			editScheduledTransactionFrequency:
-				{} as EditScheduledTransactionFrequencyUseCase,
+			editScheduledTransactionRecurrencePattern:
+				{} as EditScheduledTransactionRecurrencePatternUseCase,
 			editScheduledTransactionStartDate:
 				{} as EditScheduledTransactionStartDateUseCase,
 			modifyNItemRecurrence: {} as ModifyNItemRecurrenceUseCase,
@@ -73,20 +73,20 @@ export const ScheduledTransactionsContext =
 	});
 
 export const useItemsContextDefault = (
-	container: AwilixContainer
+	container: AwilixContainer,
 ): ScheduledTransactionsContextType => {
 	const getAllScheduledTransactionsUseCase = container.resolve(
-		"getAllScheduledTransactionsUseCase"
+		"getAllScheduledTransactionsUseCase",
 	);
 	const recordItem = container.resolve("recordItemUseCase");
 	const getItemsUntilDate = container.resolve(
-		"getScheduledTransactionsUntilDateUseCase"
+		"getScheduledTransactionsUntilDateUseCase",
 	);
 	const modifyNItemRecurrence = container.resolve(
-		"modifyNItemRecurrenceUseCase"
+		"modifyNItemRecurrenceUseCase",
 	);
 	const deleteItemRecurrence = container.resolve(
-		"deleteItemRecurrenceUseCase"
+		"deleteItemRecurrenceUseCase",
 	);
 
 	const { scheduledItems, updateScheduledTransactions } =
@@ -98,37 +98,37 @@ export const useItemsContextDefault = (
 		useCases: {
 			createScheduledItem: container.resolve("createItemUseCase"),
 			deleteScheduledTransaction: container.resolve(
-				"deleteScheduledTransactionUseCase"
+				"deleteScheduledTransactionUseCase",
 			),
 			createStore: container.resolve("createStoreUseCase"),
 			getAllStores: container.resolve("getAllStoresUseCase"),
 			getScheduledTransactionsUntilDate: getItemsUntilDate,
 			recordItem,
 			recordItemRecurrence: container.resolve(
-				"recordItemRecurrenceUseCase"
+				"recordItemRecurrenceUseCase",
 			),
 			deleteItemRecurrence,
 			editScheduledTransactionName: container.resolve(
-				"editScheduledTransactionNameUseCase"
+				"editScheduledTransactionNameUseCase",
 			),
 			editScheduledTransactionAmount: container.resolve(
-				"editScheduledTransactionAmountUseCase"
+				"editScheduledTransactionAmountUseCase",
 			),
-			editScheduledTransactionFrequency: container.resolve(
-				"editScheduledTransactionFrequencyUseCase"
+			editScheduledTransactionRecurrencePattern: container.resolve(
+				"editScheduledTransactionRecurrencePatternUseCase",
 			),
 			editScheduledTransactionStartDate: container.resolve(
-				"editScheduledTransactionStartDateUseCase"
+				"editScheduledTransactionStartDateUseCase",
 			),
 			modifyNItemRecurrence,
 			itemsWithAccumulatedBalanceUseCase: container.resolve(
-				"itemsWithAccumulatedBalanceUseCase"
+				"itemsWithAccumulatedBalanceUseCase",
 			),
 			nextPendingOccurrenceUseCase: container.resolve(
-				"nextPendingOccurrenceUseCase"
+				"nextPendingOccurrenceUseCase",
 			),
 			nextMonthExpensesUseCase: container.resolve(
-				"nextMonthOccurrencesUseCase"
+				"nextMonthOccurrencesUseCase",
 			),
 		},
 		scheduledItems,

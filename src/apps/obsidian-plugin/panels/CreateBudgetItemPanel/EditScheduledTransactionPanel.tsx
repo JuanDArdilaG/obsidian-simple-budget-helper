@@ -14,11 +14,12 @@ import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueob
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { useContext, useState } from "react";
 import {
-	ItemRecurrenceFrequency,
 	ItemRecurrenceInfo,
+	RecurrencePattern,
 	ScheduledTransaction,
 } from "../../../../contexts/ScheduledTransactions/domain";
 import { Input } from "../../components/Input/Input";
+import { RecurrencePatternFormV2 } from "../../components/v2/RecurrencePatternFormV2";
 
 export const EditScheduledTransactionPanel = ({
 	scheduledTransaction,
@@ -38,17 +39,15 @@ export const EditScheduledTransactionPanel = ({
 			modifyNItemRecurrence,
 			editScheduledTransactionName,
 			editScheduledTransactionAmount,
-			editScheduledTransactionFrequency,
-			editScheduledTransactionStartDate,
+			editScheduledTransactionRecurrencePattern,
 		},
 	} = useContext(ScheduledTransactionsContext);
 	const { accounts } = useContext(AccountsContext);
 
 	const [date, setDate] = useState<DateValueObject>(recurrence.date);
 	const [name, setName] = useState<string>(scheduledTransaction.name.value);
-	const [frequency, setFrequency] = useState<string | undefined>(
-		scheduledTransaction.recurrencePattern.frequency?.value,
-	);
+	const [recurrencePattern, setRecurrencePattern] =
+		useState<RecurrencePattern>(scheduledTransaction.recurrencePattern);
 
 	const [editScope, setEditScope] = useState<"single" | "all">(initialScope);
 
@@ -107,22 +106,20 @@ export const EditScheduledTransactionPanel = ({
 				/>
 			)}
 
-			{editScope === "all" && frequency !== undefined && (
-				<Input<string>
-					id="scheduled-transaction-frequency-input"
-					label="Frequency"
-					value={frequency}
-					onChange={setFrequency}
-					style={{ marginBottom: 16 }}
+			{editScope === "all" && (
+				<RecurrencePatternFormV2
+					initialPattern={recurrencePattern}
+					onChange={setRecurrencePattern}
 				/>
 			)}
 
-			{/* Always show modification fields */}
-			<DateInput
-				value={date}
-				onChange={(value) => setDate(new DateValueObject(value))}
-				label="Date"
-			/>
+			{editScope === "single" && (
+				<DateInput
+					value={date}
+					onChange={(value) => setDate(new DateValueObject(value))}
+					label="Date"
+				/>
+			)}
 
 			{/* Splits Editor */}
 			<div>
@@ -310,25 +307,16 @@ export const EditScheduledTransactionPanel = ({
 							});
 
 						if (
-							date.toString() !==
-							scheduledTransaction.recurrencePattern.startDate.toString()
-						)
-							await editScheduledTransactionStartDate.execute({
-								id: scheduledTransaction.id,
-								startDate: date,
-							});
-						if (
-							frequency &&
-							frequency !==
-								scheduledTransaction.recurrencePattern.frequency
-									?.value
+							!recurrencePattern.equalTo(
+								scheduledTransaction.recurrencePattern,
+							)
 						) {
-							await editScheduledTransactionFrequency.execute({
-								id: scheduledTransaction.id,
-								frequency: new ItemRecurrenceFrequency(
-									frequency,
-								),
-							});
+							await editScheduledTransactionRecurrencePattern.execute(
+								{
+									id: scheduledTransaction.id,
+									recurrencePattern,
+								},
+							);
 						}
 					}
 

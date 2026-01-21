@@ -6,24 +6,24 @@ import {
 import {
 	IRecurrenceModificationsService,
 	IScheduledTransactionsRepository,
-	ItemRecurrenceFrequency,
+	RecurrencePattern,
 } from "../domain";
 
-export class EditScheduledTransactionFrequencyUseCase
-	implements
-		CommandUseCase<{ id: Nanoid; frequency: ItemRecurrenceFrequency }>
-{
+export class EditScheduledTransactionRecurrencePatternUseCase implements CommandUseCase<{
+	id: Nanoid;
+	recurrencePattern: RecurrencePattern;
+}> {
 	constructor(
 		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository,
-		private readonly _recurrenceModificationsService: IRecurrenceModificationsService
+		private readonly _recurrenceModificationsService: IRecurrenceModificationsService,
 	) {}
 
 	async execute({
 		id,
-		frequency,
+		recurrencePattern,
 	}: {
 		id: Nanoid;
-		frequency: ItemRecurrenceFrequency;
+		recurrencePattern: RecurrencePattern;
 	}): Promise<void> {
 		const scheduledTransaction =
 			await this._scheduledTransactionsRepository.findById(id);
@@ -34,10 +34,10 @@ export class EditScheduledTransactionFrequencyUseCase
 		// Improvement opportunity: not clear but update the original date in modifications
 		await this._recurrenceModificationsService.clearAllModifications(id);
 
-		scheduledTransaction.recurrencePattern.updateFrequency(frequency);
+		scheduledTransaction.recurrencePattern = recurrencePattern;
 
 		await this._scheduledTransactionsRepository.persist(
-			scheduledTransaction
+			scheduledTransaction,
 		);
 	}
 }

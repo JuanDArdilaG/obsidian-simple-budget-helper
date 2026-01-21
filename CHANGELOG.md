@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Subtype to accounts: Assets = Cash, Checking, Savings, Investment; Liabilities = Credit Card, Loans.
 - On all scheduled transactions list, add option to record a scheduled transaction directly from the list.
+- Now the recurrence pattern could be edited when modifying a scheduled transaction.
 
 ### Changed
 

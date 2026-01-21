@@ -96,6 +96,11 @@ export class ScheduledTransaction extends Entity<
 		return this._recurrencePattern;
 	}
 
+	set recurrencePattern(pattern: RecurrencePattern) {
+		this._recurrencePattern = pattern;
+		this.updateTimestamp();
+	}
+
 	get store(): StringValueObject | undefined {
 		return this._store;
 	}
