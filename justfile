@@ -137,24 +137,43 @@ bump type="patch":
     
     echo "✅ Version bumped to $new_version in manifest.json"
 
-alias de := deploy
-deploy type="patch": check-git build test (bump type)
-    #!/usr/bin/env bash
-    # Get the new version from manifest.json
-    new_version=$(node -p "require('./manifest.json').version")
-    
-    # Commit the version change
-    git add manifest.json
-    git commit -m "chore: bump version to $new_version"
+# Internal: Commit and push version change
+_push-version:
+	#!/usr/bin/env bash
+	# Get the new version from manifest.json
+	current_version=$(just _get-version)
+	
+	# Commit the version change
+	git add manifest.json
+	git commit -m "chore: bump version to $current_version"
     
     # Push changes
     git push
+	
+	echo "✅ Committed version $current_version successfully!"
+
+# Internal: Create and push git tag for new version
+_tag-version:
+	#!/usr/bin/env bash
+	current_version=$(just _get-version)
+	
+	# Create and push tag
+	git tag -a $current_version -m "$current_version"
+	git push origin $current_version
+	
+	echo "✅ Tagged version $current_version successfully!"
+
+alias de := deploy
+deploy type="patch": check-git build test (bump type)
+    #!/usr/bin/env bash
+    echo "🚀 Deploying version..."
+
+	just _push-version
+	just _tag-version
+
+	current_version=$(just _get-version)
     
-    # Create and push tag
-    git tag -a $new_version -m "$new_version"
-    git push origin $new_version
-    
-    echo "✅ Deployed version $new_version successfully!"
+    echo "✅ Deployed version $current_version successfully!"
 
 # Bump beta version in manifest.json (format: x.y.z-beta.a)
 bump-beta type="beta":
@@ -223,14 +242,13 @@ alias de-b := deploy-beta
 deploy-beta type="beta": check-git build test (bump-beta type)
     #!/usr/bin/env bash
     echo "🚀 Deploying beta version..."
-    # Delete existing beta tag if it exists
-    git tag -d beta 2>/dev/null || true  
-    git push origin --delete beta 2>/dev/null || true
-    # Create and push tag
-    git tag -a beta -m "beta"
-    git push origin beta
+
+	just _push-version
+	just _tag-version
+
+	current_version=$(just _get-version)
     
-    echo "✅ Deployed version beta successfully!"
+    echo "✅ Deployed version $current_version successfully!"
 
 check-git:
     #!/usr/bin/env bash
