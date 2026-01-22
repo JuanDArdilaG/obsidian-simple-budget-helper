@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Accounts dashboard shows the percentage change of assets, liabilities, and net worth compared to the previous month.
+
 ### Changed
 
 - Improved UI/UX of the accounts sections for listing, creation, and edition.
