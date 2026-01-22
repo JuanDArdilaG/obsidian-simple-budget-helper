@@ -51,6 +51,14 @@ export class TransactionsReport {
 		);
 	}
 
+	filterUntilDate(date: Date): TransactionsReport {
+		return new TransactionsReport(
+			this._transactions.filter(
+				(t) => t.date.getTime() <= date.getTime(),
+			),
+		);
+	}
+
 	sortedByDate(direction: "asc" | "desc" = "asc"): TransactionsReport {
 		return new TransactionsReport(
 			this._transactions.toSorted((a, b) =>
@@ -195,5 +203,28 @@ export class TransactionsReport {
 				return transactions;
 			})
 			.reverse();
+	}
+
+	totalAssetsUntilMonth(month: number, year: number): number {
+		const transactionsUntilMonth = this._transactions.filter((t) => {
+			const tYear = t.date.getFullYear();
+			const tMonth = t.date.getMonth();
+			return tYear < year || (tYear === year && tMonth <= month);
+		});
+
+		const reportUntilMonth = new TransactionsReport(transactionsUntilMonth);
+
+		return (
+			reportUntilMonth.onlyIncomes()._transactions.reduce((total, t) => {
+				return (
+					total + t.getRealAmountForAccount(new Nanoid("any")).value
+				);
+			}, 0) -
+			reportUntilMonth.onlyExpenses()._transactions.reduce((total, t) => {
+				return (
+					total + t.getRealAmountForAccount(new Nanoid("any")).value
+				);
+			}, 0)
+		);
 	}
 }

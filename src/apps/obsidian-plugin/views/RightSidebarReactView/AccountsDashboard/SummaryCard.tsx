@@ -73,7 +73,7 @@ export function SummaryCard({
 					className={`flex items-center text-xs font-semibold px-2 py-1 rounded-full ${style}`}
 				>
 					{icon}
-					{Math.abs(trend)}%
+					{Math.abs(trend).toFixed(2)}%
 				</div>
 			</div>
 

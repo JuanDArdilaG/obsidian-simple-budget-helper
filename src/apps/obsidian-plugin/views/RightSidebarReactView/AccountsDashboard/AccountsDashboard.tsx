@@ -16,9 +16,13 @@ import {
 	currencies,
 	Currency,
 } from "../../../../../contexts/Currencies/domain";
+import {
+	AccountsReport,
+	TransactionsReport,
+} from "../../../../../contexts/Reports/domain";
 import { Nanoid } from "../../../../../contexts/Shared/domain";
 import { ConfirmationModal } from "../../../components/ConfirmationModal";
-import { AccountsContext, AppContext } from "../Contexts";
+import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
 import { ExchangeRatesContext } from "../Contexts/ExchangeRatesContext";
 import { AccountSection } from "./AccountSection";
 import { DonutChart } from "./DonutChart";
@@ -49,6 +53,7 @@ export function AccountsDashboard() {
 	const {
 		useCases: { getExchangeRate },
 	} = useContext(ExchangeRatesContext);
+	const { transactions } = useContext(TransactionsContext);
 
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [lastUpdated, setLastUpdated] = useState<string>();
@@ -92,20 +97,54 @@ export function AccountsDashboard() {
 		fetchExchangeRates();
 	}, [accounts, getExchangeRate, plugin.settings.defaultCurrency]);
 
+	const accountsReport = useMemo(() => {
+		return new AccountsReport(accountsWithExchangeRates);
+	}, [accountsWithExchangeRates]);
+	const transactionsReport = useMemo(() => {
+		return new TransactionsReport(transactions);
+	}, [transactions]);
+
 	const summary = useMemo(() => {
-		const assets = accountsWithExchangeRates
-			.filter((a) => a.type.isAsset())
-			.reduce((sum, a) => sum + a.convertedBalance, 0);
-		const liabilities = accountsWithExchangeRates
-			.filter((a) => a.type.isLiability())
-			.reduce((sum, a) => sum + a.convertedBalance, 0);
+		const totalAssets = accountsReport.getTotalForAssets();
+		const totalLiabilities = accountsReport.getTotalForLiabilities();
+		const netWorth = accountsReport.getTotal();
+
+		const now = new Date();
+		const thirtyDaysAgo = new Date();
+		thirtyDaysAgo.setDate(now.getDate() - 30);
+
+		const lastMonthAssets = accountsReport.getTotalAssetsUntilDate(
+			transactionsReport,
+			thirtyDaysAgo,
+		);
+		const lastMonthLiabilities =
+			accountsReport.getTotalLiabilitiesUntilDate(
+				transactionsReport,
+				thirtyDaysAgo,
+			);
+		const netWorthLastMonth = lastMonthAssets - lastMonthLiabilities;
+
+		console.log("Last Month Assets:", lastMonthAssets);
+		console.log("Last Month Liabilities:", lastMonthLiabilities);
+		console.log("Net Worth Last Month:", netWorthLastMonth);
+
+		const assetsTrend =
+			((totalAssets - lastMonthAssets) / lastMonthAssets) * 100;
+		const liabilitiesTrend =
+			((totalLiabilities - lastMonthLiabilities) / lastMonthLiabilities) *
+			100;
+		const netWorthTrend =
+			((netWorth - netWorthLastMonth) / netWorthLastMonth) * 100;
+
 		return {
-			assets,
-			liabilities,
-			netWorth: assets - liabilities,
-			assetsTrend: 5.2,
-			liabilitiesTrend: -3.1,
-			netWorthTrend: 8.7,
+			assets: accountsReport.getTotalForAssets(),
+			liabilities: accountsReport.getTotalForLiabilities(),
+			netWorth: accountsReport.getTotal(),
+			assetsTrend: Number.isFinite(assetsTrend) ? assetsTrend : 0,
+			liabilitiesTrend: Number.isFinite(liabilitiesTrend)
+				? liabilitiesTrend
+				: 0,
+			netWorthTrend: Number.isFinite(netWorthTrend) ? netWorthTrend : 0,
 		};
 	}, [accountsWithExchangeRates]);
 
@@ -177,15 +216,17 @@ export function AccountsDashboard() {
 
 	const handleRefresh = () => {
 		setIsRefreshing(true);
-		updateAccounts();
-		const lastUpdatedDate = new Date();
-		setLastUpdated(
-			lastUpdatedDate.toLocaleTimeString(undefined, {
-				hour: "2-digit",
-				minute: "2-digit",
-			}),
-		);
-		setIsRefreshing(false);
+		setTimeout(() => {
+			updateAccounts();
+			const lastUpdatedDate = new Date();
+			setLastUpdated(
+				lastUpdatedDate.toLocaleTimeString(undefined, {
+					hour: "2-digit",
+					minute: "2-digit",
+				}),
+			);
+			setIsRefreshing(false);
+		}, 500); // To show the spinner for at least 500ms
 	};
 
 	useEffect(() => {
@@ -277,9 +318,7 @@ export function AccountsDashboard() {
 						<AccountSection
 							title="Assets"
 							type="asset"
-							accounts={accountsWithExchangeRates.filter((a) =>
-								a.type.isAsset(),
-							)}
+							accounts={accountsReport.getAssets()}
 							onUpdate={handleUpdateAccount}
 							onDelete={handleDeleteAccount}
 							onAdd={handleAddAccountClick}
@@ -303,9 +342,7 @@ export function AccountsDashboard() {
 						<AccountSection
 							title="Liabilities"
 							type="liability"
-							accounts={accountsWithExchangeRates.filter((a) =>
-								a.type.isLiability(),
-							)}
+							accounts={accountsReport.getLiabilities()}
 							onUpdate={handleUpdateAccount}
 							onDelete={handleDeleteAccount}
 							onAdd={handleAddAccountClick}
