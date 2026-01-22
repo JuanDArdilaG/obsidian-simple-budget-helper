@@ -49,7 +49,10 @@ export function AccountsDashboard() {
 	const {
 		useCases: { getExchangeRate },
 	} = useContext(ExchangeRatesContext);
+
 	const [isRefreshing, setIsRefreshing] = useState(false);
+	const [lastUpdated, setLastUpdated] = useState<string>();
+
 	const [isAddingAccount, setIsAddingAccount] = useState<{
 		type: "asset" | "liability";
 	} | null>(null);
@@ -175,8 +178,19 @@ export function AccountsDashboard() {
 	const handleRefresh = () => {
 		setIsRefreshing(true);
 		updateAccounts();
+		const lastUpdatedDate = new Date();
+		setLastUpdated(
+			lastUpdatedDate.toLocaleTimeString(undefined, {
+				hour: "2-digit",
+				minute: "2-digit",
+			}),
+		);
 		setIsRefreshing(false);
 	};
+
+	useEffect(() => {
+		handleRefresh();
+	}, []);
 
 	return (
 		<div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20 relative">
@@ -204,7 +218,7 @@ export function AccountsDashboard() {
 							</motion.div>
 						</button>
 						<div className="text-sm text-gray-500 hidden sm:block">
-							Last updated: Today
+							Last updated: {lastUpdated}
 						</div>
 					</div>
 				</div>

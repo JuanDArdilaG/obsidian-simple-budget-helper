@@ -418,12 +418,6 @@ ul {
 	background: var(--color-cyan);
 }
 
-.selection-checkmark {
-	color: white;
-	font-size: 12px;
-	font-weight: bold;
-}
-
 /* Item Content */
 .item-content {
 	flex: 1;
