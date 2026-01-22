@@ -1,5 +1,32 @@
 @import "tailwindcss";
 
+select {
+	background-color: var(--color-white);
+	border-color: var(--color-gray-300);
+	font-size: initial;
+}
+
+button {
+	height: auto;
+	font-size: inherit;
+	border: initial;
+}
+
+button:not(.clickable-icon) {
+	box-shadow: none;
+}
+
+h3 {
+	color: var(--color-gray-500);
+	letter-spacing: var(--tracking-wide);
+	--tw-font-weight: var(--font-weight-medium);
+	font-weight: var(--font-weight-medium);
+	font-size: var(--text-sm);
+	line-height: var(--tw-leading, var(--text-sm--line-height));
+	margin-block-start: unset;
+	margin-block-end: unset;
+}
+
 ul {
 	list-style-type: none;
 	padding: 0;
@@ -126,10 +153,6 @@ ul {
 .select-with-creation {
 	color: var(--mono-rgb-100);
 	background-color: var(--mono-rgb-100);
-}
-
-input {
-	padding: 5px;
 }
 
 .no-styles {

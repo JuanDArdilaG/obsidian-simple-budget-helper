@@ -4,7 +4,7 @@ import {
 } from "@juandardilag/value-objects";
 import { AnimatePresence, motion } from "framer-motion";
 import { RefreshCw, X } from "lucide-react";
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import {
 	Account,
 	AccountAssetSubtype,
@@ -17,7 +17,9 @@ import {
 	Currency,
 } from "../../../../../contexts/Currencies/domain";
 import { Nanoid } from "../../../../../contexts/Shared/domain";
+import { ConfirmationModal } from "../../../components/ConfirmationModal";
 import { AccountsContext, AppContext } from "../Contexts";
+import { ExchangeRatesContext } from "../Contexts/ExchangeRatesContext";
 import { AccountSection } from "./AccountSection";
 import { DonutChart } from "./DonutChart";
 import { SummaryCard } from "./SummaryCard";
@@ -44,6 +46,9 @@ export function AccountsDashboard() {
 			adjustAccount,
 		},
 	} = useContext(AccountsContext);
+	const {
+		useCases: { getExchangeRate },
+	} = useContext(ExchangeRatesContext);
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [isAddingAccount, setIsAddingAccount] = useState<{
 		type: "asset" | "liability";
@@ -52,13 +57,45 @@ export function AccountsDashboard() {
 		plugin.settings.defaultCurrency,
 	);
 
+	const [accountsWithExchangeRates, setAccountsWithExchangeRates] = useState<
+		Account[]
+	>([]);
+
+	useEffect(() => {
+		const fetchExchangeRates = async () => {
+			const updatedAccounts = await Promise.all(
+				accounts.map(async (account) => {
+					if (
+						account.currency.value ===
+						plugin.settings.defaultCurrency
+					) {
+						return account;
+					}
+					const exchangeRate = await getExchangeRate.execute({
+						fromCurrency: account.currency,
+						toCurrency: new Currency(
+							plugin.settings.defaultCurrency,
+						),
+						date: account.updatedAt,
+					});
+					if (exchangeRate) {
+						account.exchangeRate = exchangeRate;
+					}
+					return account;
+				}),
+			);
+			setAccountsWithExchangeRates(updatedAccounts);
+		};
+		fetchExchangeRates();
+	}, [accounts, getExchangeRate, plugin.settings.defaultCurrency]);
+
 	const summary = useMemo(() => {
-		const assets = accounts
+		const assets = accountsWithExchangeRates
 			.filter((a) => a.type.isAsset())
-			.reduce((sum, a) => sum + a.balance.value.value, 0);
-		const liabilities = accounts
+			.reduce((sum, a) => sum + a.convertedBalance, 0);
+		const liabilities = accountsWithExchangeRates
 			.filter((a) => a.type.isLiability())
-			.reduce((sum, a) => sum + a.balance.value.value, 0);
+			.reduce((sum, a) => sum + a.convertedBalance, 0);
 		return {
 			assets,
 			liabilities,
@@ -67,7 +104,7 @@ export function AccountsDashboard() {
 			liabilitiesTrend: -3.1,
 			netWorthTrend: 8.7,
 		};
-	}, [accounts]);
+	}, [accountsWithExchangeRates]);
 
 	const handleUpdateAccount = async (
 		id: Nanoid,
@@ -102,7 +139,11 @@ export function AccountsDashboard() {
 	};
 
 	const handleDeleteAccount = async (id: Nanoid) => {
-		await deleteAccount.execute(id);
+		new ConfirmationModal(plugin.app, (confirmed) => {
+			if (confirmed) {
+				deleteAccount.execute(id);
+			}
+		}).open();
 	};
 
 	const handleAddAccountClick = (type: "asset" | "liability") => {
@@ -204,7 +245,7 @@ export function AccountsDashboard() {
 				</div>
 
 				{/* Bottom Section: Account Lists */}
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+				<div className="grid! grid-cols-1! lg:grid-cols-2! gap-8!">
 					<motion.div
 						initial={{
 							opacity: 0,
@@ -222,7 +263,9 @@ export function AccountsDashboard() {
 						<AccountSection
 							title="Assets"
 							type="asset"
-							accounts={accounts.filter((a) => a.type.isAsset())}
+							accounts={accountsWithExchangeRates.filter((a) =>
+								a.type.isAsset(),
+							)}
 							onUpdate={handleUpdateAccount}
 							onDelete={handleDeleteAccount}
 							onAdd={handleAddAccountClick}
@@ -246,7 +289,7 @@ export function AccountsDashboard() {
 						<AccountSection
 							title="Liabilities"
 							type="liability"
-							accounts={accounts.filter((a) =>
+							accounts={accountsWithExchangeRates.filter((a) =>
 								a.type.isLiability(),
 							)}
 							onUpdate={handleUpdateAccount}
@@ -277,7 +320,7 @@ export function AccountsDashboard() {
 							className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 border border-gray-100"
 						>
 							<div className="flex justify-between items-center mb-4">
-								<h3 className="text-lg font-semibold text-gray-900">
+								<h3 className="text-lg! font-semibold! text-gray-900!">
 									Add New{" "}
 									{isAddingAccount.type === "asset"
 										? "Asset"
@@ -285,7 +328,7 @@ export function AccountsDashboard() {
 								</h3>
 								<button
 									onClick={() => setIsAddingAccount(null)}
-									className="text-gray-400 hover:text-gray-600 transition-colors"
+									className="text-gray-400! hover:text-gray-600! transition-colors!"
 								>
 									<X size={20} />
 								</button>
@@ -294,7 +337,7 @@ export function AccountsDashboard() {
 							<div className="mb-6">
 								<label
 									htmlFor="currency-select"
-									className="block text-sm font-medium text-gray-700 mb-2"
+									className="block text-sm! font-medium! text-gray-700! mb-2!"
 								>
 									Select Currency
 								</label>
@@ -304,7 +347,7 @@ export function AccountsDashboard() {
 									onChange={(e) =>
 										setNewAccountCurrency(e.target.value)
 									}
-									className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+									className="w-full px-3! py-2! border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
 								>
 									{Object.keys(currencies).map((code) => (
 										<option key={code} value={code}>
@@ -320,13 +363,13 @@ export function AccountsDashboard() {
 							<div className="flex gap-3">
 								<button
 									onClick={() => setIsAddingAccount(null)}
-									className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+									className="flex-1 px-4! py-2! border! border-gray-300! rounded-lg! text-gray-700! font-medium! hover:bg-gray-50 transition-colors"
 								>
 									Cancel
 								</button>
 								<button
 									onClick={confirmAddAccount}
-									className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+									className="flex-1 px-4! py-2! bg-indigo-600! text-white! rounded-lg! font-medium! hover:bg-indigo-700 transition-colors"
 								>
 									Create Account
 								</button>

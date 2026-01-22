@@ -28,15 +28,12 @@ export function AccountSection({
 	onAdd,
 }: Readonly<AccountSectionProps>) {
 	const [isOpen, setIsOpen] = useState(true);
-	const total = accounts.reduce(
-		(sum, acc) => sum + acc.balance.value.value,
-		0,
-	);
+	const total = accounts.reduce((sum, acc) => sum + acc.convertedBalance, 0);
 	return (
-		<div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+		<div className="bg-white! rounded-xl! shadow-sm! border! border-gray-100! overflow-hidden! mb-6!">
 			<button
 				onClick={() => setIsOpen(!isOpen)}
-				className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors focus:outline-none focus:bg-gray-50"
+				className="w-full! flex items-center! justify-between! p-6! hover:bg-gray-50! transition-colors! focus:outline-none! focus:bg-gray-50!"
 			>
 				<div className="flex items-center gap-3">
 					<motion.div
@@ -93,8 +90,8 @@ export function AccountSection({
 									accounts
 										.toSorted(
 											(a, b) =>
-												b.balance.value.value -
-												a.balance.value.value,
+												b.convertedBalance -
+												a.convertedBalance,
 										)
 										.map((account) => (
 											<AccountRow

@@ -96,8 +96,9 @@ export function DonutChart({ assets, liabilities }: Readonly<DonutChartProps>) {
 							verticalAlign="bottom"
 							height={36}
 							iconType="circle"
+							wrapperStyle={{ paddingTop: "8px" }}
 							formatter={(value) => (
-								<span className="text-sm text-gray-600 font-medium ml-1">
+								<span className="text-sm! text-gray-600! font-medium! ml-1!">
 									{value}
 								</span>
 							)}

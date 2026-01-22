@@ -12,6 +12,7 @@ import {
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Transaction } from "contexts/Transactions/domain";
+import { ExchangeRate } from "../../Currencies/domain";
 import { Currency } from "../../Currencies/domain/currency.vo";
 import { Nanoid } from "../../Shared/domain";
 
@@ -40,7 +41,7 @@ export class Account extends Entity<Nanoid, AccountPrimitives> {
 		private _currency: Currency,
 		private _balance: AccountBalance,
 		updatedAt: DateValueObject,
-		private _defaultCurrencyBalance?: AccountBalance,
+		private _exchangeRate?: ExchangeRate,
 	) {
 		super(id, updatedAt);
 	}
@@ -138,12 +139,19 @@ export class Account extends Entity<Nanoid, AccountPrimitives> {
 		return this._balance;
 	}
 
-	get defaultCurrencyBalance(): AccountBalance | undefined {
-		return this._defaultCurrencyBalance;
+	get convertedBalance(): number {
+		if (!this._exchangeRate) {
+			return this._balance.value.value;
+		}
+		return this._balance.value.value * this._exchangeRate.rate.value;
 	}
 
-	set defaultCurrencyBalance(balance: AccountBalance | undefined) {
-		this._defaultCurrencyBalance = balance;
+	get exchangeRate(): ExchangeRate | undefined {
+		return this._exchangeRate;
+	}
+
+	set exchangeRate(exchangeRate: ExchangeRate | undefined) {
+		this._exchangeRate = exchangeRate;
 	}
 
 	get realBalance(): PriceValueObject {
