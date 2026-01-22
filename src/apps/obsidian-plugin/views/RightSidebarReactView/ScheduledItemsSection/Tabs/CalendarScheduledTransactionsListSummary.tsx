@@ -31,7 +31,7 @@ export const CalendarScheduledTransactionsListSummary = ({
 		[accounts],
 	);
 	const totalSpendableAssets = useMemo(
-		() => accountsReport.getTotalForAssets().value,
+		() => accountsReport.getTotalForAssets(),
 		[accountsReport],
 	);
 
