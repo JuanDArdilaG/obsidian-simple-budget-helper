@@ -21,30 +21,24 @@ export class ReportsService implements IReportsService {
 	 * @returns {ScheduledTransactionsWithAccounts[]} an array containing the items with its corresponding account and toAccount (if applies)
 	 */
 	async #addAccountsToItems(
-		report: ScheduledMonthlyReport
+		report: ScheduledMonthlyReport,
 	): Promise<ScheduledTransactionsWithAccounts[]> {
 		return await Promise.all(
 			report.scheduledTransactionsWithAccounts.map(
 				async ({ scheduledTransaction }) => {
-					const account = await this._accountsService.getByID(
-						scheduledTransaction.originAccounts[0]?.accountId
-					);
+					const account =
+						scheduledTransaction.originAccounts[0]?.account;
 					const toAccount =
-						scheduledTransaction.destinationAccounts[0]
-							?.accountId &&
-						(await this._accountsService.getByID(
-							scheduledTransaction.destinationAccounts[0]
-								?.accountId
-						));
+						scheduledTransaction.destinationAccounts[0]?.account;
 					return { scheduledTransaction, account, toAccount };
-				}
-			)
+				},
+			),
 		);
 	}
 
 	#filterItemsByType(
 		items: ScheduledTransactionsWithAccounts[],
-		type?: "expenses" | "incomes"
+		type?: "expenses" | "incomes",
 	): ScheduledTransactionsWithAccounts[] {
 		if (!type) return items;
 		return items.filter(
@@ -66,19 +60,19 @@ export class ReportsService implements IReportsService {
 				)
 					return true;
 				return false;
-			}
+			},
 		);
 	}
 
 	async getTotal(
 		report: ScheduledMonthlyReport,
-		type?: "expenses" | "incomes"
+		type?: "expenses" | "incomes",
 	): Promise<ReportBalance> {
 		this.#logger.debug("getTotal", { report, type });
 
 		const items = this.#filterItemsByType(
 			await this.#addAccountsToItems(report),
-			type
+			type,
 		);
 
 		this.#logger.debug("items", { items });
@@ -112,13 +106,13 @@ export class ReportsService implements IReportsService {
 
 	async getTotalPerMonth(
 		report: ScheduledMonthlyReport,
-		type: "expenses" | "incomes" | "all" = "all"
+		type: "expenses" | "incomes" | "all" = "all",
 	): Promise<ReportBalance> {
 		this.#logger.debug("getTotalPerMonth", { report, type });
 
 		const items = this.#filterItemsByType(
 			await this.#addAccountsToItems(report),
-			type !== "all" ? type : undefined
+			type === "all" ? undefined : type,
 		);
 
 		let total = ReportBalance.zero();
@@ -130,7 +124,7 @@ export class ReportsService implements IReportsService {
 			// Use the item's getPricePerMonthWithAccountTypes method to handle recurring conversions
 			const monthlyPrice = item.getPricePerMonthWithAccountTypes(
 				account.type,
-				toAccount?.type
+				toAccount?.type,
 			);
 			total = total.plus(monthlyPrice);
 		}

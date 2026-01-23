@@ -52,13 +52,11 @@ export class AccountsServiceMock implements IAccountsService {
 	async adjustOnTransaction(transaction: Transaction): Promise<void> {
 		// Adjust all fromSplits
 		for (const split of transaction.originAccounts) {
-			const account = await this.getByID(split.accountId);
-			account.adjustFromTransaction(transaction);
+			split.account.adjustFromTransaction(transaction);
 		}
 		// Adjust all toSplits
 		for (const split of transaction.destinationAccounts) {
-			const account = await this.getByID(split.accountId);
-			account.adjustFromTransaction(transaction);
+			split.account.adjustFromTransaction(transaction);
 		}
 	}
 }

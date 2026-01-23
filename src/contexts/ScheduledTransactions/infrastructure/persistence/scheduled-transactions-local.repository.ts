@@ -1,14 +1,20 @@
 import { CategoryID } from "contexts/Categories/domain";
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
-import { LocalRepository } from "contexts/Shared/infrastructure/persistence/local/local.repository";
+import {
+	LocalRepository,
+	RepositoryDependencies,
+} from "contexts/Shared/infrastructure/persistence/local/local.repository";
 import { SubCategoryID } from "contexts/Subcategories/domain";
+import { Account, IAccountsRepository } from "../../../Accounts/domain";
 import { Nanoid } from "../../../Shared/domain";
 import {
 	IScheduledTransactionsRepository,
 	ScheduledTransaction,
 	ScheduledTransactionPrimitives,
 } from "../../domain";
+
+export type ScheduledTransactionsDependencies = RepositoryDependencies<Account>;
 
 export class ScheduledTransactionsLocalRepository
 	extends LocalRepository<
@@ -18,35 +24,44 @@ export class ScheduledTransactionsLocalRepository
 	>
 	implements IScheduledTransactionsRepository
 {
-	constructor(protected readonly _db: LocalDB) {
-		super(_db, Config.scheduledTransactionsTableName);
+	constructor(
+		protected readonly _db: LocalDB,
+		private readonly _accountsRepository: IAccountsRepository,
+	) {
+		super(_db, Config.scheduledTransactionsTableName, [
+			{ type: "Account", getter: _accountsRepository.findAll },
+		]);
 	}
 
 	protected mapToDomain(
-		record: ScheduledTransactionPrimitives
+		record: ScheduledTransactionPrimitives,
+		dependencies?: ScheduledTransactionsDependencies,
 	): ScheduledTransaction {
-		return ScheduledTransaction.fromPrimitives(record);
+		const accounts = dependencies
+			? dependencies.get("Account")!
+			: new Map<string, Account>();
+		return ScheduledTransaction.fromPrimitives(accounts, record);
 	}
 
 	protected mapToPrimitives(
-		entity: ScheduledTransaction
+		entity: ScheduledTransaction,
 	): ScheduledTransactionPrimitives {
 		return entity.toPrimitives();
 	}
 
 	async findByCategory(
-		category: CategoryID
+		category: CategoryID,
 	): Promise<ScheduledTransaction[]> {
 		return this.filter(
-			(record) => record.category.category.id === category.value
+			(record) => record.category.category.id === category.value,
 		);
 	}
 
 	async findBySubCategory(
-		subCategory: SubCategoryID
+		subCategory: SubCategoryID,
 	): Promise<ScheduledTransaction[]> {
 		return this.filter(
-			(record) => record.category.subCategory.id === subCategory.value
+			(record) => record.category.subCategory.id === subCategory.value,
 		);
 	}
 }

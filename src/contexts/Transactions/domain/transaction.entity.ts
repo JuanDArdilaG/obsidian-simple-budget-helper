@@ -3,31 +3,31 @@ import {
 	NumberValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
-import { CategoryID } from "contexts/Categories/domain";
+import { Category } from "contexts/Categories/domain";
 import { Nanoid, OperationType } from "contexts/Shared/domain";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { InvalidArgumentError } from "contexts/Shared/domain/errors/invalid-argument.error";
-import { SubCategoryID } from "contexts/Subcategories/domain";
+import { SubCategory } from "contexts/Subcategories/domain";
+import { Account } from "../../Accounts/domain";
 import { ScheduledTransaction } from "../../ScheduledTransactions/domain";
-import { TransactionName } from "./item-name.valueobject";
 import {
-	PaymentSplit,
-	PaymentSplitPrimitives,
-} from "./payment-split.valueobject";
+	AccountSplit,
+	AccountSplitPrimitives,
+} from "./account-split.valueobject";
+import { TransactionName } from "./item-name.valueobject";
 import { TransactionAmount } from "./transaction-amount.valueobject";
 import { TransactionDate } from "./transaction-date.valueobject";
-import { TransactionID } from "./transaction-id.valueobject";
 import { TransactionOperation } from "./transaction-operation.valueobject";
 
-export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
+export class Transaction extends Entity<Nanoid, TransactionPrimitives> {
 	constructor(
-		id: TransactionID,
-		private _originAccounts: PaymentSplit[],
-		private _destinationAccounts: PaymentSplit[],
+		id: Nanoid,
+		private _originAccounts: AccountSplit[],
+		private _destinationAccounts: AccountSplit[],
 		private _name: TransactionName,
 		private _operation: TransactionOperation,
-		private _category: CategoryID,
-		private _subCategory: SubCategoryID,
+		private _category: Category,
+		private _subcategory: SubCategory,
 		private _date: TransactionDate,
 		updatedAt: DateValueObject,
 		private readonly _store?: StringValueObject,
@@ -67,13 +67,13 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		date: TransactionDate,
 	): Transaction {
 		return new Transaction(
-			TransactionID.generate(),
+			Nanoid.generate(),
 			scheduledItem.originAccounts,
 			scheduledItem.destinationAccounts,
 			scheduledItem.name,
 			scheduledItem.operation.type,
-			scheduledItem.category.category.id,
-			scheduledItem.category.subCategory.id,
+			scheduledItem.category.category,
+			scheduledItem.category.subCategory,
 			date,
 			DateValueObject.createNowDate(),
 			scheduledItem.store,
@@ -81,32 +81,33 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 	}
 
 	static create(
-		fromSplits: PaymentSplit[],
-		toSplits: PaymentSplit[],
+		date: TransactionDate,
+		originAccountSplits: AccountSplit[],
+		destinationAccountSplits: AccountSplit[],
 		name: TransactionName,
 		operation: TransactionOperation,
-		category: CategoryID,
-		subCategory: SubCategoryID,
+		category: Category,
+		subCategory: SubCategory,
 	): Transaction {
 		return new Transaction(
-			TransactionID.generate(),
-			fromSplits,
-			toSplits,
+			Nanoid.generate(),
+			originAccountSplits,
+			destinationAccountSplits,
 			name,
 			operation,
 			category,
 			subCategory,
-			TransactionDate.createNowDate(),
+			date,
 			DateValueObject.createNowDate(),
 		);
 	}
 
-	get originAccounts(): PaymentSplit[] {
+	get originAccounts(): AccountSplit[] {
 		return this._originAccounts;
 	}
 
 	get originAmount(): TransactionAmount {
-		return PaymentSplit.totalAmount(this._originAccounts);
+		return AccountSplit.totalAmount(this._originAccounts);
 	}
 
 	get realOriginAmount(): TransactionAmount {
@@ -116,27 +117,23 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 			: amount;
 	}
 
-	get destinationAccounts(): PaymentSplit[] {
+	get destinationAccounts(): AccountSplit[] {
 		return this._destinationAccounts;
 	}
 
 	get destinationAmount(): TransactionAmount {
-		return PaymentSplit.totalAmount(this._destinationAccounts);
+		return AccountSplit.totalAmount(this._destinationAccounts);
 	}
 
-	setOriginAccounts(splits: PaymentSplit[]): void {
+	setOriginAccounts(splits: AccountSplit[]): void {
 		this._originAccounts = splits;
 		this.updateTimestamp();
 	}
 
-	setDestinationAccounts(splits: PaymentSplit[]): void {
+	setDestinationAccounts(splits: AccountSplit[]): void {
 		this._destinationAccounts = splits;
 		this.validateTransferOperation();
 		this.updateTimestamp();
-	}
-
-	get id(): TransactionID {
-		return this._id;
 	}
 
 	get name(): TransactionName {
@@ -167,21 +164,21 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		this.updateTimestamp();
 	}
 
-	get category(): CategoryID {
+	get category(): Category {
 		return this._category;
 	}
 
-	updateCategory(category: CategoryID) {
+	updateCategory(category: Category) {
 		this._category = category;
 		this.updateTimestamp();
 	}
 
-	get subCategory(): SubCategoryID {
-		return this._subCategory;
+	get subcategory(): SubCategory {
+		return this._subcategory;
 	}
 
-	updateSubCategory(subCategory: SubCategoryID) {
-		this._subCategory = subCategory;
+	updateSubCategory(subCategory: SubCategory) {
+		this._subcategory = subCategory;
 		this.updateTimestamp();
 	}
 
@@ -200,14 +197,14 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 
 	getRealAmountForAccount(accountID: Nanoid): TransactionAmount {
 		const originAccounts = this._originAccounts.filter((split) =>
-			split.accountId.equalTo(accountID),
+			split.account.id.equalTo(accountID),
 		);
 		const destinationAccounts = this._destinationAccounts.filter((split) =>
-			split.accountId.equalTo(accountID),
+			split.account.id.equalTo(accountID),
 		);
 
-		const originTotal = PaymentSplit.totalAmount(originAccounts).toNumber();
-		const destinationTotal = PaymentSplit.totalAmount(
+		const originTotal = AccountSplit.totalAmount(originAccounts).toNumber();
+		const destinationTotal = AccountSplit.totalAmount(
 			destinationAccounts,
 			this._exchangeRate,
 		).toNumber();
@@ -224,8 +221,8 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		return {
 			id: this._id.value,
 			name: this._name.value,
-			category: this._category.value,
-			subCategory: this._subCategory.value,
+			category: this._category.id.value,
+			subCategory: this._subcategory.id.value,
 			fromSplits: this._originAccounts.map((s) => s.toPrimitives()),
 			toSplits: this._destinationAccounts.map((s) => s.toPrimitives()),
 			operation: this._operation.value,
@@ -236,35 +233,44 @@ export class Transaction extends Entity<TransactionID, TransactionPrimitives> {
 		};
 	}
 
-	static fromPrimitives({
-		id,
-		name,
-		category,
-		subCategory,
-		fromSplits,
-		toSplits,
-		operation,
-		date,
-		store,
-		exchangeRate,
-		updatedAt,
-	}: TransactionPrimitives): Transaction {
-		let _fromSplits: PaymentSplit[] = [];
-		let _toSplits: PaymentSplit[] = [];
-		if (fromSplits && fromSplits.length > 0) {
-			_fromSplits = fromSplits.map(PaymentSplit.fromPrimitives);
-		}
-		if (toSplits && toSplits.length > 0) {
-			_toSplits = toSplits.map(PaymentSplit.fromPrimitives);
-		}
+	static fromPrimitives(
+		accountsMap: Map<string, Account>,
+		category: Category,
+		subCategory: SubCategory,
+		{
+			id,
+			name,
+			fromSplits,
+			toSplits,
+			operation,
+			date,
+			store,
+			exchangeRate,
+			updatedAt,
+		}: TransactionPrimitives,
+	): Transaction {
+		const _fromSplits: AccountSplit[] =
+			fromSplits?.map((primitive) =>
+				AccountSplit.fromPrimitives(
+					accountsMap.get(primitive.accountId)!,
+					primitive,
+				),
+			) || [];
+		const _toSplits: AccountSplit[] =
+			toSplits?.map((primitive) =>
+				AccountSplit.fromPrimitives(
+					accountsMap.get(primitive.accountId)!,
+					primitive,
+				),
+			) || [];
 		return new Transaction(
-			new TransactionID(id),
+			new Nanoid(id),
 			_fromSplits,
 			_toSplits,
 			new TransactionName(name),
 			new TransactionOperation(operation),
-			new CategoryID(category),
-			new SubCategoryID(subCategory),
+			category,
+			subCategory,
 			new TransactionDate(new Date(date)),
 			updatedAt
 				? new DateValueObject(new Date(updatedAt))
@@ -296,8 +302,8 @@ export type TransactionPrimitives = {
 	name: string;
 	category: string;
 	subCategory: string;
-	fromSplits?: PaymentSplitPrimitives[];
-	toSplits?: PaymentSplitPrimitives[];
+	fromSplits?: AccountSplitPrimitives[];
+	toSplits?: AccountSplitPrimitives[];
 	operation: OperationType;
 	date: Date;
 	store?: string;

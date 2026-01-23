@@ -6,10 +6,9 @@ import { CommandUseCase } from "contexts/Shared/domain/command-use-case.interfac
 import { EntityNotFoundError } from "contexts/Shared/domain/errors/not-found.error";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { ITransactionsService } from "contexts/Transactions/domain";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionName } from "contexts/Transactions/domain/item-name.valueobject";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionDate } from "contexts/Transactions/domain/transaction-date.valueobject";
-import { TransactionID } from "contexts/Transactions/domain/transaction-id.valueobject";
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 import { Nanoid } from "../../Shared/domain";
 import {
@@ -21,19 +20,17 @@ export type RecordScheduledTransactionUseCaseInput = {
 	scheduledTransactionID: Nanoid;
 	occurrenceIndex: NumberValueObject;
 	date?: TransactionDate;
-	fromSplits?: PaymentSplit[];
-	toSplits?: PaymentSplit[];
+	fromSplits?: AccountSplit[];
+	toSplits?: AccountSplit[];
 };
 
-export class RecordScheduledTransactionUseCase
-	implements CommandUseCase<RecordScheduledTransactionUseCaseInput>
-{
+export class RecordScheduledTransactionUseCase implements CommandUseCase<RecordScheduledTransactionUseCaseInput> {
 	readonly #logger = new Logger("RecordOccurrenceV2UseCase");
 
 	constructor(
 		private readonly _transactionsService: ITransactionsService,
 		private readonly _scheduledTransactionsService: IScheduledTransactionsService,
-		private readonly _recurrenceModificationsService: IRecurrenceModificationsService
+		private readonly _recurrenceModificationsService: IRecurrenceModificationsService,
 	) {}
 
 	async execute({
@@ -50,12 +47,12 @@ export class RecordScheduledTransactionUseCase
 
 		const scheduledTransaction =
 			await this._scheduledTransactionsService.getByID(
-				scheduledTransactionID
+				scheduledTransactionID,
 			);
 		if (!scheduledTransaction) {
 			throw new EntityNotFoundError(
 				"ScheduledTransaction",
-				scheduledTransactionID
+				scheduledTransactionID,
 			);
 		}
 
@@ -63,12 +60,12 @@ export class RecordScheduledTransactionUseCase
 		const recurrenceInfo =
 			await this._scheduledTransactionsService.getOccurrence(
 				scheduledTransactionID,
-				occurrenceIndex
+				occurrenceIndex,
 			);
 
 		if (!recurrenceInfo) {
 			throw new Error(
-				`Invalid occurrence index: ${occurrenceIndex.value}`
+				`Invalid occurrence index: ${occurrenceIndex.value}`,
 			);
 		}
 
@@ -80,16 +77,16 @@ export class RecordScheduledTransactionUseCase
 
 		// Create transaction from the effective data
 		const transaction = new Transaction(
-			TransactionID.generate(),
+			Nanoid.generate(),
 			effectiveFromSplits,
 			effectiveToSplits,
 			new TransactionName(scheduledTransaction.name.value),
 			scheduledTransaction.operation.type,
-			scheduledTransaction.category.category.id,
-			scheduledTransaction.category.subCategory.id,
+			scheduledTransaction.category.category,
+			scheduledTransaction.category.subCategory,
 			effectiveDate,
 			DateValueObject.createNowDate(),
-			recurrenceInfo.store
+			recurrenceInfo.store,
 		);
 
 		this.#logger.debug("Created transaction", {
@@ -99,7 +96,7 @@ export class RecordScheduledTransactionUseCase
 		// Mark the occurrence as completed
 		await this._recurrenceModificationsService.markOccurrenceAsCompleted(
 			scheduledTransactionID,
-			occurrenceIndex
+			occurrenceIndex,
 		);
 
 		// Record the transaction

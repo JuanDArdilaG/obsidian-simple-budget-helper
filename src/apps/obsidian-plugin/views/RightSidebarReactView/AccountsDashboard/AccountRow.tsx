@@ -95,7 +95,7 @@ export function AccountRow({
 								setEditSubtype(e.target.value as AccountSubtype)
 							}
 							onKeyDown={handleKeyDown}
-							className="w-full px-3 py-1.5 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-xs text-gray-600"
+							className="w-full! px-3! py-1.5! border! border-indigo-200! rounded-md! focus:outline-none! focus:ring-2! focus:ring-indigo-500! bg-white! text-xs! text-gray-600!"
 						>
 							{account.type.isAsset() ? (
 								<>

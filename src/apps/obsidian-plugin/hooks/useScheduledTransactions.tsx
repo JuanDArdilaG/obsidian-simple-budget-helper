@@ -8,14 +8,15 @@ export const useScheduledTransactions = ({
 }: {
 	getAllScheduledTransactionsUseCase: GetAllScheduledTransactionsUseCase;
 }) => {
-	const { logger } = useLogger("useItems");
+	const { logger } = useLogger("useScheduledTransactions");
 
 	const [items, setItems] = useState<ScheduledTransaction[]>([]);
-	const [updateScheduledTransactions, setUpdateItems] = useState(true);
+	const [updateScheduledTransactions, setUpdateScheduledTransactions] =
+		useState(false);
 
 	useEffect(() => {
 		if (updateScheduledTransactions) {
-			setUpdateItems(false);
+			setUpdateScheduledTransactions(false);
 			getAllScheduledTransactionsUseCase
 				.execute()
 				.then((scheduledTransactions) => {
@@ -29,6 +30,6 @@ export const useScheduledTransactions = ({
 
 	return {
 		scheduledItems: items,
-		updateScheduledTransactions: () => setUpdateItems(true),
+		updateScheduledTransactions: () => setUpdateScheduledTransactions(true),
 	};
 };

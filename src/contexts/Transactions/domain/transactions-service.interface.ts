@@ -1,8 +1,7 @@
 import { AccountBalance } from "contexts/Accounts/domain";
-import { CategoryID } from "contexts/Categories/domain";
+import { Category, CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { Nanoid } from "../../Shared/domain";
-import { TransactionID } from "./transaction-id.valueobject";
 import { Transaction } from "./transaction.entity";
 
 export interface ITransactionsService {
@@ -13,14 +12,14 @@ export interface ITransactionsService {
 	): Promise<void>;
 
 	getAll(): Promise<Transaction[]>;
-	getByID(id: TransactionID): Promise<Transaction>;
+	getByID(id: Nanoid): Promise<Transaction>;
 	getByCategory(category: CategoryID): Promise<Transaction[]>;
 	getBySubCategory(subCategory: SubCategoryID): Promise<Transaction[]>;
 	hasTransactionsByCategory(category: CategoryID): Promise<boolean>;
 	hasTransactionsBySubCategory(subCategory: SubCategoryID): Promise<boolean>;
 	reassignTransactionsCategory(
-		oldCategory: CategoryID,
-		newCategory: CategoryID,
+		oldCategory: Category,
+		newCategory: Category,
 	): Promise<void>;
 	reassignTransactionsSubCategory(
 		oldSubCategory: SubCategoryID,
@@ -32,7 +31,7 @@ export interface ITransactionsService {
 		newSubCategory: SubCategoryID,
 	): Promise<void>;
 	update(transaction: Transaction): Promise<void>;
-	delete(id: TransactionID): Promise<void>;
+	delete(id: Nanoid): Promise<void>;
 	getTransactionsByCategory(
 		category: CategoryID,
 	): Promise<Array<Transaction>>;

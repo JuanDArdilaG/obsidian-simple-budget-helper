@@ -41,7 +41,6 @@ import {
 } from "../../../../../contexts/Transactions/domain";
 import { CategoriesContext } from "../Contexts";
 import { AppContext } from "../Contexts/AppContext";
-import { RightSidebarReactTab } from "../RightSidebarReactTab";
 
 interface TransactionSummary {
 	id: string;
@@ -125,8 +124,8 @@ export const CategoriesList = () => {
 				date: tx.date.toISOString().split("T")[0],
 				operation: tx.operation.value,
 				account:
-					tx.originAccounts[0]?.accountId.value ||
-					tx.destinationAccounts[0]?.accountId.value,
+					tx.originAccounts[0]?.account.id.value ||
+					tx.destinationAccounts[0]?.account.id.value,
 			});
 
 			if (itemType === "category") {
@@ -255,7 +254,7 @@ export const CategoriesList = () => {
 			// Add all subcategories from all categories (excluding the one being deleted)
 			sortedCategories.forEach((cat) => {
 				if (cat.category.id.value !== deleteItem.id) {
-					cat.subCategories.forEach((subCat) => {
+					cat.subcategories.forEach((subCat) => {
 						reassignments.push({
 							id: subCat.id.value,
 							name: subCat.name.toString(),
@@ -280,7 +279,7 @@ export const CategoriesList = () => {
 
 			// Add all subcategories (excluding the one being deleted)
 			sortedCategories.forEach((cat) => {
-				cat.subCategories.forEach((subCat) => {
+				cat.subcategories.forEach((subCat) => {
 					if (subCat.id.value !== deleteItem.id) {
 						reassignments.push({
 							id: subCat.id.value,
@@ -299,394 +298,377 @@ export const CategoriesList = () => {
 
 	return (
 		<>
-			<RightSidebarReactTab
-				title="Categories"
-				total={categoriesWithSubcategories.length}
-				handleRefresh={async () => updateCategoriesWithSubcategories()}
+			<Box
+				sx={{
+					display: "flex",
+					flexDirection: { xs: "column", md: "row" },
+					gap: 2,
+					mb: 4,
+					p: 1,
+				}}
 			>
-				{/* Creation panels section */}
-				<Box
-					sx={{
-						display: "flex",
-						flexDirection: { xs: "column", md: "row" },
-						gap: 2,
-						mb: 4,
-						p: 1,
-					}}
-				>
-					<Box sx={{ flex: { xs: "none", md: 1 } }}>
-						<CreateCategoryPanel
-							onCreate={() => {
-								updateCategoriesWithSubcategories();
-							}}
-						/>
-					</Box>
-
-					<Box sx={{ flex: { xs: "none", md: 1 } }}>
-						<CreateSubCategoryPanel
-							onCreate={() => {
-								updateCategoriesWithSubcategories();
-							}}
-						/>
-					</Box>
+				<Box sx={{ flex: { xs: "none", md: 1 } }}>
+					<CreateCategoryPanel
+						onCreate={() => {
+							updateCategoriesWithSubcategories();
+						}}
+					/>
 				</Box>
 
-				{/* Categories list section */}
-				<Box
-					sx={{
-						maxHeight: "calc(100vh - 200px)",
-						overflowY: "auto",
-						mt: 2,
-						"&::-webkit-scrollbar": {
-							width: "6px",
-						},
-						"&::-webkit-scrollbar-track": {
-							background: "var(--background-secondary)",
-							borderRadius: "3px",
-						},
-						"&::-webkit-scrollbar-thumb": {
-							background: "var(--background-modifier-border)",
-							borderRadius: "3px",
-							"&:hover": {
-								background: "var(--text-muted)",
-							},
-						},
-					}}
-				>
-					{sortedCategories.map((categoryWithSubCategories) => {
-						const categoryId =
-							categoryWithSubCategories.category.id.value;
-						const isExpanded = expandedCategories.has(categoryId);
-						const hasSubCategories =
-							categoryWithSubCategories.subCategories.length > 0;
+				<Box sx={{ flex: { xs: "none", md: 1 } }}>
+					<CreateSubCategoryPanel
+						onCreate={() => {
+							updateCategoriesWithSubcategories();
+						}}
+					/>
+				</Box>
+			</Box>
 
-						return (
-							<Card
-								key={categoryId}
-								sx={{
-									mb: 1.5,
-									borderRadius: 2,
-									backgroundColor:
-										"var(--background-primary)",
-									border: "1px solid var(--background-modifier-border)",
-									boxShadow: "none",
-									"&:hover": {
-										borderColor: "var(--text-muted)",
-										transition:
-											"border-color 0.2s ease-in-out",
-									},
-								}}
-							>
-								<CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
-									<ListItem
-										sx={{
-											p: 0,
-											cursor: hasSubCategories
-												? "pointer"
-												: "default",
-										}}
-										onClick={() =>
-											hasSubCategories &&
-											handleCategoryToggle(categoryId)
-										}
-									>
-										<ListItemIcon sx={{ minWidth: 40 }}>
-											<CategoryIcon
-												sx={{
-													fontSize: isMobile
-														? 20
-														: 24,
-													color: "var(--interactive-accent)",
-												}}
-											/>
-										</ListItemIcon>
-										<ListItemText
-											primary={
-												<Typography
-													variant={
-														isMobile ? "h6" : "h5"
-													}
-													sx={{
-														fontWeight: 600,
-														color: "var(--text-normal)",
-													}}
-												>
-													{categoryWithSubCategories.category.name.toString()}
-												</Typography>
-											}
-											secondary={
-												<Typography
-													variant="body2"
-													sx={{
-														mt: 0.5,
-														color: "var(--text-muted)",
-													}}
-												>
-													{
-														categoryWithSubCategories
-															.subCategories
-															.length
-													}{" "}
-													subcategor
-													{categoryWithSubCategories
-														.subCategories
-														.length === 1
-														? "y"
-														: "ies"}
-												</Typography>
-											}
-										/>
-										<Box
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												gap: 1,
-											}}
-										>
-											{hasSubCategories && (
-												<IconButton
-													size="small"
-													sx={{
-														transform: isExpanded
-															? "rotate(180deg)"
-															: "rotate(0deg)",
-														transition:
-															"transform 0.2s ease-in-out",
-														color: "var(--text-muted)",
-														"&:hover": {
-															backgroundColor:
-																"var(--background-modifier-hover)",
-														},
-													}}
-												>
-													<ExpandMore />
-												</IconButton>
-											)}
-											<Tooltip title="More options">
-												<IconButton
-													size="small"
-													onClick={(e) => {
-														e.stopPropagation();
-														handleMenuOpen(e, {
-															id: categoryId,
-															name: categoryWithSubCategories.category.name.toString(),
-															type: "category",
-														});
-													}}
-													sx={{
-														color: "var(--text-muted)",
-														"&:hover": {
-															backgroundColor:
-																"var(--background-modifier-hover)",
-														},
-													}}
-												>
-													<MoreVertIcon />
-												</IconButton>
-											</Tooltip>
-										</Box>
-									</ListItem>
+			{/* Categories list section */}
+			<Box
+				sx={{
+					maxHeight: "calc(100vh - 200px)",
+					overflowY: "auto",
+					mt: 2,
+					"&::-webkit-scrollbar": {
+						width: "6px",
+					},
+					"&::-webkit-scrollbar-track": {
+						background: "var(--background-secondary)",
+						borderRadius: "3px",
+					},
+					"&::-webkit-scrollbar-thumb": {
+						background: "var(--background-modifier-border)",
+						borderRadius: "3px",
+						"&:hover": {
+							background: "var(--text-muted)",
+						},
+					},
+				}}
+			>
+				{sortedCategories.map((categoryWithSubCategories) => {
+					const categoryId =
+						categoryWithSubCategories.category.id.value;
+					const isExpanded = expandedCategories.has(categoryId);
+					const hasSubCategories =
+						categoryWithSubCategories.subcategories.length > 0;
 
-									{hasSubCategories && (
-										<>
-											<Divider
-												sx={{
-													my: 1.5,
-													borderColor:
-														"var(--background-modifier-border)",
-												}}
-											/>
-											<Collapse
-												in={isExpanded}
-												timeout="auto"
-												unmountOnExit
-											>
-												<List
-													sx={{
-														pl: isMobile ? 2 : 3,
-													}}
-												>
-													{categoryWithSubCategories.subCategories
-														.toSorted((a, b) =>
-															a.name.compareTo(
-																b.name,
-															),
-														)
-														.map((subCategory) => (
-															<ListItem
-																key={
-																	subCategory
-																		.id
-																		.value
-																}
-																sx={{
-																	p: isMobile
-																		? "8px 0"
-																		: "12px 0",
-																	borderRadius: 1,
-																	"&:hover": {
-																		backgroundColor:
-																			"var(--background-modifier-hover)",
-																	},
-																}}
-															>
-																<ListItemIcon
-																	sx={{
-																		minWidth: 32,
-																	}}
-																>
-																	<SubCategoryIcon
-																		sx={{
-																			fontSize:
-																				isMobile
-																					? 16
-																					: 18,
-																			color: "var(--text-muted)",
-																		}}
-																	/>
-																</ListItemIcon>
-																<ListItemText
-																	primary={
-																		<Typography
-																			variant={
-																				isMobile
-																					? "body2"
-																					: "body1"
-																			}
-																			sx={{
-																				fontWeight: 500,
-																				color: "var(--text-normal)",
-																			}}
-																		>
-																			{subCategory.name.toString()}
-																		</Typography>
-																	}
-																/>
-																<Tooltip title="More options">
-																	<IconButton
-																		size="small"
-																		onClick={(
-																			e,
-																		) => {
-																			e.stopPropagation();
-																			handleMenuOpen(
-																				e,
-																				{
-																					id: subCategory
-																						.id
-																						.value,
-																					name: subCategory.name.toString(),
-																					type: "subcategory",
-																				},
-																			);
-																		}}
-																		sx={{
-																			color: "var(--text-muted)",
-																			"&:hover":
-																				{
-																					backgroundColor:
-																						"var(--background-modifier-hover)",
-																				},
-																		}}
-																	>
-																		<MoreVertIcon />
-																	</IconButton>
-																</Tooltip>
-															</ListItem>
-														))}
-												</List>
-											</Collapse>
-										</>
-									)}
-								</CardContent>
-							</Card>
-						);
-					})}
-
-					{sortedCategories.length === 0 && (
-						<Box
+					return (
+						<Card
+							key={categoryId}
 							sx={{
-								textAlign: "center",
-								py: 4,
-								color: "var(--text-muted)",
+								mb: 1.5,
+								borderRadius: 2,
+								backgroundColor: "var(--background-primary)",
+								border: "1px solid var(--background-modifier-border)",
+								boxShadow: "none",
+								"&:hover": {
+									borderColor: "var(--text-muted)",
+									transition: "border-color 0.2s ease-in-out",
+								},
 							}}
 						>
-							<CategoryIcon
-								sx={{
-									fontSize: 48,
-									mb: 2,
-									opacity: 0.5,
-									color: "var(--text-muted)",
-								}}
-							/>
-							<Typography
-								variant="h6"
-								gutterBottom
-								sx={{ color: "var(--text-normal)" }}
-							>
-								No categories yet
-							</Typography>
-							<Typography
-								variant="body2"
-								sx={{ color: "var(--text-muted)" }}
-							>
-								Create your first category to get started
-							</Typography>
-						</Box>
-					)}
-				</Box>
+							<CardContent sx={{ p: isMobile ? 1.5 : 2 }}>
+								<ListItem
+									sx={{
+										p: 0,
+										cursor: hasSubCategories
+											? "pointer"
+											: "default",
+									}}
+									onClick={() =>
+										hasSubCategories &&
+										handleCategoryToggle(categoryId)
+									}
+								>
+									<ListItemIcon sx={{ minWidth: 40 }}>
+										<CategoryIcon
+											sx={{
+												fontSize: isMobile ? 20 : 24,
+												color: "var(--interactive-accent)",
+											}}
+										/>
+									</ListItemIcon>
+									<ListItemText
+										primary={
+											<Typography
+												variant={isMobile ? "h6" : "h5"}
+												sx={{
+													fontWeight: 600,
+													color: "var(--text-normal)",
+												}}
+											>
+												{categoryWithSubCategories.category.name.toString()}
+											</Typography>
+										}
+										secondary={
+											<Typography
+												variant="body2"
+												sx={{
+													mt: 0.5,
+													color: "var(--text-muted)",
+												}}
+											>
+												{
+													categoryWithSubCategories
+														.subcategories.length
+												}{" "}
+												subcategor
+												{categoryWithSubCategories
+													.subcategories.length === 1
+													? "y"
+													: "ies"}
+											</Typography>
+										}
+									/>
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											gap: 1,
+										}}
+									>
+										{hasSubCategories && (
+											<IconButton
+												size="small"
+												sx={{
+													transform: isExpanded
+														? "rotate(180deg)"
+														: "rotate(0deg)",
+													transition:
+														"transform 0.2s ease-in-out",
+													color: "var(--text-muted)",
+													"&:hover": {
+														backgroundColor:
+															"var(--background-modifier-hover)",
+													},
+												}}
+											>
+												<ExpandMore />
+											</IconButton>
+										)}
+										<Tooltip title="More options">
+											<IconButton
+												size="small"
+												onClick={(e) => {
+													e.stopPropagation();
+													handleMenuOpen(e, {
+														id: categoryId,
+														name: categoryWithSubCategories.category.name.toString(),
+														type: "category",
+													});
+												}}
+												sx={{
+													color: "var(--text-muted)",
+													"&:hover": {
+														backgroundColor:
+															"var(--background-modifier-hover)",
+													},
+												}}
+											>
+												<MoreVertIcon />
+											</IconButton>
+										</Tooltip>
+									</Box>
+								</ListItem>
 
-				{/* More options menu */}
-				<Menu
-					anchorEl={anchorEl}
-					open={Boolean(anchorEl)}
-					onClose={handleMenuClose}
-					anchorOrigin={{
-						vertical: "bottom",
-						horizontal: "right",
-					}}
-					transformOrigin={{
-						vertical: "top",
-						horizontal: "right",
-					}}
+								{hasSubCategories && (
+									<>
+										<Divider
+											sx={{
+												my: 1.5,
+												borderColor:
+													"var(--background-modifier-border)",
+											}}
+										/>
+										<Collapse
+											in={isExpanded}
+											timeout="auto"
+											unmountOnExit
+										>
+											<List
+												sx={{
+													pl: isMobile ? 2 : 3,
+												}}
+											>
+												{categoryWithSubCategories.subcategories
+													.toSorted((a, b) =>
+														a.name.compareTo(
+															b.name,
+														),
+													)
+													.map((subCategory) => (
+														<ListItem
+															key={
+																subCategory.id
+																	.value
+															}
+															sx={{
+																p: isMobile
+																	? "8px 0"
+																	: "12px 0",
+																borderRadius: 1,
+																"&:hover": {
+																	backgroundColor:
+																		"var(--background-modifier-hover)",
+																},
+															}}
+														>
+															<ListItemIcon
+																sx={{
+																	minWidth: 32,
+																}}
+															>
+																<SubCategoryIcon
+																	sx={{
+																		fontSize:
+																			isMobile
+																				? 16
+																				: 18,
+																		color: "var(--text-muted)",
+																	}}
+																/>
+															</ListItemIcon>
+															<ListItemText
+																primary={
+																	<Typography
+																		variant={
+																			isMobile
+																				? "body2"
+																				: "body1"
+																		}
+																		sx={{
+																			fontWeight: 500,
+																			color: "var(--text-normal)",
+																		}}
+																	>
+																		{subCategory.name.toString()}
+																	</Typography>
+																}
+															/>
+															<Tooltip title="More options">
+																<IconButton
+																	size="small"
+																	onClick={(
+																		e,
+																	) => {
+																		e.stopPropagation();
+																		handleMenuOpen(
+																			e,
+																			{
+																				id: subCategory
+																					.id
+																					.value,
+																				name: subCategory.name.toString(),
+																				type: "subcategory",
+																			},
+																		);
+																	}}
+																	sx={{
+																		color: "var(--text-muted)",
+																		"&:hover":
+																			{
+																				backgroundColor:
+																					"var(--background-modifier-hover)",
+																			},
+																	}}
+																>
+																	<MoreVertIcon />
+																</IconButton>
+															</Tooltip>
+														</ListItem>
+													))}
+											</List>
+										</Collapse>
+									</>
+								)}
+							</CardContent>
+						</Card>
+					);
+				})}
+
+				{sortedCategories.length === 0 && (
+					<Box
+						sx={{
+							textAlign: "center",
+							py: 4,
+							color: "var(--text-muted)",
+						}}
+					>
+						<CategoryIcon
+							sx={{
+								fontSize: 48,
+								mb: 2,
+								opacity: 0.5,
+								color: "var(--text-muted)",
+							}}
+						/>
+						<Typography
+							variant="h6"
+							gutterBottom
+							sx={{ color: "var(--text-normal)" }}
+						>
+							No categories yet
+						</Typography>
+						<Typography
+							variant="body2"
+							sx={{ color: "var(--text-muted)" }}
+						>
+							Create your first category to get started
+						</Typography>
+					</Box>
+				)}
+			</Box>
+
+			{/* More options menu */}
+			<Menu
+				anchorEl={anchorEl}
+				open={Boolean(anchorEl)}
+				onClose={handleMenuClose}
+				anchorOrigin={{
+					vertical: "bottom",
+					horizontal: "right",
+				}}
+				transformOrigin={{
+					vertical: "top",
+					horizontal: "right",
+				}}
+				sx={{
+					"& .MuiPaper-root": {
+						backgroundColor: "var(--background-primary)",
+						border: "1px solid var(--background-modifier-border)",
+						color: "var(--text-normal)",
+					},
+				}}
+			>
+				<MenuItemComponent
+					onClick={handleDeleteClick}
 					sx={{
-						"& .MuiPaper-root": {
-							backgroundColor: "var(--background-primary)",
-							border: "1px solid var(--background-modifier-border)",
-							color: "var(--text-normal)",
+						color: "var(--text-error)",
+						"&:hover": {
+							backgroundColor: "var(--background-modifier-error)",
+							color: "var(--text-on-accent)",
 						},
 					}}
 				>
-					<MenuItemComponent
-						onClick={handleDeleteClick}
-						sx={{
-							color: "var(--text-error)",
-							"&:hover": {
-								backgroundColor:
-									"var(--background-modifier-error)",
-								color: "var(--text-on-accent)",
-							},
-						}}
-					>
-						<DeleteIcon sx={{ mr: 1, fontSize: 20 }} />
-						Delete {selectedItem?.type}
-					</MenuItemComponent>
-				</Menu>
+					<DeleteIcon sx={{ mr: 1, fontSize: 20 }} />
+					Delete {selectedItem?.type}
+				</MenuItemComponent>
+			</Menu>
 
-				{/* Delete confirmation dialog */}
-				<DeleteConfirmationDialog
-					open={deleteDialogOpen}
-					onClose={handleDeleteDialogClose}
-					onConfirm={handleDeleteConfirm}
-					title={`Delete ${deleteItem?.type}`}
-					message={`Are you sure you want to delete this ${deleteItem?.type}?`}
-					itemName={deleteItem?.name || ""}
-					itemType={deleteItem?.type || "category"}
-					availableReassignments={getAvailableReassignments()}
-					hasRelatedItems={relatedTransactions.length > 0}
-					relatedTransactions={relatedTransactions}
-				/>
-			</RightSidebarReactTab>
+			{/* Delete confirmation dialog */}
+			<DeleteConfirmationDialog
+				open={deleteDialogOpen}
+				onClose={handleDeleteDialogClose}
+				onConfirm={handleDeleteConfirm}
+				title={`Delete ${deleteItem?.type}`}
+				message={`Are you sure you want to delete this ${deleteItem?.type}?`}
+				itemName={deleteItem?.name || ""}
+				itemType={deleteItem?.type || "category"}
+				availableReassignments={getAvailableReassignments()}
+				hasRelatedItems={relatedTransactions.length > 0}
+				relatedTransactions={relatedTransactions}
+			/>
 
 			{/* Notification */}
 			<Notification

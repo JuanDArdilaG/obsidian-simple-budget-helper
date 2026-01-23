@@ -1,11 +1,5 @@
 @import "tailwindcss";
 
-select {
-	background-color: var(--color-white);
-	border-color: var(--color-gray-300);
-	font-size: initial;
-}
-
 button {
 	height: auto;
 	font-size: inherit;
@@ -19,9 +13,6 @@ button:not(.clickable-icon) {
 h3 {
 	color: var(--color-gray-500);
 	letter-spacing: var(--tracking-wide);
-	--tw-font-weight: var(--font-weight-medium);
-	font-weight: var(--font-weight-medium);
-	font-size: var(--text-sm);
 	line-height: var(--tw-leading, var(--text-sm--line-height));
 	margin-block-start: unset;
 	margin-block-end: unset;

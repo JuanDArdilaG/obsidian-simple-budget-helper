@@ -5,7 +5,7 @@ import {
 	AccountAssetSubtype,
 	AccountIntegrityResult,
 } from "contexts/Accounts/domain";
-import { Transaction, TransactionID } from "contexts/Transactions/domain";
+import { Transaction } from "contexts/Transactions/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Nanoid } from "../../../../src/contexts/Shared/domain";
 import { buildTestAccounts } from "../domain/buildTestAccounts";
@@ -39,7 +39,7 @@ const currency = "USD";
 // Mock transaction that behaves like a real transaction
 const createMockTransaction = (testAccountId: Nanoid, amount: number) => {
 	const mockTransaction = {
-		id: { value: TransactionID.generate().value },
+		id: { value: Nanoid.generate().value },
 		getRealAmountForAccount: vi
 			.fn()
 			.mockReturnValue({ value: new PriceValueObject(amount) }),

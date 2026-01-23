@@ -2,7 +2,7 @@ import { NumberValueObject } from "@juandardilag/value-objects";
 import { Category, CategoryID } from "contexts/Categories/domain";
 import { Criteria, Nanoid } from "contexts/Shared/domain";
 import { SubCategory, SubCategoryID } from "contexts/Subcategories/domain";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import {
 	IScheduledTransactionsService,
 	ItemRecurrenceInfo,
@@ -10,14 +10,12 @@ import {
 	ScheduledTransactionPrimitives,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
 
-export class ScheduledTransactionsServiceMock
-	implements IScheduledTransactionsService
-{
+export class ScheduledTransactionsServiceMock implements IScheduledTransactionsService {
 	constructor(public items: ScheduledTransaction[]) {}
 
 	getOccurrence(
 		id: Nanoid,
-		occurrenceIndex: NumberValueObject
+		occurrenceIndex: NumberValueObject,
 	): Promise<ItemRecurrenceInfo | null> {
 		throw new Error("Method not implemented.");
 	}
@@ -27,15 +25,15 @@ export class ScheduledTransactionsServiceMock
 
 	async getByCategory(category: CategoryID): Promise<ScheduledTransaction[]> {
 		return this.items.filter((item) =>
-			item.category.category.id.equalTo(category)
+			item.category.category.id.equalTo(category),
 		);
 	}
 
 	async getBySubCategory(
-		subCategory: SubCategoryID
+		subCategory: SubCategoryID,
 	): Promise<ScheduledTransaction[]> {
 		return this.items.filter((item) =>
-			item.category.subCategory.id.equalTo(subCategory)
+			item.category.subCategory.id.equalTo(subCategory),
 		);
 	}
 
@@ -51,7 +49,7 @@ export class ScheduledTransactionsServiceMock
 
 	async reassignItemsCategory(
 		oldCategory: Category,
-		newCategory: Category
+		newCategory: Category,
 	): Promise<void> {
 		const items = await this.getByCategory(oldCategory.id);
 		for (const item of items) {
@@ -61,7 +59,7 @@ export class ScheduledTransactionsServiceMock
 
 	async reassignItemsSubCategory(
 		oldSubCategory: SubCategory,
-		newSubCategory: SubCategory
+		newSubCategory: SubCategory,
 	): Promise<void> {
 		const items = await this.getBySubCategory(oldSubCategory.id);
 		for (const item of items) {
@@ -72,7 +70,7 @@ export class ScheduledTransactionsServiceMock
 	async reassignItemsCategoryAndSubcategory(
 		oldCategory: Category,
 		newCategory: Category,
-		newSubCategory: SubCategory
+		newSubCategory: SubCategory,
 	): Promise<void> {
 		const items = await this.getByCategory(oldCategory.id);
 		for (const item of items) {
@@ -85,8 +83,8 @@ export class ScheduledTransactionsServiceMock
 		id: Nanoid,
 		n: NumberValueObject,
 		newRecurrence: ItemRecurrenceInfo,
-		fromSplits?: PaymentSplit[],
-		toSplits?: PaymentSplit[]
+		fromSplits?: AccountSplit[],
+		toSplits?: AccountSplit[],
 	): Promise<void> {
 		throw new Error("Method not implemented.");
 	}
@@ -114,7 +112,7 @@ export class ScheduledTransactionsServiceMock
 	}
 
 	async getByCriteria(
-		criteria: Criteria<ScheduledTransactionPrimitives>
+		criteria: Criteria<ScheduledTransactionPrimitives>,
 	): Promise<ScheduledTransaction[]> {
 		throw new Error("Method not implemented.");
 	}

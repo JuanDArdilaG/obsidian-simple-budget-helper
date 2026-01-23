@@ -6,7 +6,6 @@ import { Nanoid } from "contexts/Shared/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { useEffect, useState } from "react";
 import { ItemRecurrenceInfo } from "../../../../../../contexts/ScheduledTransactions/domain";
-import { RightSidebarReactTab } from "../../RightSidebarReactTab";
 import { CalendarTimeframe, TimeframeButtons } from "../TimeframeButtons";
 import { CalendarScheduledTransactionsList } from "./CalendarScheduledTransactionsList";
 
@@ -118,7 +117,7 @@ export const CalendarScheduledTransactionsTab = () => {
 	}, [timeframe]);
 
 	return (
-		<RightSidebarReactTab title={"Upcoming Schedules"} subtitle>
+		<>
 			<div style={{ display: "flex", justifyContent: "center" }}>
 				{UntilDateFilterInput}
 			</div>
@@ -132,6 +131,6 @@ export const CalendarScheduledTransactionsTab = () => {
 				showFilters={showFilters}
 				setShowFilters={setShowFilters}
 			/>
-		</RightSidebarReactTab>
+		</>
 	);
 };

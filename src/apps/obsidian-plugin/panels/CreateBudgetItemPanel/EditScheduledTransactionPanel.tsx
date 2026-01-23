@@ -9,8 +9,7 @@ import { RadioSelect } from "apps/obsidian-plugin/components/RadioSelect";
 import { Select } from "apps/obsidian-plugin/components/Select";
 import { ScheduledTransactionsContext } from "apps/obsidian-plugin/views";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts/AccountsContext";
-import { Nanoid } from "contexts/Shared/domain";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { useContext, useState } from "react";
 import {
@@ -53,21 +52,21 @@ export const EditScheduledTransactionPanel = ({
 
 	const [originAccounts, setOriginAccounts] = useState(
 		recurrence.originAccounts?.map((split) => ({
-			accountId: split.accountId.value,
+			accountId: split.account.id.value,
 			amount: split.amount,
 		})) ??
 			scheduledTransaction.originAccounts.map((split) => ({
-				accountId: split.accountId.value,
+				accountId: split.account.id.value,
 				amount: split.amount,
 			})),
 	);
 	const [destinationAccounts, setDestinationAccounts] = useState(
 		recurrence.destinationAccounts?.map((account) => ({
-			accountId: account.accountId.value,
+			accountId: account.account.id.value,
 			amount: account.amount,
 		})) ??
 			scheduledTransaction.destinationAccounts.map((account) => ({
-				accountId: account.accountId.value,
+				accountId: account.account.id.value,
 				amount: account.amount,
 			})),
 	);
@@ -264,19 +263,27 @@ export const EditScheduledTransactionPanel = ({
 			<button
 				onClick={async () => {
 					if (editScope === "single") {
-						const fromSplitObjs = originAccounts.map(
-							(s) =>
-								new PaymentSplit(
-									new Nanoid(s.accountId),
-									s.amount,
-								),
+						const fromSplitObjs = originAccounts.map((s) =>
+							AccountSplit.fromPrimitives(
+								accounts.find(
+									(acc) => acc.id.value === s.accountId,
+								)!,
+								{
+									accountId: s.accountId,
+									amount: s.amount.value,
+								},
+							),
 						);
-						const toSplitObjs = destinationAccounts.map(
-							(s) =>
-								new PaymentSplit(
-									new Nanoid(s.accountId),
-									s.amount,
-								),
+						const toSplitObjs = destinationAccounts.map((s) =>
+							AccountSplit.fromPrimitives(
+								accounts.find(
+									(acc) => acc.id.value === s.accountId,
+								)!,
+								{
+									accountId: s.accountId,
+									amount: s.amount.value,
+								},
+							),
 						);
 
 						await modifyNItemRecurrence.execute({

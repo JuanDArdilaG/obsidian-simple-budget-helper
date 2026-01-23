@@ -66,7 +66,7 @@ export function SummaryCard({
 			className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between h-full"
 		>
 			<div className="flex justify-between items-start mb-4">
-				<h3 className="text-sm font-medium uppercase tracking-wide">
+				<h3 className="text-sm! font-medium! uppercase tracking-wide">
 					{title}
 				</h3>
 				<div

@@ -22,21 +22,23 @@ export class ScheduledTransactionsService
 	>
 	implements IScheduledTransactionsService
 {
-	#logger = new Logger("ScheduledTransactionsService");
+	static readonly #logger = new Logger("ScheduledTransactionsService");
 	constructor(
 		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository,
 		private readonly _recurrenceModificationsService: IRecurrenceModificationsService,
-		private readonly _accountsService: IAccountsService
+		private readonly _accountsService: IAccountsService,
 	) {
 		super("ScheduledTransaction", _scheduledTransactionsRepository);
 	}
 
 	async delete(id: Nanoid): Promise<void> {
-		this.#logger.debug(`Deleting scheduled transaction with id ${id}`);
+		ScheduledTransactionsService.#logger.debug(
+			`Deleting scheduled transaction with id ${id}`,
+		);
 		const modifications =
 			await this._recurrenceModificationsService.getByScheduledItemId(id);
-		this.#logger.debug(
-			`Found ${modifications.length} modifications for scheduled transaction with id ${id}`
+		ScheduledTransactionsService.#logger.debug(
+			`Found ${modifications.length} modifications for scheduled transaction with id ${id}`,
 		);
 		for (const modification of modifications) {
 			await this._recurrenceModificationsService.delete(modification.id);
@@ -46,15 +48,15 @@ export class ScheduledTransactionsService
 
 	async getByCategory(category: CategoryID): Promise<ScheduledTransaction[]> {
 		return await this._scheduledTransactionsRepository.findByCategory(
-			category
+			category,
 		);
 	}
 
 	async getBySubCategory(
-		subCategory: SubCategoryID
+		subCategory: SubCategoryID,
 	): Promise<ScheduledTransaction[]> {
 		return await this._scheduledTransactionsRepository.findBySubCategory(
-			subCategory
+			subCategory,
 		);
 	}
 
@@ -70,7 +72,7 @@ export class ScheduledTransactionsService
 
 	async reassignItemsCategory(
 		oldCategory: Category,
-		newCategory: Category
+		newCategory: Category,
 	): Promise<void> {
 		const items = await this.getByCategory(oldCategory.id);
 		for (const item of items) {
@@ -81,7 +83,7 @@ export class ScheduledTransactionsService
 
 	async reassignItemsSubCategory(
 		oldSubCategory: SubCategory,
-		newSubCategory: SubCategory
+		newSubCategory: SubCategory,
 	): Promise<void> {
 		const items = await this.getBySubCategory(oldSubCategory.id);
 		for (const item of items) {
@@ -93,7 +95,7 @@ export class ScheduledTransactionsService
 	async reassignItemsCategoryAndSubcategory(
 		oldCategory: Category,
 		newCategory: Category,
-		newSubCategory: SubCategory
+		newSubCategory: SubCategory,
 	): Promise<void> {
 		const items = await this.getByCategory(oldCategory.id);
 		for (const item of items) {
@@ -105,7 +107,7 @@ export class ScheduledTransactionsService
 
 	async getOccurrence(
 		id: Nanoid,
-		occurrenceIndex: NumberValueObject
+		occurrenceIndex: NumberValueObject,
 	): Promise<ItemRecurrenceInfo | null> {
 		const scheduledTransaction = await this.getByID(id);
 		const baseDate =
@@ -118,45 +120,41 @@ export class ScheduledTransactionsService
 		const modification =
 			await this._recurrenceModificationsService.getByScheduledItemIdAndOccurrenceIndex(
 				id,
-				occurrenceIndex.value
+				occurrenceIndex.value,
 			);
 
 		if (modification) {
 			return ItemRecurrenceInfo.fromModification(
 				scheduledTransaction,
-				modification
+				modification,
 			);
 		}
 
 		return ItemRecurrenceInfo.fromScheduledTransaction(
 			scheduledTransaction,
 			occurrenceIndex,
-			baseDate
+			baseDate,
 		);
 	}
 
 	async getMonthlyPriceEstimate(id: Nanoid): Promise<NumberValueObject> {
 		const scheduledTransaction = await this.getByID(id);
-		const fromAccount = await this._accountsService.getByID(
-			scheduledTransaction.originAccounts[0].accountId
-		);
+		const fromAccount = scheduledTransaction.originAccounts[0].account;
 		const toAccount =
 			scheduledTransaction.destinationAccounts.length > 0
-				? await this._accountsService.getByID(
-						scheduledTransaction.destinationAccounts[0].accountId
-				  )
+				? scheduledTransaction.destinationAccounts[0].account
 				: null;
-		if (toAccount && toAccount.type.equalTo(fromAccount.type)) {
+		if (toAccount?.type.equalTo(fromAccount.type)) {
 			return new NumberValueObject(0);
 		}
 		const frequencyFactor =
 			scheduledTransaction.getMonthlyFrequencyFactor();
 
 		const absValue = new NumberValueObject(
-			scheduledTransaction.originAmount.value * frequencyFactor.value
+			scheduledTransaction.originAmount.value * frequencyFactor.value,
 		);
 		if (
-			(toAccount && toAccount.type.isLiability()) ||
+			toAccount?.type.isLiability() ||
 			scheduledTransaction.operation.type.isExpense()
 		) {
 			return absValue.times(new NumberValueObject(-1));

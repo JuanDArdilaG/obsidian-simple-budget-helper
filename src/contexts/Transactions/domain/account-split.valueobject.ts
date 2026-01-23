@@ -1,54 +1,57 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
-import { Nanoid } from "contexts/Shared/domain";
+import { Account } from "../../Accounts/domain";
 import { TransactionAmount } from "./transaction-amount.valueobject";
 
-export interface PaymentSplitPrimitives {
+export interface AccountSplitPrimitives {
 	[key: string]: string | number;
 	accountId: string;
 	amount: number;
 }
 
-export class PaymentSplit {
+export class AccountSplit {
 	constructor(
-		private readonly _accountId: Nanoid,
+		private readonly _account: Account,
 		private readonly _amount: TransactionAmount,
 	) {}
 
-	get accountId(): Nanoid {
-		return this._accountId;
+	get account(): Account {
+		return this._account;
 	}
 
 	get amount(): TransactionAmount {
 		return this._amount;
 	}
 
-	equalTo(other: PaymentSplit): boolean {
+	equalTo(other: AccountSplit): boolean {
 		return (
-			this.accountId.equalTo(other.accountId) &&
+			this.account.id.equalTo(other.account.id) &&
 			this.amount.equalTo(other.amount)
 		);
 	}
 
 	toString(): string {
-		return `${this.accountId.value} - ${this.amount.toString()}`;
+		return `${this.account.name.value} - ${this.amount.toString()}`;
 	}
 
-	toPrimitives(): PaymentSplitPrimitives {
+	toPrimitives(): AccountSplitPrimitives {
 		return {
-			accountId: this.accountId.value,
+			accountId: this.account.id.value,
 			amount: this.amount.value,
 		};
 	}
 
-	static fromPrimitives(primitives: PaymentSplitPrimitives): PaymentSplit {
-		return new PaymentSplit(
-			new Nanoid(primitives.accountId),
+	static fromPrimitives(
+		account: Account,
+		primitives: AccountSplitPrimitives,
+	): AccountSplit {
+		return new AccountSplit(
+			account,
 			new TransactionAmount(primitives.amount),
 		);
 	}
 
 	static totalAmount(
-		splits: PaymentSplit[],
+		splits: AccountSplit[],
 		exchangeRate?: NumberValueObject,
 	): TransactionAmount {
 		return new TransactionAmount(

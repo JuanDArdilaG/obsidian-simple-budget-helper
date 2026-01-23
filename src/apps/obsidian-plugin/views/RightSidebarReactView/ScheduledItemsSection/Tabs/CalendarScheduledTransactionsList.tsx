@@ -78,7 +78,7 @@ export const CalendarScheduledTransactionsList = ({
 	setShowFilters: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
 	const logger = useLogger("CalendarScheduledTransactionsList");
-	const { getAccountByID, accounts } = useContext(AccountsContext);
+	const { accounts } = useContext(AccountsContext);
 	const { categories, subCategories } = useContext(CategoriesContext);
 	const [refreshItems, setRefreshItems] = useState(true);
 
@@ -150,11 +150,11 @@ export const CalendarScheduledTransactionsList = ({
 			// Account filter
 			if (filters.selectedAccount) {
 				const hasFromAccount = recurrence.originAccounts.some((split) =>
-					split.accountId.equalTo(filters.selectedAccount!),
+					split.account.id.equalTo(filters.selectedAccount!),
 				);
 				const hasToAccount = recurrence.destinationAccounts.some(
 					(split) =>
-						split.accountId.equalTo(filters.selectedAccount!),
+						split.account.id.equalTo(filters.selectedAccount!),
 				);
 				if (!hasFromAccount && !hasToAccount) {
 					return false;
@@ -183,10 +183,10 @@ export const CalendarScheduledTransactionsList = ({
 
 			// Price range filter - use the same logic as getItemSplitPrice
 			const accountId =
-				recurrence.originAccounts?.[0]?.accountId ??
-				recurrence.originAccounts[0]?.accountId;
+				recurrence.originAccounts?.[0]?.account.id ??
+				recurrence.originAccounts[0]?.account.id;
 			const split = recurrence.originAccounts.find(
-				(split) => split.accountId.value === accountId.value,
+				(split) => split.account.id.value === accountId.value,
 			);
 			const itemPrice = split ? Math.abs(split.amount.value) : 0;
 
@@ -745,14 +745,9 @@ export const CalendarScheduledTransactionsList = ({
 											}
 											recurrence={recurrence}
 											accountName={
-												getAccountByID(
-													recurrence
-														.originAccounts?.[0]
-														?.accountId ??
-														recurrence
-															.originAccounts[0]
-															?.accountId,
-												)?.name ?? AccountName.empty()
+												recurrence.originAccounts?.[0]
+													?.account?.name ??
+												AccountName.empty()
 											}
 											accountBalance={accountBalance}
 											accountPrevBalance={
@@ -779,14 +774,9 @@ export const CalendarScheduledTransactionsList = ({
 													}
 													recurrence={recurrence}
 													accountName={
-														getAccountByID(
-															recurrence
-																.destinationAccounts?.[0]
-																?.accountId ??
-																recurrence
-																	.destinationAccounts[0]
-																	?.accountId,
-														)?.name ??
+														recurrence
+															.destinationAccounts?.[0]
+															?.account?.name ??
 														AccountName.empty()
 													}
 													accountBalance={

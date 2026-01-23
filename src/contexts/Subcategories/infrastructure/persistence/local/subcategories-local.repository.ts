@@ -1,14 +1,14 @@
-import {
-	SubCategory,
-	SubCategoryID,
-	SubcategoryPrimitives,
-	ISubCategoriesRepository,
-	SubCategoryName,
-} from "contexts/Subcategories/domain";
-import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
-import { LocalRepository } from "contexts/Shared/infrastructure/persistence/local/local.repository";
 import { CategoryID } from "contexts/Categories/domain";
 import { Config } from "contexts/Shared/infrastructure/config/config";
+import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
+import { LocalRepository } from "contexts/Shared/infrastructure/persistence/local/local.repository";
+import {
+	ISubCategoriesRepository,
+	SubCategory,
+	SubCategoryID,
+	SubCategoryName,
+	SubcategoryPrimitives,
+} from "contexts/Subcategories/domain";
 
 export class SubcategoriesLocalRepository
 	extends LocalRepository<SubCategoryID, SubCategory, SubcategoryPrimitives>

@@ -5,7 +5,7 @@ import {
 import { Category, CategoryID } from "contexts/Categories/domain";
 import { IService, Nanoid } from "contexts/Shared/domain";
 import { SubCategory, SubCategoryID } from "contexts/Subcategories/domain";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { ItemRecurrenceInfo } from "./item-recurrence-info.valueobject";
 import {
 	RecurrenceModification,
@@ -16,54 +16,52 @@ import {
 	ScheduledTransactionPrimitives,
 } from "./scheduled-transaction.entity";
 
-export interface IScheduledTransactionsService
-	extends IService<
-		Nanoid,
-		ScheduledTransaction,
-		ScheduledTransactionPrimitives
-	> {
+export interface IScheduledTransactionsService extends IService<
+	Nanoid,
+	ScheduledTransaction,
+	ScheduledTransactionPrimitives
+> {
 	// Item management
 	getByCategory(category: CategoryID): Promise<ScheduledTransaction[]>;
 	getBySubCategory(
-		subCategory: SubCategoryID
+		subCategory: SubCategoryID,
 	): Promise<ScheduledTransaction[]>;
 	hasItemsByCategory(category: CategoryID): Promise<boolean>;
 	hasItemsBySubCategory(subCategory: SubCategoryID): Promise<boolean>;
 	reassignItemsCategory(
 		oldCategory: Category,
-		newCategory: Category
+		newCategory: Category,
 	): Promise<void>;
 	reassignItemsSubCategory(
 		oldSubCategory: SubCategory,
-		newSubCategory: SubCategory
+		newSubCategory: SubCategory,
 	): Promise<void>;
 	reassignItemsCategoryAndSubcategory(
 		oldCategory: Category,
 		newCategory: Category,
-		newSubCategory: SubCategory
+		newSubCategory: SubCategory,
 	): Promise<void>;
 
 	getOccurrence(
 		id: Nanoid,
-		occurrenceIndex: NumberValueObject
+		occurrenceIndex: NumberValueObject,
 	): Promise<ItemRecurrenceInfo | null>;
 
 	getMonthlyPriceEstimate(id: Nanoid): Promise<NumberValueObject>;
 }
 
-export interface IRecurrenceModificationsService
-	extends IService<
-		Nanoid,
-		RecurrenceModification,
-		RecurrenceModificationPrimitives
-	> {
+export interface IRecurrenceModificationsService extends IService<
+	Nanoid,
+	RecurrenceModification,
+	RecurrenceModificationPrimitives
+> {
 	// Find modifications
 	getByScheduledItemId(
-		scheduledItemId: Nanoid
+		scheduledItemId: Nanoid,
 	): Promise<RecurrenceModification[]>;
 	getByScheduledItemIdAndOccurrenceIndex(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: number
+		occurrenceIndex: number,
 	): Promise<RecurrenceModification | null>;
 
 	// Modify occurrences
@@ -72,25 +70,25 @@ export interface IRecurrenceModificationsService
 		occurrenceIndex: NumberValueObject,
 		modifications: {
 			date?: DateValueObject;
-			fromSplits?: PaymentSplit[];
-			toSplits?: PaymentSplit[];
-		}
+			fromSplits?: AccountSplit[];
+			toSplits?: AccountSplit[];
+		},
 	): Promise<RecurrenceModification>;
 
 	// State management
 	markOccurrenceAsCompleted(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: NumberValueObject
+		occurrenceIndex: NumberValueObject,
 	): Promise<RecurrenceModification>;
 
 	markOccurrenceAsDeleted(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: NumberValueObject
+		occurrenceIndex: NumberValueObject,
 	): Promise<RecurrenceModification>;
 
 	resetOccurrenceToPending(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: number
+		occurrenceIndex: number,
 	): Promise<void>;
 
 	// Bulk operations

@@ -1,18 +1,13 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
-import { AccountType } from "contexts/Accounts/domain";
-import { GetAllCategoriesWithSubCategoriesUseCaseOutput } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
+import { CategoriesWithSubcategories } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 import { Category } from "contexts/Categories/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { SubCategory } from "contexts/Subcategories/domain";
 import { ScheduledTransaction } from "../../ScheduledTransactions/domain";
-import { Nanoid } from "../../Shared/domain";
 import { ReportBalance } from "./report-balance.valueobject";
 
 export class ScheduledCategoriesReport {
 	readonly _ = new Logger("ScheduledCategoriesReport");
-	private static readonly defaultAccountTypeLookup = () => {
-		return new AccountType("asset");
-	};
 
 	constructor(readonly scheduledTransactions: ScheduledTransaction[]) {}
 
@@ -84,19 +79,14 @@ export class ScheduledCategoriesReport {
 		);
 	}
 
-	getTotalPerMonth(
-		accountTypeLookup?: (id: Nanoid) => AccountType,
-	): ReportBalance {
-		const lookup =
-			accountTypeLookup ||
-			ScheduledCategoriesReport.defaultAccountTypeLookup;
+	getTotalPerMonth(): ReportBalance {
 		return this.scheduledTransactions.reduce(
 			(total, item) =>
 				total.plus(
 					item.getPricePerMonthWithAccountTypes(
-						lookup(item.originAccounts[0].accountId),
+						item.originAccounts[0].account.type,
 						item.destinationAccounts.length > 0
-							? lookup(item.destinationAccounts[0].accountId)
+							? item.destinationAccounts[0].account.type
 							: undefined,
 					),
 				),
@@ -105,21 +95,15 @@ export class ScheduledCategoriesReport {
 	}
 
 	groupPerCategory(
-		categoriesWithSubcategories: GetAllCategoriesWithSubCategoriesUseCaseOutput,
-		accountTypeLookup?: (id: Nanoid) => AccountType,
+		categoriesWithSubcategories: CategoriesWithSubcategories,
 	): {
 		perMonthExpensesPercentage: NumberValueObject;
 		perMonthInverseOperationPercentage: NumberValueObject;
 		items: ItemsWithCategoryAndSubCategory[];
 	} {
-		const lookup =
-			accountTypeLookup ||
-			ScheduledCategoriesReport.defaultAccountTypeLookup;
 		const res: ItemsWithCategoryAndSubCategory[] = [];
-		const totalExpenses = this.onlyExpenses()
-			.getTotalPerMonth(lookup)
-			.abs();
-		const totalIncomes = this.onlyIncomes().getTotalPerMonth(lookup).abs();
+		const totalExpenses = this.onlyExpenses().getTotalPerMonth().abs();
+		const totalIncomes = this.onlyIncomes().getTotalPerMonth().abs();
 		const expenses = NumberValueObject.zero();
 		const inverseOperation = NumberValueObject.zero();
 		this.scheduledTransactions
@@ -146,9 +130,9 @@ export class ScheduledCategoriesReport {
 					r = res.last();
 				}
 				const itemPricePerMonth = item.getPricePerMonthWithAccountTypes(
-					lookup(item.originAccounts[0].accountId),
+					item.originAccounts[0].account.type,
 					item.destinationAccounts.length > 0
-						? lookup(item.destinationAccounts[0].accountId)
+						? item.destinationAccounts[0].account.type
 						: undefined,
 				);
 				if (r?.category.percentageOperation !== undefined)
@@ -163,7 +147,7 @@ export class ScheduledCategoriesReport {
 				);
 				if (!rS) {
 					const subCategory =
-						categoryWithSubCategories.subCategories.find((sub) =>
+						categoryWithSubCategories.subcategories.find((sub) =>
 							sub.id.equalTo(item.category.subCategory.id),
 						);
 					if (!subCategory) return;

@@ -22,6 +22,7 @@ import {
 } from "../../../../../contexts/Reports/domain";
 import { Nanoid } from "../../../../../contexts/Shared/domain";
 import { ConfirmationModal } from "../../../components/ConfirmationModal";
+import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
 import { ExchangeRatesContext } from "../Contexts/ExchangeRatesContext";
 import { AccountSection } from "./AccountSection";
@@ -56,6 +57,7 @@ export function AccountsDashboard() {
 	const { transactions } = useContext(TransactionsContext);
 
 	const [isRefreshing, setIsRefreshing] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
 	const [lastUpdated, setLastUpdated] = useState<string>();
 
 	const [isAddingAccount, setIsAddingAccount] = useState<{
@@ -216,6 +218,7 @@ export function AccountsDashboard() {
 
 	const handleRefresh = () => {
 		setIsRefreshing(true);
+		setIsLoading(true);
 		setTimeout(() => {
 			updateAccounts();
 			const lastUpdatedDate = new Date();
@@ -226,12 +229,17 @@ export function AccountsDashboard() {
 				}),
 			);
 			setIsRefreshing(false);
+			setIsLoading(false);
 		}, 500); // To show the spinner for at least 500ms
 	};
 
 	useEffect(() => {
 		handleRefresh();
 	}, []);
+
+	if (isLoading) {
+		return <LoadingSpinner />;
+	}
 
 	return (
 		<div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20 relative">
@@ -398,7 +406,7 @@ export function AccountsDashboard() {
 									onChange={(e) =>
 										setNewAccountCurrency(e.target.value)
 									}
-									className="w-full px-3! py-2! border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+									className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:outline-none! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500! bg-white!"
 								>
 									{Object.keys(currencies).map((code) => (
 										<option key={code} value={code}>

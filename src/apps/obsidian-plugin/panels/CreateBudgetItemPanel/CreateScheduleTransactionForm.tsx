@@ -22,6 +22,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { Account } from "../../../../contexts/Accounts/domain";
 import {
 	ScheduledTransaction,
 	ScheduledTransactionPrimitives,
@@ -216,7 +217,9 @@ export const CreateScheduleTransactionForm = ({
 
 	const handleSubmit = (withClose: boolean) => async () => {
 		if (!item) return;
-		const itemToPersist = ScheduledTransaction.fromPrimitives({
+		const accountsMap = new Map<string, Account>();
+		accounts.forEach((acc) => accountsMap.set(acc.id.value, acc));
+		const itemToPersist = ScheduledTransaction.fromPrimitives(accountsMap, {
 			...item,
 			id: Nanoid.generate().value,
 			category: {

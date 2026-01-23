@@ -4,9 +4,10 @@ import {
 } from "@juandardilag/value-objects";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import {
-	PaymentSplit,
-	PaymentSplitPrimitives,
-} from "contexts/Transactions/domain/payment-split.valueobject";
+	AccountSplit,
+	AccountSplitPrimitives,
+} from "contexts/Transactions/domain/account-split.valueobject";
+import { Account } from "../../Accounts/domain";
 import { Nanoid } from "../../Shared/domain";
 
 export enum RecurrenceModificationState {
@@ -27,9 +28,9 @@ export class RecurrenceModification extends Entity<
 		private readonly _originalDate: DateValueObject,
 		private _state: RecurrenceModificationState,
 		private _date?: DateValueObject,
-		private _fromSplits?: PaymentSplit[],
-		private _toSplits?: PaymentSplit[],
-		updatedAt?: DateValueObject
+		private _fromSplits?: AccountSplit[],
+		private _toSplits?: AccountSplit[],
+		updatedAt?: DateValueObject,
 	) {
 		super(id, updatedAt ?? DateValueObject.createNowDate());
 	}
@@ -40,8 +41,8 @@ export class RecurrenceModification extends Entity<
 		originalDate: DateValueObject,
 		state: RecurrenceModificationState = RecurrenceModificationState.PENDING,
 		modifiedDate?: DateValueObject,
-		fromSplits?: PaymentSplit[],
-		toSplits?: PaymentSplit[]
+		fromSplits?: AccountSplit[],
+		toSplits?: AccountSplit[],
 	): RecurrenceModification {
 		return new RecurrenceModification(
 			Nanoid.generate(),
@@ -51,7 +52,7 @@ export class RecurrenceModification extends Entity<
 			state,
 			modifiedDate,
 			fromSplits,
-			toSplits
+			toSplits,
 		);
 	}
 
@@ -75,11 +76,11 @@ export class RecurrenceModification extends Entity<
 		return this._date;
 	}
 
-	get fromSplits(): PaymentSplit[] | undefined {
+	get fromSplits(): AccountSplit[] | undefined {
 		return this._fromSplits;
 	}
 
-	get toSplits(): PaymentSplit[] | undefined {
+	get toSplits(): AccountSplit[] | undefined {
 		return this._toSplits;
 	}
 
@@ -142,7 +143,7 @@ export class RecurrenceModification extends Entity<
 	/**
 	 * Updates the payment splits for this specific occurrence
 	 */
-	updateFromSplits(fromSplits: PaymentSplit[]): void {
+	updateFromSplits(fromSplits: AccountSplit[]): void {
 		this._fromSplits = fromSplits;
 		this.updateTimestamp();
 	}
@@ -150,7 +151,7 @@ export class RecurrenceModification extends Entity<
 	/**
 	 * Updates the payment splits for this specific occurrence
 	 */
-	updateToSplits(toSplits: PaymentSplit[]): void {
+	updateToSplits(toSplits: AccountSplit[]): void {
 		this._toSplits = toSplits;
 		this.updateTimestamp();
 	}
@@ -193,7 +194,8 @@ export class RecurrenceModification extends Entity<
 	}
 
 	static fromPrimitives(
-		primitives: RecurrenceModificationPrimitives
+		accounts: Map<string, Account>,
+		primitives: RecurrenceModificationPrimitives,
 	): RecurrenceModification {
 		return new RecurrenceModification(
 			new Nanoid(primitives.id),
@@ -205,12 +207,18 @@ export class RecurrenceModification extends Entity<
 				? new DateValueObject(new Date(primitives.modifiedDate))
 				: undefined,
 			primitives.fromSplits?.map((split) =>
-				PaymentSplit.fromPrimitives(split)
+				AccountSplit.fromPrimitives(
+					accounts.get(split.accountId)!,
+					split,
+				),
 			),
 			primitives.toSplits?.map((split) =>
-				PaymentSplit.fromPrimitives(split)
+				AccountSplit.fromPrimitives(
+					accounts.get(split.accountId)!,
+					split,
+				),
 			),
-			new DateValueObject(new Date(primitives.updatedAt))
+			new DateValueObject(new Date(primitives.updatedAt)),
 		);
 	}
 
@@ -233,8 +241,8 @@ export type RecurrenceModificationPrimitives = {
 	originalDate: Date;
 	state: RecurrenceModificationState;
 	modifiedDate?: Date;
-	fromSplits?: PaymentSplitPrimitives[];
-	toSplits?: PaymentSplitPrimitives[];
+	fromSplits?: AccountSplitPrimitives[];
+	toSplits?: AccountSplitPrimitives[];
 	brand?: string;
 	store?: string;
 	updatedAt: string;

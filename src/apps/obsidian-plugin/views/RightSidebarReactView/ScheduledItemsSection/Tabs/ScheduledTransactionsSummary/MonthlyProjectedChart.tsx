@@ -15,7 +15,7 @@ import {
 import { LegendPayload } from "recharts/types/component/DefaultLegendContent";
 import { ItemRecurrenceInfo } from "../../../../../../../contexts/ScheduledTransactions/domain";
 import {
-	PaymentSplit,
+	AccountSplit,
 	Transaction,
 	TransactionAmount,
 } from "../../../../../../../contexts/Transactions/domain";
@@ -40,7 +40,7 @@ interface MonthlyData {
 
 export const MonthlyProjectedChart = () => {
 	const { logger } = useLogger("MonthlyProjectedChart");
-	const { accounts, getAccountByID } = useContext(AccountsContext);
+	const { accounts } = useContext(AccountsContext);
 	const {
 		scheduledItems,
 		useCases: { getScheduledTransactionsUntilDate },
@@ -222,7 +222,7 @@ export const MonthlyProjectedChart = () => {
 
 			setChartData(finalMonths);
 		});
-	}, [getAccountByID, transactions, accounts, scheduledItems]);
+	}, [transactions, accounts, scheduledItems]);
 
 	return (
 		<div style={{ marginBottom: "20px" }}>
@@ -445,19 +445,11 @@ export const MonthlyProjectedChart = () => {
 												a.originAmount.value,
 										)
 										.map((item, index) => {
-											const account = getAccountByID(
-												item.originAccounts[0]
-													?.accountId,
-											);
-											const toAccount = item
-												.destinationAccounts[0]
-												?.accountId
-												? getAccountByID(
-														item
-															.destinationAccounts[0]
-															?.accountId,
-													)
-												: undefined;
+											const account =
+												item.originAccounts[0]?.account;
+											const toAccount =
+												item.destinationAccounts[0]
+													?.account;
 											const price = item.originAmount;
 
 											return (
@@ -540,19 +532,11 @@ export const MonthlyProjectedChart = () => {
 												a.originAmount.value,
 										)
 										.map((item, index) => {
-											const account = getAccountByID(
-												item.originAccounts[0]
-													?.accountId,
-											);
-											const toAccount = item
-												.destinationAccounts[0]
-												?.accountId
-												? getAccountByID(
-														item
-															.destinationAccounts[0]
-															?.accountId,
-													)
-												: undefined;
+											const account =
+												item.originAccounts[0]?.account;
+											const toAccount =
+												item.destinationAccounts[0]
+													?.account;
 											const price = item.originAmount;
 
 											return (
@@ -632,19 +616,17 @@ export const MonthlyProjectedChart = () => {
 											const fromAccounts =
 												transaction.originAccounts
 													.map(
-														(s: PaymentSplit) =>
-															getAccountByID(
-																s.accountId,
-															)?.name.value || "",
+														(s: AccountSplit) =>
+															s.account.name
+																.value,
 													)
 													.join(", ");
 											const toAccounts =
 												transaction.destinationAccounts
 													.map(
-														(s: PaymentSplit) =>
-															getAccountByID(
-																s.accountId,
-															)?.name.value || "",
+														(s: AccountSplit) =>
+															s.account.name
+																.value,
 													)
 													.join(", ");
 											const amount =
@@ -735,33 +717,31 @@ export const MonthlyProjectedChart = () => {
 											const fromAccounts =
 												transaction.originAccounts
 													.map(
-														(s: PaymentSplit) =>
-															getAccountByID(
-																s.accountId,
-															)?.name.value || "",
+														(s: AccountSplit) =>
+															s.account.name
+																.value,
 													)
 													.join(", ");
 											const toAccounts =
 												transaction.destinationAccounts
 													.map(
-														(s: PaymentSplit) =>
-															getAccountByID(
-																s.accountId,
-															)?.name.value || "",
+														(s: AccountSplit) =>
+															s.account.name
+																.value,
 													)
 													.join(", ");
 											const amount =
 												transaction.destinationAccounts.reduce(
 													(
 														sum: number,
-														s: PaymentSplit,
+														s: AccountSplit,
 													) => sum + s.amount.value,
 													0,
 												) -
 												transaction.originAccounts.reduce(
 													(
 														sum: number,
-														s: PaymentSplit,
+														s: AccountSplit,
 													) => sum + s.amount.value,
 													0,
 												);

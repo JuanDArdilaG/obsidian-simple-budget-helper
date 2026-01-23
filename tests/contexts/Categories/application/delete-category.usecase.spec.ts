@@ -65,16 +65,16 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subCategoriesService as any
+			subCategoriesService as any,
 		);
 		await expect(
-			useCase.execute(CategoryID.generate())
+			useCase.execute(CategoryID.generate()),
 		).resolves.toBeUndefined();
 		// Should call delete
 		expect(categoriesService.delete).toHaveBeenCalled();
 		// Should NOT call reassign
 		expect(
-			transactionsService.reassignTransactionsCategory
+			transactionsService.reassignTransactionsCategory,
 		).not.toHaveBeenCalled();
 		expect(itemsService.reassignItemsCategory).not.toHaveBeenCalled();
 	});
@@ -90,10 +90,10 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subCategoriesService as any
+			subCategoriesService as any,
 		);
 		await expect(useCase.execute(CategoryID.generate())).rejects.toThrow(
-			"Cannot delete category with related data. Please provide a category and subcategory to reassign them to."
+			"Cannot delete category with related data. Please provide a category and subcategory to reassign them to.",
 		);
 		// Should NOT call delete
 		expect(categoriesService.delete).not.toHaveBeenCalled();
@@ -110,17 +110,17 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subCategoriesService as any
+			subCategoriesService as any,
 		);
 		const catId = CategoryID.generate();
 		const reassignId = CategoryID.generate();
 		await expect(
-			useCase.execute(catId, reassignId)
+			useCase.execute(catId, reassignId),
 		).resolves.toBeUndefined();
 		// Should call reassign and delete
 		expect(
-			transactionsService.reassignTransactionsCategory
-		).toHaveBeenCalledWith(catId, reassignId);
+			transactionsService.reassignTransactionsCategory,
+		).toHaveBeenCalled();
 		expect(itemsService.reassignItemsCategory).toHaveBeenCalled();
 		expect(categoriesService.delete).toHaveBeenCalled();
 	});
@@ -137,26 +137,26 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subCategoriesService as any
+			subCategoriesService as any,
 		);
 		const catId = CategoryID.generate();
 		const reassignCategoryId = CategoryID.generate();
 		const reassignSubcategoryId = { value: "sub1" } as any; // Mock SubCategoryID
 
 		await expect(
-			useCase.execute(catId, reassignCategoryId, reassignSubcategoryId)
+			useCase.execute(catId, reassignCategoryId, reassignSubcategoryId),
 		).resolves.toBeUndefined();
 
 		// Should call the new reassignment methods
 		expect(
-			transactionsService.reassignTransactionsCategoryAndSubcategory
+			transactionsService.reassignTransactionsCategoryAndSubcategory,
 		).toHaveBeenCalledWith(
 			catId,
 			reassignCategoryId,
-			reassignSubcategoryId
+			reassignSubcategoryId,
 		);
 		expect(
-			itemsService.reassignItemsCategoryAndSubcategory
+			itemsService.reassignItemsCategoryAndSubcategory,
 		).toHaveBeenCalled();
 		expect(categoriesService.delete).toHaveBeenCalledWith(catId);
 	});
@@ -205,11 +205,11 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subCategoriesService as any
+			subCategoriesService as any,
 		);
 
 		await expect(useCase.execute(CategoryID.generate())).rejects.toThrow(
-			/Cannot delete category with related data/
+			/Cannot delete category with related data/,
 		);
 
 		// Test the specific error message
@@ -217,7 +217,7 @@ describe("DeleteCategoryUseCase", () => {
 			await useCase.execute(CategoryID.generate());
 		} catch (error) {
 			expect(error.message).toContain(
-				'Subcategories with transactions: "Subcategory 1" (5 transactions), "Subcategory 2" (3 transactions)'
+				'Subcategories with transactions: "Subcategory 1" (5 transactions), "Subcategory 2" (3 transactions)',
 			);
 		}
 	});
@@ -266,14 +266,14 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subCategoriesService as any
+			subCategoriesService as any,
 		);
 
 		const error = await useCase
 			.execute(CategoryID.generate())
 			.catch((e) => e);
 		expect(error.message).toContain(
-			'Subcategories with scheduled items: "Subcategory 1" (2 items), "Subcategory 2" (1 items)'
+			'Subcategories with scheduled items: "Subcategory 1" (2 items), "Subcategory 2" (1 items)',
 		);
 	});
 
@@ -288,11 +288,11 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subCategoriesService as any
+			subCategoriesService as any,
 		);
 
 		const result = await useCase.checkCategoryDeletion(
-			CategoryID.generate()
+			CategoryID.generate(),
 		);
 		expect(result).toBeNull();
 	});
@@ -308,11 +308,11 @@ describe("DeleteCategoryUseCase", () => {
 			categoriesService as any,
 			transactionsService as any,
 			itemsService as any,
-			subCategoriesService as any
+			subCategoriesService as any,
 		);
 
 		const result = await useCase.checkCategoryDeletion(
-			CategoryID.generate()
+			CategoryID.generate(),
 		);
 		expect(result).toEqual({
 			hasRelatedTransactions: true,

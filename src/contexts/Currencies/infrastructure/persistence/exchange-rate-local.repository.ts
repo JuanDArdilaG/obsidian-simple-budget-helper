@@ -21,7 +21,7 @@ export class ExchangeRateLocalRepository
 	async getByFromToAndDate(
 		fromCurrency: Currency,
 		toCurrency: Currency,
-		date: DateValueObject
+		date: DateValueObject,
 	): Promise<ExchangeRate | null> {
 		const allRecords = await this.findAll();
 

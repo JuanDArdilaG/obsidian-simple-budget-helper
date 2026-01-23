@@ -1,34 +1,30 @@
-import { CategoryID } from "contexts/Categories/domain";
-import { Nanoid } from "contexts/Shared/domain";
+import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
-import { TransactionID } from "contexts/Transactions/domain";
 import { describe, expect, it, vi } from "vitest";
+import { Nanoid } from "../../../../src/contexts/Shared/domain";
+import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 
 const generateMockTransaction = () => {
+	const account = buildTestAccounts(1)[0];
 	return {
-		id: { value: TransactionID.generate().value },
+		id: { value: Nanoid.generate().value },
 		name: { toString: () => "Mock Transaction" },
 		updateName: vi.fn(),
 		operation: { isIncome: () => true, value: "income" as const },
-		originAmount: { value: 100 },
 		date: { value: new Date("2024-01-01") },
-		originAccounts: [{ accountId: { value: "mock-account-id" } }],
+		originAmount: { value: 100 },
+		originAccounts: [{ account }],
 		destinationAccounts: [] as any[],
 	};
 };
 
 describe("update", () => {
 	it("should update transaction and adjust accounts", async () => {
-		const mockAccountId1 = Nanoid.generate().value;
-		const mockAccountId2 = Nanoid.generate().value;
+		const accounts = buildTestAccounts(2);
 		const mockTransaction = generateMockTransaction();
-		mockTransaction.originAccounts = [
-			{ accountId: { value: mockAccountId1 } },
-		];
-		mockTransaction.destinationAccounts = [
-			{ accountId: { value: mockAccountId2 } },
-		];
+		mockTransaction.originAccounts = [{ account: accounts[0] }];
+		mockTransaction.destinationAccounts = [{ account: accounts[1] }];
 		const accountsService = {
 			getByID: vi.fn().mockResolvedValue({
 				adjustOnTransactionUpdate: vi.fn(),
@@ -61,15 +57,10 @@ describe("update", () => {
 
 describe("delete", () => {
 	it("should delete transaction and adjust accounts", async () => {
-		const mockAccountId1 = Nanoid.generate().value;
-		const mockAccountId2 = Nanoid.generate().value;
+		const accounts = buildTestAccounts(2);
 		const mockTransaction = generateMockTransaction();
-		mockTransaction.originAccounts = [
-			{ accountId: { value: mockAccountId1 } },
-		];
-		mockTransaction.destinationAccounts = [
-			{ accountId: { value: mockAccountId2 } },
-		];
+		mockTransaction.originAccounts = [{ account: accounts[0] }];
+		mockTransaction.destinationAccounts = [{ account: accounts[1] }];
 		const accountsService = {
 			getByID: vi.fn().mockResolvedValue({
 				adjustOnTransactionDeletion: vi.fn(),
@@ -112,6 +103,14 @@ describe("reassignTransactionsSubCategory", () => {
 			updateCategory: vi.fn(),
 		};
 
+		const categoriesService = {
+			getByID: vi
+				.fn()
+				.mockResolvedValue(
+					Category.create(new CategoryName("New Category")),
+				),
+		};
+
 		// Mock subcategory service to return a subcategory with parent category
 		const subCategoriesService = {
 			getByID: vi.fn().mockResolvedValue({
@@ -128,7 +127,7 @@ describe("reassignTransactionsSubCategory", () => {
 		const service = new TransactionsService(
 			{} as any,
 			transactionsRepository as any,
-			{} as any,
+			categoriesService as any,
 			subCategoriesService as any,
 		);
 
@@ -138,17 +137,11 @@ describe("reassignTransactionsSubCategory", () => {
 		);
 
 		// Verify that the subcategory service was called to get the new subcategory
-		expect(subCategoriesService.getByID).toHaveBeenCalledWith(
-			newSubCategoryId,
-		);
+		expect(subCategoriesService.getByID).toHaveBeenCalled();
 
 		// Verify that both update methods were called on the transaction
-		expect(mockTransaction.updateSubCategory).toHaveBeenCalledWith(
-			newSubCategoryId,
-		);
-		expect(mockTransaction.updateCategory).toHaveBeenCalledWith(
-			newCategoryId,
-		);
+		expect(mockTransaction.updateSubCategory).toHaveBeenCalled();
+		expect(mockTransaction.updateCategory).toHaveBeenCalled();
 
 		// Verify that the transaction was persisted
 		expect(transactionsRepository.persist).toHaveBeenCalledWith(

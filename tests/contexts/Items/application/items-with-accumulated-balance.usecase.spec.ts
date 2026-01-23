@@ -13,10 +13,10 @@ describe("execute", () => {
 		const accounts = buildTestAccounts(1);
 		const items = buildTestItems([
 			{
-				account: accounts[0].id,
+				account: accounts[0],
 			},
 			{
-				account: accounts[0].id,
+				account: accounts[0],
 			},
 		]);
 		const scheduledTransactionsService =
@@ -51,12 +51,12 @@ describe("execute", () => {
 			accountsService,
 			new GetScheduledTransactionsUntilDateUseCase(
 				scheduledTransactionsService,
-				recurrenceModificationsService
-			)
+				recurrenceModificationsService,
+			),
 		);
 
 		const itemsWithBalance = await useCase.execute(
-			DateValueObject.createNowDate()
+			DateValueObject.createNowDate(),
 		);
 
 		expect(itemsWithBalance.length).toBe(2);
@@ -67,7 +67,7 @@ describe("execute", () => {
 
 		// Verify that the mock was called
 		expect(
-			recurrenceModificationsService.getByScheduledItemId
+			recurrenceModificationsService.getByScheduledItemId,
 		).toHaveBeenCalledTimes(2);
 	});
 });

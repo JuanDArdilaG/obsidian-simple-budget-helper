@@ -8,38 +8,81 @@ import { IDValueObject } from "contexts/Shared/domain/value-objects/id/id.valueo
 import { IndexableType } from "dexie";
 import { LocalDB } from "./local.db";
 
+export type RepositoryDependencies<
+	Entities extends Entity<IDValueObject, EntityComposedValue>,
+> = Map<string, Map<string, Entities>>;
+
 export abstract class LocalRepository<
 	ID extends IDValueObject,
 	T extends Entity<ID, Primitives>,
-	Primitives extends EntityComposedValue
-> implements IRepository<ID, T, Primitives>
-{
+	Primitives extends EntityComposedValue,
+> implements IRepository<ID, T, Primitives> {
 	protected constructor(
 		protected readonly _db: LocalDB,
-		protected readonly tableName: string
+		protected readonly tableName: string,
+		protected readonly _dependencies?: Array<{
+			type: string;
+			getter: () => Promise<
+				Array<Entity<IDValueObject, EntityComposedValue>>
+			>;
+		}>,
 	) {}
 
-	protected abstract mapToDomain(record: Primitives): T;
+	protected abstract mapToDomain(
+		record: Primitives,
+		dependencies?: Map<
+			string,
+			Map<string, Entity<IDValueObject, EntityComposedValue>>
+		>,
+	): T;
 	protected abstract mapToPrimitives(entity: T): Primitives;
 
+	async #resolveDependencies(): Promise<
+		Map<string, Map<string, Entity<IDValueObject, EntityComposedValue>>>
+	> {
+		const resolvedDependencies = new Map<
+			string,
+			Map<string, Entity<IDValueObject, EntityComposedValue>>
+		>();
+		if (this._dependencies) {
+			for (const dependency of this._dependencies) {
+				const entities = await dependency.getter();
+				const entityMap = new Map<
+					string,
+					Entity<IDValueObject, EntityComposedValue>
+				>();
+				entities.forEach((entity) => {
+					entityMap.set(entity.id.value, entity);
+				});
+				resolvedDependencies.set(dependency.type, entityMap);
+			}
+		}
+		return resolvedDependencies;
+	}
+
 	async findById(id: ID): Promise<T | null> {
+		const resolvedDependencies = await this.#resolveDependencies();
 		const record = await this._db.db.table(this.tableName).get(id.value);
-		return record ? this.mapToDomain(record) : null;
+		return record ? this.mapToDomain(record, resolvedDependencies) : null;
 	}
 
 	async findAll(): Promise<T[]> {
+		const resolvedDependencies = await this.#resolveDependencies();
 		const records = await this._db.db.table(this.tableName).toArray();
-		return records.map((record: Primitives) => this.mapToDomain(record));
+		return records.map((record: Primitives) =>
+			this.mapToDomain(record, resolvedDependencies),
+		);
 	}
 
 	async findByCriteria(criteria: Criteria<Primitives>): Promise<T[]> {
+		const resolvedDependencies = await this.#resolveDependencies();
 		let records = await this._db.db.table(this.tableName).toArray();
 
 		// Apply filters
 		if (criteria.filters && Object.keys(criteria.filters).length > 0) {
 			records = records.filter((record) => {
 				for (const [field, filter] of Object.entries(
-					criteria.filters
+					criteria.filters,
 				)) {
 					const recordValue = record[field];
 					const filterValue = filter.value;
@@ -98,7 +141,9 @@ export abstract class LocalRepository<
 			records = records.slice(0, criteria.limit);
 		}
 
-		return records.map((record: Primitives) => this.mapToDomain(record));
+		return records.map((record: Primitives) =>
+			this.mapToDomain(record, resolvedDependencies),
+		);
 	}
 
 	async persist(entity: T): Promise<void> {
@@ -135,7 +180,7 @@ export abstract class LocalRepository<
 
 	async bulkAdd(entities: T[]): Promise<void> {
 		const primitives = entities.map((entity) =>
-			this.mapToPrimitives(entity)
+			this.mapToPrimitives(entity),
 		);
 		await this._db.db.table(this.tableName).bulkAdd(primitives);
 		// Sync to local files after data modification
@@ -144,7 +189,7 @@ export abstract class LocalRepository<
 
 	async bulkPut(entities: T[]): Promise<void> {
 		const primitives = entities.map((entity) =>
-			this.mapToPrimitives(entity)
+			this.mapToPrimitives(entity),
 		);
 		await this._db.db.table(this.tableName).bulkPut(primitives);
 		// Sync to local files after data modification
@@ -176,19 +221,25 @@ export abstract class LocalRepository<
 	}
 
 	async where(field: string, value: unknown): Promise<T[]> {
+		const resolvedDependencies = await this.#resolveDependencies();
 		const records = await this._db.db
 			.table(this.tableName)
 			.where(field)
 			.equals(value as IndexableType)
 			.toArray();
-		return records.map((record: Primitives) => this.mapToDomain(record));
+		return records.map((record: Primitives) =>
+			this.mapToDomain(record, resolvedDependencies),
+		);
 	}
 
 	async filter(predicate: (record: Primitives) => boolean): Promise<T[]> {
+		const resolvedDependencies = await this.#resolveDependencies();
 		const records = await this._db.db
 			.table(this.tableName)
 			.filter(predicate)
 			.toArray();
-		return records.map((record: Primitives) => this.mapToDomain(record));
+		return records.map((record: Primitives) =>
+			this.mapToDomain(record, resolvedDependencies),
+		);
 	}
 }

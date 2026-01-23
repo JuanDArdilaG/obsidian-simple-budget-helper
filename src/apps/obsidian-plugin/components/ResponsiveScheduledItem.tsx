@@ -13,12 +13,11 @@ import {
 } from "contexts/Accounts/domain";
 import { Nanoid } from "contexts/Shared/domain";
 import { Forward } from "lucide-react";
-import { useContext, useMemo } from "react";
+import { useMemo } from "react";
 import {
 	ItemRecurrenceInfo,
 	ScheduledTransaction,
 } from "../../../contexts/ScheduledTransactions/domain";
-import { AccountsContext } from "../views";
 
 export const ResponsiveScheduledItem = ({
 	scheduleTransaction,
@@ -86,27 +85,16 @@ export const ResponsiveScheduledItem = ({
 		return "var(--color-green)";
 	}, [recurrence]);
 
-	const { accounts } = useContext(AccountsContext);
 	const fromAccount = useMemo(
-		() =>
-			accounts.find(
-				(account) =>
-					account.id ===
-					scheduleTransaction.originAccounts[0].accountId,
-			),
-		[scheduleTransaction, accounts],
+		() => scheduleTransaction.originAccounts[0].account,
+		[scheduleTransaction],
 	);
 	const toAccount = useMemo(
 		() =>
 			scheduleTransaction.destinationAccounts.length > 0
-				? accounts.find(
-						(account) =>
-							account.id ===
-							scheduleTransaction.destinationAccounts[0]
-								.accountId,
-					)
+				? scheduleTransaction.destinationAccounts[0].account
 				: undefined,
-		[scheduleTransaction, accounts],
+		[scheduleTransaction],
 	);
 
 	// Wide screen layout (≥1200px) - Multi-column table-like layout

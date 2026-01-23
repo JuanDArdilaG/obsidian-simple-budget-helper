@@ -4,14 +4,15 @@ import {
 	EntityNotFoundError,
 	Nanoid,
 } from "../../Shared/domain";
-import { PaymentSplit } from "../../Transactions/domain";
+import { AccountSplit } from "../../Transactions/domain";
 import { IScheduledTransactionsRepository } from "../domain";
 
-export class EditScheduledTransactionAmountUseCase
-	implements CommandUseCase<{ id: Nanoid; amount: PriceValueObject }>
-{
+export class EditScheduledTransactionAmountUseCase implements CommandUseCase<{
+	id: Nanoid;
+	amount: PriceValueObject;
+}> {
 	constructor(
-		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository
+		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository,
 	) {}
 
 	async execute({
@@ -28,14 +29,14 @@ export class EditScheduledTransactionAmountUseCase
 		}
 
 		scheduledTransaction.updateOriginAccounts([
-			new PaymentSplit(
-				scheduledTransaction.originAccounts[0].accountId,
-				amount
+			new AccountSplit(
+				scheduledTransaction.originAccounts[0].account,
+				amount,
 			),
 		]);
 
 		await this._scheduledTransactionsRepository.persist(
-			scheduledTransaction
+			scheduledTransaction,
 		);
 	}
 }

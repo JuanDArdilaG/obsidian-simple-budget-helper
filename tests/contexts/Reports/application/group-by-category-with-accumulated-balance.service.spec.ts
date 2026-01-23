@@ -1,9 +1,9 @@
 import { Category, CategoryName } from "contexts/Categories/domain";
 import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
 import { TransactionsReport } from "contexts/Reports/domain";
-import { Nanoid } from "contexts/Shared/domain";
 import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
 import { describe, expect, it } from "vitest";
+import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 import { CategoriesServiceMock } from "../../Categories/application/categories-service.mock";
 import { SubcategoriesServiceMock } from "../../Subcategories/application/subcategories-service.mock";
 import { buildTestTransactions } from "../domain/buildTestTransactions";
@@ -27,20 +27,21 @@ describe("execute", () => {
 			categoriesService,
 			subCategoriesService,
 		);
+		const accounts = buildTestAccounts(2);
 		const transactions = buildTestTransactions([
 			{
 				amount: 100,
 				category: categoriesService.categories[0].id.value,
 				subcategory: subCategoriesService.subcategories[0].id.value,
 				operation: "expense",
-				account: Nanoid.generate().value,
+				account: accounts[0],
 			},
 			{
 				amount: 200,
 				category: categoriesService.categories[0].id.value,
 				subcategory: subCategoriesService.subcategories[1].id.value,
 				operation: "income",
-				account: Nanoid.generate().value,
+				account: accounts[1],
 			},
 		]);
 		const report = new TransactionsReport(transactions);

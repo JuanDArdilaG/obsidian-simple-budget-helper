@@ -1,14 +1,15 @@
-import { CategoryID } from "contexts/Categories/domain";
-import { Nanoid } from "contexts/Shared/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
+import { Category, CategoryName } from "contexts/Categories/domain";
+import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionName } from "contexts/Transactions/domain/item-name.valueobject";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { TransactionOperation } from "contexts/Transactions/domain/transaction-operation.valueobject";
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 import { ITransactionsRepository } from "contexts/Transactions/domain/transactions-repository.interface";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TransactionDate } from "../../../../src/contexts/Transactions/domain";
+import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 
 describe("GetAllTransactionsUseCase", () => {
 	let useCase: GetAllTransactionsUseCase;
@@ -34,14 +35,19 @@ describe("GetAllTransactionsUseCase", () => {
 	describe("account filtering", () => {
 		it("should filter transactions by account using splits", async () => {
 			// Arrange
-			const account1 = Nanoid.generate();
-			const account2 = Nanoid.generate();
-			const category = CategoryID.generate();
-			const subCategory = SubCategoryID.generate();
+			const accounts = buildTestAccounts(2);
+			const account1 = accounts[0];
+			const account2 = accounts[1];
+			const category = Category.create(new CategoryName("Test Category"));
+			const subCategory = SubCategory.create(
+				category.id,
+				new SubCategoryName("Test Subcategory"),
+			);
 
 			const transaction1 = Transaction.create(
-				[new PaymentSplit(account1, new TransactionAmount(100))],
-				[new PaymentSplit(account2, new TransactionAmount(100))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account1, new TransactionAmount(100))],
+				[new AccountSplit(account2, new TransactionAmount(100))],
 				new TransactionName("Transfer 1"),
 				new TransactionOperation("transfer"),
 				category,
@@ -49,7 +55,8 @@ describe("GetAllTransactionsUseCase", () => {
 			);
 
 			const transaction2 = Transaction.create(
-				[new PaymentSplit(account2, new TransactionAmount(50))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account2, new TransactionAmount(50))],
 				[],
 				new TransactionName("Expense 1"),
 				new TransactionOperation("expense"),
@@ -58,7 +65,8 @@ describe("GetAllTransactionsUseCase", () => {
 			);
 
 			const transaction3 = Transaction.create(
-				[new PaymentSplit(account1, new TransactionAmount(75))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account1, new TransactionAmount(75))],
 				[],
 				new TransactionName("Expense 2"),
 				new TransactionOperation("expense"),
@@ -74,7 +82,7 @@ describe("GetAllTransactionsUseCase", () => {
 
 			// Act
 			const result = await useCase.execute({
-				accountFilter: account1,
+				accountFilter: account1.id,
 			});
 
 			// Assert
@@ -86,14 +94,19 @@ describe("GetAllTransactionsUseCase", () => {
 
 		it("should filter transactions by account in toSplits", async () => {
 			// Arrange
-			const account1 = Nanoid.generate();
-			const account2 = Nanoid.generate();
-			const category = CategoryID.generate();
-			const subCategory = SubCategoryID.generate();
+			const accounts = buildTestAccounts(2);
+			const account1 = accounts[0];
+			const account2 = accounts[1];
+			const category = Category.create(new CategoryName("Test Category"));
+			const subCategory = SubCategory.create(
+				category.id,
+				new SubCategoryName("Test Subcategory"),
+			);
 
 			const transaction1 = Transaction.create(
-				[new PaymentSplit(account2, new TransactionAmount(100))],
-				[new PaymentSplit(account1, new TransactionAmount(100))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account2, new TransactionAmount(100))],
+				[new AccountSplit(account1, new TransactionAmount(100))],
 				new TransactionName("Transfer to account1"),
 				new TransactionOperation("transfer"),
 				category,
@@ -101,7 +114,8 @@ describe("GetAllTransactionsUseCase", () => {
 			);
 
 			const transaction2 = Transaction.create(
-				[new PaymentSplit(account2, new TransactionAmount(50))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account2, new TransactionAmount(50))],
 				[],
 				new TransactionName("Expense from account2"),
 				new TransactionOperation("expense"),
@@ -116,7 +130,7 @@ describe("GetAllTransactionsUseCase", () => {
 
 			// Act
 			const result = await useCase.execute({
-				accountFilter: account1,
+				accountFilter: account1.id,
 			});
 
 			// Assert
@@ -127,13 +141,18 @@ describe("GetAllTransactionsUseCase", () => {
 
 		it("should return all transactions when no account filter is provided", async () => {
 			// Arrange
-			const account1 = Nanoid.generate();
-			const account2 = Nanoid.generate();
-			const category = CategoryID.generate();
-			const subCategory = SubCategoryID.generate();
+			const accounts = buildTestAccounts(2);
+			const account1 = accounts[0];
+			const account2 = accounts[1];
+			const category = Category.create(new CategoryName("Test Category"));
+			const subCategory = SubCategory.create(
+				category.id,
+				new SubCategoryName("Test Subcategory"),
+			);
 
 			const transaction1 = Transaction.create(
-				[new PaymentSplit(account1, new TransactionAmount(100))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account1, new TransactionAmount(100))],
 				[],
 				new TransactionName("Transaction 1"),
 				new TransactionOperation("expense"),
@@ -142,7 +161,8 @@ describe("GetAllTransactionsUseCase", () => {
 			);
 
 			const transaction2 = Transaction.create(
-				[new PaymentSplit(account2, new TransactionAmount(50))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account2, new TransactionAmount(50))],
 				[],
 				new TransactionName("Transaction 2"),
 				new TransactionOperation("expense"),
@@ -168,13 +188,21 @@ describe("GetAllTransactionsUseCase", () => {
 	describe("category and subcategory filtering", () => {
 		it("should filter transactions by category", async () => {
 			// Arrange
-			const account = Nanoid.generate();
-			const category1 = CategoryID.generate();
-			const category2 = CategoryID.generate();
-			const subCategory = SubCategoryID.generate();
+			const account = buildTestAccounts(1)[0];
+			const category1 = Category.create(
+				new CategoryName("Test Category 1"),
+			);
+			const category2 = Category.create(
+				new CategoryName("Test Category 2"),
+			);
+			const subCategory = SubCategory.create(
+				category1.id,
+				new SubCategoryName("Test Subcategory"),
+			);
 
 			const transaction1 = Transaction.create(
-				[new PaymentSplit(account, new TransactionAmount(100))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account, new TransactionAmount(100))],
 				[],
 				new TransactionName("Transaction 1"),
 				new TransactionOperation("expense"),
@@ -183,7 +211,8 @@ describe("GetAllTransactionsUseCase", () => {
 			);
 
 			const transaction2 = Transaction.create(
-				[new PaymentSplit(account, new TransactionAmount(50))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account, new TransactionAmount(50))],
 				[],
 				new TransactionName("Transaction 2"),
 				new TransactionOperation("expense"),
@@ -198,7 +227,7 @@ describe("GetAllTransactionsUseCase", () => {
 
 			// Act
 			const result = await useCase.execute({
-				categoryFilter: category1,
+				categoryFilter: category1.id,
 			});
 
 			// Assert
@@ -209,13 +238,20 @@ describe("GetAllTransactionsUseCase", () => {
 
 		it("should filter transactions by subcategory", async () => {
 			// Arrange
-			const account = Nanoid.generate();
-			const category = CategoryID.generate();
-			const subCategory1 = SubCategoryID.generate();
-			const subCategory2 = SubCategoryID.generate();
+			const account = buildTestAccounts(1)[0];
+			const category = Category.create(new CategoryName("Test Category"));
+			const subCategory1 = SubCategory.create(
+				category.id,
+				new SubCategoryName("Test Subcategory 1"),
+			);
+			const subCategory2 = SubCategory.create(
+				category.id,
+				new SubCategoryName("Test Subcategory 2"),
+			);
 
 			const transaction1 = Transaction.create(
-				[new PaymentSplit(account, new TransactionAmount(100))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account, new TransactionAmount(100))],
 				[],
 				new TransactionName("Transaction 1"),
 				new TransactionOperation("expense"),
@@ -224,7 +260,8 @@ describe("GetAllTransactionsUseCase", () => {
 			);
 
 			const transaction2 = Transaction.create(
-				[new PaymentSplit(account, new TransactionAmount(50))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account, new TransactionAmount(50))],
 				[],
 				new TransactionName("Transaction 2"),
 				new TransactionOperation("expense"),
@@ -239,7 +276,7 @@ describe("GetAllTransactionsUseCase", () => {
 
 			// Act
 			const result = await useCase.execute({
-				subCategoryFilter: subCategory1,
+				subCategoryFilter: subCategory1.id,
 			});
 
 			// Assert
@@ -252,15 +289,27 @@ describe("GetAllTransactionsUseCase", () => {
 	describe("combined filtering", () => {
 		it("should filter transactions by account, category, and subcategory", async () => {
 			// Arrange
-			const account1 = Nanoid.generate();
-			const account2 = Nanoid.generate();
-			const category1 = CategoryID.generate();
-			const category2 = CategoryID.generate();
-			const subCategory1 = SubCategoryID.generate();
-			const subCategory2 = SubCategoryID.generate();
+			const accounts = buildTestAccounts(2);
+			const account1 = accounts[0];
+			const account2 = accounts[1];
+			const category1 = Category.create(
+				new CategoryName("Test Category 1"),
+			);
+			const category2 = Category.create(
+				new CategoryName("Test Category 2"),
+			);
+			const subCategory1 = SubCategory.create(
+				category1.id,
+				new SubCategoryName("Test Subcategory 1"),
+			);
+			const subCategory2 = SubCategory.create(
+				category2.id,
+				new SubCategoryName("Test Subcategory 2"),
+			);
 
 			const transaction1 = Transaction.create(
-				[new PaymentSplit(account1, new TransactionAmount(100))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account1, new TransactionAmount(100))],
 				[],
 				new TransactionName("Transaction 1"),
 				new TransactionOperation("expense"),
@@ -269,7 +318,8 @@ describe("GetAllTransactionsUseCase", () => {
 			);
 
 			const transaction2 = Transaction.create(
-				[new PaymentSplit(account1, new TransactionAmount(50))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account1, new TransactionAmount(50))],
 				[],
 				new TransactionName("Transaction 2"),
 				new TransactionOperation("expense"),
@@ -278,7 +328,8 @@ describe("GetAllTransactionsUseCase", () => {
 			);
 
 			const transaction3 = Transaction.create(
-				[new PaymentSplit(account1, new TransactionAmount(75))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account1, new TransactionAmount(75))],
 				[],
 				new TransactionName("Transaction 3"),
 				new TransactionOperation("expense"),
@@ -287,7 +338,8 @@ describe("GetAllTransactionsUseCase", () => {
 			);
 
 			const transaction4 = Transaction.create(
-				[new PaymentSplit(account2, new TransactionAmount(25))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account2, new TransactionAmount(25))],
 				[],
 				new TransactionName("Transaction 4"),
 				new TransactionOperation("expense"),
@@ -304,9 +356,9 @@ describe("GetAllTransactionsUseCase", () => {
 
 			// Act
 			const result = await useCase.execute({
-				accountFilter: account1,
-				categoryFilter: category1,
-				subCategoryFilter: subCategory1,
+				accountFilter: account1.id,
+				categoryFilter: category1.id,
+				subCategoryFilter: subCategory1.id,
 			});
 
 			// Assert
@@ -322,17 +374,20 @@ describe("GetAllTransactionsUseCase", () => {
 		it("should create multiple transactions for the same item when quantity > 1", async () => {
 			// This test would be more appropriate for the CreateTransactionForm component
 			// but we can test the underlying logic here
-			const account = Nanoid.generate();
-			const category = CategoryID.generate();
-			const subCategory = SubCategoryID.generate();
+			const account = buildTestAccounts(1)[0];
+			const category = Category.create(new CategoryName("Test Category"));
+			const subCategory = SubCategory.create(
+				category.id,
+				new SubCategoryName("Test Subcategory"),
+			);
 
 			// Create multiple transactions with the same item ID but different transaction IDs
 			const transactions = [];
-			const itemId = "test-item-id";
 
 			for (let i = 0; i < 3; i++) {
 				const transaction = Transaction.create(
-					[new PaymentSplit(account, new TransactionAmount(100))],
+					TransactionDate.createNowDate(),
+					[new AccountSplit(account, new TransactionAmount(100))],
 					[],
 					new TransactionName("Test Item"),
 					new TransactionOperation("expense"),
@@ -348,7 +403,7 @@ describe("GetAllTransactionsUseCase", () => {
 
 			// Act
 			const result = await useCase.execute({
-				categoryFilter: category,
+				categoryFilter: category.id,
 			});
 
 			// Assert
@@ -356,20 +411,24 @@ describe("GetAllTransactionsUseCase", () => {
 			expect(result.every((t) => t.name.value === "Test Item")).toBe(
 				true,
 			);
-			expect(result.every((t) => t.category.equalTo(category))).toBe(
-				true,
-			);
+			expect(
+				result.every((t) => t.category.id.equalTo(category.id)),
+			).toBe(true);
 		});
 
 		it("should handle edge cases for quantity values", async () => {
 			// Test that the system can handle various quantity scenarios
-			const account = Nanoid.generate();
-			const category = CategoryID.generate();
-			const subCategory = SubCategoryID.generate();
+			const account = buildTestAccounts(1)[0];
+			const category = Category.create(new CategoryName("Test Category"));
+			const subCategory = SubCategory.create(
+				category.id,
+				new SubCategoryName("Test Subcategory"),
+			);
 
 			// Create a single transaction (quantity = 1)
 			const transaction = Transaction.create(
-				[new PaymentSplit(account, new TransactionAmount(50))],
+				TransactionDate.createNowDate(),
+				[new AccountSplit(account, new TransactionAmount(50))],
 				[],
 				new TransactionName("Single Item"),
 				new TransactionOperation("expense"),
@@ -383,7 +442,7 @@ describe("GetAllTransactionsUseCase", () => {
 
 			// Act
 			const result = await useCase.execute({
-				categoryFilter: category,
+				categoryFilter: category.id,
 			});
 
 			// Assert

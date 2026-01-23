@@ -1,34 +1,34 @@
-import { QueryUseCase } from "contexts/Shared/domain";
 import { Category, ICategoriesRepository } from "contexts/Categories/domain";
+import { QueryUseCase } from "contexts/Shared/domain";
 import {
-	SubCategory,
 	ISubCategoriesRepository,
+	SubCategory,
 } from "contexts/Subcategories/domain";
 
-export type GetAllCategoriesWithSubCategoriesUseCaseOutput = {
+export type CategoriesWithSubcategories = {
 	category: Category;
-	subCategories: SubCategory[];
+	subcategories: SubCategory[];
 }[];
 
-export class GetAllCategoriesWithSubCategoriesUseCase
-	implements
-		QueryUseCase<void, GetAllCategoriesWithSubCategoriesUseCaseOutput>
-{
+export class GetAllCategoriesWithSubCategoriesUseCase implements QueryUseCase<
+	void,
+	CategoriesWithSubcategories
+> {
 	constructor(
-		private _categoriesRepository: ICategoriesRepository,
-		private _subCategoriesRepository: ISubCategoriesRepository
+		private readonly _categoriesRepository: ICategoriesRepository,
+		private readonly _subCategoriesRepository: ISubCategoriesRepository,
 	) {}
 
-	async execute(): Promise<GetAllCategoriesWithSubCategoriesUseCaseOutput> {
+	async execute(): Promise<CategoriesWithSubcategories> {
 		const categories = await this._categoriesRepository.findAll();
 		return Promise.all(
 			categories.map(async (category) => ({
 				category,
-				subCategories:
+				subcategories:
 					await this._subCategoriesRepository.findAllByCategory(
-						category.id
+						category.id,
 					),
-			}))
+			})),
 		);
 	}
 }

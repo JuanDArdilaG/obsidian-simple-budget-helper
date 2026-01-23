@@ -6,7 +6,7 @@ import {
 import { Account } from "contexts/Accounts/domain";
 import { ItemOperation, Nanoid } from "contexts/Shared/domain";
 import {
-	PaymentSplit,
+	AccountSplit,
 	TransactionAmount,
 	TransactionCategory,
 } from "../../Transactions/domain";
@@ -27,8 +27,8 @@ export class ItemRecurrenceInfo {
 		private readonly _operation: ItemOperation,
 		private readonly _category: TransactionCategory,
 		private _state: RecurrenceModificationState,
-		private _originAccounts: PaymentSplit[],
-		private _destinationAccounts: PaymentSplit[],
+		private _originAccounts: AccountSplit[],
+		private _destinationAccounts: AccountSplit[],
 		private _store?: StringValueObject,
 		private readonly _tags?: ItemTags,
 	) {}
@@ -110,11 +110,11 @@ export class ItemRecurrenceInfo {
 		this._state = state;
 	}
 
-	get originAccounts(): PaymentSplit[] {
+	get originAccounts(): AccountSplit[] {
 		return this._originAccounts;
 	}
 
-	updateFromSplits(fromSplits: PaymentSplit[]): void {
+	updateFromSplits(fromSplits: AccountSplit[]): void {
 		this._originAccounts = fromSplits;
 	}
 
@@ -140,11 +140,11 @@ export class ItemRecurrenceInfo {
 		);
 	}
 
-	get destinationAccounts(): PaymentSplit[] {
+	get destinationAccounts(): AccountSplit[] {
 		return this._destinationAccounts;
 	}
 
-	updateToSplits(toSplits: PaymentSplit[]): void {
+	updateToSplits(toSplits: AccountSplit[]): void {
 		this._destinationAccounts = toSplits;
 	}
 
@@ -163,8 +163,8 @@ export class ItemRecurrenceInfo {
 	getRealPriceForAccount(
 		operation: ItemOperation,
 		account: Account,
-		itemFromSplits: PaymentSplit[],
-		itemToSplits?: PaymentSplit[],
+		itemFromSplits: AccountSplit[],
+		itemToSplits?: AccountSplit[],
 	): PriceValueObject {
 		let multiplier = 1;
 		const amount = (this._originAccounts ?? itemFromSplits).reduce(
@@ -175,7 +175,7 @@ export class ItemRecurrenceInfo {
 		if (operation.type.isTransfer()) {
 			// Check if account is in fromSplits (negative multiplier)
 			const fromSplit = (this._originAccounts ?? itemFromSplits).find(
-				(split) => split.accountId.equalTo(account.id),
+				(split) => split.account.id.equalTo(account.id),
 			);
 			if (fromSplit) {
 				multiplier = -1;
@@ -183,7 +183,7 @@ export class ItemRecurrenceInfo {
 				// Check if account is in toSplits (positive multiplier)
 				const toSplit = (
 					this._destinationAccounts ?? itemToSplits
-				)?.find((split) => split.accountId.equalTo(account.id));
+				)?.find((split) => split.account.id.equalTo(account.id));
 				if (!toSplit) {
 					multiplier = 0;
 				}

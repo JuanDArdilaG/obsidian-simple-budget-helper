@@ -9,11 +9,7 @@ import {
 import { ConfirmationModal } from "../../../../components/ConfirmationModal";
 import { EditScheduledTransactionPanel } from "../../../../panels/CreateBudgetItemPanel/EditScheduledTransactionPanel";
 import { RecordItemPanel } from "../../../../panels/RecordItemPanel";
-import {
-	AccountsContext,
-	AppContext,
-	ScheduledTransactionsContext,
-} from "../../Contexts";
+import { AppContext, ScheduledTransactionsContext } from "../../Contexts";
 
 export const AllScheduledTransactionsList = ({
 	selectedTransaction,
@@ -37,7 +33,6 @@ export const AllScheduledTransactionsList = ({
 		useCases: { deleteScheduledTransaction },
 	} = useContext(ScheduledTransactionsContext);
 
-	const { getAccountByID } = useContext(AccountsContext);
 	const {
 		scheduledItems,
 		updateScheduledTransactions,
@@ -115,17 +110,11 @@ export const AllScheduledTransactionsList = ({
 							return dateA.isGreaterOrEqualThan(dateB) ? 1 : -1;
 						})
 						.map(({ scheduledTransaction, recurrence }) => {
-							const account = getAccountByID(
-								scheduledTransaction.originAccounts[0]
-									?.accountId,
-							);
-							const toAccount = scheduledTransaction
-								.destinationAccounts[0]?.accountId
-								? getAccountByID(
-										scheduledTransaction
-											.destinationAccounts[0]?.accountId,
-									)
-								: undefined;
+							const account =
+								scheduledTransaction.originAccounts[0]?.account;
+							const toAccount =
+								scheduledTransaction.destinationAccounts[0]
+									?.account;
 							const accountName =
 								account?.name ??
 								new AccountName("Unknown Account");

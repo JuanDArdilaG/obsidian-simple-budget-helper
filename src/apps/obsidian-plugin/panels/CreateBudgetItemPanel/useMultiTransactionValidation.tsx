@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { OperationType } from "../../../../contexts/Shared/domain";
-import { PaymentSplitPrimitives } from "../../../../contexts/Transactions/domain";
+import { AccountSplitPrimitives } from "../../../../contexts/Transactions/domain";
 
 interface ValidationErrors {
 	items?: string;
@@ -25,8 +25,8 @@ export const useMultiTransactionValidation = (
 	items: TransactionItem[],
 	date: Date,
 	operation: OperationType,
-	fromSplits: PaymentSplitPrimitives[],
-	toSplits: PaymentSplitPrimitives[],
+	fromSplits: AccountSplitPrimitives[],
+	toSplits: AccountSplitPrimitives[],
 	exchangeRate?: number,
 ) => {
 	const [errors, setErrors] = useState<ValidationErrors>({});

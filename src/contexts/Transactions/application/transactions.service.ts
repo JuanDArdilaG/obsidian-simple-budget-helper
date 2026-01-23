@@ -1,6 +1,7 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
 import { AccountBalance, IAccountsService } from "contexts/Accounts/domain";
 import {
+	Category,
 	CategoryID,
 	CategoryName,
 	ICategoriesService,
@@ -17,11 +18,11 @@ import {
 	ITransactionsService,
 	Transaction,
 	TransactionCriteria,
-	TransactionID,
+	TransactionDate,
 	TransactionName,
 	TransactionOperation,
 } from "contexts/Transactions/domain";
-import { PaymentSplit } from "../domain/payment-split.valueobject";
+import { AccountSplit } from "../domain/account-split.valueobject";
 
 export class TransactionsService implements ITransactionsService {
 	readonly #logger = new Logger("TransactionsService");
@@ -36,7 +37,7 @@ export class TransactionsService implements ITransactionsService {
 		return this._transactionsRepository.findAll();
 	}
 
-	async getByID(id: TransactionID): Promise<Transaction> {
+	async getByID(id: Nanoid): Promise<Transaction> {
 		const transaction = await this._transactionsRepository.findById(id);
 		if (!transaction) throw new EntityNotFoundError("Transaction", id);
 		return transaction;
@@ -67,10 +68,10 @@ export class TransactionsService implements ITransactionsService {
 	}
 
 	async reassignTransactionsCategory(
-		oldCategory: CategoryID,
-		newCategory: CategoryID,
+		oldCategory: Category,
+		newCategory: Category,
 	): Promise<void> {
-		const transactions = await this.getByCategory(oldCategory);
+		const transactions = await this.getByCategory(oldCategory.id);
 
 		for (const transaction of transactions) {
 			transaction.updateCategory(newCategory);
@@ -88,10 +89,12 @@ export class TransactionsService implements ITransactionsService {
 		const newSubCategoryEntity =
 			await this.subCategoriesService.getByID(newSubCategory);
 		const newCategory = newSubCategoryEntity.category;
+		const newCategoryEntity =
+			await this.categoriesService.getByID(newCategory);
 
 		for (const transaction of transactions) {
-			transaction.updateSubCategory(newSubCategory);
-			transaction.updateCategory(newCategory);
+			transaction.updateSubCategory(newSubCategoryEntity);
+			transaction.updateCategory(newCategoryEntity);
 			await this._transactionsRepository.persist(transaction);
 		}
 	}
@@ -103,9 +106,14 @@ export class TransactionsService implements ITransactionsService {
 	): Promise<void> {
 		const transactions = await this.getByCategory(oldCategory);
 
+		const newCategoryEntity =
+			await this.categoriesService.getByID(newCategory);
+		const newSubCategoryEntity =
+			await this.subCategoriesService.getByID(newSubCategory);
+
 		for (const transaction of transactions) {
-			transaction.updateCategory(newCategory);
-			transaction.updateSubCategory(newSubCategory);
+			transaction.updateCategory(newCategoryEntity);
+			transaction.updateSubCategory(newSubCategoryEntity);
 			await this._transactionsRepository.persist(transaction);
 		}
 	}
@@ -151,19 +159,18 @@ export class TransactionsService implements ITransactionsService {
 				new NumberValueObject(-1),
 			);
 
-		const fromSplits = [
-			new PaymentSplit(accountID, amountDifference.abs()),
-		];
+		const fromSplits = [new AccountSplit(account, amountDifference.abs())];
 
 		const transaction = Transaction.create(
+			TransactionDate.createNowDate(),
 			fromSplits,
 			[],
 			new TransactionName(`Adjustment for ${account.name}`),
 			new TransactionOperation(
 				amountDifference.isPositive() ? "income" : "expense",
 			),
-			category.id,
-			subCategory.id,
+			category,
+			subCategory,
 		);
 
 		await this.record(transaction);
@@ -172,11 +179,11 @@ export class TransactionsService implements ITransactionsService {
 	async update(transaction: Transaction): Promise<void> {
 		const prevTransaction = await this.getByID(transaction.id);
 		const allAccountIDs = [
-			...transaction.originAccounts.map((s) => s.accountId.value),
-			...transaction.destinationAccounts.map((s) => s.accountId.value),
-			...prevTransaction.originAccounts.map((s) => s.accountId.value),
+			...transaction.originAccounts.map((s) => s.account.id.value),
+			...transaction.destinationAccounts.map((s) => s.account.id.value),
+			...prevTransaction.originAccounts.map((s) => s.account.id.value),
 			...prevTransaction.destinationAccounts.map(
-				(s) => s.accountId.value,
+				(s) => s.account.id.value,
 			),
 		];
 		const uniqueAccountIDs = Array.from(new Set(allAccountIDs)).map(
@@ -192,7 +199,7 @@ export class TransactionsService implements ITransactionsService {
 		await this._transactionsRepository.persist(transaction);
 	}
 
-	async delete(id: TransactionID): Promise<void> {
+	async delete(id: Nanoid): Promise<void> {
 		const transaction = await this.getByID(id);
 
 		await this._transactionsRepository.deleteById(id);
@@ -202,8 +209,8 @@ export class TransactionsService implements ITransactionsService {
 
 	async #adjustAccountsOnDeletion(transaction: Transaction) {
 		const allAccountIDs = [
-			...transaction.originAccounts.map((s) => s.accountId.value),
-			...transaction.destinationAccounts.map((s) => s.accountId.value),
+			...transaction.originAccounts.map((s) => s.account.id.value),
+			...transaction.destinationAccounts.map((s) => s.account.id.value),
 		];
 		const uniqueAccountIDs = Array.from(new Set(allAccountIDs)).map(
 			(id) => new Nanoid(id),

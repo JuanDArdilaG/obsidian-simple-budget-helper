@@ -1,6 +1,6 @@
 import {
+	CategoriesWithSubcategories,
 	GetAllCategoriesWithSubCategoriesUseCase,
-	GetAllCategoriesWithSubCategoriesUseCaseOutput,
 } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
 import {
@@ -19,7 +19,7 @@ export const useCategories = ({
 	const { logger } = useLogger("useCategories");
 
 	const [categoriesWithSubcategories, setCategoriesWithSubcategories] =
-		useState<GetAllCategoriesWithSubCategoriesUseCaseOutput>([]);
+		useState<CategoriesWithSubcategories>([]);
 	const [updateCatWithSubs, setUpdateCatWithSubs] = useState(true);
 	useEffect(() => {
 		if (updateCatWithSubs) {
@@ -30,7 +30,7 @@ export const useCategories = ({
 			getAllCategoriesWithSubCategories
 				.execute()
 				.then((catWithSubs) =>
-					setCategoriesWithSubcategories(catWithSubs)
+					setCategoriesWithSubcategories(catWithSubs),
 				);
 		}
 	}, [updateCatWithSubs]);
@@ -45,7 +45,7 @@ export const useCategories = ({
 			});
 			getAllCategoriesWithSubCategories.execute().then((catWithSubs) => {
 				const allCategories = catWithSubs.map(
-					(catWithSubs) => catWithSubs.category
+					(catWithSubs) => catWithSubs.category,
 				);
 				// Remove duplicates by ID using Map
 				const categoryMap = new Map<string, Category>();
@@ -64,9 +64,9 @@ export const useCategories = ({
 		if (updateSubCategories) {
 			setUpdateSubCategories(false);
 			getAllCategoriesWithSubCategories.execute().then((catsWithSubs) => {
-				const allSubCategories = catsWithSubs
-					.map((catWithSubs) => catWithSubs.subCategories)
-					.flat();
+				const allSubCategories = catsWithSubs.flatMap(
+					(catWithSubs) => catWithSubs.subcategories,
+				);
 				// Remove duplicates by ID using Map
 				const subCategoryMap = new Map<string, SubCategory>();
 				allSubCategories.forEach((subCat) => {
@@ -80,7 +80,7 @@ export const useCategories = ({
 
 	const getCategoryByID = useCallback(
 		(id: CategoryID) => categories.find((cat) => cat.id.equalTo(id)),
-		[categories]
+		[categories],
 	);
 
 	const getCategoryByName = useCallback(
@@ -88,18 +88,18 @@ export const useCategories = ({
 			const cat = categories.find((cat) => cat.name.equalTo(name));
 			return cat;
 		},
-		[categories]
+		[categories],
 	);
 
 	const getSubCategoryByID = useCallback(
 		(id: SubCategoryID) => subCategories.find((sub) => sub.id.equalTo(id)),
-		[subCategories]
+		[subCategories],
 	);
 
 	const getSubCategoryByName = useCallback(
 		(name: SubCategoryName) =>
 			subCategories.find((sub) => sub.name.equalTo(name)),
-		[subCategories]
+		[subCategories],
 	);
 
 	return {

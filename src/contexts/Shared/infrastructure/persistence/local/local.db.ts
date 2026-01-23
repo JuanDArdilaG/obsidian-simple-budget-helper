@@ -14,7 +14,6 @@ import { Store } from "../../../../Stores/domain";
 import { Logger } from "../../logger";
 import { DB } from "../db";
 import { BackupManager } from "./backup-manager";
-import { ConflictResolver } from "./conflict-resolver";
 import { DataVersioning } from "./data-versioning";
 import { LocalFileManager } from "./local-file-manager";
 
@@ -26,7 +25,6 @@ export class LocalDB extends DB {
 	db: Dexie;
 	logger: Logger = new Logger("LocalDB");
 	public fileManager: LocalFileManager;
-	private readonly conflictResolver: ConflictResolver;
 	public backupManager: BackupManager;
 	private readonly dataVersioning: DataVersioning;
 	private dbId: string = "";
@@ -34,7 +32,6 @@ export class LocalDB extends DB {
 	constructor(app: App) {
 		super();
 		this.fileManager = new LocalFileManager(app);
-		this.conflictResolver = new ConflictResolver();
 		this.backupManager = new BackupManager(app);
 		this.dataVersioning = new DataVersioning();
 	}
@@ -110,28 +107,8 @@ export class LocalDB extends DB {
 				this.logger.debug("Loading data from local files");
 				const localData = await this.fileManager.loadData();
 
-				// Check for conflicts and resolve them
-				const conflicts = await this.conflictResolver.detectConflicts(
-					this.db,
-					localData,
-				);
-				let dataToImport = localData;
-
-				if (conflicts.length > 0) {
-					this.logger.debug("Conflicts detected, resolving...", {
-						conflicts,
-					});
-					const resolvedData =
-						await this.conflictResolver.resolveConflicts(
-							conflicts,
-							localData,
-						);
-					await this.fileManager.saveData(resolvedData);
-					dataToImport = resolvedData;
-				}
-
 				// Import data into IndexedDB (prioritizing local file data)
-				await this.importData(dataToImport);
+				await this.importData(localData);
 			}
 		} catch (error) {
 			this.logger.error("Error loading data from local files", error);

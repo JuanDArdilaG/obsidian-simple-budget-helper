@@ -4,7 +4,7 @@ import {
 	PriceValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
-import { AccountType } from "contexts/Accounts/domain";
+import { Account, AccountType } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
 import {
 	ItemOperation,
@@ -14,9 +14,9 @@ import {
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { SubCategory } from "contexts/Subcategories/domain";
 import {
-	PaymentSplit,
-	PaymentSplitPrimitives,
-} from "contexts/Transactions/domain/payment-split.valueobject";
+	AccountSplit,
+	AccountSplitPrimitives,
+} from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import {
 	TransactionCategory,
@@ -37,8 +37,8 @@ export class ScheduledTransaction extends Entity<
 	private constructor(
 		id: Nanoid,
 		private _name: StringValueObject,
-		private _originAccounts: PaymentSplit[],
-		private _destinationAccounts: PaymentSplit[],
+		private _originAccounts: AccountSplit[],
+		private _destinationAccounts: AccountSplit[],
 		private _operation: ItemOperation,
 		private readonly _category: TransactionCategory,
 		private _recurrencePattern: RecurrencePattern,
@@ -53,8 +53,8 @@ export class ScheduledTransaction extends Entity<
 	static create(
 		name: StringValueObject,
 		recurrencePattern: RecurrencePattern,
-		fromSplits: PaymentSplit[],
-		toSplits: PaymentSplit[],
+		fromSplits: AccountSplit[],
+		toSplits: AccountSplit[],
 		operation: ItemOperation,
 		category: TransactionCategory,
 		store?: StringValueObject,
@@ -76,11 +76,11 @@ export class ScheduledTransaction extends Entity<
 		return this._name;
 	}
 
-	get originAccounts(): PaymentSplit[] {
+	get originAccounts(): AccountSplit[] {
 		return this._originAccounts;
 	}
 
-	get destinationAccounts(): PaymentSplit[] {
+	get destinationAccounts(): AccountSplit[] {
 		return this._destinationAccounts;
 	}
 
@@ -110,11 +110,11 @@ export class ScheduledTransaction extends Entity<
 	}
 
 	get originAmount(): TransactionAmount {
-		return PaymentSplit.totalAmount(this._originAccounts);
+		return AccountSplit.totalAmount(this._originAccounts);
 	}
 
 	get destinationAmount(): TransactionAmount {
-		return PaymentSplit.totalAmount(this._destinationAccounts);
+		return AccountSplit.totalAmount(this._destinationAccounts);
 	}
 
 	/**
@@ -196,12 +196,12 @@ export class ScheduledTransaction extends Entity<
 		this.updateTimestamp();
 	}
 
-	updateOriginAccounts(fromSplits: PaymentSplit[]): void {
+	updateOriginAccounts(fromSplits: AccountSplit[]): void {
 		this._originAccounts = fromSplits;
 		this.updateTimestamp();
 	}
 
-	updateDestinationAccounts(toSplits: PaymentSplit[]): void {
+	updateDestinationAccounts(toSplits: AccountSplit[]): void {
 		this._destinationAccounts = toSplits;
 		this.updateTimestamp();
 	}
@@ -254,28 +254,6 @@ export class ScheduledTransaction extends Entity<
 	}
 
 	/**
-	 * Creates a copy of this item - for test compatibility
-	 */
-	copy(): ScheduledTransaction {
-		return new ScheduledTransaction(
-			this._id,
-			this._name,
-			this._originAccounts.map((split) =>
-				PaymentSplit.fromPrimitives(split.toPrimitives()),
-			),
-			this._destinationAccounts.map((split) =>
-				PaymentSplit.fromPrimitives(split.toPrimitives()),
-			),
-			this._operation,
-			this._category,
-			this._recurrencePattern,
-			this._store,
-			this._tags,
-			this.updatedAt,
-		);
-	}
-
-	/**
 	 * Gets the date for a specific occurrence index
 	 */
 	getOccurrenceDate(
@@ -310,16 +288,23 @@ export class ScheduledTransaction extends Entity<
 	}
 
 	static fromPrimitives(
+		accounts: Map<string, Account>,
 		primitives: ScheduledTransactionPrimitives,
 	): ScheduledTransaction {
 		return new ScheduledTransaction(
 			new Nanoid(primitives.id),
 			new StringValueObject(primitives.name),
 			primitives.fromSplits.map((split) =>
-				PaymentSplit.fromPrimitives(split),
+				AccountSplit.fromPrimitives(
+					accounts.get(split.accountId)!,
+					split,
+				),
 			),
 			primitives.toSplits.map((split) =>
-				PaymentSplit.fromPrimitives(split),
+				AccountSplit.fromPrimitives(
+					accounts.get(split.accountId)!,
+					split,
+				),
 			),
 			ItemOperation.fromPrimitives(primitives.operation),
 			TransactionCategory.fromPrimitives(primitives.category),
@@ -369,8 +354,8 @@ export class ScheduledTransaction extends Entity<
 export type ScheduledTransactionPrimitives = {
 	id: string;
 	name: string;
-	fromSplits: PaymentSplitPrimitives[];
-	toSplits: PaymentSplitPrimitives[];
+	fromSplits: AccountSplitPrimitives[];
+	toSplits: AccountSplitPrimitives[];
 	operation: ItemOperationPrimitives;
 	category: TransactionCategoryPrimitives;
 	recurrencePattern: RecurrencePatternPrimitives;

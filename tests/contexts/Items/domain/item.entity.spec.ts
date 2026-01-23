@@ -4,10 +4,9 @@ import {
 	StringValueObject,
 } from "@juandardilag/value-objects";
 import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
-import { Nanoid } from "contexts/Shared/domain";
 import { ItemOperation } from "contexts/Shared/domain/Item/item-operation.valueobject";
 import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { describe, expect, it } from "vitest";
 import {
@@ -16,6 +15,7 @@ import {
 	ScheduledTransactionDate,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
 import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
+import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 import { buildTestItems } from "./buildTestItems";
 
 describe("remainingDays", () => {
@@ -28,7 +28,7 @@ describe("remainingDays", () => {
 				},
 			},
 		]);
-		const item = items[0].copy();
+		const item = items[0];
 
 		const str = item.recurrencePattern.getNthOccurrence(
 			NumberValueObject.zero(),
@@ -46,7 +46,7 @@ describe("remainingDays", () => {
 				},
 			},
 		]);
-		const item = items[0].copy();
+		const item = items[0];
 		const str = item.recurrencePattern.getNthOccurrence(
 			NumberValueObject.zero(),
 		)?.remainingDaysStr;
@@ -63,7 +63,7 @@ describe("remainingDays", () => {
 				},
 			},
 		]);
-		const item = items[0].copy();
+		const item = items[0];
 
 		const str = item.recurrencePattern.getNthOccurrence(
 			NumberValueObject.zero(),
@@ -81,7 +81,7 @@ describe("remainingDays", () => {
 				},
 			},
 		]);
-		const item = items[0].copy();
+		const item = items[0];
 
 		const str = item.recurrencePattern.getNthOccurrence(
 			NumberValueObject.zero(),
@@ -121,11 +121,12 @@ describe("createRecurrences", () => {
 
 describe("transfer operation validation", () => {
 	it("should throw error when creating transfer operation without toSplits", () => {
-		const fromAccount = Nanoid.generate();
+		const accounts = buildTestAccounts(1);
+		const fromAccount = accounts[0];
 		const fromSplits = [
-			new PaymentSplit(fromAccount, new TransactionAmount(100)),
+			new AccountSplit(fromAccount, new TransactionAmount(100)),
 		];
-		const toSplits: PaymentSplit[] = []; // Empty toSplits for transfer
+		const toSplits: AccountSplit[] = []; // Empty toSplits for transfer
 
 		expect(() => {
 			ScheduledTransaction.create(
@@ -148,13 +149,14 @@ describe("transfer operation validation", () => {
 	});
 
 	it("should allow transfer operation with valid toSplits", () => {
-		const fromAccount = Nanoid.generate();
-		const toAccount = Nanoid.generate();
+		const accounts = buildTestAccounts(2);
+		const fromAccount = accounts[0];
+		const toAccount = accounts[1];
 		const fromSplits = [
-			new PaymentSplit(fromAccount, new TransactionAmount(100)),
+			new AccountSplit(fromAccount, new TransactionAmount(100)),
 		];
 		const toSplits = [
-			new PaymentSplit(toAccount, new TransactionAmount(100)),
+			new AccountSplit(toAccount, new TransactionAmount(100)),
 		];
 
 		expect(() => {
@@ -178,11 +180,12 @@ describe("transfer operation validation", () => {
 	});
 
 	it("should throw error when updating operation to transfer without toSplits", () => {
-		const fromAccount = Nanoid.generate();
+		const accounts = buildTestAccounts(1);
+		const fromAccount = accounts[0];
 		const fromSplits = [
-			new PaymentSplit(fromAccount, new TransactionAmount(100)),
+			new AccountSplit(fromAccount, new TransactionAmount(100)),
 		];
-		const toSplits: PaymentSplit[] = []; // Empty toSplits
+		const toSplits: AccountSplit[] = []; // Empty toSplits
 
 		const item = ScheduledTransaction.create(
 			new StringValueObject("Test Item"),
@@ -205,13 +208,14 @@ describe("transfer operation validation", () => {
 	});
 
 	it("should allow updating operation to transfer with valid toSplits", () => {
-		const fromAccount = Nanoid.generate();
-		const toAccount = Nanoid.generate();
+		const accounts = buildTestAccounts(2);
+		const fromAccount = accounts[0];
+		const toAccount = accounts[1];
 		const fromSplits = [
-			new PaymentSplit(fromAccount, new TransactionAmount(100)),
+			new AccountSplit(fromAccount, new TransactionAmount(100)),
 		];
 		const toSplits = [
-			new PaymentSplit(toAccount, new TransactionAmount(100)),
+			new AccountSplit(toAccount, new TransactionAmount(100)),
 		];
 
 		const item = ScheduledTransaction.create(

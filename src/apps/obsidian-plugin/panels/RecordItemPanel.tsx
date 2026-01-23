@@ -8,7 +8,7 @@ import {
 	TransactionAmount,
 	TransactionDate,
 } from "contexts/Transactions/domain";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { X } from "lucide-react";
 import { useContext, useState } from "react";
 import { ItemRecurrenceInfo } from "../../../contexts/ScheduledTransactions/domain";
@@ -36,13 +36,13 @@ export const RecordItemPanel = ({
 	const { accounts, getAccountByID } = useContext(AccountsContext);
 	const [fromSplits, setFromSplits] = useState(
 		recurrence.originAccounts.map((split) => ({
-			accountId: split.accountId.value,
+			accountId: split.account.id.value,
 			amount: split.amount,
 		})),
 	);
 	const [toSplits, setToSplits] = useState(
 		recurrence.destinationAccounts.map((split) => ({
-			accountId: split.accountId.value,
+			accountId: split.account.id.value,
 			amount: split.amount,
 		})),
 	);
@@ -53,13 +53,23 @@ export const RecordItemPanel = ({
 		setIsRecording(true);
 		try {
 			// Convert the split arrays to PaymentSplit objects
-			const paymentFromSplits = fromSplits.map(
-				(split) =>
-					new PaymentSplit(new Nanoid(split.accountId), split.amount),
+			const paymentFromSplits = fromSplits.map((split) =>
+				AccountSplit.fromPrimitives(
+					accounts.find((acc) => acc.id.value === split.accountId)!,
+					{
+						accountId: split.accountId,
+						amount: split.amount.value,
+					},
+				),
 			);
-			const paymentToSplits = toSplits.map(
-				(split) =>
-					new PaymentSplit(new Nanoid(split.accountId), split.amount),
+			const paymentToSplits = toSplits.map((split) =>
+				AccountSplit.fromPrimitives(
+					accounts.find((acc) => acc.id.value === split.accountId)!,
+					{
+						accountId: split.accountId,
+						amount: split.amount.value,
+					},
+				),
 			);
 
 			await recordItemRecurrence.execute({

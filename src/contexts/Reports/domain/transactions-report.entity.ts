@@ -1,7 +1,7 @@
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
+import { Account } from "../../Accounts/domain";
 import { Nanoid } from "../../Shared/domain";
-import { ReportBalance } from "./report-balance.valueobject";
 
 export type GroupByYearMonthDay = {
 	[year: number]: {
@@ -13,10 +13,15 @@ export type GroupByYearMonthDay = {
 
 export type TransactionWithAccumulatedBalance = {
 	transaction: Transaction;
-	accounts: {
-		id: Nanoid;
-		balance: ReportBalance;
-		prevBalance: ReportBalance;
+	originAccounts: {
+		account: Account;
+		balance: number;
+		prevBalance: number;
+	}[];
+	destinationAccounts?: {
+		account: Account;
+		balance: number;
+		prevBalance: number;
 	}[];
 };
 
@@ -73,11 +78,11 @@ export class TransactionsReport {
 		return new TransactionsReport(
 			this._transactions.toSorted((a, b) =>
 				direction === "asc"
-					? PaymentSplit.totalAmount(a.originAccounts).compareTo(
-							PaymentSplit.totalAmount(b.originAccounts),
+					? AccountSplit.totalAmount(a.originAccounts).compareTo(
+							AccountSplit.totalAmount(b.originAccounts),
 						)
-					: PaymentSplit.totalAmount(b.originAccounts).compareTo(
-							PaymentSplit.totalAmount(a.originAccounts),
+					: AccountSplit.totalAmount(b.originAccounts).compareTo(
+							AccountSplit.totalAmount(a.originAccounts),
 						),
 			),
 		);
@@ -103,104 +108,59 @@ export class TransactionsReport {
 
 		const sortedReport = this.sortedByDate("asc");
 
-		const accumulated: Record<string, ReportBalance> = {};
-		return sortedReport.transactions
-			.flatMap((transaction) => {
-				const transactions: TransactionWithAccumulatedBalance[] = [];
+		const accumulated: Record<string, number> = {};
 
-				// For transfer transactions, create separate entries for from and to accounts
-				if (transaction.operation.isTransfer()) {
-					transactions.push(
-						{
-							transaction,
-							accounts: transaction.originAccounts.map(
-								(originAccount) => {
-									const originAccountID =
-										originAccount.accountId.value;
-									if (!accumulated[originAccountID])
-										accumulated[originAccountID] =
-											new ReportBalance(0);
-									const prevBalance =
-										accumulated[originAccountID];
-									accumulated[originAccountID] = accumulated[
-										originAccountID
-									].plus(
-										transaction.getRealAmountForAccount(
-											originAccount.accountId,
-										),
-									);
-									return {
-										id: originAccount.accountId,
-										balance:
-											accumulated[
-												originAccount.accountId.value
-											],
-										prevBalance,
-									};
-								},
-							),
-						},
-						{
-							transaction,
-							accounts: transaction.destinationAccounts.map(
-								(destinationAccount) => {
-									const destinationAccountID =
-										destinationAccount.accountId.value;
-									if (!accumulated[destinationAccountID])
-										accumulated[destinationAccountID] =
-											new ReportBalance(0);
-									const prevBalance =
-										accumulated[destinationAccountID];
-									accumulated[destinationAccountID] =
-										accumulated[destinationAccountID].plus(
-											transaction.getRealAmountForAccount(
-												destinationAccount.accountId,
-											),
-										);
-									return {
-										id: destinationAccount.accountId,
-										balance:
-											accumulated[destinationAccountID],
-										prevBalance,
-									};
-								},
-							),
-						},
-					);
-				} else {
-					// For non-transfer transactions, use the original logic
-					const allAccountIDs = [
-						...transaction.originAccounts.map(
-							(s) => s.accountId.value,
-						),
-						...transaction.destinationAccounts.map(
-							(s) => s.accountId.value,
-						),
-					];
-					const uniqueAccountIDs = Array.from(new Set(allAccountIDs));
-					transactions.push({
-						transaction,
-						accounts: uniqueAccountIDs.map((accountId) => {
-							if (!accumulated[accountId])
-								accumulated[accountId] = new ReportBalance(0);
-							const prevBalance = accumulated[accountId];
-							accumulated[accountId] = accumulated[
-								accountId
-							].plus(
+		return sortedReport.transactions
+			.map((transaction) => {
+				return {
+					transaction,
+					originAccounts: transaction.originAccounts.map(
+						(originAccount) => {
+							if (!accumulated[originAccount.account.id.value])
+								accumulated[originAccount.account.id.value] = 0;
+							const prevBalance =
+								accumulated[originAccount.account.id.value];
+							accumulated[originAccount.account.id.value] +=
 								transaction.getRealAmountForAccount(
-									new Nanoid(accountId),
-								),
-							);
+									originAccount.account.id,
+								).value;
 							return {
-								id: new Nanoid(accountId),
-								balance: accumulated[accountId],
+								account: originAccount.account,
+								balance:
+									accumulated[originAccount.account.id.value],
 								prevBalance,
 							};
-						}),
-					});
-				}
-
-				return transactions;
+						},
+					),
+					destinationAccounts: transaction.destinationAccounts.map(
+						(destinationAccount) => {
+							if (
+								!accumulated[
+									destinationAccount.account.id.value
+								]
+							)
+								accumulated[
+									destinationAccount.account.id.value
+								] = 0;
+							const prevBalance =
+								accumulated[
+									destinationAccount.account.id.value
+								];
+							accumulated[destinationAccount.account.id.value] +=
+								transaction.getRealAmountForAccount(
+									destinationAccount.account.id,
+								).value;
+							return {
+								account: destinationAccount.account,
+								balance:
+									accumulated[
+										destinationAccount.account.id.value
+									],
+								prevBalance,
+							};
+						},
+					),
+				};
 			})
 			.reverse();
 	}

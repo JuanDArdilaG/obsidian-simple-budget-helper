@@ -19,8 +19,10 @@ export class GetAllTransactionsUseCase implements QueryUseCase<
 	GetAllTransactionsUseCaseInput,
 	GetAllTransactionsUseCaseOutput
 > {
-	#logger = new Logger("GetAllTransactionsUseCase");
-	constructor(private _transactionsRepository: ITransactionsRepository) {}
+	static readonly #logger = new Logger("GetAllTransactionsUseCase");
+	constructor(
+		private readonly _transactionsRepository: ITransactionsRepository,
+	) {}
 
 	async execute({
 		accountFilter,
@@ -39,14 +41,14 @@ export class GetAllTransactionsUseCase implements QueryUseCase<
 		// Filter by category
 		if (categoryFilter) {
 			filteredTransactions = filteredTransactions.filter((transaction) =>
-				transaction.category.equalTo(categoryFilter),
+				transaction.category.id.equalTo(categoryFilter),
 			);
 		}
 
 		// Filter by subcategory
 		if (subCategoryFilter) {
 			filteredTransactions = filteredTransactions.filter((transaction) =>
-				transaction.subCategory.equalTo(subCategoryFilter),
+				transaction.subcategory.id.equalTo(subCategoryFilter),
 			);
 		}
 
@@ -55,10 +57,10 @@ export class GetAllTransactionsUseCase implements QueryUseCase<
 			filteredTransactions = filteredTransactions.filter(
 				(transaction) => {
 					const fromAccountIds = transaction.originAccounts.map(
-						(split) => split.accountId,
+						(split) => split.account.id,
 					);
 					const toAccountIds = transaction.destinationAccounts.map(
-						(split) => split.accountId,
+						(split) => split.account.id,
 					);
 					const allAccountIds = [...fromAccountIds, ...toAccountIds];
 
@@ -69,7 +71,7 @@ export class GetAllTransactionsUseCase implements QueryUseCase<
 			);
 		}
 
-		this.#logger.debug("filtered transactions", {
+		GetAllTransactionsUseCase.#logger.debug("filtered transactions", {
 			accountFilter: accountFilter?.value,
 			categoryFilter: categoryFilter?.value,
 			subCategoryFilter: subCategoryFilter?.value,

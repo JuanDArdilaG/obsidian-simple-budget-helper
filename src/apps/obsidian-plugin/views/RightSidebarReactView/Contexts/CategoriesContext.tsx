@@ -1,18 +1,18 @@
-import { createContext, useCallback } from "react";
+import { useCategories } from "apps/obsidian-plugin/hooks";
 import { AwilixContainer } from "awilix";
+import { CreateCategoryUseCase } from "contexts/Categories/application/create-category.usecase";
+import {
+	CategoriesWithSubcategories,
+	GetAllCategoriesWithSubCategoriesUseCase,
+} from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
+import { CreateSubCategoryUseCase } from "contexts/Subcategories/application/create-subcategory.usecase";
 import {
 	SubCategory,
 	SubCategoryID,
 	SubCategoryName,
 } from "contexts/Subcategories/domain";
-import { useCategories } from "apps/obsidian-plugin/hooks";
-import { CreateCategoryUseCase } from "contexts/Categories/application/create-category.usecase";
-import {
-	GetAllCategoriesWithSubCategoriesUseCase,
-	GetAllCategoriesWithSubCategoriesUseCaseOutput,
-} from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
-import { CreateSubCategoryUseCase } from "contexts/Subcategories/application/create-subcategory.usecase";
+import { createContext, useCallback } from "react";
 
 export type CategoriesContextType = {
 	useCases: {
@@ -20,7 +20,7 @@ export type CategoriesContextType = {
 		createSubCategory: CreateSubCategoryUseCase;
 		getAllCategoriesWithSubCategories: GetAllCategoriesWithSubCategoriesUseCase;
 	};
-	categoriesWithSubcategories: GetAllCategoriesWithSubCategoriesUseCaseOutput;
+	categoriesWithSubcategories: CategoriesWithSubcategories;
 	categories: Category[];
 	subCategories: SubCategory[];
 	getCategoryByID: (id: CategoryID) => Category | undefined;
@@ -54,12 +54,12 @@ export const CategoriesContext = createContext<CategoriesContextType>({
 });
 
 export const getCategoriesContextDefault = (
-	container: AwilixContainer
+	container: AwilixContainer,
 ): CategoriesContextType => {
 	const createCategory = container.resolve("createCategoryUseCase");
 	const createSubCategory = container.resolve("createSubCategoryUseCase");
 	const getAllCategoriesWithSubCategories = container.resolve(
-		"getAllCategoriesWithSubCategoriesUseCase"
+		"getAllCategoriesWithSubCategoriesUseCase",
 	);
 
 	const {
@@ -78,11 +78,11 @@ export const getCategoriesContextDefault = (
 	const getSubCategoriesByCategory = useCallback(
 		(category: Category) =>
 			category
-				? categoriesWithSubcategories.find((catWithSubs) =>
-						catWithSubs.category.name.equalTo(category.name)
-				  )?.subCategories ?? []
+				? (categoriesWithSubcategories.find((catWithSubs) =>
+						catWithSubs.category.name.equalTo(category.name),
+					)?.subcategories ?? [])
 				: [],
-		[categoriesWithSubcategories]
+		[categoriesWithSubcategories],
 	);
 
 	return {

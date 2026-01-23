@@ -1,7 +1,7 @@
 // created from 'create-ts-index'
 
+export * from './account-split.valueobject';
 export * from './item-name.valueobject';
-export * from './payment-split.valueobject';
 export * from './transaction-amount.valueobject';
 export * from './transaction-category.vo';
 export * from './transaction-date.valueobject';

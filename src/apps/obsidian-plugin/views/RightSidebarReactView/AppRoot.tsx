@@ -1,19 +1,19 @@
-import { StrictMode } from "react";
-import { ItemView, WorkspaceLeaf } from "obsidian";
-import { Root, createRoot } from "react-dom/client";
-import { RightSidebarReactView } from "./RightSidebarReactView";
 import { views } from "apps/obsidian-plugin/config";
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
+import { ItemView, WorkspaceLeaf } from "obsidian";
+import { StrictMode } from "react";
+import { Root, createRoot } from "react-dom/client";
+import { AppView } from "./App";
 
-export class RightSidebarReactViewRoot extends ItemView {
+export class AppRoot extends ItemView {
 	root: Root | null = null;
 
 	constructor(
 		leaf: WorkspaceLeaf,
 		private readonly _plugin: SimpleBudgetHelperPlugin,
 		private readonly _statusBarAddText: (
-			val: string | DocumentFragment
-		) => void
+			val: string | DocumentFragment,
+		) => void,
 	) {
 		super(leaf);
 	}
@@ -34,11 +34,8 @@ export class RightSidebarReactViewRoot extends ItemView {
 		this.root = createRoot(this.containerEl.children[1]);
 		this.root?.render(
 			<StrictMode>
-				<RightSidebarReactView
-					plugin={this._plugin}
-					statusBarAddText={(text) => this._statusBarAddText(text)}
-				/>
-			</StrictMode>
+				<AppView plugin={this._plugin} />
+			</StrictMode>,
 		);
 	}
 

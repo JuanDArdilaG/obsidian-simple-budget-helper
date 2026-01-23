@@ -4,34 +4,25 @@ import { ScheduledTransaction } from "../../ScheduledTransactions/domain";
 import { ReportBalance } from "./report-balance.valueobject";
 
 export class ScheduledMonthlyReport {
-	readonly #logger = new Logger("ScheduledMonthlyReport");
+	static readonly #logger = new Logger("ScheduledMonthlyReport");
 
 	readonly scheduledTransactionsWithAccounts: ScheduledTransactionsWithAccounts[];
 
 	constructor(
 		scheduledTransactions: ScheduledTransaction[],
-		private readonly accounts: Account[]
+		private readonly accounts: Account[],
 	) {
 		this.scheduledTransactionsWithAccounts = scheduledTransactions
 			.map((scheduledTransaction) => ({
 				scheduledTransaction,
-				account: this.accounts.find((account) =>
-					account.id.equalTo(
-						scheduledTransaction.originAccounts[0].accountId
-					)
-				),
+				account: scheduledTransaction.originAccounts[0].account,
 				toAccount:
 					scheduledTransaction.destinationAccounts.length > 0
-						? accounts.find((account) =>
-								account.id.equalTo(
-									scheduledTransaction.destinationAccounts[0]
-										.accountId
-								)
-						  )
+						? scheduledTransaction.destinationAccounts[0].account
 						: undefined,
 			}))
 			.filter(
-				(item) => !!item.account
+				(item) => !!item.account,
 			) as ScheduledTransactionsWithAccounts[];
 	}
 
@@ -39,10 +30,10 @@ export class ScheduledMonthlyReport {
 		return new ScheduledMonthlyReport(
 			this.scheduledTransactionsWithAccounts
 				.filter(({ scheduledTransaction }) =>
-					scheduledTransaction.operation.type.isExpense()
+					scheduledTransaction.operation.type.isExpense(),
 				)
 				.map(({ scheduledTransaction }) => scheduledTransaction),
-			this.accounts
+			this.accounts,
 		);
 	}
 
@@ -50,10 +41,10 @@ export class ScheduledMonthlyReport {
 		return new ScheduledMonthlyReport(
 			this.scheduledTransactionsWithAccounts
 				.filter(({ scheduledTransaction }) =>
-					scheduledTransaction.operation.type.isIncome()
+					scheduledTransaction.operation.type.isIncome(),
 				)
 				.map(({ scheduledTransaction }) => scheduledTransaction),
-			this.accounts
+			this.accounts,
 		);
 	}
 
@@ -63,10 +54,10 @@ export class ScheduledMonthlyReport {
 				.filter(
 					({ scheduledTransaction }) =>
 						scheduledTransaction.recurrencePattern
-							.totalOccurrences === -1
+							.totalOccurrences === -1,
 				)
 				.map(({ scheduledTransaction }) => scheduledTransaction),
-			this.accounts
+			this.accounts,
 		);
 	}
 
@@ -76,10 +67,10 @@ export class ScheduledMonthlyReport {
 				.filter(
 					({ scheduledTransaction }) =>
 						scheduledTransaction.recurrencePattern
-							.totalOccurrences !== -1
+							.totalOccurrences !== -1,
 				)
 				.map(({ scheduledTransaction }) => scheduledTransaction),
-			this.accounts
+			this.accounts,
 		);
 	}
 
@@ -89,7 +80,7 @@ export class ScheduledMonthlyReport {
 	getExpenseItems(): ScheduledTransaction[] {
 		return this.scheduledTransactionsWithAccounts
 			.filter(({ scheduledTransaction }) =>
-				scheduledTransaction.operation.type.isExpense()
+				scheduledTransaction.operation.type.isExpense(),
 			)
 			.map(({ scheduledTransaction }) => scheduledTransaction);
 	}
@@ -100,7 +91,7 @@ export class ScheduledMonthlyReport {
 	getIncomeItems(): ScheduledTransaction[] {
 		return this.scheduledTransactionsWithAccounts
 			.filter(({ scheduledTransaction }) =>
-				scheduledTransaction.operation.type.isIncome()
+				scheduledTransaction.operation.type.isIncome(),
 			)
 			.map(({ scheduledTransaction }) => scheduledTransaction);
 	}
@@ -111,7 +102,7 @@ export class ScheduledMonthlyReport {
 	getTransferItems(): ScheduledTransaction[] {
 		return this.scheduledTransactionsWithAccounts
 			.filter(({ scheduledTransaction }) =>
-				scheduledTransaction.operation.type.isTransfer()
+				scheduledTransaction.operation.type.isTransfer(),
 			)
 			.map(({ scheduledTransaction }) => scheduledTransaction);
 	}
@@ -124,7 +115,7 @@ export class ScheduledMonthlyReport {
 			.filter(
 				({ scheduledTransaction }) =>
 					scheduledTransaction.recurrencePattern.totalOccurrences ===
-					-1
+					-1,
 			)
 			.map(({ scheduledTransaction }) => scheduledTransaction);
 	}
@@ -137,7 +128,7 @@ export class ScheduledMonthlyReport {
 			.filter(
 				({ scheduledTransaction }) =>
 					scheduledTransaction.recurrencePattern.totalOccurrences !==
-					-1
+					-1,
 			)
 			.map(({ scheduledTransaction }) => scheduledTransaction);
 	}
@@ -146,7 +137,7 @@ export class ScheduledMonthlyReport {
 		return this.scheduledTransactionsWithAccounts.reduce(
 			(total, { scheduledTransaction }) =>
 				total.plus(scheduledTransaction.realPrice),
-			ReportBalance.zero()
+			ReportBalance.zero(),
 		);
 	}
 
@@ -156,10 +147,10 @@ export class ScheduledMonthlyReport {
 				total.plus(
 					scheduledTransaction.getPricePerMonthWithAccountTypes(
 						account.type,
-						toAccount?.type
-					)
+						toAccount?.type,
+					),
 				),
-			ReportBalance.zero()
+			ReportBalance.zero(),
 		);
 	}
 }

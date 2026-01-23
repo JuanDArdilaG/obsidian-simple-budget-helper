@@ -1,6 +1,10 @@
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
-import { LocalRepository } from "contexts/Shared/infrastructure/persistence/local/local.repository";
+import {
+	LocalRepository,
+	RepositoryDependencies,
+} from "contexts/Shared/infrastructure/persistence/local/local.repository";
+import { Account, IAccountsRepository } from "../../../Accounts/domain";
 import { Nanoid } from "../../../Shared/domain";
 import { Logger } from "../../../Shared/infrastructure/logger";
 import {
@@ -8,6 +12,9 @@ import {
 	RecurrenceModification,
 	RecurrenceModificationPrimitives,
 } from "../../domain";
+
+export type RecurrenceModificationsDependencies =
+	RepositoryDependencies<Account>;
 
 export class RecurrenceModificationsLocalRepository
 	extends LocalRepository<
@@ -17,32 +24,43 @@ export class RecurrenceModificationsLocalRepository
 	>
 	implements IRecurrenceModificationsRepository
 {
-	#logger = new Logger("RecurrenceModificationsLocalRepository");
-	constructor(protected readonly _db: LocalDB) {
-		super(_db, Config.scheduledTransactionsModificationsTableName);
+	static readonly #logger = new Logger(
+		"RecurrenceModificationsLocalRepository",
+	);
+	constructor(
+		protected readonly _db: LocalDB,
+		private readonly _accountsRepository: IAccountsRepository,
+	) {
+		super(_db, Config.scheduledTransactionsModificationsTableName, [
+			{ type: "Account", getter: _accountsRepository.findAll },
+		]);
 	}
 
 	protected mapToDomain(
-		record: RecurrenceModificationPrimitives
+		record: RecurrenceModificationPrimitives,
+		dependencies?: RecurrenceModificationsDependencies,
 	): RecurrenceModification {
-		return RecurrenceModification.fromPrimitives(record);
+		const accounts = dependencies
+			? dependencies.get("Account")!
+			: new Map<string, Account>();
+		return RecurrenceModification.fromPrimitives(accounts, record);
 	}
 
 	protected mapToPrimitives(
-		entity: RecurrenceModification
+		entity: RecurrenceModification,
 	): RecurrenceModificationPrimitives {
 		return entity.toPrimitives();
 	}
 
 	async findByScheduledItemId(
-		scheduledItemId: Nanoid
+		scheduledItemId: Nanoid,
 	): Promise<RecurrenceModification[]> {
 		return this.where("scheduledItemId", scheduledItemId.value);
 	}
 
 	async findByScheduledItemIdAndOccurrenceIndex(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: number
+		occurrenceIndex: number,
 	): Promise<RecurrenceModification | null> {
 		const modification = await this._db.db
 			.table(this.tableName)
@@ -50,12 +68,15 @@ export class RecurrenceModificationsLocalRepository
 			.equals(scheduledItemId.value)
 			.and(
 				(modification: RecurrenceModificationPrimitives) =>
-					modification.index === occurrenceIndex
+					modification.index === occurrenceIndex,
 			)
 			.first();
-		this.#logger.debug("findByScheduledItemIdAndOccurrenceIndex result", {
-			modification,
-		});
+		RecurrenceModificationsLocalRepository.#logger.debug(
+			"findByScheduledItemIdAndOccurrenceIndex result",
+			{
+				modification,
+			},
+		);
 
 		if (!modification) {
 			return null;

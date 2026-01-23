@@ -9,7 +9,7 @@ import {
 import { Category } from "contexts/Categories/domain";
 import { ItemOperation, Nanoid } from "contexts/Shared/domain";
 import { SubCategory } from "contexts/Subcategories/domain";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Currency } from "../../../../src/contexts/Currencies/domain/currency.vo";
@@ -23,6 +23,7 @@ import {
 	ScheduledTransactionDate,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
 import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
+import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 
 const category = Category.create(new StringValueObject("Salary"));
 const subCategory = SubCategory.create(
@@ -99,11 +100,11 @@ describe("ScheduledTransactionsService", () => {
 	describe("getMonthlyPriceEstimate", () => {
 		it("should return correct price for income items", async () => {
 			const itemID = Nanoid.generate();
-			const accountID = Nanoid.generate();
+			const account = buildTestAccounts(1)[0];
 			const fromSplits = [
-				new PaymentSplit(accountID, new TransactionAmount(100)),
+				new AccountSplit(account, new TransactionAmount(100)),
 			];
-			const toSplits: PaymentSplit[] = [];
+			const toSplits: AccountSplit[] = [];
 
 			const item = ScheduledTransaction.create(
 				new StringValueObject("Income Item"),
@@ -128,11 +129,11 @@ describe("ScheduledTransactionsService", () => {
 
 		it("should return correct price for expense items", async () => {
 			const itemID = Nanoid.generate();
-			const accountID = Nanoid.generate();
+			const account = buildTestAccounts(1)[0];
 			const fromSplits = [
-				new PaymentSplit(accountID, new TransactionAmount(100)),
+				new AccountSplit(account, new TransactionAmount(100)),
 			];
-			const toSplits: PaymentSplit[] = [];
+			const toSplits: AccountSplit[] = [];
 
 			const item = ScheduledTransaction.create(
 				new StringValueObject("Expense Item"),
@@ -157,13 +158,23 @@ describe("ScheduledTransactionsService", () => {
 
 		it("should return correct price for asset to liability transfers", async () => {
 			const itemID = Nanoid.generate();
-			const fromAccountID = Nanoid.generate();
-			const toAccountID = Nanoid.generate();
+
+			const fromAccount = Account.createAsset(
+				AccountAssetSubtype.CASH,
+				new AccountName("Asset Account"),
+				new Currency("USD"),
+			);
+			const toAccount = Account.createLiability(
+				AccountLiabilitySubtype.CREDIT_CARD,
+				new AccountName("Liability Account"),
+				new Currency("USD"),
+			);
+
 			const fromSplits = [
-				new PaymentSplit(fromAccountID, new TransactionAmount(100)),
+				new AccountSplit(fromAccount, new TransactionAmount(100)),
 			];
 			const toSplits = [
-				new PaymentSplit(toAccountID, new TransactionAmount(100)),
+				new AccountSplit(toAccount, new TransactionAmount(100)),
 			];
 
 			const item = ScheduledTransaction.create(
@@ -175,17 +186,6 @@ describe("ScheduledTransactionsService", () => {
 				toSplits,
 				ItemOperation.transfer(),
 				new TransactionCategory(category, subCategory),
-			);
-
-			const fromAccount = Account.createAsset(
-				AccountAssetSubtype.CASH,
-				new AccountName("Asset Account"),
-				new Currency("USD"),
-			);
-			const toAccount = Account.createLiability(
-				AccountLiabilitySubtype.CREDIT_CARD,
-				new AccountName("Liability Account"),
-				new Currency("USD"),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -203,13 +203,21 @@ describe("ScheduledTransactionsService", () => {
 
 		it("should return correct price for liability to asset transfers", async () => {
 			const itemID = Nanoid.generate();
-			const fromAccountID = Nanoid.generate();
-			const toAccountID = Nanoid.generate();
+			const fromAccount = Account.createLiability(
+				AccountLiabilitySubtype.CREDIT_CARD,
+				new AccountName("Liability Account"),
+				new Currency("USD"),
+			);
+			const toAccount = Account.createAsset(
+				AccountAssetSubtype.CASH,
+				new AccountName("Asset Account"),
+				new Currency("USD"),
+			);
 			const fromSplits = [
-				new PaymentSplit(fromAccountID, new TransactionAmount(100)),
+				new AccountSplit(fromAccount, new TransactionAmount(100)),
 			];
 			const toSplits = [
-				new PaymentSplit(toAccountID, new TransactionAmount(100)),
+				new AccountSplit(toAccount, new TransactionAmount(100)),
 			];
 
 			const item = ScheduledTransaction.create(
@@ -221,17 +229,6 @@ describe("ScheduledTransactionsService", () => {
 				toSplits,
 				ItemOperation.transfer(),
 				new TransactionCategory(category, subCategory),
-			);
-
-			const fromAccount = Account.createLiability(
-				AccountLiabilitySubtype.CREDIT_CARD,
-				new AccountName("Liability Account"),
-				new Currency("USD"),
-			);
-			const toAccount = Account.createAsset(
-				AccountAssetSubtype.CASH,
-				new AccountName("Asset Account"),
-				new Currency("USD"),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -249,13 +246,23 @@ describe("ScheduledTransactionsService", () => {
 
 		it("should return zero for asset to asset transfers", async () => {
 			const itemID = Nanoid.generate();
-			const fromAccountID = Nanoid.generate();
-			const toAccountID = Nanoid.generate();
+
+			const fromAccount = Account.createAsset(
+				AccountAssetSubtype.CASH,
+				new AccountName("Asset Account 1"),
+				new Currency("USD"),
+			);
+			const toAccount = Account.createAsset(
+				AccountAssetSubtype.CASH,
+				new AccountName("Asset Account 2"),
+				new Currency("USD"),
+			);
+
 			const fromSplits = [
-				new PaymentSplit(fromAccountID, new TransactionAmount(100)),
+				new AccountSplit(fromAccount, new TransactionAmount(100)),
 			];
 			const toSplits = [
-				new PaymentSplit(toAccountID, new TransactionAmount(100)),
+				new AccountSplit(toAccount, new TransactionAmount(100)),
 			];
 
 			const item = ScheduledTransaction.create(
@@ -267,17 +274,6 @@ describe("ScheduledTransactionsService", () => {
 				toSplits,
 				ItemOperation.transfer(),
 				new TransactionCategory(category, subCategory),
-			);
-
-			const fromAccount = Account.createAsset(
-				AccountAssetSubtype.CASH,
-				new AccountName("Asset Account 1"),
-				new Currency("USD"),
-			);
-			const toAccount = Account.createAsset(
-				AccountAssetSubtype.CASH,
-				new AccountName("Asset Account 2"),
-				new Currency("USD"),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -295,13 +291,21 @@ describe("ScheduledTransactionsService", () => {
 
 		it("should return zero for liability to liability transfers", async () => {
 			const scheduledTransactionId = Nanoid.generate();
-			const fromAccountID = Nanoid.generate();
-			const toAccountID = Nanoid.generate();
+			const fromAccount = Account.createLiability(
+				AccountLiabilitySubtype.CREDIT_CARD,
+				new AccountName("Liability Account 1"),
+				new Currency("USD"),
+			);
+			const toAccount = Account.createLiability(
+				AccountLiabilitySubtype.CREDIT_CARD,
+				new AccountName("Liability Account 2"),
+				new Currency("USD"),
+			);
 			const fromSplits = [
-				new PaymentSplit(fromAccountID, new TransactionAmount(100)),
+				new AccountSplit(fromAccount, new TransactionAmount(100)),
 			];
 			const toSplits = [
-				new PaymentSplit(toAccountID, new TransactionAmount(100)),
+				new AccountSplit(toAccount, new TransactionAmount(100)),
 			];
 
 			const scheduledTransaction = ScheduledTransaction.create(
@@ -313,17 +317,6 @@ describe("ScheduledTransactionsService", () => {
 				toSplits,
 				ItemOperation.transfer(),
 				new TransactionCategory(category, subCategory),
-			);
-
-			const fromAccount = Account.createLiability(
-				AccountLiabilitySubtype.CREDIT_CARD,
-				new AccountName("Liability Account 1"),
-				new Currency("USD"),
-			);
-			const toAccount = Account.createLiability(
-				AccountLiabilitySubtype.CREDIT_CARD,
-				new AccountName("Liability Account 2"),
-				new Currency("USD"),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(
@@ -343,11 +336,11 @@ describe("ScheduledTransactionsService", () => {
 
 		it("should calculate monthly price for recurring items", async () => {
 			const itemID = Nanoid.generate();
-			const accountID = Nanoid.generate();
+			const account = buildTestAccounts(1)[0];
 			const fromSplits = [
-				new PaymentSplit(accountID, new TransactionAmount(100)),
+				new AccountSplit(account, new TransactionAmount(100)),
 			];
-			const toSplits: PaymentSplit[] = [];
+			const toSplits: AccountSplit[] = [];
 
 			const item = ScheduledTransaction.create(
 				new StringValueObject("Recurring Income Item"),

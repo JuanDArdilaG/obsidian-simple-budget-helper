@@ -11,15 +11,15 @@ import {
 } from "@mui/material";
 import { PriceInput } from "apps/obsidian-plugin/components/Input/PriceInput";
 import { AccountsContext } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
-import { PaymentSplitPrimitives } from "contexts/Transactions/domain";
+import { AccountSplitPrimitives } from "contexts/Transactions/domain";
 import { useContext, useMemo } from "react";
 
 interface MultiAccountSelectProps {
 	id: string;
 	label: string;
 	placeholder?: string;
-	selectedAccounts: PaymentSplitPrimitives[];
-	onChange: (accounts: PaymentSplitPrimitives[]) => void;
+	selectedAccounts: AccountSplitPrimitives[];
+	onChange: (accounts: AccountSplitPrimitives[]) => void;
 	totalAmount?: number;
 	error?: string;
 	isLocked?: boolean;
@@ -60,7 +60,7 @@ export const MultiAccountSelect = ({
 	);
 
 	const handleAccountToggle = (accountId: string, checked: boolean) => {
-		let newSplits: PaymentSplitPrimitives[];
+		let newSplits: AccountSplitPrimitives[];
 		if (checked) {
 			// Add account with default amount
 			newSplits = [...selectedAccounts, { accountId, amount: 0 }];

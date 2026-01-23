@@ -1,11 +1,8 @@
 import { StringValueObject } from "@juandardilag/value-objects";
 import { useTransactions } from "apps/obsidian-plugin/hooks";
 import { AwilixContainer } from "awilix";
-import { CategoryID } from "contexts/Categories/domain";
 import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
 import { TransactionsReport } from "contexts/Reports/domain";
-import { Nanoid } from "contexts/Shared/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
 import { DeleteTransactionUseCase } from "contexts/Transactions/application/delete-transaction.usecase";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
 import { GetAllUniqueItemStoresUseCase } from "contexts/Transactions/application/get-all-unique-item-stores.usecase";
@@ -25,21 +22,10 @@ export type TransactionsContextType = {
 		getAllUniqueItemStores: GetAllUniqueItemStoresUseCase;
 		groupByCategoryWithAccumulatedBalance: GroupByCategoryWithAccumulatedBalanceUseCase;
 	};
+	isLoading: boolean;
 	transactions: Transaction[];
 	transactionsReport: TransactionsReport;
 	updateTransactions: () => void;
-	filteredTransactions: Transaction[];
-	setFilters: React.Dispatch<
-		React.SetStateAction<
-			[
-				account?: Nanoid | undefined,
-				category?: CategoryID | undefined,
-				subCategory?: SubCategoryID | undefined,
-			]
-		>
-	>;
-	filteredTransactionsReport: TransactionsReport;
-	updateFilteredTransactions: () => void;
 	stores: StringValueObject[];
 	updateStores: () => void;
 };
@@ -59,10 +45,7 @@ export const TransactionsContext = createContext<TransactionsContextType>({
 	transactions: [],
 	updateTransactions: () => {},
 	transactionsReport: {} as TransactionsReport,
-	filteredTransactions: [],
-	setFilters: () => {},
-	filteredTransactionsReport: {} as TransactionsReport,
-	updateFilteredTransactions: () => {},
+	isLoading: false,
 	stores: [],
 	updateStores: () => {},
 });
@@ -89,11 +72,9 @@ export const getTransactionsContextValues = (
 	);
 
 	const {
+		isLoading,
 		transactions,
 		updateTransactions,
-		filteredTransactions,
-		setFilters,
-		updateFilteredTransactions,
 		stores,
 		updateStores,
 	} = useTransactions({
@@ -104,11 +85,6 @@ export const getTransactionsContextValues = (
 	const transactionsReport = useMemo(
 		() => new TransactionsReport(transactions),
 		[transactions],
-	);
-
-	const filteredTransactionsReport = useMemo(
-		() => new TransactionsReport(filteredTransactions),
-		[filteredTransactions],
 	);
 
 	return {
@@ -123,13 +99,10 @@ export const getTransactionsContextValues = (
 				"groupByCategoryWithAccumulatedBalanceUseCase",
 			),
 		},
+		isLoading,
 		transactions,
 		transactionsReport,
 		updateTransactions,
-		filteredTransactions,
-		setFilters,
-		filteredTransactionsReport,
-		updateFilteredTransactions,
 		stores,
 		updateStores,
 	};

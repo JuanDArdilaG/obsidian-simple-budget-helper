@@ -1,21 +1,20 @@
 import { AccountBalance } from "contexts/Accounts/domain";
-import { CategoryID } from "contexts/Categories/domain";
+import { Category, CategoryID } from "contexts/Categories/domain";
 import { SubCategoryID } from "contexts/Subcategories/domain";
 import {
 	ITransactionsService,
 	Transaction,
-	TransactionID,
 } from "contexts/Transactions/domain";
 import { Nanoid } from "../../../../src/contexts/Shared/domain";
 
 export class TransactionsServiceMock implements ITransactionsService {
 	constructor(public transactions: Transaction[]) {}
 
-	async getByID(id: TransactionID): Promise<Transaction> {
+	async getByID(id: Nanoid): Promise<Transaction> {
 		throw new Error("not implemented");
 	}
 
-	async delete(id: TransactionID): Promise<void> {
+	async delete(id: Nanoid): Promise<void> {
 		throw new Error("not implemented");
 	}
 
@@ -49,8 +48,8 @@ export class TransactionsServiceMock implements ITransactionsService {
 	}
 
 	async reassignTransactionsCategory(
-		oldCategory: CategoryID,
-		newCategory: CategoryID,
+		oldCategory: Category,
+		newCategory: Category,
 	): Promise<void> {
 		throw new Error("not implemented");
 	}
