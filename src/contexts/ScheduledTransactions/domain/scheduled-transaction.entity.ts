@@ -4,24 +4,18 @@ import {
 	PriceValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
-import { Account, AccountType } from "contexts/Accounts/domain";
-import { Category } from "contexts/Categories/domain";
+import { AccountTypeType } from "contexts/Accounts/domain";
 import {
 	ItemOperation,
 	ItemOperationPrimitives,
 	Nanoid,
 } from "contexts/Shared/domain";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
-import { SubCategory } from "contexts/Subcategories/domain";
 import {
 	AccountSplit,
 	AccountSplitPrimitives,
 } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
-import {
-	TransactionCategory,
-	TransactionCategoryPrimitives,
-} from "../../Transactions/domain/transaction-category.vo";
 import { ItemTag } from "./item-tag.valueobject";
 import { ItemTags } from "./item-tags.valueobject";
 import {
@@ -31,7 +25,7 @@ import {
 import { ScheduledTransactionDate } from "./scheduled-transaction-date.vo";
 
 export class ScheduledTransaction extends Entity<
-	Nanoid,
+	string,
 	ScheduledTransactionPrimitives
 > {
 	private constructor(
@@ -40,13 +34,14 @@ export class ScheduledTransaction extends Entity<
 		private _originAccounts: AccountSplit[],
 		private _destinationAccounts: AccountSplit[],
 		private _operation: ItemOperation,
-		private readonly _category: TransactionCategory,
+		private _categoryId: Nanoid,
+		private _subcategoryId: Nanoid,
 		private _recurrencePattern: RecurrencePattern,
 		private readonly _store?: StringValueObject,
 		private _tags?: ItemTags,
 		updatedAt?: DateValueObject,
 	) {
-		super(id, updatedAt ?? DateValueObject.createNowDate());
+		super(id.value, updatedAt ?? DateValueObject.createNowDate());
 		this.validateTransferOperation();
 	}
 
@@ -56,7 +51,8 @@ export class ScheduledTransaction extends Entity<
 		fromSplits: AccountSplit[],
 		toSplits: AccountSplit[],
 		operation: ItemOperation,
-		category: TransactionCategory,
+		categoryId: Nanoid,
+		subcategoryId: Nanoid,
 		store?: StringValueObject,
 	): ScheduledTransaction {
 		return new ScheduledTransaction(
@@ -65,13 +61,18 @@ export class ScheduledTransaction extends Entity<
 			fromSplits,
 			toSplits,
 			operation,
-			category,
+			categoryId,
+			subcategoryId,
 			recurrencePattern,
 			store,
 		);
 	}
 
 	// Getters
+	get nanoid(): Nanoid {
+		return new Nanoid(this.id);
+	}
+
 	get name(): StringValueObject {
 		return this._name;
 	}
@@ -88,8 +89,22 @@ export class ScheduledTransaction extends Entity<
 		return this._operation;
 	}
 
-	get category(): TransactionCategory {
-		return this._category;
+	get category(): Nanoid {
+		return this._categoryId;
+	}
+
+	set category(newCategoryId: Nanoid) {
+		this._categoryId = newCategoryId;
+		this.updateTimestamp();
+	}
+
+	get subcategory(): Nanoid {
+		return this._subcategoryId;
+	}
+
+	set subcategory(newSubCategoryId: Nanoid) {
+		this._subcategoryId = newSubCategoryId;
+		this.updateTimestamp();
 	}
 
 	get recurrencePattern(): RecurrencePattern {
@@ -131,8 +146,8 @@ export class ScheduledTransaction extends Entity<
 	 * Returns the real price with account types consideration
 	 */
 	getRealPriceWithAccountTypes(
-		fromAccountType: AccountType,
-		toAccountType?: AccountType,
+		fromAccountType: AccountTypeType,
+		toAccountType?: AccountTypeType,
 	): PriceValueObject {
 		if (this._operation.type.isIncome()) {
 			return this.originAmount;
@@ -151,11 +166,11 @@ export class ScheduledTransaction extends Entity<
 			const toType = toAccountType;
 
 			// Asset to Liability: negative (expense)
-			if (fromType.isAsset() && toType.isLiability()) {
+			if (fromType === "asset" && toType === "liability") {
 				return this.originAmount.negate();
 			}
 			// Liability to Asset: positive (income)
-			else if (fromType.isLiability() && toType.isAsset()) {
+			else if (fromType === "liability" && toType === "asset") {
 				return this.originAmount;
 			}
 			// Asset to Asset or Liability to Liability: neutral (zero)
@@ -170,8 +185,8 @@ export class ScheduledTransaction extends Entity<
 	 * Returns the price per month with account types consideration
 	 */
 	getPricePerMonthWithAccountTypes(
-		fromAccountType: AccountType,
-		toAccountType?: AccountType,
+		fromAccountType: AccountTypeType,
+		toAccountType?: AccountTypeType,
 	): PriceValueObject {
 		const realPrice = this.getRealPriceWithAccountTypes(
 			fromAccountType,
@@ -256,9 +271,7 @@ export class ScheduledTransaction extends Entity<
 	/**
 	 * Gets the date for a specific occurrence index
 	 */
-	getOccurrenceDate(
-		index: NumberValueObject,
-	): ScheduledTransactionDate | null {
+	getOccurrenceDate(index: number): ScheduledTransactionDate | null {
 		return this._recurrencePattern.getNthOccurrence(index);
 	}
 
@@ -271,7 +284,7 @@ export class ScheduledTransaction extends Entity<
 
 	toPrimitives(): ScheduledTransactionPrimitives {
 		return {
-			id: this.id.value,
+			id: this.id,
 			name: this._name.value,
 			fromSplits: this._originAccounts.map((split) =>
 				split.toPrimitives(),
@@ -280,34 +293,31 @@ export class ScheduledTransaction extends Entity<
 				split.toPrimitives(),
 			),
 			operation: this._operation.toPrimitives(),
-			category: this._category.toPrimitives(),
+			category: this._categoryId.value,
+			subcategory: this._subcategoryId.value,
 			recurrencePattern: this._recurrencePattern.toPrimitives(),
 			tags: this._tags?.toPrimitives(),
-			updatedAt: this.updatedAt.value.toISOString(),
+			updatedAt: this.updatedAt.toISOString(),
 		};
 	}
 
 	static fromPrimitives(
-		accounts: Map<string, Account>,
 		primitives: ScheduledTransactionPrimitives,
 	): ScheduledTransaction {
+		let category = primitives.category;
+		let subcategory = primitives.subcategory;
+		if ((primitives.category as any).category) {
+			category = (primitives.category as any).category.id;
+			subcategory = (primitives.category as any).subCategory.id;
+		}
 		return new ScheduledTransaction(
 			new Nanoid(primitives.id),
 			new StringValueObject(primitives.name),
-			primitives.fromSplits.map((split) =>
-				AccountSplit.fromPrimitives(
-					accounts.get(split.accountId)!,
-					split,
-				),
-			),
-			primitives.toSplits.map((split) =>
-				AccountSplit.fromPrimitives(
-					accounts.get(split.accountId)!,
-					split,
-				),
-			),
+			primitives.fromSplits.map(AccountSplit.fromPrimitives),
+			primitives.toSplits.map(AccountSplit.fromPrimitives),
 			ItemOperation.fromPrimitives(primitives.operation),
-			TransactionCategory.fromPrimitives(primitives.category),
+			new Nanoid(category),
+			new Nanoid(subcategory),
 			RecurrencePattern.fromPrimitives(primitives.recurrencePattern),
 			primitives.store
 				? new StringValueObject(primitives.store)
@@ -338,10 +348,8 @@ export class ScheduledTransaction extends Entity<
 			fromSplits: [],
 			toSplits: [],
 			operation: ItemOperation.expense().toPrimitives(),
-			category: {
-				category: Category.emptyPrimitives(),
-				subCategory: SubCategory.emptyPrimitives(),
-			},
+			category: "",
+			subcategory: "",
 			store: undefined,
 			recurrencePattern: RecurrencePattern.oneTime(
 				ScheduledTransactionDate.createNowDate(),
@@ -357,7 +365,8 @@ export type ScheduledTransactionPrimitives = {
 	fromSplits: AccountSplitPrimitives[];
 	toSplits: AccountSplitPrimitives[];
 	operation: ItemOperationPrimitives;
-	category: TransactionCategoryPrimitives;
+	category: string;
+	subcategory: string;
 	recurrencePattern: RecurrencePatternPrimitives;
 	store?: string;
 	tags?: string[];

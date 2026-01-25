@@ -1,7 +1,4 @@
-import {
-	DateValueObject,
-	NumberValueObject,
-} from "@juandardilag/value-objects";
+import { DateValueObject } from "@juandardilag/value-objects";
 import { CommandUseCase } from "contexts/Shared/domain/command-use-case.interface";
 import { EntityNotFoundError } from "contexts/Shared/domain/errors/not-found.error";
 import { Logger } from "contexts/Shared/infrastructure/logger";
@@ -18,8 +15,8 @@ import {
 
 export type RecordScheduledTransactionUseCaseInput = {
 	scheduledTransactionID: Nanoid;
-	occurrenceIndex: NumberValueObject;
-	date?: TransactionDate;
+	occurrenceIndex: number;
+	date?: Date;
 	fromSplits?: AccountSplit[];
 	toSplits?: AccountSplit[];
 };
@@ -41,13 +38,13 @@ export class RecordScheduledTransactionUseCase implements CommandUseCase<RecordS
 		toSplits,
 	}: RecordScheduledTransactionUseCaseInput): Promise<void> {
 		this.#logger.debug("Recording occurrence", {
-			occurrenceIndex: occurrenceIndex.value,
-			date: date?.value,
+			occurrenceIndex: occurrenceIndex,
+			date,
 		});
 
 		const scheduledTransaction =
 			await this._scheduledTransactionsService.getByID(
-				scheduledTransactionID,
+				scheduledTransactionID.value,
 			);
 		if (!scheduledTransaction) {
 			throw new EntityNotFoundError(
@@ -64,16 +61,16 @@ export class RecordScheduledTransactionUseCase implements CommandUseCase<RecordS
 			);
 
 		if (!recurrenceInfo) {
-			throw new Error(
-				`Invalid occurrence index: ${occurrenceIndex.value}`,
-			);
+			throw new Error(`Invalid occurrence index: ${occurrenceIndex}`);
 		}
 
 		// Determine effective transaction data
 		const effectiveFromSplits = fromSplits ?? recurrenceInfo.originAccounts;
 		const effectiveToSplits =
 			toSplits ?? recurrenceInfo.destinationAccounts;
-		const effectiveDate = date ?? recurrenceInfo.date;
+		const effectiveDate = date
+			? new TransactionDate(date)
+			: recurrenceInfo.date;
 
 		// Create transaction from the effective data
 		const transaction = new Transaction(
@@ -82,8 +79,8 @@ export class RecordScheduledTransactionUseCase implements CommandUseCase<RecordS
 			effectiveToSplits,
 			new TransactionName(scheduledTransaction.name.value),
 			scheduledTransaction.operation.type,
-			scheduledTransaction.category.category,
-			scheduledTransaction.category.subCategory,
+			scheduledTransaction.category,
+			scheduledTransaction.category,
 			effectiveDate,
 			DateValueObject.createNowDate(),
 			recurrenceInfo.store,

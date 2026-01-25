@@ -1,7 +1,7 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
-import { Category, CategoryID } from "contexts/Categories/domain";
+import { Category } from "contexts/Categories/domain";
 import { Service } from "contexts/Shared/application/service.abstract";
-import { SubCategory, SubCategoryID } from "contexts/Subcategories/domain";
+import { Subcategory } from "contexts/Subcategories/domain";
 import { IAccountsService } from "../../Accounts/domain";
 import { Nanoid } from "../../Shared/domain";
 import { Logger } from "../../Shared/infrastructure/logger";
@@ -16,7 +16,7 @@ import {
 
 export class ScheduledTransactionsService
 	extends Service<
-		Nanoid,
+		string,
 		ScheduledTransaction,
 		ScheduledTransactionPrimitives
 	>
@@ -31,12 +31,14 @@ export class ScheduledTransactionsService
 		super("ScheduledTransaction", _scheduledTransactionsRepository);
 	}
 
-	async delete(id: Nanoid): Promise<void> {
+	async delete(id: string): Promise<void> {
 		ScheduledTransactionsService.#logger.debug(
 			`Deleting scheduled transaction with id ${id}`,
 		);
 		const modifications =
-			await this._recurrenceModificationsService.getByScheduledItemId(id);
+			await this._recurrenceModificationsService.getByScheduledItemId(
+				new Nanoid(id),
+			);
 		ScheduledTransactionsService.#logger.debug(
 			`Found ${modifications.length} modifications for scheduled transaction with id ${id}`,
 		);
@@ -46,26 +48,26 @@ export class ScheduledTransactionsService
 		super.delete(id);
 	}
 
-	async getByCategory(category: CategoryID): Promise<ScheduledTransaction[]> {
+	async getByCategory(category: Nanoid): Promise<ScheduledTransaction[]> {
 		return await this._scheduledTransactionsRepository.findByCategory(
 			category,
 		);
 	}
 
 	async getBySubCategory(
-		subCategory: SubCategoryID,
+		subCategory: Nanoid,
 	): Promise<ScheduledTransaction[]> {
 		return await this._scheduledTransactionsRepository.findBySubCategory(
 			subCategory,
 		);
 	}
 
-	async hasItemsByCategory(category: CategoryID): Promise<boolean> {
+	async hasItemsByCategory(category: Nanoid): Promise<boolean> {
 		const items = await this.getByCategory(category);
 		return items.length > 0;
 	}
 
-	async hasItemsBySubCategory(subCategory: SubCategoryID): Promise<boolean> {
+	async hasItemsBySubCategory(subCategory: Nanoid): Promise<boolean> {
 		const items = await this.getBySubCategory(subCategory);
 		return items.length > 0;
 	}
@@ -74,42 +76,45 @@ export class ScheduledTransactionsService
 		oldCategory: Category,
 		newCategory: Category,
 	): Promise<void> {
-		const items = await this.getByCategory(oldCategory.id);
+		const items = await this.getByCategory(oldCategory.nanoid);
 		for (const item of items) {
-			item.category.category = newCategory;
+			item.category = newCategory.nanoid;
 			await this._scheduledTransactionsRepository.persist(item);
 		}
 	}
 
 	async reassignItemsSubCategory(
-		oldSubCategory: SubCategory,
-		newSubCategory: SubCategory,
+		oldSubCategory: Subcategory,
+		newSubCategory: Subcategory,
 	): Promise<void> {
-		const items = await this.getBySubCategory(oldSubCategory.id);
+		const items = await this.getBySubCategory(oldSubCategory.nanoid);
 		for (const item of items) {
-			item.category.subCategory = newSubCategory;
+			item.subcategory = newSubCategory.nanoid;
 			await this._scheduledTransactionsRepository.persist(item);
 		}
 	}
 
 	async reassignItemsCategoryAndSubcategory(
-		oldCategory: Category,
+		oldCategoryId: Nanoid,
+		oldSubcategoryId: Nanoid | undefined,
 		newCategory: Category,
-		newSubCategory: SubCategory,
+		newSubCategory: Subcategory,
 	): Promise<void> {
-		const items = await this.getByCategory(oldCategory.id);
+		const items = oldSubcategoryId
+			? await this.getBySubCategory(oldSubcategoryId)
+			: await this.getByCategory(oldCategoryId);
 		for (const item of items) {
-			item.category.category = newCategory;
-			item.category.subCategory = newSubCategory;
+			item.category = newCategory.nanoid;
+			item.subcategory = newSubCategory.nanoid;
 			await this._scheduledTransactionsRepository.persist(item);
 		}
 	}
 
 	async getOccurrence(
 		id: Nanoid,
-		occurrenceIndex: NumberValueObject,
+		occurrenceIndex: number,
 	): Promise<ItemRecurrenceInfo | null> {
-		const scheduledTransaction = await this.getByID(id);
+		const scheduledTransaction = await this.getByID(id.value);
 		const baseDate =
 			scheduledTransaction.getOccurrenceDate(occurrenceIndex);
 
@@ -120,7 +125,7 @@ export class ScheduledTransactionsService
 		const modification =
 			await this._recurrenceModificationsService.getByScheduledItemIdAndOccurrenceIndex(
 				id,
-				occurrenceIndex.value,
+				occurrenceIndex,
 			);
 
 		if (modification) {
@@ -138,13 +143,18 @@ export class ScheduledTransactionsService
 	}
 
 	async getMonthlyPriceEstimate(id: Nanoid): Promise<NumberValueObject> {
-		const scheduledTransaction = await this.getByID(id);
-		const fromAccount = scheduledTransaction.originAccounts[0].account;
+		const scheduledTransaction = await this.getByID(id.value);
+		const fromAccount = await this._accountsService.getByID(
+			scheduledTransaction.originAccounts[0].accountId.value,
+		);
 		const toAccount =
 			scheduledTransaction.destinationAccounts.length > 0
-				? scheduledTransaction.destinationAccounts[0].account
+				? await this._accountsService.getByID(
+						scheduledTransaction.destinationAccounts[0].accountId
+							.value,
+					)
 				: null;
-		if (toAccount?.type.equalTo(fromAccount.type)) {
+		if (toAccount?.type.value === fromAccount.type.value) {
 			return new NumberValueObject(0);
 		}
 		const frequencyFactor =

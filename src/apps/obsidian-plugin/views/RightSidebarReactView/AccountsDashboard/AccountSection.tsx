@@ -95,7 +95,7 @@ export function AccountSection({
 										)
 										.map((account) => (
 											<AccountRow
-												key={account.id.value}
+												key={account.id}
 												account={account}
 												onUpdate={onUpdate}
 												onDelete={onDelete}

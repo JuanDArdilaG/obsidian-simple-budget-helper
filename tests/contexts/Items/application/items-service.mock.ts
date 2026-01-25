@@ -1,7 +1,7 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
-import { Category, CategoryID } from "contexts/Categories/domain";
+import { Category } from "contexts/Categories/domain";
 import { Criteria, Nanoid } from "contexts/Shared/domain";
-import { SubCategory, SubCategoryID } from "contexts/Subcategories/domain";
+import { Subcategory } from "contexts/Subcategories/domain";
 import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import {
 	IScheduledTransactionsService,
@@ -15,7 +15,7 @@ export class ScheduledTransactionsServiceMock implements IScheduledTransactionsS
 
 	getOccurrence(
 		id: Nanoid,
-		occurrenceIndex: NumberValueObject,
+		occurrenceIndex: number,
 	): Promise<ItemRecurrenceInfo | null> {
 		throw new Error("Method not implemented.");
 	}
@@ -23,26 +23,26 @@ export class ScheduledTransactionsServiceMock implements IScheduledTransactionsS
 		throw new Error("Method not implemented.");
 	}
 
-	async getByCategory(category: CategoryID): Promise<ScheduledTransaction[]> {
-		return this.items.filter((item) =>
-			item.category.category.id.equalTo(category),
+	async getByCategory(category: Nanoid): Promise<ScheduledTransaction[]> {
+		return this.items.filter(
+			(item) => item.category.value === category.value,
 		);
 	}
 
 	async getBySubCategory(
-		subCategory: SubCategoryID,
+		subCategory: Nanoid,
 	): Promise<ScheduledTransaction[]> {
-		return this.items.filter((item) =>
-			item.category.subCategory.id.equalTo(subCategory),
+		return this.items.filter(
+			(item) => item.subcategory.value === subCategory.value,
 		);
 	}
 
-	async hasItemsByCategory(category: CategoryID): Promise<boolean> {
+	async hasItemsByCategory(category: Nanoid): Promise<boolean> {
 		const items = await this.getByCategory(category);
 		return items.length > 0;
 	}
 
-	async hasItemsBySubCategory(subCategory: SubCategoryID): Promise<boolean> {
+	async hasItemsBySubCategory(subCategory: Nanoid): Promise<boolean> {
 		const items = await this.getBySubCategory(subCategory);
 		return items.length > 0;
 	}
@@ -51,31 +51,34 @@ export class ScheduledTransactionsServiceMock implements IScheduledTransactionsS
 		oldCategory: Category,
 		newCategory: Category,
 	): Promise<void> {
-		const items = await this.getByCategory(oldCategory.id);
+		const items = await this.getByCategory(oldCategory.nanoid);
 		for (const item of items) {
-			item.category.category = newCategory;
+			item.category = newCategory.nanoid;
 		}
 	}
 
 	async reassignItemsSubCategory(
-		oldSubCategory: SubCategory,
-		newSubCategory: SubCategory,
+		oldSubCategory: Subcategory,
+		newSubCategory: Subcategory,
 	): Promise<void> {
-		const items = await this.getBySubCategory(oldSubCategory.id);
+		const items = await this.getBySubCategory(oldSubCategory.nanoid);
 		for (const item of items) {
-			item.category.subCategory = newSubCategory;
+			item.subcategory = newSubCategory.nanoid;
 		}
 	}
 
 	async reassignItemsCategoryAndSubcategory(
-		oldCategory: Category,
+		oldCategoryId: Nanoid,
+		oldSubcategoryId: Nanoid | undefined,
 		newCategory: Category,
-		newSubCategory: SubCategory,
+		newSubCategory: Subcategory,
 	): Promise<void> {
-		const items = await this.getByCategory(oldCategory.id);
+		const items = oldSubcategoryId
+			? await this.getBySubCategory(oldSubcategoryId)
+			: await this.getByCategory(oldCategoryId);
 		for (const item of items) {
-			item.category.category = newCategory;
-			item.category.subCategory = newSubCategory;
+			item.category = newCategory.nanoid;
+			item.subcategory = newSubCategory.nanoid;
 		}
 	}
 
@@ -97,18 +100,18 @@ export class ScheduledTransactionsServiceMock implements IScheduledTransactionsS
 		throw new Error("Method not implemented.");
 	}
 
-	async exists(id: Nanoid): Promise<boolean> {
-		return this.items.some((item) => item.id.equalTo(id));
+	async exists(id: string): Promise<boolean> {
+		return this.items.some((item) => item.id === id);
 	}
 
 	async create(item: ScheduledTransaction): Promise<void> {
 		this.items.push(item);
 	}
 
-	async getByID(id: Nanoid): Promise<ScheduledTransaction> {
-		const item = this.items.find((i) => i.id.equalTo(id));
+	async getByID(id: string): Promise<ScheduledTransaction> {
+		const item = this.items.find((i) => i.id === id);
 		if (!item) throw new Error("item not found on get");
-		return Promise.resolve(item);
+		return item;
 	}
 
 	async getByCriteria(
@@ -118,18 +121,18 @@ export class ScheduledTransactionsServiceMock implements IScheduledTransactionsS
 	}
 
 	async getAll(): Promise<ScheduledTransaction[]> {
-		return Promise.resolve(this.items);
+		return this.items;
 	}
 
 	async update(item: ScheduledTransaction): Promise<void> {
-		const index = this.items.findIndex((i) => i.id.equalTo(item.id));
+		const index = this.items.findIndex((i) => i.id === item.id);
 		if (index !== -1) {
 			this.items[index] = item;
 		}
 	}
 
-	async delete(id: Nanoid): Promise<void> {
-		const index = this.items.findIndex((i) => i.id.equalTo(id));
+	async delete(id: string): Promise<void> {
+		const index = this.items.findIndex((i) => i.id === id);
 		if (index !== -1) {
 			this.items.splice(index, 1);
 		}

@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { AlertTriangle, X } from "lucide-react";
 import { Transaction } from "../../../../../contexts/Transactions/domain";
 
@@ -26,22 +25,8 @@ export function DeleteConfirmationModal({
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
-			<motion.div
-				initial={{
-					opacity: 0,
-					scale: 0.95,
-				}}
-				animate={{
-					opacity: 1,
-					scale: 1,
-				}}
-				exit={{
-					opacity: 0,
-					scale: 0.95,
-				}}
-				className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 border border-gray-100"
-			>
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-20">
+			<div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 border border-gray-100">
 				<div className="flex items-start gap-4 mb-4">
 					<div className="p-3 bg-rose-50 rounded-full">
 						<AlertTriangle className="w-6 h-6 text-rose-600" />
@@ -57,7 +42,7 @@ export function DeleteConfirmationModal({
 					</div>
 					<button
 						onClick={onClose}
-						className="text-gray-400 hover:text-gray-600 transition-colors"
+						className="text-gray-400 hover:text-gray-600"
 					>
 						<X size={20} />
 					</button>
@@ -101,18 +86,18 @@ export function DeleteConfirmationModal({
 				<div className="flex gap-3">
 					<button
 						onClick={onClose}
-						className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+						className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
 					>
 						Cancel
 					</button>
 					<button
 						onClick={async () => await onConfirm()}
-						className="flex-1 px-4 py-2.5 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 transition-colors shadow-sm"
+						className="flex-1 px-4 py-2.5 bg-rose-600 text-white rounded-lg font-medium hover:bg-rose-700 shadow-sm"
 					>
 						Delete Transaction
 					</button>
 				</div>
-			</motion.div>
+			</div>
 		</div>
 	);
 }

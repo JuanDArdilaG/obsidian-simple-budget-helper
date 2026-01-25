@@ -8,7 +8,7 @@ import {
 import { RepositoryMock } from "../../../../tests/contexts/Shared/domain/repository.mock";
 
 export class TransactionsRepositoryMock
-	extends RepositoryMock<Nanoid, Transaction, TransactionPrimitives>
+	extends RepositoryMock<string, Transaction, TransactionPrimitives>
 	implements ITransactionsRepository
 {
 	findByAccountId(accountId: Nanoid): Promise<Transaction[]> {

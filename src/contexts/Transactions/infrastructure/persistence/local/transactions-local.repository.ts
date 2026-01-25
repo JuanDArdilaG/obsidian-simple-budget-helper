@@ -8,46 +8,21 @@ import {
 	Transaction,
 	TransactionPrimitives,
 } from "contexts/Transactions/domain";
-import { Account, IAccountsRepository } from "../../../../Accounts/domain";
-import { Category, ICategoriesRepository } from "../../../../Categories/domain";
-import {
-	ISubCategoriesRepository,
-	SubCategory,
-} from "../../../../Subcategories/domain";
-
-export type TransactionDependencies = Map<
-	string,
-	Map<string, Account | Category | SubCategory>
->;
+import { IAccountsRepository } from "../../../../Accounts/domain";
+import { ICategoriesRepository } from "../../../../Categories/domain";
+import { ISubcategoriesRepository } from "../../../../Subcategories/domain";
 
 export class TransactionsLocalRepository
-	extends LocalRepository<Nanoid, Transaction, TransactionPrimitives>
+	extends LocalRepository<string, Transaction, TransactionPrimitives>
 	implements ITransactionsRepository
 {
 	constructor(
 		protected readonly _db: LocalDB,
 		readonly _accountsRepository: IAccountsRepository,
 		readonly _categoriesRepository: ICategoriesRepository,
-		readonly _subCategoriesRepository: ISubCategoriesRepository,
+		readonly _subCategoriesRepository: ISubcategoriesRepository,
 	) {
-		super(_db, Config.transactionsTableName, [
-			{
-				type: "Account",
-				getter: _accountsRepository.findAll.bind(_accountsRepository),
-			},
-			{
-				type: "Category",
-				getter: _categoriesRepository.findAll.bind(
-					_categoriesRepository,
-				),
-			},
-			{
-				type: "SubCategory",
-				getter: _subCategoriesRepository.findAll.bind(
-					_subCategoriesRepository,
-				),
-			},
-		]);
+		super(_db, Config.transactionsTableName);
 	}
 
 	async findAllUniqueItemStores(): Promise<StringValueObject[]> {
@@ -104,42 +79,8 @@ export class TransactionsLocalRepository
 		});
 	}
 
-	protected mapToDomain(
-		record: TransactionPrimitives,
-		dependencies?: TransactionDependencies,
-	): Transaction {
-		const accounts = dependencies?.get("Account") as Map<string, Account>;
-		const categories = dependencies?.get("Category") as Map<
-			string,
-			Category
-		>;
-		const subCategories = dependencies?.get("SubCategory") as Map<
-			string,
-			SubCategory
-		>;
-		if (!accounts || !categories || !subCategories) {
-			throw new Error(
-				"Missing dependencies to map Transaction entity from primitives",
-			);
-		}
-		const category = categories.get(record.category);
-		if (!category) {
-			throw new Error(
-				`Category with ID ${record.category} not found for Transaction mapping`,
-			);
-		}
-		const subCategory = subCategories.get(record.subCategory);
-		if (!subCategory) {
-			throw new Error(
-				`SubCategory with ID ${record.subCategory} not found for Transaction mapping`,
-			);
-		}
-		return Transaction.fromPrimitives(
-			accounts,
-			category,
-			subCategory,
-			record,
-		);
+	protected mapToDomain(record: TransactionPrimitives): Transaction {
+		return Transaction.fromPrimitives(record);
 	}
 
 	protected mapToPrimitives(entity: Transaction): TransactionPrimitives {

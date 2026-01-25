@@ -1,30 +1,19 @@
-import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
+import { Category, CategoryName } from "contexts/Categories/domain";
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 import { describe, expect, it, vi } from "vitest";
 import { Nanoid } from "../../../../src/contexts/Shared/domain";
 import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
-
-const generateMockTransaction = () => {
-	const account = buildTestAccounts(1)[0];
-	return {
-		id: { value: Nanoid.generate().value },
-		name: { toString: () => "Mock Transaction" },
-		updateName: vi.fn(),
-		operation: { isIncome: () => true, value: "income" as const },
-		date: { value: new Date("2024-01-01") },
-		originAmount: { value: 100 },
-		originAccounts: [{ account }],
-		destinationAccounts: [] as any[],
-	};
-};
+import { buildTestTransactions } from "../../Reports/domain/buildTestTransactions";
 
 describe("update", () => {
 	it("should update transaction and adjust accounts", async () => {
 		const accounts = buildTestAccounts(2);
-		const mockTransaction = generateMockTransaction();
-		mockTransaction.originAccounts = [{ account: accounts[0] }];
-		mockTransaction.destinationAccounts = [{ account: accounts[1] }];
+		const mockTransaction = buildTestTransactions([
+			{
+				account: accounts[0],
+				toAccount: accounts[1],
+			},
+		])[0];
 		const accountsService = {
 			getByID: vi.fn().mockResolvedValue({
 				adjustOnTransactionUpdate: vi.fn(),
@@ -58,9 +47,12 @@ describe("update", () => {
 describe("delete", () => {
 	it("should delete transaction and adjust accounts", async () => {
 		const accounts = buildTestAccounts(2);
-		const mockTransaction = generateMockTransaction();
-		mockTransaction.originAccounts = [{ account: accounts[0] }];
-		mockTransaction.destinationAccounts = [{ account: accounts[1] }];
+		const mockTransaction = buildTestTransactions([
+			{
+				account: accounts[0],
+				toAccount: accounts[1],
+			},
+		])[0];
 		const accountsService = {
 			getByID: vi.fn().mockResolvedValue({
 				adjustOnTransactionDeletion: vi.fn(),
@@ -82,7 +74,7 @@ describe("delete", () => {
 			subCategoriesService as any,
 		);
 
-		await service.delete(mockTransaction.id as any);
+		await service.delete(mockTransaction.nanoid);
 
 		expect(accountsService.getByID).toHaveBeenCalled();
 		expect(transactionsRepository.deleteById).toHaveBeenCalledWith(
@@ -93,9 +85,9 @@ describe("delete", () => {
 
 describe("reassignTransactionsSubCategory", () => {
 	it("should update both subcategory and category when reassigning transactions", async () => {
-		const oldSubCategoryId = SubCategoryID.generate();
-		const newSubCategoryId = SubCategoryID.generate();
-		const newCategoryId = CategoryID.generate();
+		const oldSubCategoryId = Nanoid.generate();
+		const newSubCategoryId = Nanoid.generate();
+		const newCategoryId = Nanoid.generate();
 
 		// Mock transaction with update methods
 		const mockTransaction = {
@@ -114,7 +106,7 @@ describe("reassignTransactionsSubCategory", () => {
 		// Mock subcategory service to return a subcategory with parent category
 		const subCategoriesService = {
 			getByID: vi.fn().mockResolvedValue({
-				category: newCategoryId,
+				categoryId: newCategoryId,
 			}),
 		};
 

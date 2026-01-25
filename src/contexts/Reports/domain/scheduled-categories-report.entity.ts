@@ -1,8 +1,9 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
-import { CategoriesWithSubcategories } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
+import { CategoriesWithSubcategoriesMap } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 import { Category } from "contexts/Categories/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
-import { SubCategory } from "contexts/Subcategories/domain";
+import { Subcategory } from "contexts/Subcategories/domain";
+import { AccountsMap } from "../../Accounts/application/get-all-accounts.usecase";
 import { ScheduledTransaction } from "../../ScheduledTransactions/domain";
 import { ReportBalance } from "./report-balance.valueobject";
 
@@ -79,43 +80,55 @@ export class ScheduledCategoriesReport {
 		);
 	}
 
-	getTotalPerMonth(): ReportBalance {
-		return this.scheduledTransactions.reduce(
-			(total, item) =>
-				total.plus(
-					item.getPricePerMonthWithAccountTypes(
-						item.originAccounts[0].account.type,
-						item.destinationAccounts.length > 0
-							? item.destinationAccounts[0].account.type
-							: undefined,
-					),
+	getTotalPerMonth(accountsMap: AccountsMap): ReportBalance {
+		return this.scheduledTransactions.reduce((total, item) => {
+			const originAccount = accountsMap.get(
+				item.originAccounts[0].accountId.value,
+			);
+			const destinationAccount =
+				item.destinationAccounts.length > 0
+					? accountsMap.get(
+							item.destinationAccounts[0].accountId.value,
+						)
+					: undefined;
+			if (!originAccount) return total;
+			if (item.destinationAccounts.length > 0 && !destinationAccount)
+				return total;
+
+			return total.plus(
+				item.getPricePerMonthWithAccountTypes(
+					originAccount.type.value,
+					destinationAccount?.type.value,
 				),
-			ReportBalance.zero(),
-		);
+			);
+		}, ReportBalance.zero());
 	}
 
 	groupPerCategory(
-		categoriesWithSubcategories: CategoriesWithSubcategories,
+		accountsMap: AccountsMap,
+		categoriesWithSubcategories: CategoriesWithSubcategoriesMap,
 	): {
 		perMonthExpensesPercentage: NumberValueObject;
 		perMonthInverseOperationPercentage: NumberValueObject;
 		items: ItemsWithCategoryAndSubCategory[];
 	} {
 		const res: ItemsWithCategoryAndSubCategory[] = [];
-		const totalExpenses = this.onlyExpenses().getTotalPerMonth().abs();
-		const totalIncomes = this.onlyIncomes().getTotalPerMonth().abs();
+		const totalExpenses = this.onlyExpenses()
+			.getTotalPerMonth(accountsMap)
+			.abs();
+		const totalIncomes = this.onlyIncomes()
+			.getTotalPerMonth(accountsMap)
+			.abs();
 		const expenses = NumberValueObject.zero();
 		const inverseOperation = NumberValueObject.zero();
 		this.scheduledTransactions
 			.filter((item) => !item.operation.type.isTransfer())
 			.forEach((item) => {
 				const categoryWithSubCategories =
-					categoriesWithSubcategories.find(({ category }) =>
-						category.id.equalTo(item.category.category.id),
-					);
+					categoriesWithSubcategories.get(item.category.value);
 				if (!categoryWithSubCategories) return;
-				let r = res.find((r) =>
-					r.category.category.id.equalTo(item.category.category.id),
+				let r = res.find(
+					(r) => r.category.category.id === item.category.value,
 				);
 				if (!r) {
 					res.push({
@@ -129,26 +142,35 @@ export class ScheduledCategoriesReport {
 					});
 					r = res.last();
 				}
-				const itemPricePerMonth = item.getPricePerMonthWithAccountTypes(
-					item.originAccounts[0].account.type,
+				const originAccount = accountsMap.get(
+					item.originAccounts[0].accountId.value,
+				);
+				const destinationAccount =
 					item.destinationAccounts.length > 0
-						? item.destinationAccounts[0].account.type
-						: undefined,
+						? accountsMap.get(
+								item.destinationAccounts[0].accountId.value,
+							)
+						: undefined;
+				if (!originAccount) return;
+				if (item.destinationAccounts.length > 0 && !destinationAccount)
+					return;
+				const itemPricePerMonth = item.getPricePerMonthWithAccountTypes(
+					originAccount.type.value,
+					destinationAccount?.type.value,
 				);
 				if (r?.category.percentageOperation !== undefined)
 					r.category.percentageOperation =
 						r.category.percentageOperation.plus(
 							itemPricePerMonth.abs(),
 						);
-				let rS = r?.subCategoriesItems.find(({ subCategory }) =>
-					subCategory.subCategory.id.equalTo(
-						item.category.subCategory.id,
-					),
+				let rS = r?.subCategoriesItems.find(
+					({ subCategory }) =>
+						subCategory.subCategory.id === item.subcategory.value,
 				);
 				if (!rS) {
 					const subCategory =
-						categoryWithSubCategories.subcategories.find((sub) =>
-							sub.id.equalTo(item.category.subCategory.id),
+						categoryWithSubCategories.subcategories.get(
+							item.subcategory.value,
 						);
 					if (!subCategory) return;
 					r?.subCategoriesItems.push({
@@ -243,7 +265,7 @@ export type ItemsWithCategoryAndSubCategory = {
 	};
 	subCategoriesItems: {
 		subCategory: {
-			subCategory: SubCategory;
+			subCategory: Subcategory;
 			percentageOperation: NumberValueObject;
 			percentageInverseOperation: NumberValueObject;
 		};

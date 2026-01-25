@@ -1,5 +1,3 @@
-import { LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
 import {
 	AppContext,
@@ -18,10 +16,6 @@ import {
 	ExchangeRatesContext,
 	getExchangeRatesContext,
 } from "./ExchangeRatesContext";
-import {
-	getItemReportContextValues,
-	ItemReportContext,
-} from "./ItemReportContext";
 
 export const AppProviders = ({
 	children,
@@ -32,40 +26,28 @@ export const AppProviders = ({
 	plugin: SimpleBudgetHelperPlugin;
 }>) => {
 	return (
-		<LocalizationProvider dateAdapter={AdapterDayjs}>
-			<AppContext.Provider
-				value={getAppContextDefault(container, plugin)}
+		<AppContext.Provider value={getAppContextDefault(container, plugin)}>
+			<ScheduledTransactionsContext.Provider
+				value={useItemsContextDefault(container)}
 			>
-				<ScheduledTransactionsContext.Provider
-					value={useItemsContextDefault(container)}
+				<AccountsContext.Provider
+					value={getAccountsContextValues(container)}
 				>
-					<AccountsContext.Provider
-						value={getAccountsContextValues(container)}
+					<CategoriesContext.Provider
+						value={getCategoriesContextDefault(container)}
 					>
-						<CategoriesContext.Provider
-							value={getCategoriesContextDefault(container)}
+						<TransactionsContext.Provider
+							value={getTransactionsContextValues(container)}
 						>
-							<TransactionsContext.Provider
-								value={getTransactionsContextValues(container)}
+							<ExchangeRatesContext.Provider
+								value={getExchangeRatesContext(container)}
 							>
-								<ItemReportContext.Provider
-									value={getItemReportContextValues(
-										container
-									)}
-								>
-									<ExchangeRatesContext.Provider
-										value={getExchangeRatesContext(
-											container
-										)}
-									>
-										{children}
-									</ExchangeRatesContext.Provider>
-								</ItemReportContext.Provider>
-							</TransactionsContext.Provider>
-						</CategoriesContext.Provider>
-					</AccountsContext.Provider>
-				</ScheduledTransactionsContext.Provider>
-			</AppContext.Provider>
-		</LocalizationProvider>
+								{children}
+							</ExchangeRatesContext.Provider>
+						</TransactionsContext.Provider>
+					</CategoriesContext.Provider>
+				</AccountsContext.Provider>
+			</ScheduledTransactionsContext.Provider>
+		</AppContext.Provider>
 	);
 };

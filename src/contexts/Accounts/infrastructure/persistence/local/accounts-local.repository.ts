@@ -7,10 +7,9 @@ import {
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
 import { LocalRepository } from "contexts/Shared/infrastructure/persistence/local/local.repository";
-import { Nanoid } from "../../../../Shared/domain";
 
 export class AccountsLocalRepository
-	extends LocalRepository<Nanoid, Account, AccountPrimitives>
+	extends LocalRepository<string, Account, AccountPrimitives>
 	implements IAccountsRepository
 {
 	constructor(protected readonly _db: LocalDB) {

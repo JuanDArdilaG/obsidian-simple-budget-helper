@@ -23,14 +23,14 @@ export class EditScheduledTransactionAmountUseCase implements CommandUseCase<{
 		amount: PriceValueObject;
 	}): Promise<void> {
 		const scheduledTransaction =
-			await this._scheduledTransactionsRepository.findById(id);
+			await this._scheduledTransactionsRepository.findById(id.value);
 		if (!scheduledTransaction) {
 			throw new EntityNotFoundError("Scheduled transaction", id);
 		}
 
 		scheduledTransaction.updateOriginAccounts([
 			new AccountSplit(
-				scheduledTransaction.originAccounts[0].account,
+				scheduledTransaction.originAccounts[0].accountId,
 				amount,
 			),
 		]);

@@ -7,7 +7,7 @@ import {
 } from "contexts/Transactions/domain";
 
 export interface ITransactionsRepository extends IRepository<
-	Nanoid,
+	string,
 	Transaction,
 	TransactionPrimitives
 > {

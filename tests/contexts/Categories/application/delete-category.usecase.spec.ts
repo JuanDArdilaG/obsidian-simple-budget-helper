@@ -1,9 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { DeleteCategoryUseCase } from "../../../../src/contexts/Categories/application/delete-category.usecase";
-import {
-	Category,
-	CategoryID,
-} from "../../../../src/contexts/Categories/domain";
+import { Category } from "../../../../src/contexts/Categories/domain";
+import { Nanoid } from "../../../../src/contexts/Shared/domain";
 
 const makeServices = (opts: {
 	hasRelated: boolean;
@@ -68,7 +66,7 @@ describe("DeleteCategoryUseCase", () => {
 			subCategoriesService as any,
 		);
 		await expect(
-			useCase.execute(CategoryID.generate()),
+			useCase.execute(Nanoid.generate()),
 		).resolves.toBeUndefined();
 		// Should call delete
 		expect(categoriesService.delete).toHaveBeenCalled();
@@ -92,7 +90,7 @@ describe("DeleteCategoryUseCase", () => {
 			itemsService as any,
 			subCategoriesService as any,
 		);
-		await expect(useCase.execute(CategoryID.generate())).rejects.toThrow(
+		await expect(useCase.execute(Nanoid.generate())).rejects.toThrow(
 			"Cannot delete category with related data. Please provide a category and subcategory to reassign them to.",
 		);
 		// Should NOT call delete
@@ -112,8 +110,8 @@ describe("DeleteCategoryUseCase", () => {
 			itemsService as any,
 			subCategoriesService as any,
 		);
-		const catId = CategoryID.generate();
-		const reassignId = CategoryID.generate();
+		const catId = Nanoid.generate();
+		const reassignId = Nanoid.generate();
 		await expect(
 			useCase.execute(catId, reassignId),
 		).resolves.toBeUndefined();
@@ -139,8 +137,8 @@ describe("DeleteCategoryUseCase", () => {
 			itemsService as any,
 			subCategoriesService as any,
 		);
-		const catId = CategoryID.generate();
-		const reassignCategoryId = CategoryID.generate();
+		const catId = Nanoid.generate();
+		const reassignCategoryId = Nanoid.generate();
 		const reassignSubcategoryId = { value: "sub1" } as any; // Mock SubCategoryID
 
 		await expect(
@@ -158,25 +156,33 @@ describe("DeleteCategoryUseCase", () => {
 		expect(
 			itemsService.reassignItemsCategoryAndSubcategory,
 		).toHaveBeenCalled();
-		expect(categoriesService.delete).toHaveBeenCalledWith(catId);
+		expect(categoriesService.delete).toHaveBeenCalledWith(catId.value);
 	});
 
 	it("throws detailed error when subcategories have related transactions", async () => {
 		const subcategoriesWithTransactions = [
-			{ id: "sub1", name: "Subcategory 1", transactionCount: 5 },
-			{ id: "sub2", name: "Subcategory 2", transactionCount: 3 },
+			{
+				id: Nanoid.generate().value,
+				name: "Subcategory 1",
+				transactionCount: 5,
+			},
+			{
+				id: Nanoid.generate().value,
+				name: "Subcategory 2",
+				transactionCount: 3,
+			},
 		];
 
 		const mockSubcategories = [
 			{
-				id: { value: "sub1" },
+				id: Nanoid.generate().value,
 				name: { toString: () => "Subcategory 1" },
-				category: { equalTo: vi.fn().mockReturnValue(true) },
+				categoryId: { equalTo: vi.fn().mockReturnValue(true) },
 			},
 			{
-				id: { value: "sub2" },
+				id: Nanoid.generate().value,
 				name: { toString: () => "Subcategory 2" },
-				category: { equalTo: vi.fn().mockReturnValue(true) },
+				categoryId: { equalTo: vi.fn().mockReturnValue(true) },
 			},
 		];
 
@@ -198,8 +204,8 @@ describe("DeleteCategoryUseCase", () => {
 			.mockResolvedValueOnce(true)
 			.mockResolvedValueOnce(true);
 		transactionsService.getBySubCategory
-			.mockResolvedValueOnce(Array(5).fill({}))
-			.mockResolvedValueOnce(Array(3).fill({}));
+			.mockResolvedValueOnce(new Array(5).fill({}))
+			.mockResolvedValueOnce(new Array(3).fill({}));
 
 		const useCase = new DeleteCategoryUseCase(
 			categoriesService as any,
@@ -208,13 +214,13 @@ describe("DeleteCategoryUseCase", () => {
 			subCategoriesService as any,
 		);
 
-		await expect(useCase.execute(CategoryID.generate())).rejects.toThrow(
+		await expect(useCase.execute(Nanoid.generate())).rejects.toThrow(
 			/Cannot delete category with related data/,
 		);
 
 		// Test the specific error message
 		try {
-			await useCase.execute(CategoryID.generate());
+			await useCase.execute(Nanoid.generate());
 		} catch (error) {
 			expect(error.message).toContain(
 				'Subcategories with transactions: "Subcategory 1" (5 transactions), "Subcategory 2" (3 transactions)',
@@ -230,14 +236,14 @@ describe("DeleteCategoryUseCase", () => {
 
 		const mockSubcategories = [
 			{
-				id: { value: "sub1" },
+				id: Nanoid.generate().value,
 				name: { toString: () => "Subcategory 1" },
-				category: { equalTo: vi.fn().mockReturnValue(true) },
+				categoryId: { equalTo: vi.fn().mockReturnValue(true) },
 			},
 			{
-				id: { value: "sub2" },
+				id: Nanoid.generate().value,
 				name: { toString: () => "Subcategory 2" },
-				category: { equalTo: vi.fn().mockReturnValue(true) },
+				categoryId: { equalTo: vi.fn().mockReturnValue(true) },
 			},
 		];
 
@@ -259,8 +265,8 @@ describe("DeleteCategoryUseCase", () => {
 			.mockResolvedValueOnce(true)
 			.mockResolvedValueOnce(true);
 		itemsService.getBySubCategory
-			.mockResolvedValueOnce(Array(2).fill({}))
-			.mockResolvedValueOnce(Array(1).fill({}));
+			.mockResolvedValueOnce(new Array(2).fill({}))
+			.mockResolvedValueOnce(new Array(1).fill({}));
 
 		const useCase = new DeleteCategoryUseCase(
 			categoriesService as any,
@@ -269,9 +275,7 @@ describe("DeleteCategoryUseCase", () => {
 			subCategoriesService as any,
 		);
 
-		const error = await useCase
-			.execute(CategoryID.generate())
-			.catch((e) => e);
+		const error = await useCase.execute(Nanoid.generate()).catch((e) => e);
 		expect(error.message).toContain(
 			'Subcategories with scheduled items: "Subcategory 1" (2 items), "Subcategory 2" (1 items)',
 		);
@@ -291,9 +295,7 @@ describe("DeleteCategoryUseCase", () => {
 			subCategoriesService as any,
 		);
 
-		const result = await useCase.checkCategoryDeletion(
-			CategoryID.generate(),
-		);
+		const result = await useCase.checkCategoryDeletion(Nanoid.generate());
 		expect(result).toBeNull();
 	});
 
@@ -311,9 +313,7 @@ describe("DeleteCategoryUseCase", () => {
 			subCategoriesService as any,
 		);
 
-		const result = await useCase.checkCategoryDeletion(
-			CategoryID.generate(),
-		);
+		const result = await useCase.checkCategoryDeletion(Nanoid.generate());
 		expect(result).toEqual({
 			hasRelatedTransactions: true,
 			hasRelatedItems: true,

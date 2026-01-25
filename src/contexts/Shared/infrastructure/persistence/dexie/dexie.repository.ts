@@ -1,27 +1,25 @@
-import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
-import { IDValueObject } from "contexts/Shared/domain/value-objects/id/id.valueobject";
-import { Criteria } from "contexts/Shared/domain/criteria";
-import { DexieDB } from "./dexie.db";
-import { EntityTable } from "dexie";
-import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Entity, EntityComposedValue } from "contexts/Shared/domain";
+import { Criteria } from "contexts/Shared/domain/criteria";
+import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
+import { Logger } from "contexts/Shared/infrastructure/logger";
+import { EntityTable } from "dexie";
+import { DexieDB } from "./dexie.db";
 
 export abstract class DexieRepository<
 	T extends Entity<ID, P>,
-	ID extends IDValueObject,
-	P extends EntityComposedValue
-> implements IRepository<ID, T, P>
-{
+	ID extends string | number,
+	P extends EntityComposedValue,
+> implements IRepository<ID, T, P> {
 	readonly #logger = new Logger("DexieRepository");
 	protected readonly _table: EntityTable<P, "id">;
 
 	constructor(
 		protected readonly _db: DexieDB,
 		protected readonly _tableName: string,
-		protected readonly _idColumn: string = "id"
+		protected readonly _idColumn: string = "id",
 	) {
 		const table = this._db.db.tables.find(
-			(table) => table.name === _tableName
+			(table) => table.name === _tableName,
 		);
 		if (!table)
 			throw new Error(`table with name ${_tableName} doesn't exists`);
@@ -33,7 +31,7 @@ export abstract class DexieRepository<
 	 */
 	async findById(id: ID): Promise<T | null> {
 		return this.mapToDomain(
-			(await this._table.where("id").equals(id.toString()).toArray())[0]
+			(await this._table.where("id").equals(id.toString()).toArray())[0],
 		);
 	}
 
@@ -91,8 +89,8 @@ export abstract class DexieRepository<
 		} else {
 			await this._table.update(
 				//@ts-ignore
-				entity.id.value,
-				entity.toPrimitives()
+				entity.id,
+				entity.toPrimitives(),
 			);
 		}
 	}
@@ -103,7 +101,7 @@ export abstract class DexieRepository<
 	async deleteById(id: ID): Promise<boolean> {
 		await this._table.delete(
 			//@ts-ignore
-			id.toString()
+			id.toString(),
 		);
 		return true;
 	}
@@ -117,7 +115,7 @@ export abstract class DexieRepository<
 				(await this._table.where("id").equals(id.toString()).count()) >=
 				1
 			);
-		} catch (_) {
+		} catch {
 			return false;
 		}
 	}

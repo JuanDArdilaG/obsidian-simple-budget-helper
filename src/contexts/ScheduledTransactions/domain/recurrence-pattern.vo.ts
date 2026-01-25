@@ -93,8 +93,8 @@ export class RecurrencePattern {
 		return this._endDate;
 	}
 
-	get maxOccurrences(): NumberValueObject | undefined {
-		return this._maxOccurrences;
+	get maxOccurrences(): number | undefined {
+		return this._maxOccurrences?.value;
 	}
 
 	get isOneTime(): boolean {
@@ -118,13 +118,11 @@ export class RecurrencePattern {
 	 * @param untilDate The date until which to generate occurrences
 	 * @return An array of DateValueObject representing the occurrences dates
 	 */
-	generateOccurrencesUntil(
-		untilDate: DateValueObject,
-	): ScheduledTransactionDate[] {
+	generateOccurrencesUntil(untilDate: Date): ScheduledTransactionDate[] {
 		const occurrences: ScheduledTransactionDate[] = [];
 
 		if (this.isOneTime) {
-			if (this._startDate.value <= untilDate.value)
+			if (this._startDate.value <= untilDate)
 				occurrences.push(this._startDate);
 			return occurrences;
 		}
@@ -136,7 +134,7 @@ export class RecurrencePattern {
 		let currentDate = this._startDate.copy();
 		let count = 0;
 
-		while (currentDate.value <= untilDate.value) {
+		while (currentDate.value <= untilDate) {
 			// Check max occurrences limit
 			if (this._maxOccurrences && count >= this._maxOccurrences.value) {
 				break;
@@ -160,11 +158,11 @@ export class RecurrencePattern {
 	/**
 	 * Calculates the nth occurrence date
 	 */
-	getNthOccurrence(n: NumberValueObject): ScheduledTransactionDate | null {
-		if (n.isNegative()) return null;
+	getNthOccurrence(n: number): ScheduledTransactionDate | null {
+		if (n < 0) return null;
 
 		if (this.isOneTime) {
-			return n.isZero()
+			return n === 0
 				? new ScheduledTransactionDate(this._startDate.value)
 				: null;
 		}
@@ -172,16 +170,13 @@ export class RecurrencePattern {
 		if (!this._frequency) return null;
 
 		// Check if n exceeds max occurrences
-		if (
-			this._maxOccurrences &&
-			n.greaterOrEqualThan(this._maxOccurrences)
-		) {
+		if (this._maxOccurrences && n >= this._maxOccurrences.value) {
 			return null;
 		}
 
 		let currentDate = this._startDate.copy();
 
-		for (let i = 0; i < n.value; i++) {
+		for (let i = 0; i < n; i++) {
 			currentDate = currentDate.next(this._frequency);
 
 			// Check if we've exceeded the end date

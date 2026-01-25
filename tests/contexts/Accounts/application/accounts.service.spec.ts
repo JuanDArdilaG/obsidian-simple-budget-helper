@@ -31,14 +31,14 @@ describe("AccountsService", () => {
 			vi.spyOn(accountsRepository, "deleteById").mockResolvedValue(true);
 
 			// Act
-			await accountsService.delete(accountId);
+			await accountsService.delete(accountId.value);
 
 			// Assert
 			expect(
 				transactionsRepository.hasTransactionsForAccount,
 			).toHaveBeenCalledWith(accountId);
 			expect(accountsRepository.deleteById).toHaveBeenCalledWith(
-				accountId,
+				accountId.value,
 			);
 		});
 
@@ -53,7 +53,9 @@ describe("AccountsService", () => {
 			vi.spyOn(accountsRepository, "deleteById").mockResolvedValue(true);
 
 			// Act & Assert
-			await expect(accountsService.delete(accountId)).rejects.toThrow(
+			await expect(
+				accountsService.delete(accountId.value),
+			).rejects.toThrow(
 				`Cannot delete account with ID ${accountId.value} because it has associated transactions. Please delete or update the accounts in all transactions first.`,
 			);
 			expect(

@@ -41,7 +41,7 @@ export interface Summary {
 export function AccountsDashboard() {
 	const { plugin } = useContext(AppContext);
 	const {
-		accounts,
+		accountsMap,
 		updateAccounts,
 		useCases: {
 			changeAccountName,
@@ -74,7 +74,7 @@ export function AccountsDashboard() {
 	useEffect(() => {
 		const fetchExchangeRates = async () => {
 			const updatedAccounts = await Promise.all(
-				accounts.map(async (account) => {
+				Array.from(accountsMap).map(async ([_, account]) => {
 					if (
 						account.currency.value ===
 						plugin.settings.defaultCurrency
@@ -97,7 +97,7 @@ export function AccountsDashboard() {
 			setAccountsWithExchangeRates(updatedAccounts);
 		};
 		fetchExchangeRates();
-	}, [accounts, getExchangeRate, plugin.settings.defaultCurrency]);
+	}, [accountsMap, getExchangeRate, plugin.settings.defaultCurrency]);
 
 	const accountsReport = useMemo(() => {
 		return new AccountsReport(accountsWithExchangeRates);
@@ -154,7 +154,7 @@ export function AccountsDashboard() {
 		id: Nanoid,
 		updates: { name?: string; subtype?: AccountSubtype; amount?: number },
 	) => {
-		const account = accounts.find((a) => a.id.equalTo(id));
+		const account = accountsMap.get(id.value);
 
 		await Promise.all([
 			updates.name && account?.name.value !== updates.name

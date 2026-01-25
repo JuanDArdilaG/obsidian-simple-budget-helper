@@ -23,27 +23,66 @@ export const useTransactions = ({
 	const [updateStores, setUpdateStores] = useState(true);
 
 	useEffect(() => {
+		console.log("[useTransactions] Effect triggered", {
+			updateTransactions,
+			transactionCount: transactions.length,
+		});
 		if (updateTransactions) {
+			console.log("[useTransactions] Starting transaction fetch");
+			setUpdateTransactions(false);
 			setIsLoading(true);
-			getAllTransactions.execute({}).then((transactions) => {
-				logger.debug("updating transactions", {
-					transactions: transactions.map((t) => t.toPrimitives()),
+			getAllTransactions
+				.execute()
+				.then((newTransactions) => {
+					console.log("[useTransactions] Transactions fetched", {
+						count: newTransactions.length,
+					});
+					logger.debug("updating transactions", {
+						transactions: newTransactions.map((t) =>
+							t.toPrimitives(),
+						),
+					});
+					setTransactions(newTransactions);
+					setIsLoading(false);
+					console.log(
+						"[useTransactions] Transaction update complete",
+					);
+				})
+				.catch((error) => {
+					console.error(
+						"[useTransactions] Error fetching transactions:",
+						error,
+					);
+					setIsLoading(false);
 				});
-				setTransactions(transactions);
-				setIsLoading(false);
-			});
 		}
 	}, [updateTransactions]);
 
 	useEffect(() => {
+		console.log("[useTransactions] Stores effect triggered", {
+			updateStores,
+			storeCount: stores.length,
+		});
 		if (updateStores) {
+			console.log("[useTransactions] Starting stores fetch");
 			setUpdateStores(false);
-			getAllUniqueItemStores.execute().then((stores) => {
-				logger.debug("updating stores", {
-					updateStores,
+			getAllUniqueItemStores
+				.execute()
+				.then((newStores) => {
+					console.log("[useTransactions] Stores fetched", {
+						count: newStores.length,
+					});
+					logger.debug("updating stores", {
+						updateStores,
+					});
+					setStores(newStores);
+				})
+				.catch((error) => {
+					console.error(
+						"[useTransactions] Error fetching stores:",
+						error,
+					);
 				});
-				setStores(stores);
-			});
 		}
 	}, [updateStores]);
 

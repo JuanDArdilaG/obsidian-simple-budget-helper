@@ -1,19 +1,14 @@
 import {
-	NumberValueObject,
 	PriceValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
-import { Account } from "contexts/Accounts/domain";
 import { ItemOperation, Nanoid } from "contexts/Shared/domain";
-import {
-	AccountSplit,
-	TransactionAmount,
-	TransactionCategory,
-} from "../../Transactions/domain";
+import { Account } from "../../Accounts/domain";
+import { AccountSplit, TransactionAmount } from "../../Transactions/domain";
 import { ItemTags } from "./item-tags.valueobject";
 import {
 	RecurrenceModification,
-	RecurrenceModificationState,
+	RecurrenceState,
 } from "./recurrence-modification.entity";
 import { ScheduledTransactionDate } from "./scheduled-transaction-date.vo";
 import { ScheduledTransaction } from "./scheduled-transaction.entity";
@@ -21,12 +16,13 @@ import { ScheduledTransaction } from "./scheduled-transaction.entity";
 export class ItemRecurrenceInfo {
 	constructor(
 		private readonly _scheduledTransactionId: Nanoid,
-		private readonly _occurrenceIndex: NumberValueObject,
+		private readonly _occurrenceIndex: number,
 		private readonly _name: StringValueObject,
 		private _date: ScheduledTransactionDate,
 		private readonly _operation: ItemOperation,
-		private readonly _category: TransactionCategory,
-		private _state: RecurrenceModificationState,
+		private readonly _category: Nanoid,
+		private readonly _subcategory: Nanoid,
+		private _state: RecurrenceState,
 		private _originAccounts: AccountSplit[],
 		private _destinationAccounts: AccountSplit[],
 		private _store?: StringValueObject,
@@ -35,17 +31,18 @@ export class ItemRecurrenceInfo {
 
 	static fromScheduledTransaction(
 		scheduledTransaction: ScheduledTransaction,
-		occurrenceIndex: NumberValueObject,
+		occurrenceIndex: number,
 		date: ScheduledTransactionDate,
 	) {
 		return new ItemRecurrenceInfo(
-			scheduledTransaction.id,
+			scheduledTransaction.nanoid,
 			occurrenceIndex,
 			scheduledTransaction.name,
 			date,
 			scheduledTransaction.operation,
 			scheduledTransaction.category,
-			RecurrenceModificationState.PENDING,
+			scheduledTransaction.subcategory,
+			RecurrenceState.PENDING,
 			scheduledTransaction.originAccounts,
 			scheduledTransaction.destinationAccounts,
 			scheduledTransaction.store,
@@ -58,7 +55,7 @@ export class ItemRecurrenceInfo {
 		modification: RecurrenceModification,
 	) {
 		return new ItemRecurrenceInfo(
-			scheduledTransaction.id,
+			scheduledTransaction.nanoid,
 			modification.index,
 			scheduledTransaction.name,
 			new ScheduledTransactionDate(
@@ -66,6 +63,7 @@ export class ItemRecurrenceInfo {
 			),
 			scheduledTransaction.operation,
 			scheduledTransaction.category,
+			scheduledTransaction.subcategory,
 			modification.state,
 			modification.fromSplits ?? scheduledTransaction.originAccounts,
 			modification.toSplits ?? scheduledTransaction.destinationAccounts,
@@ -78,7 +76,7 @@ export class ItemRecurrenceInfo {
 		return this._scheduledTransactionId;
 	}
 
-	get occurrenceIndex(): NumberValueObject {
+	get occurrenceIndex(): number {
 		return this._occurrenceIndex;
 	}
 
@@ -90,8 +88,12 @@ export class ItemRecurrenceInfo {
 		return this._operation;
 	}
 
-	get category(): TransactionCategory {
+	get category(): Nanoid {
 		return this._category;
+	}
+
+	get subcategory(): Nanoid {
+		return this._subcategory;
 	}
 
 	get date(): ScheduledTransactionDate {
@@ -102,11 +104,11 @@ export class ItemRecurrenceInfo {
 		this._date = date;
 	}
 
-	get state(): RecurrenceModificationState {
+	get state(): RecurrenceState {
 		return this._state;
 	}
 
-	updateState(state: RecurrenceModificationState): void {
+	updateState(state: RecurrenceState): void {
 		this._state = state;
 	}
 
@@ -175,7 +177,7 @@ export class ItemRecurrenceInfo {
 		if (operation.type.isTransfer()) {
 			// Check if account is in fromSplits (negative multiplier)
 			const fromSplit = (this._originAccounts ?? itemFromSplits).find(
-				(split) => split.account.id.equalTo(account.id),
+				(split) => split.accountId.equalTo(account.nanoid),
 			);
 			if (fromSplit) {
 				multiplier = -1;
@@ -183,7 +185,7 @@ export class ItemRecurrenceInfo {
 				// Check if account is in toSplits (positive multiplier)
 				const toSplit = (
 					this._destinationAccounts ?? itemToSplits
-				)?.find((split) => split.account.id.equalTo(account.id));
+				)?.find((split) => split.accountId.equalTo(account.nanoid));
 				if (!toSplit) {
 					multiplier = 0;
 				}

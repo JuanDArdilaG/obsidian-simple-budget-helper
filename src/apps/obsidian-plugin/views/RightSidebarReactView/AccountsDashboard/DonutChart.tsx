@@ -1,111 +1,83 @@
-import { motion } from "framer-motion";
-import {
-	Cell,
-	Legend,
-	Pie,
-	PieChart,
-	ResponsiveContainer,
-	Tooltip,
-} from "recharts";
+import { memo } from "react";
 
 interface DonutChartProps {
 	assets: number;
 	liabilities: number;
 }
 
-const CustomTooltip = ({ active, payload, total }: any) => {
-	if (active && payload?.length) {
-		return (
-			<div className="bg-white p-3 border border-gray-100 shadow-lg rounded-lg text-sm">
-				<p className="font-medium text-gray-900">{payload[0].name}</p>
-				<p className="text-gray-500">
-					{new Intl.NumberFormat("en-US", {
-						style: "currency",
-						currency: "USD",
-						minimumFractionDigits: 0,
-					}).format(payload[0].value)}
-				</p>
-				<p className="text-xs text-gray-400 mt-1">
-					{((payload[0].value / total) * 100).toFixed(2)}%
-				</p>
-			</div>
-		);
-	}
-	return null;
-};
-
-export function DonutChart({ assets, liabilities }: Readonly<DonutChartProps>) {
-	const data = [
-		{
-			name: "Assets",
-			value: assets,
-		},
-		{
-			name: "Liabilities",
-			value: liabilities,
-		},
-	];
-	const COLORS = ["#10b981", "#f43f5e"]; // Emerald-500, Rose-500
-
+const DonutChart = memo(function DonutChart({
+	assets,
+	liabilities,
+}: Readonly<DonutChartProps>) {
+	const total = assets + liabilities;
+	const assetsPercent = total > 0 ? (assets / total) * 100 : 50;
+	const liabilitiesPercent = total > 0 ? (liabilities / total) * 100 : 50;
+	const formatCurrency = (value: number) => {
+		return new Intl.NumberFormat("en-US", {
+			style: "currency",
+			currency: "USD",
+			minimumFractionDigits: 0,
+		}).format(value);
+	};
 	return (
-		<motion.div
-			initial={{
-				opacity: 0,
-				scale: 0.95,
-			}}
-			animate={{
-				opacity: 1,
-				scale: 1,
-			}}
-			transition={{
-				duration: 0.5,
-				delay: 0.2,
-			}}
-			className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full flex flex-col"
-		>
+		<div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
 			<h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
 				Ratio Analysis
 			</h3>
-			<div className="flex-1 min-h-[200px]">
-				<ResponsiveContainer width="100%" height="100%">
-					<PieChart>
-						<Pie
-							data={data}
-							cx="50%"
-							cy="50%"
-							innerRadius={60}
-							outerRadius={80}
-							paddingAngle={5}
-							dataKey="value"
-							stroke="none"
+
+			<div className="flex-1 flex flex-col justify-center items-center gap-6">
+				{/* Simple bar visualization */}
+				<div className="w-full max-w-xs">
+					<div className="flex h-8 rounded-lg overflow-hidden border border-gray-200">
+						<div
+							className="bg-emerald-500 flex items-center justify-center text-white text-xs font-semibold"
+							style={{
+								width: `${assetsPercent}%`,
+							}}
 						>
-							{data.map((entry, index) => (
-								<Cell
-									key={`cell-${entry.name}`}
-									fill={COLORS[index % COLORS.length]}
-								/>
-							))}
-						</Pie>
-						<Tooltip
-							content={
-								<CustomTooltip total={assets + liabilities} />
-							}
-							cursor={false}
-						/>
-						<Legend
-							verticalAlign="bottom"
-							height={36}
-							iconType="circle"
-							wrapperStyle={{ paddingTop: "8px" }}
-							formatter={(value) => (
-								<span className="text-sm! text-gray-600! font-medium! ml-1!">
-									{value}
-								</span>
-							)}
-						/>
-					</PieChart>
-				</ResponsiveContainer>
+							{assetsPercent > 15 &&
+								`${Math.round(assetsPercent)}%`}
+						</div>
+						<div
+							className="bg-rose-500 flex items-center justify-center text-white text-xs font-semibold"
+							style={{
+								width: `${liabilitiesPercent}%`,
+							}}
+						>
+							{liabilitiesPercent > 15 &&
+								`${Math.round(liabilitiesPercent)}%`}
+						</div>
+					</div>
+				</div>
+
+				{/* Legend */}
+				<div className="flex flex-col gap-3 w-full max-w-xs">
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<div className="w-3 h-3 rounded-full bg-emerald-500" />
+							<span className="text-sm font-medium text-gray-700">
+								Assets
+							</span>
+						</div>
+						<span className="text-sm font-semibold text-gray-900">
+							{formatCurrency(assets)}
+						</span>
+					</div>
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<div className="w-3 h-3 rounded-full bg-rose-500" />
+							<span className="text-sm font-medium text-gray-700">
+								Liabilities
+							</span>
+						</div>
+						<span className="text-sm font-semibold text-gray-900">
+							{formatCurrency(liabilities)}
+						</span>
+					</div>
+				</div>
 			</div>
-		</motion.div>
+		</div>
 	);
-}
+});
+
+export { DonutChart };

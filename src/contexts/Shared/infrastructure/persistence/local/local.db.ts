@@ -1,7 +1,7 @@
 import { Account } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
 import { Config } from "contexts/Shared/infrastructure/config/config";
-import { SubCategory } from "contexts/Subcategories/domain";
+import { Subcategory } from "contexts/Subcategories/domain";
 import { Transaction } from "contexts/Transactions/domain";
 import Dexie from "dexie";
 import { App } from "obsidian";
@@ -264,7 +264,7 @@ export class LocalDB extends DB {
 				", ",
 			),
 			[Config.subCategoriesTableName]: Object.keys(
-				SubCategory.emptyPrimitives(),
+				Subcategory.emptyPrimitives(),
 			).join(", "),
 			[Config.transactionsTableName]: Object.keys(
 				Transaction.emptyPrimitives(),

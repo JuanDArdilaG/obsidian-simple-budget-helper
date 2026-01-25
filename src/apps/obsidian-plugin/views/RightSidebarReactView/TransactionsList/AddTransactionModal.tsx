@@ -5,23 +5,22 @@ import {
 	Plus,
 	RefreshCw,
 	Trash2,
-	Wallet,
 	X,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Account } from "../../../../../contexts/Accounts/domain";
-import { CategoriesWithSubcategories } from "../../../../../contexts/Categories/application/get-all-categories-with-subcategories.usecase";
-import { OperationType } from "../../../../../contexts/Shared/domain";
-import { SubCategory } from "../../../../../contexts/Subcategories/domain";
+import { useEffect, useState } from "react";
+import { AccountsMap } from "../../../../../contexts/Accounts/application/get-all-accounts.usecase";
+import { CategoriesWithSubcategoriesMap } from "../../../../../contexts/Categories/application/get-all-categories-with-subcategories.usecase";
+import { CategoriesMap } from "../../../../../contexts/Categories/application/get-all-categories.usecase";
+import { Nanoid, OperationType } from "../../../../../contexts/Shared/domain";
 import {
 	AccountSplit,
-	AccountSplitPrimitives,
 	Transaction,
 	TransactionAmount,
 	TransactionDate,
 	TransactionName,
 	TransactionOperation,
 } from "../../../../../contexts/Transactions/domain";
+import { AccountSplitter } from "../../../components/AccountSplitter";
 
 export interface TransactionItem {
 	id: string;
@@ -36,8 +35,9 @@ interface AddTransactionModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onSave: (transactions: Transaction[]) => Promise<void>;
-	accounts: Account[];
-	categoriesWithSubcategories: CategoriesWithSubcategories;
+	accountsMap: AccountsMap;
+	categoriesMap: CategoriesMap;
+	categoriesWithSubcategories: CategoriesWithSubcategoriesMap;
 	editTransaction?: Transaction | null;
 }
 
@@ -45,13 +45,13 @@ export function AddTransactionModal({
 	isOpen,
 	onClose,
 	onSave,
-	accounts,
+	accountsMap,
+	categoriesMap,
 	categoriesWithSubcategories,
 	editTransaction = null,
 }: Readonly<AddTransactionModalProps>) {
 	const isEditMode = !!editTransaction;
-
-	const [type, setType] = useState<OperationType>("expense");
+	const [operation, setOperation] = useState<OperationType>("expense");
 	const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
 	const [time, setTime] = useState(new Date().toTimeString().slice(0, 5));
 	const [store, setStore] = useState("");
@@ -66,33 +66,36 @@ export function AddTransactionModal({
 	]);
 
 	// Split state
-	const [originSplits, setOriginSplits] = useState<AccountSplit[]>([]);
-	const [destinationSplits, setDestinationSplits] = useState<AccountSplit[]>(
-		[],
-	);
+	const [fromSplits, setFromSplits] = useState<AccountSplit[]>([]);
+	const [toSplits, setToSplits] = useState<AccountSplit[]>([]);
 
 	// Load transaction data when editing
 	useEffect(() => {
 		if (editTransaction) {
 			const transactionDate = new Date(editTransaction.date);
-			setType(editTransaction.operation.value);
-			setDate(editTransaction.date.toISOString().split("T")[0]);
+			setOperation(editTransaction.operation.value);
+			setDate(transactionDate.toISOString().split("T")[0]);
 			setTime(transactionDate.toTimeString().slice(0, 5));
 			setStore(editTransaction.store?.value || "");
+
+			// For edit mode, show as single item
 			setItems([
 				{
 					name: editTransaction.name.value,
-					price: editTransaction.originAmount.value,
+					price: editTransaction.originAccounts.reduce(
+						(sum, s) => sum + s.amount.value,
+						0,
+					),
 					quantity: 1,
-					category: editTransaction.category.id.value,
-					subcategory: editTransaction.subcategory?.id.value || "",
+					category: editTransaction.category.value,
+					subcategory: editTransaction.subcategory.value,
 				},
 			]);
-			setOriginSplits(editTransaction.originAccounts);
-			setDestinationSplits(editTransaction.destinationAccounts);
+			setFromSplits(editTransaction.originAccounts);
+			setToSplits(editTransaction.destinationAccounts || []);
 		} else {
 			// Reset form for new transaction
-			setType("expense");
+			setOperation("expense");
 			setDate(new Date().toISOString().split("T")[0]);
 			setTime(new Date().toTimeString().slice(0, 5));
 			setStore("");
@@ -105,41 +108,41 @@ export function AddTransactionModal({
 					subcategory: "",
 				},
 			]);
-			setOriginSplits([]);
-			setDestinationSplits([]);
+			setFromSplits([]);
+			setToSplits([]);
 		}
 	}, [editTransaction, isOpen]);
-
 	// Calculate total from items
-	const totalAmount = useMemo(
-		() => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
-		[items],
+	const totalAmount = items.reduce(
+		(sum, item) => sum + item.price * item.quantity,
+		0,
 	);
-
-	// Reset splits when total changes or type changes, if they are empty or invalid
+	// Reset splits when total changes or operation changes, if they are empty or invalid
 	useEffect(() => {
-		if (originSplits.length === 0 && accounts.length > 0 && !isEditMode) {
-			setOriginSplits([
+		if (accountsMap.size === 0) return;
+		const firstAccountId = Array.from(accountsMap.keys())[0];
+		if (fromSplits.length === 0 && !isEditMode) {
+			setFromSplits([
 				new AccountSplit(
-					accounts[0],
+					new Nanoid(firstAccountId),
 					new TransactionAmount(totalAmount),
 				),
 			]);
 		}
 		if (
-			destinationSplits.length === 0 &&
-			accounts.length > 0 &&
-			!isEditMode
+			toSplits.length === 0 &&
+			accountsMap.size > 0 &&
+			!isEditMode &&
+			operation === "transfer"
 		) {
-			setDestinationSplits([
+			setToSplits([
 				new AccountSplit(
-					accounts[0],
+					new Nanoid(firstAccountId),
 					new TransactionAmount(totalAmount),
 				),
 			]);
 		}
-	}, [accounts, totalAmount, isEditMode]);
-
+	}, [accountsMap, totalAmount, isEditMode, operation]);
 	const handleAddItem = () => {
 		setItems([
 			...items,
@@ -167,72 +170,70 @@ export function AddTransactionModal({
 		};
 		setItems(newItems);
 	};
-
 	const handleSubmit = () => {
 		// Basic validation
-		if (items.some((i) => !i.name || i.price <= 0)) return;
+		if (items.some((i) => !i.name || i.price <= 0)) {
+			alert("Please fill in all item names and prices");
+			return;
+		}
 		// Validate splits
-		const originTotal = originSplits.reduce(
+		const fromTotal = fromSplits.reduce(
 			(sum, s) => sum + s.amount.value,
 			0,
 		);
-		if (Math.abs(originTotal - totalAmount) > 0.01) {
-			alert("Origin accounts total must match transaction total");
+		if (Math.abs(fromTotal - totalAmount) > 0.01) {
+			alert("Account splits must match transaction total");
 			return;
 		}
-		if (type === "transfer") {
-			const destTotal = destinationSplits.reduce(
+		if (operation === "transfer") {
+			const toTotal = toSplits.reduce(
 				(sum, s) => sum + s.amount.value,
 				0,
 			);
-			if (Math.abs(destTotal - totalAmount) > 0.01) {
+			if (Math.abs(toTotal - totalAmount) > 0.01) {
 				alert(
-					"Destination accounts total must match transaction total",
+					"Transfer destination splits must match transaction total",
 				);
 				return;
 			}
 		}
-
-		// Combine date and time into ISO string
+		// Combine date and time into Date object
 		const dateTimeString = `${date}T${time}:00`;
-		const transactionDate = new Date(dateTimeString).toISOString();
-
+		const transactionDate = new Date(dateTimeString);
+		// Create individual transactions for each item
 		const transactions: Transaction[] = items.map((item) => {
-			let subcategory: SubCategory;
-			const category = categoriesWithSubcategories.find(
-				({ subcategories }) => {
-					const sub = subcategories.find(
-						(sub) => sub.id.value === item.subcategory,
-					);
-					if (sub) {
-						subcategory = sub;
-						return true;
-					}
-					return false;
-				},
-			);
-			if (!category) {
-				throw new Error(
-					`Category not found for subcategory ID: ${item.subcategory}`,
-				);
-			}
+			const itemTotal = item.price * item.quantity;
+			const itemRatio = itemTotal / totalAmount;
 			return Transaction.create(
-				new TransactionDate(new Date(transactionDate)),
-				originSplits,
-				destinationSplits,
+				new TransactionDate(transactionDate),
+				fromSplits.map(
+					(split) =>
+						new AccountSplit(
+							split.accountId,
+							new TransactionAmount(
+								split.amount.value * itemRatio,
+							),
+						),
+				),
+				toSplits.map(
+					(split) =>
+						new AccountSplit(
+							split.accountId,
+							new TransactionAmount(
+								split.amount.value * itemRatio,
+							),
+						),
+				),
 				new TransactionName(item.name),
-				new TransactionOperation(type),
-				category.category,
-				subcategory!,
+				new TransactionOperation(operation),
+				new Nanoid(item.category),
+				new Nanoid(item.subcategory),
 			);
 		});
-
 		onSave(transactions);
 		onClose();
 	};
-
 	if (!isOpen) return null;
-
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm overflow-y-auto">
 			<motion.div
@@ -251,27 +252,27 @@ export function AddTransactionModal({
 				className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-6 border border-gray-100 my-8 overflow-hidden flex flex-col max-h-[90vh]"
 			>
 				<div className="flex justify-between items-center mb-6 flex-shrink-0">
-					<h2 className="text-xl! font-bold! text-gray-900!">
+					<h2 className="text-xl font-bold text-gray-900">
 						{isEditMode ? "Edit Transaction" : "Add Transaction"}
 					</h2>
 					<button
 						onClick={onClose}
-						className="text-gray-400 hover:text-gray-600"
+						className="text-gray-400! hover:text-gray-600!"
 					>
 						<X size={24} />
 					</button>
 				</div>
 
 				<div className="overflow-y-auto flex-1 pr-2 -mr-2">
-					{/* Type Selection */}
-					<div className="grid grid-cols-3 gap-4 mb-6">
+					{/* Operation Selection */}
+					<div className="grid grid-cols-3 gap-4 mb-6 p-2">
 						<button
-							onClick={() => setType("expense")}
-							className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${type === "expense" ? "bg-rose-50! border-rose-200! text-rose-700! ring-2! ring-rose-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
+							onClick={() => setOperation("expense")}
+							className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${operation === "expense" ? "bg-rose-50! border-rose-200! text-rose-700! ring-2! ring-rose-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
 						>
 							<ArrowUpRight
 								className={
-									type === "expense"
+									operation === "expense"
 										? "text-rose-600"
 										: "text-gray-400"
 								}
@@ -279,12 +280,12 @@ export function AddTransactionModal({
 							<span className="font-medium">Expense</span>
 						</button>
 						<button
-							onClick={() => setType("income")}
-							className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${type === "income" ? "bg-emerald-50! border-emerald-200! text-emerald-700! ring-2! ring-emerald-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
+							onClick={() => setOperation("income")}
+							className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${operation === "income" ? "bg-emerald-50! border-emerald-200! text-emerald-700! ring-2! ring-emerald-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
 						>
 							<ArrowDownLeft
 								className={
-									type === "income"
+									operation === "income"
 										? "text-emerald-600"
 										: "text-gray-400"
 								}
@@ -292,12 +293,12 @@ export function AddTransactionModal({
 							<span className="font-medium">Income</span>
 						</button>
 						<button
-							onClick={() => setType("transfer")}
-							className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${type === "transfer" ? "bg-blue-50! border-blue-200! text-blue-700! ring-2! ring-blue-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
+							onClick={() => setOperation("transfer")}
+							className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${operation === "transfer" ? "bg-blue-50! border-blue-200! text-blue-700! ring-2! ring-blue-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
 						>
 							<RefreshCw
 								className={
-									type === "transfer"
+									operation === "transfer"
 										? "text-blue-600"
 										: "text-gray-400"
 								}
@@ -306,26 +307,24 @@ export function AddTransactionModal({
 						</button>
 					</div>
 
-					{/* Date & Store */}
-
+					{/* Date, Time & Store */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
 						<div>
-							<label
-								htmlFor="date-input"
-								className="block! text-sm! font-medium! text-gray-700! mb-1!"
-							>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
 								Date
 							</label>
 							<input
-								id="date-input"
 								type="date"
 								value={date}
 								onChange={(e) => setDate(e.target.value)}
 								className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 							/>
-							<label htmlFor="time-input">Time</label>
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
+								Time
+							</label>
 							<input
-								id="time-input"
 								type="time"
 								value={time}
 								onChange={(e) => setTime(e.target.value)}
@@ -333,19 +332,15 @@ export function AddTransactionModal({
 							/>
 						</div>
 						<div className="sm:col-span-2 lg:col-span-1">
-							<label
-								htmlFor="store-input"
-								className="block text-sm font-medium text-gray-700 mb-1"
-							>
+							<label className="block text-sm font-medium text-gray-700 mb-1">
 								Store / Payee (Optional)
 							</label>
 							<input
-								id="store-input"
 								type="text"
 								value={store}
 								onChange={(e) => setStore(e.target.value)}
 								placeholder="e.g. Walmart, Starbucks"
-								className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500"
+								className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 							/>
 						</div>
 					</div>
@@ -353,28 +348,32 @@ export function AddTransactionModal({
 					{/* Items Section */}
 					<div className="mb-8">
 						<div className="flex justify-between items-center mb-3">
-							<label
-								htmlFor="add-item-button"
-								className="block text-sm font-medium text-gray-700"
-							>
-								Items
+							<label className="block text-sm font-medium text-gray-700">
+								Items{" "}
+								{!isEditMode && (
+									<span className="text-xs text-gray-500">
+										(each item will be saved as a separate
+										transaction)
+									</span>
+								)}
 							</label>
-							<button
-								id="add-item-button"
-								onClick={handleAddItem}
-								className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
-							>
-								<Plus size={16} /> Add Item
-							</button>
+							{!isEditMode && (
+								<button
+									onClick={handleAddItem}
+									className="text-sm! text-indigo-600! hover:text-indigo-700! font-medium! flex! items-center! gap-1!"
+								>
+									<Plus size={16} /> Add Item
+								</button>
+							)}
 						</div>
 						<div className="space-y-3">
 							{items.map((item, index) => (
 								<div
 									key={item.name}
-									className="flex gap-2 items-start p-3 bg-gray-50 rounded-lg border border-gray-200"
+									className="flex! gap-2! items-start! p-3! bg-gray-50! rounded-lg! border! border-gray-200!"
 								>
-									<div className="flex-1 space-y-2">
-										<div className="flex gap-2">
+									<div className="flex-1! space-y-2!">
+										<div className="flex! flex-col! sm:flex-row! gap-2!">
 											<input
 												type="text"
 												placeholder="Item name"
@@ -386,40 +385,42 @@ export function AddTransactionModal({
 														e.target.value,
 													)
 												}
-												className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500"
+												className="flex-1! px-2! py-1.5! text-sm! border! border-gray-300! rounded! focus:ring-1! focus:ring-indigo-500! min-w-0!"
 											/>
-											<input
-												type="number"
-												placeholder="Price"
-												value={item.price || ""}
-												onChange={(e) =>
-													handleItemChange(
-														index,
-														"price",
-														Number.parseFloat(
-															e.target.value,
-														),
-													)
-												}
-												className="w-24 px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500"
-											/>
-											<input
-												type="number"
-												placeholder="Qty"
-												value={item.quantity}
-												onChange={(e) =>
-													handleItemChange(
-														index,
-														"quantity",
-														Number.parseInt(
-															e.target.value,
-														),
-													)
-												}
-												className="w-16 px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500"
-											/>
+											<div className="flex! gap-2!">
+												<input
+													type="number"
+													placeholder="Price"
+													value={item.price || ""}
+													onChange={(e) =>
+														handleItemChange(
+															index,
+															"price",
+															Number.parseFloat(
+																e.target.value,
+															),
+														)
+													}
+													className="flex-1! sm:w-24! px-2! py-1.5! text-sm! border! border-gray-300! rounded! focus:ring-1! focus:ring-indigo-500! min-w-0!"
+												/>
+												<input
+													type="number"
+													placeholder="Qty"
+													value={item.quantity}
+													onChange={(e) =>
+														handleItemChange(
+															index,
+															"quantity",
+															Number.parseInt(
+																e.target.value,
+															),
+														)
+													}
+													className="w-16! sm:w-16! px-2! py-1.5! text-sm! border! border-gray-300! rounded! focus:ring-1! focus:ring-indigo-500! min-w-0!"
+												/>
+											</div>
 										</div>
-										<div className="flex gap-2">
+										<div className="flex! flex-col! sm:flex-row! gap-2!">
 											<select
 												value={item.category}
 												onChange={(e) =>
@@ -429,27 +430,25 @@ export function AddTransactionModal({
 														e.target.value,
 													)
 												}
-												className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500"
+												className="flex-1! px-2! py-1.5! text-sm! border! border-gray-300! rounded! focus:ring-1! focus:ring-indigo-500! min-w-0!"
 											>
 												<option value="">
 													Select Category
 												</option>
-												{categoriesWithSubcategories.map(
-													({ category }) => (
+												{Array.from(categoriesMap)
+													.toSorted((a, b) =>
+														a[1].name.localeCompare(
+															b[1].name.value,
+														),
+													)
+													.map(([id, cat]) => (
 														<option
-															key={
-																category.id
-																	.value
-															}
-															value={
-																category.id
-																	.value
-															}
+															key={id}
+															value={id}
 														>
-															{category.name}
+															{cat.name}
 														</option>
-													),
-												)}
+													))}
 											</select>
 											<select
 												value={item.subcategory}
@@ -460,45 +459,43 @@ export function AddTransactionModal({
 														e.target.value,
 													)
 												}
-												className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500"
+												className="flex-1! px-2! py-1.5! text-sm! border! border-gray-300! rounded! focus:ring-1! focus:ring-indigo-500! min-w-0!"
 												disabled={!item.category}
 											>
 												<option value="">
 													Select Subcategory
 												</option>
 												{item.category &&
-													categoriesWithSubcategories
-														.find(
-															({ category }) =>
-																category.id
-																	.value ===
+													(
+														Array.from(
+															categoriesWithSubcategories.get(
 																item.category,
-														)
-														?.subcategories.map(
-															(sub) => (
-																<option
-																	key={
-																		sub.id
-																			.value
-																	}
-																	value={
-																		sub.id
-																			.value
-																	}
-																>
-																	{sub.name}
-																</option>
+															)?.subcategories ||
+																[],
+														) || []
+													)
+														.toSorted((a, b) =>
+															a[1].name.localeCompare(
+																b[1].name.value,
 															),
-														)}
+														)
+														.map(([id, sub]) => (
+															<option
+																key={id}
+																value={id}
+															>
+																{sub.name}
+															</option>
+														))}
 											</select>
 										</div>
 									</div>
-									{items.length > 1 && (
+									{items.length > 1 && !isEditMode && (
 										<button
 											onClick={() =>
 												handleRemoveItem(index)
 											}
-											className="p-1 text-gray-400 hover:text-rose-500 transition-colors"
+											className="p-1! text-gray-400! hover:text-rose-500! transition-colors! flex-shrink-0!"
 										>
 											<Trash2 size={16} />
 										</button>
@@ -512,20 +509,22 @@ export function AddTransactionModal({
 					<div className="space-y-6 mb-6">
 						<AccountSplitter
 							label={
-								type === "income" ? "Deposit To" : "Paid From"
+								operation === "income"
+									? "Deposit To"
+									: "Paid From"
 							}
-							splits={originSplits}
-							onChange={setOriginSplits}
-							accounts={accounts}
+							splits={fromSplits}
+							onChange={setFromSplits}
+							accountsMap={accountsMap}
 							totalAmount={totalAmount}
 						/>
 
-						{type === "transfer" && (
+						{operation === "transfer" && (
 							<AccountSplitter
 								label="Transfer To"
-								splits={destinationSplits}
-								onChange={setDestinationSplits}
-								accounts={accounts}
+								splits={toSplits}
+								onChange={setToSplits}
+								accountsMap={accountsMap}
 								totalAmount={totalAmount}
 							/>
 						)}
@@ -548,160 +547,21 @@ export function AddTransactionModal({
 					<div className="flex gap-3">
 						<button
 							onClick={onClose}
-							className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+							className="flex-1! px-4! py-2.5! border! border-gray-300! rounded-lg! text-gray-700! font-medium! hover:bg-gray-50! transition-colors!"
 						>
 							Cancel
 						</button>
 						<button
 							onClick={handleSubmit}
-							className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"
+							className="flex-1! px-4! py-2.5! bg-indigo-600! text-white! rounded-lg! font-medium! hover:bg-indigo-700! transition-colors! shadow-sm!"
 						>
 							{isEditMode
 								? "Update Transaction"
-								: "Save Transaction"}
+								: `Save ${items.length} Transaction${items.length > 1 ? "s" : ""}`}
 						</button>
 					</div>
 				</div>
 			</motion.div>
-		</div>
-	);
-}
-function AccountSplitter({
-	label,
-	splits,
-	onChange,
-	accounts,
-	totalAmount,
-}: Readonly<{
-	label: string;
-	splits: AccountSplit[];
-	onChange: (splits: AccountSplit[]) => void;
-	accounts: Account[];
-	totalAmount: number;
-}>) {
-	const currentTotal = splits.reduce((sum, s) => sum + s.amount.value, 0);
-	const remaining = totalAmount - currentTotal;
-	const isBalanced = Math.abs(remaining) < 0.01;
-
-	const addSplit = () => {
-		// Find first unused account if possible
-		const usedIds = new Set(splits.map((s) => s.account.id.value));
-		const nextAccount =
-			accounts.find((a) => !usedIds.has(a.id.value)) || accounts[0];
-		onChange([
-			...splits,
-			new AccountSplit(
-				nextAccount,
-				remaining > 0
-					? new TransactionAmount(remaining)
-					: TransactionAmount.zero(),
-			),
-		]);
-	};
-
-	const updateSplit = (
-		index: number,
-		field: keyof AccountSplitPrimitives,
-		value: string | number,
-	) => {
-		const newSplits = [...splits];
-		newSplits[index] = AccountSplit.fromPrimitives(
-			newSplits[index].account,
-			{
-				...newSplits[index].toPrimitives(),
-				[field]: value,
-			},
-		);
-		onChange(newSplits);
-	};
-
-	const removeSplit = (index: number) => {
-		onChange(splits.filter((_, i) => i !== index));
-	};
-
-	return (
-		<div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-			<div className="flex justify-between items-center mb-3">
-				<div className="flex items-center gap-2">
-					<Wallet size={16} className="text-gray-500" />
-					<span className="font-medium text-gray-700">{label}</span>
-				</div>
-				<div
-					className={`text-sm font-medium ${isBalanced ? "text-green-600" : "text-amber-600"}`}
-				>
-					{isBalanced ? (
-						<span className="flex items-center gap-1">
-							Match{" "}
-							<div className="w-2 h-2 rounded-full bg-green-500" />
-						</span>
-					) : (
-						<span>
-							{remaining > 0 ? "Remaining: " : "Over: "}
-							{new Intl.NumberFormat("en-US", {
-								style: "currency",
-								currency: "USD",
-							}).format(Math.abs(remaining))}
-						</span>
-					)}
-				</div>
-			</div>
-
-			<div className="space-y-2">
-				{splits.map((split, index) => (
-					<div
-						key={split.account.id.value}
-						className="flex gap-2 items-center"
-					>
-						<select
-							value={split.account.id.value}
-							onChange={(e) =>
-								updateSplit(index, "account.id", e.target.value)
-							}
-							className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white"
-						>
-							{accounts.map((acc) => (
-								<option key={acc.id.value} value={acc.id.value}>
-									{acc.name} ({acc.currency.value})
-								</option>
-							))}
-						</select>
-						<div className="relative w-32">
-							<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-								$
-							</span>
-							<input
-								type="number"
-								value={split.amount.value}
-								onChange={(e) =>
-									updateSplit(
-										index,
-										"amount",
-										Number.parseFloat(e.target.value),
-									)
-								}
-								className="w-full pl-6 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-500"
-							/>
-						</div>
-						{splits.length > 1 && (
-							<button
-								onClick={() => removeSplit(index)}
-								className="p-2 text-gray-400 hover:text-rose-500 transition-colors"
-							>
-								<Trash2 size={16} />
-							</button>
-						)}
-					</div>
-				))}
-			</div>
-
-			{!isBalanced && remaining > 0 && (
-				<button
-					onClick={addSplit}
-					className="mt-3 text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
-				>
-					<Plus size={16} /> Add Split Account
-				</button>
-			)}
 		</div>
 	);
 }

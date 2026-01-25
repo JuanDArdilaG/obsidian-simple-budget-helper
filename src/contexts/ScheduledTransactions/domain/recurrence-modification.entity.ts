@@ -1,16 +1,12 @@
-import {
-	DateValueObject,
-	NumberValueObject,
-} from "@juandardilag/value-objects";
+import { DateValueObject } from "@juandardilag/value-objects";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
 import {
 	AccountSplit,
 	AccountSplitPrimitives,
 } from "contexts/Transactions/domain/account-split.valueobject";
-import { Account } from "../../Accounts/domain";
-import { Nanoid } from "../../Shared/domain";
+import { Nanoid } from "../../Shared/domain/value-objects/id/nanoid.valueobject";
 
-export enum RecurrenceModificationState {
+export enum RecurrenceState {
 	PENDING = "pending",
 	COMPLETED = "completed",
 	SKIPPED = "skipped",
@@ -18,28 +14,28 @@ export enum RecurrenceModificationState {
 }
 
 export class RecurrenceModification extends Entity<
-	Nanoid,
+	string,
 	RecurrenceModificationPrimitives
 > {
 	private constructor(
 		id: Nanoid,
 		private readonly _scheduledItemId: Nanoid,
-		private readonly _index: NumberValueObject,
+		private readonly _index: number,
 		private readonly _originalDate: DateValueObject,
-		private _state: RecurrenceModificationState,
+		private _state: RecurrenceState,
 		private _date?: DateValueObject,
 		private _fromSplits?: AccountSplit[],
 		private _toSplits?: AccountSplit[],
 		updatedAt?: DateValueObject,
 	) {
-		super(id, updatedAt ?? DateValueObject.createNowDate());
+		super(id.value, updatedAt ?? DateValueObject.createNowDate());
 	}
 
 	static create(
 		scheduledItemId: Nanoid,
-		index: NumberValueObject,
+		index: number,
 		originalDate: DateValueObject,
-		state: RecurrenceModificationState = RecurrenceModificationState.PENDING,
+		state: RecurrenceState = RecurrenceState.PENDING,
 		modifiedDate?: DateValueObject,
 		fromSplits?: AccountSplit[],
 		toSplits?: AccountSplit[],
@@ -60,7 +56,7 @@ export class RecurrenceModification extends Entity<
 		return this._scheduledItemId;
 	}
 
-	get index(): NumberValueObject {
+	get index(): number {
 		return this._index;
 	}
 
@@ -68,7 +64,7 @@ export class RecurrenceModification extends Entity<
 		return this._originalDate;
 	}
 
-	get state(): RecurrenceModificationState {
+	get state(): RecurrenceState {
 		return this._state;
 	}
 
@@ -85,26 +81,26 @@ export class RecurrenceModification extends Entity<
 	}
 
 	get isCompleted(): boolean {
-		return this._state === RecurrenceModificationState.COMPLETED;
+		return this._state === RecurrenceState.COMPLETED;
 	}
 
 	get isPending(): boolean {
-		return this._state === RecurrenceModificationState.PENDING;
+		return this._state === RecurrenceState.PENDING;
 	}
 
 	get isSkipped(): boolean {
-		return this._state === RecurrenceModificationState.SKIPPED;
+		return this._state === RecurrenceState.SKIPPED;
 	}
 
 	get isDeleted(): boolean {
-		return this._state === RecurrenceModificationState.DELETED;
+		return this._state === RecurrenceState.DELETED;
 	}
 
 	/**
 	 * Marks this occurrence as completed
 	 */
 	markAsCompleted(): void {
-		this._state = RecurrenceModificationState.COMPLETED;
+		this._state = RecurrenceState.COMPLETED;
 		this.updateTimestamp();
 	}
 
@@ -112,7 +108,7 @@ export class RecurrenceModification extends Entity<
 	 * Marks this occurrence as skipped
 	 */
 	markAsSkipped(): void {
-		this._state = RecurrenceModificationState.SKIPPED;
+		this._state = RecurrenceState.SKIPPED;
 		this.updateTimestamp();
 	}
 
@@ -120,7 +116,7 @@ export class RecurrenceModification extends Entity<
 	 * Marks this occurrence as deleted
 	 */
 	markAsDeleted(): void {
-		this._state = RecurrenceModificationState.DELETED;
+		this._state = RecurrenceState.DELETED;
 		this.updateTimestamp();
 	}
 
@@ -128,7 +124,7 @@ export class RecurrenceModification extends Entity<
 	 * Resets this occurrence to pending state
 	 */
 	markAsPending(): void {
-		this._state = RecurrenceModificationState.PENDING;
+		this._state = RecurrenceState.PENDING;
 		this.updateTimestamp();
 	}
 
@@ -160,7 +156,7 @@ export class RecurrenceModification extends Entity<
 	 * Clears all modifications and resets to pending state
 	 */
 	clearModifications(): void {
-		this._state = RecurrenceModificationState.PENDING;
+		this._state = RecurrenceState.PENDING;
 		this._date = undefined;
 		this._fromSplits = undefined;
 		this._toSplits = undefined;
@@ -175,49 +171,38 @@ export class RecurrenceModification extends Entity<
 			this._date ||
 			this._fromSplits ||
 			this._toSplits ||
-			this._state !== RecurrenceModificationState.PENDING
+			this._state !== RecurrenceState.PENDING
 		);
 	}
 
 	toPrimitives(): RecurrenceModificationPrimitives {
 		return {
-			id: this.id.value,
+			id: this.id,
 			scheduledItemId: this._scheduledItemId.value,
-			index: this._index.value,
+			index: this._index,
 			originalDate: this._originalDate.value,
 			state: this._state,
 			modifiedDate: this._date?.value,
 			fromSplits: this._fromSplits?.map((split) => split.toPrimitives()),
 			toSplits: this._toSplits?.map((split) => split.toPrimitives()),
-			updatedAt: this.updatedAt.value.toISOString(),
+			updatedAt: this.updatedAt.toISOString(),
 		};
 	}
 
 	static fromPrimitives(
-		accounts: Map<string, Account>,
 		primitives: RecurrenceModificationPrimitives,
 	): RecurrenceModification {
 		return new RecurrenceModification(
 			new Nanoid(primitives.id),
 			new Nanoid(primitives.scheduledItemId),
-			new NumberValueObject(primitives.index),
+			primitives.index,
 			new DateValueObject(new Date(primitives.originalDate)),
 			primitives.state,
 			primitives.modifiedDate
 				? new DateValueObject(new Date(primitives.modifiedDate))
 				: undefined,
-			primitives.fromSplits?.map((split) =>
-				AccountSplit.fromPrimitives(
-					accounts.get(split.accountId)!,
-					split,
-				),
-			),
-			primitives.toSplits?.map((split) =>
-				AccountSplit.fromPrimitives(
-					accounts.get(split.accountId)!,
-					split,
-				),
-			),
+			primitives.fromSplits?.map(AccountSplit.fromPrimitives),
+			primitives.toSplits?.map(AccountSplit.fromPrimitives),
 			new DateValueObject(new Date(primitives.updatedAt)),
 		);
 	}
@@ -228,7 +213,7 @@ export class RecurrenceModification extends Entity<
 			scheduledItemId: "",
 			index: 0,
 			originalDate: new Date(),
-			state: RecurrenceModificationState.PENDING,
+			state: RecurrenceState.PENDING,
 			updatedAt: "",
 		};
 	}
@@ -239,7 +224,7 @@ export type RecurrenceModificationPrimitives = {
 	scheduledItemId: string;
 	index: number;
 	originalDate: Date;
-	state: RecurrenceModificationState;
+	state: RecurrenceState;
 	modifiedDate?: Date;
 	fromSplits?: AccountSplitPrimitives[];
 	toSplits?: AccountSplitPrimitives[];

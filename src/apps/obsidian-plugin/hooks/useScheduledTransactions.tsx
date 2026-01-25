@@ -12,7 +12,7 @@ export const useScheduledTransactions = ({
 
 	const [items, setItems] = useState<ScheduledTransaction[]>([]);
 	const [updateScheduledTransactions, setUpdateScheduledTransactions] =
-		useState(false);
+		useState(true);
 
 	useEffect(() => {
 		if (updateScheduledTransactions) {

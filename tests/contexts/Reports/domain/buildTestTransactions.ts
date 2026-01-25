@@ -7,8 +7,8 @@ import {
 import { Nanoid } from "../../../../src/contexts/Shared/domain";
 import { OperationType } from "../../../../src/contexts/Shared/domain/value-objects/operation.valueobject";
 import {
-	SubCategory,
-	SubCategoryName,
+	Subcategory,
+	SubcategoryName,
 } from "../../../../src/contexts/Subcategories/domain";
 import { AccountSplit } from "../../../../src/contexts/Transactions/domain/account-split.valueobject";
 import { TransactionName } from "../../../../src/contexts/Transactions/domain/item-name.valueobject";
@@ -46,7 +46,7 @@ export const buildTestTransactions = (
 				const fromSplits = account
 					? [
 							new AccountSplit(
-								account,
+								account.nanoid,
 								new TransactionAmount(amount ?? 100),
 							),
 						]
@@ -54,7 +54,7 @@ export const buildTestTransactions = (
 				const toSplits = toAccount
 					? [
 							new AccountSplit(
-								toAccount,
+								toAccount.nanoid,
 								new TransactionAmount(amount ?? 100),
 							),
 						]
@@ -72,18 +72,19 @@ export const buildTestTransactions = (
 					toSplits,
 					new TransactionName("test"),
 					new TransactionOperation(operation ?? "expense"),
-					_category,
-					subcategory
-						? new SubCategory(
+					_category.nanoid,
+					(subcategory
+						? new Subcategory(
 								new Nanoid(subcategory),
-								_category.id,
-								new SubCategoryName(subcategory),
-								DateValueObject.createNowDate(),
+								_category.nanoid,
+								new SubcategoryName(subcategory),
+								new Date(),
 							)
-						: SubCategory.create(
-								_category.id,
-								new SubCategoryName("Default"),
-							),
+						: Subcategory.create(
+								_category.nanoid,
+								new SubcategoryName("Default"),
+							)
+					).nanoid,
 					new TransactionDate(date ?? new Date()),
 					DateValueObject.createNowDate(),
 				);
@@ -94,7 +95,10 @@ export const buildTestTransactions = (
 		const accounts = buildTestAccounts(transactionsConfig);
 		for (let i = 0; i < transactionsConfig; i++) {
 			const fromSplits = [
-				new AccountSplit(accounts[i], new TransactionAmount(100)),
+				new AccountSplit(
+					accounts[i].nanoid,
+					new TransactionAmount(100),
+				),
 			];
 			const toSplits: AccountSplit[] = [];
 			const category = Category.create(new CategoryName("Test"));
@@ -104,8 +108,9 @@ export const buildTestTransactions = (
 				toSplits,
 				new TransactionName("test"),
 				TransactionOperation.expense(),
-				category,
-				SubCategory.create(category.id, new SubCategoryName("Test")),
+				category.nanoid,
+				Subcategory.create(category.nanoid, new SubcategoryName("Test"))
+					.nanoid,
 				new TransactionDate(new Date()),
 				DateValueObject.createNowDate(),
 			);

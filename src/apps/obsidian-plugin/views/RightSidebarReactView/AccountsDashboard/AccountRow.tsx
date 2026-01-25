@@ -39,7 +39,7 @@ export function AccountRow({
 	const handleSave = () => {
 		const amount = Number.parseFloat(editAmount.replaceAll(",", ""));
 		if (!Number.isNaN(amount) && editName.trim()) {
-			onUpdate(account.id, {
+			onUpdate(account.nanoid, {
 				name: editName,
 				subtype: editSubtype,
 				amount,
@@ -203,7 +203,7 @@ export function AccountRow({
 								<Edit2 className="w-3.5 h-3.5" />
 							</button>
 							<button
-								onClick={() => onDelete(account.id)}
+								onClick={() => onDelete(account.nanoid)}
 								className="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors"
 								aria-label="Delete account"
 							>

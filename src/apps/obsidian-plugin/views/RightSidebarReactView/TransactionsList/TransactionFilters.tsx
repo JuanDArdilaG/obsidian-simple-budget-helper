@@ -1,29 +1,33 @@
 import { Filter, X } from "lucide-react";
-import { Account } from "../../../../../contexts/Accounts/domain";
-import { CategoriesWithSubcategories } from "../../../../../contexts/Categories/application/get-all-categories-with-subcategories.usecase";
+import { memo, useContext } from "react";
+import { AccountsMap } from "../../../../../contexts/Accounts/application/get-all-accounts.usecase";
+import { CategoriesWithSubcategoriesMap } from "../../../../../contexts/Categories/application/get-all-categories-with-subcategories.usecase";
+import { CategoriesContext } from "../Contexts";
 
 interface TransactionFiltersProps {
-	accounts: Account[];
+	accountsMap: AccountsMap;
 	selectedAccounts: string[];
 	onAccountChange: (accountId: string) => void;
 	selectedCategory: string;
 	onCategoryChange: (category: string) => void;
 	selectedSubcategory: string;
 	onSubcategoryChange: (subcategory: string) => void;
-	categoriesWithSubcategories: CategoriesWithSubcategories;
 	onClearFilters: () => void;
+	categoriesWithSubcategories: CategoriesWithSubcategoriesMap;
 }
-export function TransactionFilters({
-	accounts,
+
+const TransactionFiltersComponent = ({
+	accountsMap,
 	selectedAccounts,
 	onAccountChange,
 	selectedCategory,
 	onCategoryChange,
 	selectedSubcategory,
 	onSubcategoryChange,
-	categoriesWithSubcategories,
 	onClearFilters,
-}: Readonly<TransactionFiltersProps>) {
+	categoriesWithSubcategories,
+}: Readonly<TransactionFiltersProps>) => {
+	const { categoriesMap } = useContext(CategoriesContext);
 	const hasActiveFilters =
 		selectedAccounts.length > 0 ||
 		selectedCategory !== "" ||
@@ -46,15 +50,13 @@ export function TransactionFilters({
 						<option value="" disabled>
 							Select Account
 						</option>
-						{accounts
+						{Array.from(accountsMap)
+							.map(([_, account]) => account)
 							.toSorted((a, b) =>
 								a.name.value.localeCompare(b.name.value),
 							)
 							.map((account) => (
-								<option
-									key={account.id.value}
-									value={account.id.value}
-								>
+								<option key={account.id} value={account.id}>
 									{account.name}
 								</option>
 							))}
@@ -78,16 +80,14 @@ export function TransactionFilters({
 
 				{/* Selected Accounts Tags */}
 				{selectedAccounts.map((accountId) => {
-					const account = accounts.find(
-						(a) => a.id.value === accountId,
-					);
+					const account = accountsMap.get(accountId);
 					if (!account) return null;
 					return (
 						<span
 							key={accountId}
 							className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
 						>
-							{account.name}
+							{account.name.value}
 							<button
 								onClick={() => onAccountChange(accountId)}
 								className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-600 focus:outline-none"
@@ -107,17 +107,13 @@ export function TransactionFilters({
 						className="appearance-none! bg-gray-50! border! border-gray-300! text-gray-700! py-1.5! pl-3! pr-8! rounded-md! text-sm! focus:outline-none! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 					>
 						<option value="">All Categories</option>
-						{categoriesWithSubcategories
+						{Array.from(categoriesMap)
+							.map(([_, category]) => category)
 							.toSorted((a, b) =>
-								a.category.name.value.localeCompare(
-									b.category.name.value,
-								),
+								a.name.value.localeCompare(b.name.value),
 							)
-							.map(({ category }) => (
-								<option
-									key={category.id.value}
-									value={category.id.value}
-								>
+							.map((category) => (
+								<option key={category.id} value={category.id}>
 									{category.name}
 								</option>
 							))}
@@ -150,18 +146,19 @@ export function TransactionFilters({
 							className="appearance-none! bg-gray-50! border! border-gray-300! text-gray-700! py-1.5! pl-3! pr-8! rounded-md! text-sm! focus:outline-none! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 						>
 							<option value="">All Subcategories</option>
-							{categoriesWithSubcategories
-								.find(
-									({ category }) =>
-										category.id.value === selectedCategory,
-								)
-								?.subcategories.toSorted((a, b) =>
+							{Array.from(
+								categoriesWithSubcategories.get(
+									selectedCategory,
+								)?.subcategories || [],
+							)
+								.map(([_, subcategory]) => subcategory)
+								.toSorted((a, b) =>
 									a.name.value.localeCompare(b.name.value),
 								)
 								.map((subcategory) => (
 									<option
-										key={subcategory.id.value}
-										value={subcategory.id.value}
+										key={subcategory.id}
+										value={subcategory.id}
 									>
 										{subcategory.name}
 									</option>
@@ -197,4 +194,6 @@ export function TransactionFilters({
 			</div>
 		</div>
 	);
-}
+};
+
+export const TransactionFilters = memo(TransactionFiltersComponent);

@@ -8,7 +8,7 @@ import {
 } from "contexts/Accounts/domain";
 import { Category } from "contexts/Categories/domain";
 import { ItemOperation, Nanoid } from "contexts/Shared/domain";
-import { SubCategory } from "contexts/Subcategories/domain";
+import { Subcategory } from "contexts/Subcategories/domain";
 import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -22,12 +22,11 @@ import {
 	ScheduledTransaction,
 	ScheduledTransactionDate,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
-import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
 import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 
 const category = Category.create(new StringValueObject("Salary"));
-const subCategory = SubCategory.create(
-	category.id,
+const subCategory = Subcategory.create(
+	new Nanoid(category.id),
 	new StringValueObject("Monthly Salary"),
 );
 
@@ -102,7 +101,7 @@ describe("ScheduledTransactionsService", () => {
 			const itemID = Nanoid.generate();
 			const account = buildTestAccounts(1)[0];
 			const fromSplits = [
-				new AccountSplit(account, new TransactionAmount(100)),
+				new AccountSplit(account.nanoid, new TransactionAmount(100)),
 			];
 			const toSplits: AccountSplit[] = [];
 
@@ -114,7 +113,8 @@ describe("ScheduledTransactionsService", () => {
 				fromSplits,
 				toSplits,
 				ItemOperation.income(),
-				new TransactionCategory(category, subCategory),
+				new Nanoid(category.id),
+				new Nanoid(subCategory.id),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -131,7 +131,7 @@ describe("ScheduledTransactionsService", () => {
 			const itemID = Nanoid.generate();
 			const account = buildTestAccounts(1)[0];
 			const fromSplits = [
-				new AccountSplit(account, new TransactionAmount(100)),
+				new AccountSplit(account.nanoid, new TransactionAmount(100)),
 			];
 			const toSplits: AccountSplit[] = [];
 
@@ -143,7 +143,8 @@ describe("ScheduledTransactionsService", () => {
 				fromSplits,
 				toSplits,
 				ItemOperation.expense(),
-				new TransactionCategory(category, subCategory),
+				new Nanoid(category.id),
+				new Nanoid(subCategory.id),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -171,10 +172,13 @@ describe("ScheduledTransactionsService", () => {
 			);
 
 			const fromSplits = [
-				new AccountSplit(fromAccount, new TransactionAmount(100)),
+				new AccountSplit(
+					fromAccount.nanoid,
+					new TransactionAmount(100),
+				),
 			];
 			const toSplits = [
-				new AccountSplit(toAccount, new TransactionAmount(100)),
+				new AccountSplit(toAccount.nanoid, new TransactionAmount(100)),
 			];
 
 			const item = ScheduledTransaction.create(
@@ -185,7 +189,8 @@ describe("ScheduledTransactionsService", () => {
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
-				new TransactionCategory(category, subCategory),
+				new Nanoid(category.id),
+				new Nanoid(subCategory.id),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -214,10 +219,13 @@ describe("ScheduledTransactionsService", () => {
 				new Currency("USD"),
 			);
 			const fromSplits = [
-				new AccountSplit(fromAccount, new TransactionAmount(100)),
+				new AccountSplit(
+					fromAccount.nanoid,
+					new TransactionAmount(100),
+				),
 			];
 			const toSplits = [
-				new AccountSplit(toAccount, new TransactionAmount(100)),
+				new AccountSplit(toAccount.nanoid, new TransactionAmount(100)),
 			];
 
 			const item = ScheduledTransaction.create(
@@ -228,7 +236,8 @@ describe("ScheduledTransactionsService", () => {
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
-				new TransactionCategory(category, subCategory),
+				new Nanoid(category.id),
+				new Nanoid(subCategory.id),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -259,10 +268,13 @@ describe("ScheduledTransactionsService", () => {
 			);
 
 			const fromSplits = [
-				new AccountSplit(fromAccount, new TransactionAmount(100)),
+				new AccountSplit(
+					fromAccount.nanoid,
+					new TransactionAmount(100),
+				),
 			];
 			const toSplits = [
-				new AccountSplit(toAccount, new TransactionAmount(100)),
+				new AccountSplit(toAccount.nanoid, new TransactionAmount(100)),
 			];
 
 			const item = ScheduledTransaction.create(
@@ -273,7 +285,8 @@ describe("ScheduledTransactionsService", () => {
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
-				new TransactionCategory(category, subCategory),
+				new Nanoid(category.id),
+				new Nanoid(subCategory.id),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);
@@ -302,10 +315,13 @@ describe("ScheduledTransactionsService", () => {
 				new Currency("USD"),
 			);
 			const fromSplits = [
-				new AccountSplit(fromAccount, new TransactionAmount(100)),
+				new AccountSplit(
+					fromAccount.nanoid,
+					new TransactionAmount(100),
+				),
 			];
 			const toSplits = [
-				new AccountSplit(toAccount, new TransactionAmount(100)),
+				new AccountSplit(toAccount.nanoid, new TransactionAmount(100)),
 			];
 
 			const scheduledTransaction = ScheduledTransaction.create(
@@ -316,7 +332,8 @@ describe("ScheduledTransactionsService", () => {
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
-				new TransactionCategory(category, subCategory),
+				new Nanoid(category.id),
+				new Nanoid(subCategory.id),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(
@@ -338,7 +355,7 @@ describe("ScheduledTransactionsService", () => {
 			const itemID = Nanoid.generate();
 			const account = buildTestAccounts(1)[0];
 			const fromSplits = [
-				new AccountSplit(account, new TransactionAmount(100)),
+				new AccountSplit(account.nanoid, new TransactionAmount(100)),
 			];
 			const toSplits: AccountSplit[] = [];
 
@@ -351,7 +368,8 @@ describe("ScheduledTransactionsService", () => {
 				fromSplits,
 				toSplits,
 				ItemOperation.income(),
-				new TransactionCategory(category, subCategory),
+				new Nanoid(category.id),
+				new Nanoid(subCategory.id),
 			);
 
 			vi.mocked(mockItemsRepository.findById).mockResolvedValue(item);

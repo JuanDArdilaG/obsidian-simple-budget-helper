@@ -1,5 +1,6 @@
 import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
+import { AccountsMap } from "../../Accounts/application/get-all-accounts.usecase";
 import { Account } from "../../Accounts/domain";
 import { Nanoid } from "../../Shared/domain";
 
@@ -103,7 +104,9 @@ export class TransactionsReport {
 		}, {} as GroupByYearMonthDay);
 	}
 
-	withAccumulatedBalance(): TransactionWithAccumulatedBalance[] {
+	withAccumulatedBalance(
+		accountsMap: AccountsMap,
+	): TransactionWithAccumulatedBalance[] {
 		if (!this._transactions.length) return [];
 
 		const sortedReport = this.sortedByDate("asc");
@@ -116,45 +119,59 @@ export class TransactionsReport {
 					transaction,
 					originAccounts: transaction.originAccounts.map(
 						(originAccount) => {
-							if (!accumulated[originAccount.account.id.value])
-								accumulated[originAccount.account.id.value] = 0;
+							const account = accountsMap.get(
+								originAccount.accountId.value,
+							);
+							if (!account) {
+								throw new Error(
+									`Account with ID ${originAccount.accountId.value} not found in accounts map`,
+								);
+							}
+							if (!accumulated[originAccount.accountId.value])
+								accumulated[originAccount.accountId.value] = 0;
 							const prevBalance =
-								accumulated[originAccount.account.id.value];
-							accumulated[originAccount.account.id.value] +=
+								accumulated[originAccount.accountId.value];
+							accumulated[originAccount.accountId.value] +=
 								transaction.getRealAmountForAccount(
-									originAccount.account.id,
+									new Nanoid(originAccount.accountId.value),
 								).value;
 							return {
-								account: originAccount.account,
+								account,
 								balance:
-									accumulated[originAccount.account.id.value],
+									accumulated[originAccount.accountId.value],
 								prevBalance,
 							};
 						},
 					),
 					destinationAccounts: transaction.destinationAccounts.map(
 						(destinationAccount) => {
+							const account = accountsMap.get(
+								destinationAccount.accountId.value,
+							);
+							if (!account) {
+								throw new Error(
+									`Account with ID ${destinationAccount.accountId.value} not found in accounts map`,
+								);
+							}
 							if (
-								!accumulated[
-									destinationAccount.account.id.value
-								]
+								!accumulated[destinationAccount.accountId.value]
 							)
 								accumulated[
-									destinationAccount.account.id.value
+									destinationAccount.accountId.value
 								] = 0;
 							const prevBalance =
-								accumulated[
-									destinationAccount.account.id.value
-								];
-							accumulated[destinationAccount.account.id.value] +=
+								accumulated[destinationAccount.accountId.value];
+							accumulated[destinationAccount.accountId.value] +=
 								transaction.getRealAmountForAccount(
-									destinationAccount.account.id,
+									new Nanoid(
+										destinationAccount.accountId.value,
+									),
 								).value;
 							return {
-								account: destinationAccount.account,
+								account,
 								balance:
 									accumulated[
-										destinationAccount.account.id.value
+										destinationAccount.accountId.value
 									],
 								prevBalance,
 							};

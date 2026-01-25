@@ -1,40 +1,50 @@
 import { motion } from "framer-motion";
 import {
 	ArrowDownLeft,
-	ArrowRight,
 	ArrowUpRight,
 	DollarSign,
 	Pencil,
 	RefreshCw,
 	Trash2,
 } from "lucide-react";
-import { useState } from "react";
-import { Account } from "../../../../../contexts/Accounts/domain";
+import { useContext, useMemo, useState } from "react";
 import { TransactionWithAccumulatedBalance } from "../../../../../contexts/Reports/domain";
-import { Nanoid, OperationType } from "../../../../../contexts/Shared/domain";
 import {
+	AccountSplit,
 	Transaction,
-	TransactionAmount,
 } from "../../../../../contexts/Transactions/domain";
+import { AccountsContext, CategoriesContext } from "../Contexts";
 
-interface TransactionRowProps {
+export interface TransactionRowProps {
 	transactionWithAccumulatedBalance: TransactionWithAccumulatedBalance;
 	onEdit?: (transaction: Transaction) => void;
-	onDelete?: (transactionId: Nanoid) => void;
+	onDelete?: (transaction: Transaction) => void;
 }
 
 export function TransactionRow({
-	transactionWithAccumulatedBalance: {
-		transaction,
-		originAccounts,
-		destinationAccounts,
-	},
+	transactionWithAccumulatedBalance,
 	onEdit,
 	onDelete,
 }: Readonly<TransactionRowProps>) {
+	const { transaction } = useMemo(
+		() => transactionWithAccumulatedBalance,
+		[transactionWithAccumulatedBalance],
+	);
+	const { getAccountByID } = useContext(AccountsContext);
+	const { getCategoryByID, getSubCategoryByID } =
+		useContext(CategoriesContext);
+	const transactionCategory = useMemo(
+		() => getCategoryByID(transaction.category),
+		[getCategoryByID, transaction.category],
+	);
+	const transactionSubcategory = useMemo(
+		() => getSubCategoryByID(transaction.subcategory),
+		[getSubCategoryByID, transaction.subcategory],
+	);
 	const [isHovered, setIsHovered] = useState(false);
-	const getTypeStyles = (type: OperationType) => {
-		switch (type) {
+
+	const getOperationStyles = (operation: string) => {
+		switch (operation) {
 			case "expense":
 				return {
 					bg: "bg-rose-50",
@@ -69,37 +79,36 @@ export function TransactionRow({
 				};
 		}
 	};
-	const styles = getTypeStyles(transaction.operation.value);
+	const styles = useMemo(
+		() =>
+			getOperationStyles(
+				transactionWithAccumulatedBalance.transaction.operation.value,
+			),
+		[transactionWithAccumulatedBalance.transaction.operation.value],
+	);
 
-	const renderAccountDetails = (
-		account: Account,
-		previousBalance: number,
-		newBalance: number,
-		isOrigin: boolean,
-	) => (
+	const renderAccountSplit = (split: AccountSplit, isFrom: boolean) => (
 		<div
-			key={account.id.value}
+			key={split.accountId.value}
 			className="flex items-center justify-between text-xs text-gray-500 mt-1 pl-8"
 		>
-			<span className="font-medium text-gray-600">{account.name}</span>
-			<div className="flex items-center gap-3">
-				<span>{new TransactionAmount(previousBalance).toString()}</span>
-				<ArrowRight className="w-3 h-3 text-gray-400" />
-				<span
-					className={`font-medium ${isOrigin ? "text-rose-600" : "text-emerald-600"}`}
-				>
-					{new TransactionAmount(newBalance).toString()}
-				</span>
-			</div>
+			<span className="font-medium text-gray-600">
+				{getAccountByID(split.accountId)?.name}
+			</span>
+			<span
+				className={`font-medium ${isFrom ? "text-rose-600" : "text-emerald-600"}`}
+			>
+				{isFrom ? "-" : "+"}
+				{split.amount.toString()}
+			</span>
 		</div>
 	);
 	return (
 		<div
 			onMouseEnter={() => setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}
-			className={`p-4 rounded-lg border ${styles.border} ${styles.bg} mb-3 transition-all hover:shadow-sm`}
+			className={`p-4 rounded-lg border ${styles.border} ${styles.bg} mb-3 transition-all hover:shadow-md relative group`}
 		>
-			{" "}
 			{/* Desktop Action Buttons - hover animation */}
 			<motion.div
 				initial={{
@@ -117,8 +126,12 @@ export function TransactionRow({
 			>
 				{onEdit && (
 					<button
-						onClick={() => onEdit(transaction)}
-						className="p-2! bg-white! rounded-lg! border! border-gray-200! text-gray-600! hover:text-indigo-600! hover:border-indigo-300! hover:bg-indigo-50! transition-all! shadow-sm!"
+						onClick={() =>
+							onEdit(
+								transactionWithAccumulatedBalance.transaction,
+							)
+						}
+						className="p-2 bg-white rounded-lg border border-gray-200 text-gray-600 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 transition-all shadow-sm"
 						aria-label="Edit transaction"
 					>
 						<Pencil size={16} />
@@ -126,45 +139,55 @@ export function TransactionRow({
 				)}
 				{onDelete && (
 					<button
-						onClick={() => onDelete(transaction.id)}
-						className="p-2! bg-white! rounded-lg! border! border-gray-200! text-gray-600! hover:text-rose-600! hover:border-rose-300! hover:bg-rose-50! transition-all! shadow-sm!"
+						onClick={() =>
+							onDelete(
+								transactionWithAccumulatedBalance.transaction,
+							)
+						}
+						className="p-2 bg-white rounded-lg border border-gray-200 text-gray-600 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50 transition-all shadow-sm"
 						aria-label="Delete transaction"
 					>
 						<Trash2 size={16} />
 					</button>
 				)}
 			</motion.div>
+
 			{/* Main Row */}
-			<div className="flex items-start justify-between mb-2">
-				<div className="flex items-start gap-3">
+			<div className="flex items-start justify-between mb-2 gap-2">
+				<div className="flex items-start gap-3 flex-1 md:pr-24 min-w-0">
 					<div
-						className={`p-2 rounded-full bg-white ${styles.text} shadow-sm mt-1`}
+						className={`p-2 rounded-full bg-white ${styles.text} shadow-sm mt-1 flex-shrink-0`}
 					>
 						{styles.icon}
 					</div>
-					<div>
-						<div className="flex! items-center! gap-2!">
-							<h3 className="flex! gap-2! font-semibold! text-gray-900!">
-								<span>{transaction.name.value}</span>
-								{transaction.store && (
-									<span className="text-xs font-medium text-gray-500">
-										{transaction.store.value}
-									</span>
-								)}
+					<div className="flex-1 min-w-0">
+						<div className="flex items-center gap-2">
+							<h3 className="font-semibold! text-gray-900! truncate!">
+								{transaction.name}
 							</h3>
 						</div>
-						<div className="text-sm text-gray-600 mt-0.5">
-							{transaction.category.name}
+						<div className="flex items-center gap-2 mt-0.5">
+							<span className="text-sm text-gray-600 truncate">
+								{transactionCategory?.name}
+								{` • ${transactionSubcategory?.name}`}
+							</span>
 						</div>
+						{transaction.store && (
+							<div className="text-xs text-gray-500 mt-1 truncate!">
+								at {transaction.store}
+							</div>
+						)}
 					</div>
 				</div>
-				<div className="text-right">
-					<div className={`font-bold text-lg ${styles.text}`}>
+				<div className="text-right flex-shrink-0 min-w-fit">
+					<div
+						className={`font-bold text-lg ${styles.text} whitespace-nowrap`}
+					>
 						{transaction.operation.isExpense() && "-"}
 						{transaction.operation.isIncome() && "+"}
 						{transaction.originAmount.toString()}
 					</div>
-					<div className="text-xs text-gray-500">
+					<div className="text-xs text-gray-500 whitespace-nowrap">
 						{new Date(transaction.date).toLocaleTimeString([], {
 							hour: "2-digit",
 							minute: "2-digit",
@@ -172,12 +195,13 @@ export function TransactionRow({
 					</div>
 				</div>
 			</div>
+
 			{/* Mobile Action Buttons - below main content */}
 			<div className="flex md:hidden items-center justify-end gap-2 pb-2 border-b border-gray-200/50">
 				{onEdit && (
 					<button
 						onClick={() => onEdit(transaction)}
-						className="flex! items-center! gap-1.5! px-3! py-1.5! bg-white! rounded-lg! border! border-gray-200! text-gray-700! hover:text-indigo-600! hover:border-indigo-300! hover:bg-indigo-50! transition-all! shadow-sm! active:scale-95! text-sm! font-medium!"
+						className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-gray-200 text-gray-700 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 transition-all shadow-sm active:scale-95 text-sm font-medium"
 						aria-label="Edit transaction"
 					>
 						<Pencil size={14} />
@@ -186,8 +210,8 @@ export function TransactionRow({
 				)}
 				{onDelete && (
 					<button
-						onClick={() => onDelete(transaction.id)}
-						className="flex! items-center! gap-1.5! px-3! py-1.5! bg-white! rounded-lg! border! border-gray-200! text-gray-700! hover:text-rose-600! hover:border-rose-300! hover:bg-rose-50! transition-all! shadow-sm! active:scale-95! text-sm! font-medium!"
+						onClick={() => onDelete(transaction)}
+						className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-gray-200 text-gray-700 hover:text-rose-600 hover:border-rose-300 hover:bg-rose-50 transition-all shadow-sm active:scale-95 text-sm font-medium"
 						aria-label="Delete transaction"
 					>
 						<Trash2 size={14} />
@@ -195,45 +219,38 @@ export function TransactionRow({
 					</button>
 				)}
 			</div>
+
 			{/* Account Details */}
 			<div className="border-t border-gray-200/50 pt-2 mt-2 space-y-1">
-				{transaction.operation.isTransfer() && destinationAccounts ? (
+				{transaction.operation.isTransfer() &&
+				transaction.destinationAccounts ? (
 					<>
 						<div className="text-xs font-semibold text-gray-500 uppercase tracking-wider pl-8 mb-1">
 							From
 						</div>
-						{originAccounts.map(
-							({ account, prevBalance, balance }) =>
-								renderAccountDetails(
-									account,
-									prevBalance,
-									balance,
-									true,
-								),
+						{transaction.originAccounts.map((split) =>
+							renderAccountSplit(split, true),
 						)}
 						<div className="text-xs font-semibold text-gray-500 uppercase tracking-wider pl-8 mt-2 mb-1">
 							To
 						</div>
-						{destinationAccounts.map(
-							({ account, prevBalance, balance }) =>
-								renderAccountDetails(
-									account,
-									prevBalance,
-									balance,
-									false,
-								),
+						{transaction.destinationAccounts.map((split) =>
+							renderAccountSplit(split, false),
 						)}
 					</>
 				) : (
 					<>
-						{originAccounts.map(
-							({ account, prevBalance, balance }) =>
-								renderAccountDetails(
-									account,
-									prevBalance,
-									balance,
-									true,
-								),
+						{transaction.originAccounts.map((split) =>
+							renderAccountSplit(
+								split,
+								transaction.operation.isIncome(),
+							),
+						)}
+						{transaction.destinationAccounts?.map((split) =>
+							renderAccountSplit(
+								split,
+								transaction.operation.isIncome(),
+							),
 						)}
 					</>
 				)}

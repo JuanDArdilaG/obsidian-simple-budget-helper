@@ -1,5 +1,4 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
-import { AccountType } from "contexts/Accounts/domain";
 import { ItemOperation } from "contexts/Shared/domain";
 import { describe, expect, it } from "vitest";
 import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
@@ -68,10 +67,8 @@ describe("Item Price Calculations", () => {
 				const item = items[0];
 
 				expect(
-					item.getPricePerMonthWithAccountTypes(
-						new AccountType("asset"),
-						new AccountType("asset"),
-					).value,
+					item.getPricePerMonthWithAccountTypes("asset", "asset")
+						.value,
 				).toBe(100);
 			});
 
@@ -88,10 +85,8 @@ describe("Item Price Calculations", () => {
 				const item = items[0];
 
 				expect(
-					item.getPricePerMonthWithAccountTypes(
-						new AccountType("asset"),
-						new AccountType("asset"),
-					).value,
+					item.getPricePerMonthWithAccountTypes("asset", "asset")
+						.value,
 				).toBe(-100);
 			});
 
@@ -109,10 +104,8 @@ describe("Item Price Calculations", () => {
 
 				// With same account types (both asset), transfer should be neutral
 				expect(
-					item.getPricePerMonthWithAccountTypes(
-						new AccountType("asset"),
-						new AccountType("asset"),
-					).value,
+					item.getPricePerMonthWithAccountTypes("asset", "asset")
+						.value,
 				).toBe(0);
 			});
 		});
@@ -133,10 +126,8 @@ describe("Item Price Calculations", () => {
 
 				// 1 week frequency means 4.35 times per month (30.4167 days / 7 days)
 				expect(
-					item.getPricePerMonthWithAccountTypes(
-						new AccountType("asset"),
-						new AccountType("asset"),
-					).value,
+					item.getPricePerMonthWithAccountTypes("asset", "asset")
+						.value,
 				).toBeCloseTo(435, 0);
 			});
 
@@ -155,10 +146,8 @@ describe("Item Price Calculations", () => {
 
 				// 1 week frequency means 4.35 times per month (30.4167 days / 7 days)
 				expect(
-					item.getPricePerMonthWithAccountTypes(
-						new AccountType("asset"),
-						new AccountType("asset"),
-					).value,
+					item.getPricePerMonthWithAccountTypes("asset", "asset")
+						.value,
 				).toBeCloseTo(-435, 0);
 			});
 
@@ -178,10 +167,8 @@ describe("Item Price Calculations", () => {
 				// With same account types (both asset), transfer should be neutral
 				// 1 week frequency means 4.35 times per month, but result should be 0
 				expect(
-					item.getPricePerMonthWithAccountTypes(
-						new AccountType("asset"),
-						new AccountType("asset"),
-					).value,
+					item.getPricePerMonthWithAccountTypes("asset", "asset")
+						.value,
 				).toBe(0);
 			});
 
@@ -201,10 +188,8 @@ describe("Item Price Calculations", () => {
 				// With same account types (both asset), transfer should be neutral
 				// Monthly frequency means 1 time per month, but result should be 0
 				expect(
-					item.getPricePerMonthWithAccountTypes(
-						new AccountType("asset"),
-						new AccountType("asset"),
-					).value,
+					item.getPricePerMonthWithAccountTypes("asset", "asset")
+						.value,
 				).toBe(0);
 			});
 
@@ -224,10 +209,8 @@ describe("Item Price Calculations", () => {
 				// With same account types (both asset), transfer should be neutral
 				// Daily frequency means 30.42 times per month, but result should be 0
 				expect(
-					item.getPricePerMonthWithAccountTypes(
-						new AccountType("asset"),
-						new AccountType("asset"),
-					).value,
+					item.getPricePerMonthWithAccountTypes("asset", "asset")
+						.value,
 				).toBe(0);
 			});
 		});
@@ -250,10 +233,8 @@ describe("Item Price Calculations", () => {
 
 				// Asset to Liability should be negative (expense)
 				expect(
-					item.getPricePerMonthWithAccountTypes(
-						new AccountType("asset"),
-						new AccountType("liability"),
-					).value,
+					item.getPricePerMonthWithAccountTypes("asset", "liability")
+						.value,
 				).toBe(-100);
 			});
 
@@ -273,10 +254,8 @@ describe("Item Price Calculations", () => {
 				const item = items[0];
 				// Liability to Asset should be positive (income)
 				expect(
-					item.getPricePerMonthWithAccountTypes(
-						new AccountType("liability"),
-						new AccountType("asset"),
-					).value,
+					item.getPricePerMonthWithAccountTypes("liability", "asset")
+						.value,
 				).toBe(100);
 			});
 		});

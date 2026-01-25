@@ -3,7 +3,6 @@ import {
 	Entity,
 	EntityComposedValue,
 	EntityNotFoundError,
-	IDValueObject,
 	InvalidArgumentError,
 	IRepository,
 } from "../domain";
@@ -11,15 +10,14 @@ import { IService } from "../domain/service.interface";
 import { Logger } from "../infrastructure/logger";
 
 export abstract class Service<
-	ID extends IDValueObject,
+	ID extends string | number,
 	T extends Entity<ID, P>,
-	P extends EntityComposedValue
-> implements IService<ID, T, P>
-{
-	#logger = new Logger("ServiceAbstract");
+	P extends EntityComposedValue,
+> implements IService<ID, T, P> {
+	readonly #logger = new Logger("ServiceAbstract");
 	constructor(
 		private readonly _entityName: string,
-		private readonly _repository: IRepository<ID, T, P>
+		private readonly _repository: IRepository<ID, T, P>,
 	) {}
 
 	async exists(id: ID): Promise<boolean> {
@@ -30,8 +28,8 @@ export abstract class Service<
 		if (await this._repository.exists(item.id))
 			throw new InvalidArgumentError(
 				this._entityName,
-				item.id.value,
-				`${this._entityName} with id ${item.id} already exists`
+				item.id,
+				`${this._entityName} with id ${item.id} already exists`,
 			);
 		await this._repository.persist(item);
 	}
@@ -59,7 +57,7 @@ export abstract class Service<
 	async delete(id: ID): Promise<void> {
 		const exists = await this._repository.exists(id);
 		this.#logger.debug(
-			`Deleting ${this._entityName} with id ${id}, exists: ${exists}`
+			`Deleting ${this._entityName} with id ${id}, exists: ${exists}`,
 		);
 		if (!exists) throw new EntityNotFoundError(this._entityName, id);
 		await this._repository.deleteById(id);

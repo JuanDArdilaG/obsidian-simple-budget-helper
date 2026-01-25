@@ -4,78 +4,41 @@ import {
 	EntityComposedValue,
 } from "contexts/Shared/domain/entity.abstract";
 import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
-import { IDValueObject } from "contexts/Shared/domain/value-objects/id/id.valueobject";
 import { IndexableType } from "dexie";
+import { Logger } from "../../logger";
 import { LocalDB } from "./local.db";
 
-export type RepositoryDependencies<
-	Entities extends Entity<IDValueObject, EntityComposedValue>,
-> = Map<string, Map<string, Entities>>;
-
 export abstract class LocalRepository<
-	ID extends IDValueObject,
+	ID extends string | number,
 	T extends Entity<ID, Primitives>,
 	Primitives extends EntityComposedValue,
 > implements IRepository<ID, T, Primitives> {
+	static readonly #logger = new Logger("LocalRepository");
 	protected constructor(
 		protected readonly _db: LocalDB,
 		protected readonly tableName: string,
-		protected readonly _dependencies?: Array<{
-			type: string;
-			getter: () => Promise<
-				Array<Entity<IDValueObject, EntityComposedValue>>
-			>;
-		}>,
 	) {}
 
-	protected abstract mapToDomain(
-		record: Primitives,
-		dependencies?: Map<
-			string,
-			Map<string, Entity<IDValueObject, EntityComposedValue>>
-		>,
-	): T;
+	protected abstract mapToDomain(record: Primitives): T;
 	protected abstract mapToPrimitives(entity: T): Primitives;
 
-	async #resolveDependencies(): Promise<
-		Map<string, Map<string, Entity<IDValueObject, EntityComposedValue>>>
-	> {
-		const resolvedDependencies = new Map<
-			string,
-			Map<string, Entity<IDValueObject, EntityComposedValue>>
-		>();
-		if (this._dependencies) {
-			for (const dependency of this._dependencies) {
-				const entities = await dependency.getter();
-				const entityMap = new Map<
-					string,
-					Entity<IDValueObject, EntityComposedValue>
-				>();
-				entities.forEach((entity) => {
-					entityMap.set(entity.id.value, entity);
-				});
-				resolvedDependencies.set(dependency.type, entityMap);
-			}
-		}
-		return resolvedDependencies;
-	}
-
 	async findById(id: ID): Promise<T | null> {
-		const resolvedDependencies = await this.#resolveDependencies();
-		const record = await this._db.db.table(this.tableName).get(id.value);
-		return record ? this.mapToDomain(record, resolvedDependencies) : null;
+		const record = await this._db.db.table(this.tableName).get(id);
+		return record ? this.mapToDomain(record) : null;
 	}
 
 	async findAll(): Promise<T[]> {
-		const resolvedDependencies = await this.#resolveDependencies();
-		const records = await this._db.db.table(this.tableName).toArray();
-		return records.map((record: Primitives) =>
-			this.mapToDomain(record, resolvedDependencies),
+		LocalRepository.#logger.debug(
+			`Fetching all records from table: ${this.tableName}`,
 		);
+		const records = await this._db.db.table(this.tableName).toArray();
+		LocalRepository.#logger.debug(
+			`Fetched ${records.length} records from table: ${this.tableName}`,
+		);
+		return records.map(this.mapToDomain);
 	}
 
 	async findByCriteria(criteria: Criteria<Primitives>): Promise<T[]> {
-		const resolvedDependencies = await this.#resolveDependencies();
 		let records = await this._db.db.table(this.tableName).toArray();
 
 		// Apply filters
@@ -141,9 +104,7 @@ export abstract class LocalRepository<
 			records = records.slice(0, criteria.limit);
 		}
 
-		return records.map((record: Primitives) =>
-			this.mapToDomain(record, resolvedDependencies),
-		);
+		return records.map((record: Primitives) => this.mapToDomain(record));
 	}
 
 	async persist(entity: T): Promise<void> {
@@ -156,7 +117,7 @@ export abstract class LocalRepository<
 	async deleteById(id: ID): Promise<boolean> {
 		const exists = await this.exists(id);
 		if (exists) {
-			await this._db.db.table(this.tableName).delete(id.value);
+			await this._db.db.table(this.tableName).delete(id);
 			// Sync to local files after data modification
 			await this._db.sync();
 			return true;
@@ -165,7 +126,7 @@ export abstract class LocalRepository<
 	}
 
 	async exists(id: ID): Promise<boolean> {
-		const record = await this._db.db.table(this.tableName).get(id.value);
+		const record = await this._db.db.table(this.tableName).get(id);
 		return !!record;
 	}
 
@@ -221,25 +182,19 @@ export abstract class LocalRepository<
 	}
 
 	async where(field: string, value: unknown): Promise<T[]> {
-		const resolvedDependencies = await this.#resolveDependencies();
 		const records = await this._db.db
 			.table(this.tableName)
 			.where(field)
 			.equals(value as IndexableType)
 			.toArray();
-		return records.map((record: Primitives) =>
-			this.mapToDomain(record, resolvedDependencies),
-		);
+		return records.map((record: Primitives) => this.mapToDomain(record));
 	}
 
 	async filter(predicate: (record: Primitives) => boolean): Promise<T[]> {
-		const resolvedDependencies = await this.#resolveDependencies();
 		const records = await this._db.db
 			.table(this.tableName)
 			.filter(predicate)
 			.toArray();
-		return records.map((record: Primitives) =>
-			this.mapToDomain(record, resolvedDependencies),
-		);
+		return records.map((record: Primitives) => this.mapToDomain(record));
 	}
 }

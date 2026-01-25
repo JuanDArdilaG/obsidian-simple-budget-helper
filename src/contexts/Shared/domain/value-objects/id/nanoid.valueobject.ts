@@ -1,8 +1,8 @@
+import { StringValueObject } from "@juandardilag/value-objects";
 import { InvalidArgumentError } from "contexts/Shared/domain/errors";
-import { IDValueObject } from "contexts/Shared/domain/value-objects/id";
 import { nanoid } from "nanoid";
 
-export class Nanoid extends IDValueObject {
+export class Nanoid extends StringValueObject {
 	constructor(value: string) {
 		super(value, { minLength: 21, maxLength: 21 });
 		this.validate();
@@ -13,7 +13,7 @@ export class Nanoid extends IDValueObject {
 			throw new InvalidArgumentError(
 				"nanoid",
 				this.value,
-				"invalid nanoid"
+				"invalid nanoid",
 			);
 	}
 

@@ -1,10 +1,7 @@
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
-import {
-	LocalRepository,
-	RepositoryDependencies,
-} from "contexts/Shared/infrastructure/persistence/local/local.repository";
-import { Account, IAccountsRepository } from "../../../Accounts/domain";
+import { LocalRepository } from "contexts/Shared/infrastructure/persistence/local/local.repository";
+import { IAccountsRepository } from "../../../Accounts/domain";
 import { Nanoid } from "../../../Shared/domain";
 import { Logger } from "../../../Shared/infrastructure/logger";
 import {
@@ -13,12 +10,9 @@ import {
 	RecurrenceModificationPrimitives,
 } from "../../domain";
 
-export type RecurrenceModificationsDependencies =
-	RepositoryDependencies<Account>;
-
 export class RecurrenceModificationsLocalRepository
 	extends LocalRepository<
-		Nanoid,
+		string,
 		RecurrenceModification,
 		RecurrenceModificationPrimitives
 	>
@@ -31,19 +25,13 @@ export class RecurrenceModificationsLocalRepository
 		protected readonly _db: LocalDB,
 		private readonly _accountsRepository: IAccountsRepository,
 	) {
-		super(_db, Config.scheduledTransactionsModificationsTableName, [
-			{ type: "Account", getter: _accountsRepository.findAll },
-		]);
+		super(_db, Config.scheduledTransactionsModificationsTableName);
 	}
 
 	protected mapToDomain(
 		record: RecurrenceModificationPrimitives,
-		dependencies?: RecurrenceModificationsDependencies,
 	): RecurrenceModification {
-		const accounts = dependencies
-			? dependencies.get("Account")!
-			: new Map<string, Account>();
-		return RecurrenceModification.fromPrimitives(accounts, record);
+		return RecurrenceModification.fromPrimitives(record);
 	}
 
 	protected mapToPrimitives(

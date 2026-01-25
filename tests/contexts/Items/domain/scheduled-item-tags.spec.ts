@@ -1,11 +1,10 @@
 import { StringValueObject } from "@juandardilag/value-objects";
-import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
+import { Category, CategoryName } from "contexts/Categories/domain";
 import { ItemOperation, Nanoid } from "contexts/Shared/domain";
-import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
+import { Subcategory, SubcategoryName } from "contexts/Subcategories/domain";
 import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { describe, expect, it } from "vitest";
-import { Account } from "../../../../src/contexts/Accounts/domain";
 import {
 	ItemRecurrenceFrequency,
 	ItemTag,
@@ -16,15 +15,12 @@ import {
 	ScheduledTransactionDate,
 	ScheduledTransactionPrimitives,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
-import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
 import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 
-const category = new TransactionCategory(
-	Category.create(new CategoryName("Test Category")),
-	SubCategory.create(
-		CategoryID.generate(),
-		new SubCategoryName("Test Subcategory"),
-	),
+const category = Category.create(new CategoryName("Test Category"));
+const subCategory = Subcategory.create(
+	Nanoid.generate(),
+	new SubcategoryName("Test Subcategory"),
 );
 
 describe("ScheduledTransaction Tags", () => {
@@ -33,7 +29,7 @@ describe("ScheduledTransaction Tags", () => {
 		const frequency = new ItemRecurrenceFrequency("monthly");
 		const accounts = buildTestAccounts(1);
 		const fromSplits = [
-			new AccountSplit(accounts[0], new TransactionAmount(100)),
+			new AccountSplit(accounts[0].nanoid, new TransactionAmount(100)),
 		];
 		const toSplits: AccountSplit[] = [];
 
@@ -43,7 +39,8 @@ describe("ScheduledTransaction Tags", () => {
 			fromSplits,
 			toSplits,
 			ItemOperation.income(),
-			category,
+			category.nanoid,
+			subCategory.nanoid,
 		);
 
 		scheduledTransaction.updateTags(tags);
@@ -142,7 +139,8 @@ describe("ScheduledTransaction Tags", () => {
 				operation: {
 					type: "income" as const,
 				},
-				category: category.toPrimitives(),
+				category: category.id,
+				subcategory: subCategory.id,
 				store: "",
 				recurrencePattern: {
 					type: RecurrenceType.ONE_TIME,
@@ -153,10 +151,7 @@ describe("ScheduledTransaction Tags", () => {
 				tags: tags,
 			};
 
-			const item = ScheduledTransaction.fromPrimitives(
-				new Map<string, Account>(),
-				primitives,
-			);
+			const item = ScheduledTransaction.fromPrimitives(primitives);
 
 			expect(item.tags?.count).toBe(3);
 			expect(item.tags?.has(new ItemTag("work"))).toBe(true);
@@ -181,7 +176,8 @@ describe("ScheduledTransaction Tags", () => {
 				operation: {
 					type: "income" as const,
 				},
-				category: category.toPrimitives(),
+				category: category.id,
+				subcategory: subCategory.id,
 				store: "",
 				recurrencePattern: {
 					type: RecurrenceType.ONE_TIME,
@@ -191,10 +187,7 @@ describe("ScheduledTransaction Tags", () => {
 				tags: [],
 			};
 
-			const item = ScheduledTransaction.fromPrimitives(
-				new Map<string, Account>(),
-				primitives,
-			);
+			const item = ScheduledTransaction.fromPrimitives(primitives);
 
 			expect(item.tags?.isEmpty).toBe(true);
 		});

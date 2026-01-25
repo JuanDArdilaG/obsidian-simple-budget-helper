@@ -1,14 +1,16 @@
-import { CategoryID } from "contexts/Categories/domain";
-import { SubCategoryName } from "./subcategory-name.valueobject";
-import { SubCategory, SubcategoryPrimitives } from "./subcategory.entity";
 import { IService } from "contexts/Shared/domain";
-import { SubCategoryID } from "./subcategory-id.valueobject";
+import { Nanoid } from "../../Shared/domain/value-objects/id/nanoid.valueobject";
+import { SubcategoryName } from "./subcategory-name.valueobject";
+import { Subcategory, SubcategoryPrimitives } from "./subcategory.entity";
 
-export interface ISubCategoriesService
-	extends IService<SubCategoryID, SubCategory, SubcategoryPrimitives> {
-	create(subCategory: SubCategory): Promise<void>;
+export interface ISubCategoriesService extends IService<
+	string,
+	Subcategory,
+	SubcategoryPrimitives
+> {
+	create(subCategory: Subcategory): Promise<void>;
 	getByNameWithCreation(
-		categoryID: CategoryID,
-		name: SubCategoryName
-	): Promise<SubCategory>;
+		categoryID: Nanoid,
+		name: SubcategoryName,
+	): Promise<Subcategory>;
 }

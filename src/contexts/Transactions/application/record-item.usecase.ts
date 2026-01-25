@@ -40,8 +40,9 @@ export class RecordItemUseCase implements CommandUseCase<RecordScheduledItemUseC
 			account,
 			toAccount,
 		});
-		const item = await this._scheduledTransactionsService.getByID(id);
-		if (!item) throw new EntityNotFoundError("ScheduledTransaction", id);
+		const item = await this._scheduledTransactionsService.getByID(id.value);
+		if (!item)
+			throw new EntityNotFoundError("ScheduledTransaction", id.value);
 
 		const transaction = Transaction.fromScheduledTransaction(
 			item,
@@ -58,10 +59,10 @@ export class RecordItemUseCase implements CommandUseCase<RecordScheduledItemUseC
 			let fromSplits = transaction.originAccounts;
 			let toSplits = transaction.destinationAccounts;
 			if (account && amount) {
-				fromSplits = [new AccountSplit(account, amount)];
+				fromSplits = [new AccountSplit(account.nanoid, amount)];
 			}
 			if (toAccount && amount) {
-				toSplits = [new AccountSplit(toAccount, amount)];
+				toSplits = [new AccountSplit(toAccount.nanoid, amount)];
 			}
 			transaction.setOriginAccounts(fromSplits);
 			transaction.setDestinationAccounts(toSplits);

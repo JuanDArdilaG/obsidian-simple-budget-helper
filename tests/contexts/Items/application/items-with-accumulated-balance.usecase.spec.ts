@@ -1,5 +1,6 @@
 import { DateValueObject } from "@juandardilag/value-objects";
 import { describe, expect, it, vi } from "vitest";
+import { GetAllAccountsUseCase } from "../../../../src/contexts/Accounts/application/get-all-accounts.usecase";
 import { GetScheduledTransactionsUntilDateUseCase } from "../../../../src/contexts/ScheduledTransactions/application/get-items-until-date.usecase";
 import { ScheduledTransactionsWithAccumulatedBalanceUseCase } from "../../../../src/contexts/ScheduledTransactions/application/items-with-accumulated-balance.usecase";
 import { IRecurrenceModificationsService } from "../../../../src/contexts/ScheduledTransactions/domain";
@@ -47,8 +48,12 @@ describe("execute", () => {
 				update: vi.fn(),
 			};
 
-		const useCase = new ScheduledTransactionsWithAccumulatedBalanceUseCase(
+		const getAllAccountsUseCase = new GetAllAccountsUseCase(
 			accountsService,
+		);
+
+		const useCase = new ScheduledTransactionsWithAccumulatedBalanceUseCase(
+			getAllAccountsUseCase,
 			new GetScheduledTransactionsUntilDateUseCase(
 				scheduledTransactionsService,
 				recurrenceModificationsService,

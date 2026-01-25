@@ -98,7 +98,7 @@ describe("AccountsIntegrityService", () => {
 			expect(result.accountId).toBe(testAccountId);
 			expect(result.hasIntegrity).toBe(true);
 			expect(mockAccountsRepository.findById).toHaveBeenCalledWith(
-				testAccountId,
+				testAccountId.value,
 			);
 			expect(
 				mockTransactionsRepository.findByAccountId,
@@ -173,10 +173,10 @@ describe("AccountsIntegrityService", () => {
 				.mockResolvedValueOnce(accounts[1]);
 			mockTransactionsRepository.findByAccountId
 				.mockResolvedValueOnce([
-					createMockTransaction(accounts[0].id, 100),
+					createMockTransaction(accounts[0].nanoid, 100),
 				])
 				.mockResolvedValueOnce([
-					createMockTransaction(accounts[1].id, 200),
+					createMockTransaction(accounts[1].nanoid, 200),
 				]);
 
 			// Act
@@ -202,7 +202,7 @@ describe("AccountsIntegrityService", () => {
 			mockTransactionsRepository.findByAccountId
 				.mockRejectedValueOnce(new Error("Database error"))
 				.mockResolvedValueOnce([
-					createMockTransaction(accounts[1].id, 200),
+					createMockTransaction(accounts[1].nanoid, 200),
 				]);
 
 			// Act

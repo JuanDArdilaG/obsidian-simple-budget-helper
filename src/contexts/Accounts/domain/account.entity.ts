@@ -32,7 +32,7 @@ export enum AccountLiabilitySubtype {
 
 export type AccountSubtype = AccountAssetSubtype | AccountLiabilitySubtype;
 
-export class Account extends Entity<Nanoid, AccountPrimitives> {
+export class Account extends Entity<string, AccountPrimitives> {
 	constructor(
 		id: Nanoid,
 		private readonly _type: AccountType,
@@ -43,7 +43,7 @@ export class Account extends Entity<Nanoid, AccountPrimitives> {
 		updatedAt: DateValueObject,
 		private _exchangeRate?: ExchangeRate,
 	) {
-		super(id, updatedAt);
+		super(id.value, updatedAt);
 	}
 
 	static fromPrimitives({
@@ -102,6 +102,10 @@ export class Account extends Entity<Nanoid, AccountPrimitives> {
 			AccountBalance.zero(),
 			DateValueObject.createNowDate(),
 		);
+	}
+
+	get nanoid(): Nanoid {
+		return new Nanoid(this._id);
 	}
 
 	get type(): AccountType {
@@ -167,14 +171,14 @@ export class Account extends Entity<Nanoid, AccountPrimitives> {
 
 	adjustFromTransaction(transaction: Transaction) {
 		logger.debug("adjustFromTransaction", {
-			id: this._id.value,
+			id: this._id,
 			type: this._type.value,
 			transaction: transaction.toPrimitives(),
 			balance: this._balance.value,
 		});
 
 		// Get the base amount from the transaction
-		const baseAmount = transaction.getRealAmountForAccount(this._id);
+		const baseAmount = transaction.getRealAmountForAccount(this.nanoid);
 
 		// For liability accounts, we need to invert the sign
 		// because liability accounts have opposite accounting rules
@@ -192,15 +196,15 @@ export class Account extends Entity<Nanoid, AccountPrimitives> {
 	) {
 		const prevAmount = this._type.isLiability()
 			? prevTransaction
-					.getRealAmountForAccount(this.id)
+					.getRealAmountForAccount(this.nanoid)
 					.times(new NumberValueObject(-1))
-			: prevTransaction.getRealAmountForAccount(this.id);
+			: prevTransaction.getRealAmountForAccount(this.nanoid);
 
 		const newAmount = this._type.isLiability()
 			? transaction
-					.getRealAmountForAccount(this.id)
+					.getRealAmountForAccount(this.nanoid)
 					.times(new NumberValueObject(-1))
-			: transaction.getRealAmountForAccount(this.id);
+			: transaction.getRealAmountForAccount(this.nanoid);
 
 		if (prevAmount.equalTo(newAmount)) return;
 
@@ -211,9 +215,9 @@ export class Account extends Entity<Nanoid, AccountPrimitives> {
 	adjustOnTransactionDeletion(transaction: Transaction) {
 		const amount = this._type.isLiability()
 			? transaction
-					.getRealAmountForAccount(this.id)
+					.getRealAmountForAccount(this.nanoid)
 					.times(new NumberValueObject(-1))
-			: transaction.getRealAmountForAccount(this.id);
+			: transaction.getRealAmountForAccount(this.nanoid);
 
 		this._balance = this._balance.subtract(amount);
 		this.updateTimestamp();
@@ -221,7 +225,7 @@ export class Account extends Entity<Nanoid, AccountPrimitives> {
 
 	toPrimitives(): AccountPrimitives {
 		return {
-			id: this._id.value,
+			id: this._id,
 			type: this._type.value,
 			subtype: this.subtype,
 			name: this._name.value,

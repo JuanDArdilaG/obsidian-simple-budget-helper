@@ -1,34 +1,51 @@
-import { Category, ICategoriesRepository } from "contexts/Categories/domain";
+import { Category } from "contexts/Categories/domain";
 import { QueryUseCase } from "contexts/Shared/domain";
 import {
-	ISubCategoriesRepository,
-	SubCategory,
-} from "contexts/Subcategories/domain";
+	GetAllSubcategoriesUseCase,
+	SubcategoriesMap,
+} from "../../Subcategories/application/get-all-subcategories.usecase";
+import { GetAllCategoriesUseCase } from "./get-all-categories.usecase";
 
-export type CategoriesWithSubcategories = {
-	category: Category;
-	subcategories: SubCategory[];
-}[];
+export type CategoriesWithSubcategoriesMap = Map<
+	string,
+	{
+		category: Category;
+		subcategories: SubcategoriesMap;
+	}
+>;
 
 export class GetAllCategoriesWithSubCategoriesUseCase implements QueryUseCase<
 	void,
-	CategoriesWithSubcategories
+	CategoriesWithSubcategoriesMap
 > {
 	constructor(
-		private readonly _categoriesRepository: ICategoriesRepository,
-		private readonly _subCategoriesRepository: ISubCategoriesRepository,
+		private readonly getAllCategoriesUseCase: GetAllCategoriesUseCase,
+		private readonly getAllSubCategoriesUseCase: GetAllSubcategoriesUseCase,
 	) {}
 
-	async execute(): Promise<CategoriesWithSubcategories> {
-		const categories = await this._categoriesRepository.findAll();
-		return Promise.all(
-			categories.map(async (category) => ({
+	async execute(): Promise<CategoriesWithSubcategoriesMap> {
+		const categoriesMap = await this.getAllCategoriesUseCase.execute();
+		const subcategoriesMap =
+			await this.getAllSubCategoriesUseCase.execute();
+
+		const categoriesWithSubcategories: CategoriesWithSubcategoriesMap =
+			new Map();
+
+		categoriesMap.forEach((category, categoryId) => {
+			const subcategoriesForCategory: SubcategoriesMap = new Map();
+
+			subcategoriesMap.forEach((subcategory, subcategoryId) => {
+				if (subcategory.categoryId.value === categoryId) {
+					subcategoriesForCategory.set(subcategoryId, subcategory);
+				}
+			});
+
+			categoriesWithSubcategories.set(categoryId, {
 				category,
-				subcategories:
-					await this._subCategoriesRepository.findAllByCategory(
-						category.id,
-					),
-			})),
-		);
+				subcategories: subcategoriesForCategory,
+			});
+		});
+
+		return categoriesWithSubcategories;
 	}
 }

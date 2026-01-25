@@ -1,7 +1,6 @@
 import { StringValueObject } from "@juandardilag/value-objects";
 import { useTransactions } from "apps/obsidian-plugin/hooks";
 import { AwilixContainer } from "awilix";
-import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
 import { TransactionsReport } from "contexts/Reports/domain";
 import { DeleteTransactionUseCase } from "contexts/Transactions/application/delete-transaction.usecase";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
@@ -11,6 +10,9 @@ import { RecordTransactionUseCase } from "contexts/Transactions/application/reco
 import { UpdateTransactionUseCase } from "contexts/Transactions/application/update-transaction.usecase";
 import { Transaction } from "contexts/Transactions/domain";
 import { createContext, useMemo } from "react";
+import { GetTransactionsByCategoryUseCase } from "../../../../../contexts/Transactions/application/get-transactions-by-category.usecase";
+import { GetTransactionsBySubcategoryUseCase } from "../../../../../contexts/Transactions/application/get-transactions-by-subcategory.usecase";
+import { GetTransactionsWithPagination } from "../../../../../contexts/Transactions/application/get-transactions-with-pagination.usecase";
 
 export type TransactionsContextType = {
 	useCases: {
@@ -18,9 +20,11 @@ export type TransactionsContextType = {
 		deleteTransaction: DeleteTransactionUseCase;
 		updateTransaction: UpdateTransactionUseCase;
 		getAllTransactions: GetAllTransactionsUseCase;
+		getTransactionsWithPagination: GetTransactionsWithPagination;
+		getTransactionsByCategory: GetTransactionsByCategoryUseCase;
+		getTransactionsBySubcategory: GetTransactionsBySubcategoryUseCase;
 		getAllUniqueTransactionsByNameUseCase: GetAllUniqueTransactionsByNameUseCase;
 		getAllUniqueItemStores: GetAllUniqueItemStoresUseCase;
-		groupByCategoryWithAccumulatedBalance: GroupByCategoryWithAccumulatedBalanceUseCase;
 	};
 	isLoading: boolean;
 	transactions: Transaction[];
@@ -39,10 +43,11 @@ export const TransactionsContext = createContext<TransactionsContextType>({
 		getAllUniqueTransactionsByNameUseCase:
 			{} as GetAllUniqueTransactionsByNameUseCase,
 		getAllUniqueItemStores: {} as GetAllUniqueItemStoresUseCase,
-		groupByCategoryWithAccumulatedBalance:
-			{} as GroupByCategoryWithAccumulatedBalanceUseCase,
+		getTransactionsWithPagination: {} as GetTransactionsWithPagination,
+		getTransactionsByCategory: {} as GetTransactionsByCategoryUseCase,
+		getTransactionsBySubcategory: {} as GetTransactionsBySubcategoryUseCase,
 	},
-	transactions: [],
+	transactions: [] as Transaction[],
 	updateTransactions: () => {},
 	transactionsReport: {} as TransactionsReport,
 	isLoading: false,
@@ -87,6 +92,11 @@ export const getTransactionsContextValues = (
 		[transactions],
 	);
 
+	console.log("[TransactionsContext] Context value created", {
+		transactionCount: transactions.length,
+		isLoading,
+	});
+
 	return {
 		useCases: {
 			recordTransaction,
@@ -95,9 +105,18 @@ export const getTransactionsContextValues = (
 			getAllTransactions,
 			getAllUniqueTransactionsByNameUseCase,
 			getAllUniqueItemStores,
-			groupByCategoryWithAccumulatedBalance: container.resolve(
-				"groupByCategoryWithAccumulatedBalanceUseCase",
-			),
+			getTransactionsWithPagination:
+				container.resolve<GetTransactionsWithPagination>(
+					"getTransactionsWithPagination",
+				),
+			getTransactionsBySubcategory:
+				container.resolve<GetTransactionsBySubcategoryUseCase>(
+					"getTransactionsBySubcategoryUseCase",
+				),
+			getTransactionsByCategory:
+				container.resolve<GetTransactionsByCategoryUseCase>(
+					"getTransactionsByCategoryUseCase",
+				),
 		},
 		isLoading,
 		transactions,

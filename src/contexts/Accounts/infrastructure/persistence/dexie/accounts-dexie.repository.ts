@@ -7,10 +7,9 @@ import {
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.db";
 import { DexieRepository } from "contexts/Shared/infrastructure/persistence/dexie/dexie.repository";
-import { Nanoid } from "../../../../Shared/domain";
 
 export class AccountsDexieRepository
-	extends DexieRepository<Account, Nanoid, AccountPrimitives>
+	extends DexieRepository<Account, string, AccountPrimitives>
 	implements IAccountsRepository
 {
 	constructor(protected readonly _db: DexieDB) {

@@ -1,21 +1,20 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
-import { Account } from "../../Accounts/domain";
+import { Nanoid } from "../../Shared/domain";
 import { TransactionAmount } from "./transaction-amount.valueobject";
 
 export interface AccountSplitPrimitives {
-	[key: string]: string | number;
 	accountId: string;
 	amount: number;
 }
 
 export class AccountSplit {
 	constructor(
-		private readonly _account: Account,
+		private readonly _accountId: Nanoid,
 		private readonly _amount: TransactionAmount,
 	) {}
 
-	get account(): Account {
-		return this._account;
+	get accountId(): Nanoid {
+		return this._accountId;
 	}
 
 	get amount(): TransactionAmount {
@@ -24,28 +23,25 @@ export class AccountSplit {
 
 	equalTo(other: AccountSplit): boolean {
 		return (
-			this.account.id.equalTo(other.account.id) &&
+			this.accountId.value === other.accountId.value &&
 			this.amount.equalTo(other.amount)
 		);
 	}
 
 	toString(): string {
-		return `${this.account.name.value} - ${this.amount.toString()}`;
+		return `${this.accountId.value} - ${this.amount.toString()}`;
 	}
 
 	toPrimitives(): AccountSplitPrimitives {
 		return {
-			accountId: this.account.id.value,
+			accountId: this.accountId.value,
 			amount: this.amount.value,
 		};
 	}
 
-	static fromPrimitives(
-		account: Account,
-		primitives: AccountSplitPrimitives,
-	): AccountSplit {
+	static fromPrimitives(primitives: AccountSplitPrimitives): AccountSplit {
 		return new AccountSplit(
-			account,
+			new Nanoid(primitives.accountId),
 			new TransactionAmount(primitives.amount),
 		);
 	}

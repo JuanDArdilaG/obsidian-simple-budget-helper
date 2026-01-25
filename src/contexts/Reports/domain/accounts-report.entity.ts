@@ -35,7 +35,7 @@ export class AccountsReport {
 		date: Date,
 	): number {
 		const filteredTransactions = transactions.filterUntilDate(date);
-		const assetsAccountsIds = this.getAssets().map((acc) => acc.id);
+		const assetsAccountsIds = this.getAssets().map((acc) => acc.nanoid);
 
 		const totalAssets = filteredTransactions.transactions.reduce(
 			(total, transaction) => {
@@ -61,7 +61,7 @@ export class AccountsReport {
 	): number {
 		const filteredTransactions = transactions.filterUntilDate(date);
 		const liabilitiesAccountsIds = this.getLiabilities().map(
-			(acc) => acc.id,
+			(acc) => acc.nanoid,
 		);
 
 		const totalLiabilities = filteredTransactions.transactions.reduce(

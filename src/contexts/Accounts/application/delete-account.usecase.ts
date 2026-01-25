@@ -5,6 +5,6 @@ export class DeleteAccountUseCase {
 	constructor(private readonly _accountsService: IAccountsService) {}
 
 	async execute(accountId: Nanoid): Promise<void> {
-		await this._accountsService.delete(accountId);
+		await this._accountsService.delete(accountId.value);
 	}
 }

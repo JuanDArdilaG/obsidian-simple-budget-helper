@@ -3,9 +3,7 @@ import {
 	PriceValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
-import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
-import { ItemOperation } from "contexts/Shared/domain";
-import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
+import { ItemOperation, Nanoid } from "contexts/Shared/domain";
 import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { Account } from "../../../../src/contexts/Accounts/domain";
@@ -15,7 +13,6 @@ import {
 	ScheduledTransaction,
 	ScheduledTransactionDate,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
-import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
 import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 
 type ItemConfig = {
@@ -33,7 +30,12 @@ type ItemConfig = {
 // Helper to create splits for test items
 function makeSplits(account?: Account, amount: number = 100): AccountSplit[] {
 	return account
-		? [new AccountSplit(account, new TransactionAmount(Math.abs(amount)))]
+		? [
+				new AccountSplit(
+					account.nanoid,
+					new TransactionAmount(Math.abs(amount)),
+				),
+			]
 		: [];
 }
 
@@ -54,13 +56,8 @@ export const buildTestItems = (
 				fromSplits,
 				toSplits,
 				ItemOperation.expense(),
-				new TransactionCategory(
-					Category.create(new CategoryName("Test")),
-					SubCategory.create(
-						CategoryID.generate(),
-						new SubCategoryName("Test"),
-					),
-				),
+				Nanoid.generate(),
+				Nanoid.generate(),
 			);
 			items.push(item);
 		}
@@ -96,13 +93,8 @@ export const buildTestItems = (
 					fromSplits,
 					finalToSplits,
 					operation ?? ItemOperation.expense(),
-					new TransactionCategory(
-						Category.create(new CategoryName("Test")),
-						SubCategory.create(
-							CategoryID.generate(),
-							new SubCategoryName("Test"),
-						),
-					),
+					Nanoid.generate(),
+					Nanoid.generate(),
 				);
 				if (recurrence?.frequency) {
 					item = ScheduledTransaction.create(
@@ -114,13 +106,8 @@ export const buildTestItems = (
 						fromSplits,
 						finalToSplits,
 						operation ?? ItemOperation.expense(),
-						new TransactionCategory(
-							Category.create(new CategoryName("Test")),
-							SubCategory.create(
-								CategoryID.generate(),
-								new SubCategoryName("Test"),
-							),
-						),
+						Nanoid.generate(),
+						Nanoid.generate(),
 					);
 					if (recurrence.untilDate) {
 						const adjustedUntilDate =
@@ -145,13 +132,8 @@ export const buildTestItems = (
 							fromSplits,
 							finalToSplits,
 							operation ?? ItemOperation.expense(),
-							new TransactionCategory(
-								Category.create(new CategoryName("Test")),
-								SubCategory.create(
-									CategoryID.generate(),
-									new SubCategoryName("Test"),
-								),
-							),
+							Nanoid.generate(),
+							Nanoid.generate(),
 						);
 					}
 				}

@@ -1,6 +1,5 @@
 import { AccountBalance } from "contexts/Accounts/domain";
-import { Category, CategoryID } from "contexts/Categories/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
+import { Category } from "contexts/Categories/domain";
 import { Nanoid } from "../../Shared/domain";
 import { Transaction } from "./transaction.entity";
 
@@ -13,29 +12,27 @@ export interface ITransactionsService {
 
 	getAll(): Promise<Transaction[]>;
 	getByID(id: Nanoid): Promise<Transaction>;
-	getByCategory(category: CategoryID): Promise<Transaction[]>;
-	getBySubCategory(subCategory: SubCategoryID): Promise<Transaction[]>;
-	hasTransactionsByCategory(category: CategoryID): Promise<boolean>;
-	hasTransactionsBySubCategory(subCategory: SubCategoryID): Promise<boolean>;
+	getByCategory(category: Nanoid): Promise<Transaction[]>;
+	getBySubCategory(subCategory: Nanoid): Promise<Transaction[]>;
+	hasTransactionsByCategory(category: Nanoid): Promise<boolean>;
+	hasTransactionsBySubCategory(subCategory: Nanoid): Promise<boolean>;
 	reassignTransactionsCategory(
 		oldCategory: Category,
 		newCategory: Category,
 	): Promise<void>;
 	reassignTransactionsSubCategory(
-		oldSubCategory: SubCategoryID,
-		newSubCategory: SubCategoryID,
+		oldSubCategory: Nanoid,
+		newSubCategory: Nanoid,
 	): Promise<void>;
 	reassignTransactionsCategoryAndSubcategory(
-		oldCategory: CategoryID,
-		newCategory: CategoryID,
-		newSubCategory: SubCategoryID,
+		oldCategory: Nanoid,
+		newCategory: Nanoid,
+		newSubCategory: Nanoid,
 	): Promise<void>;
 	update(transaction: Transaction): Promise<void>;
 	delete(id: Nanoid): Promise<void>;
-	getTransactionsByCategory(
-		category: CategoryID,
-	): Promise<Array<Transaction>>;
+	getTransactionsByCategory(category: Nanoid): Promise<Array<Transaction>>;
 	getTransactionsBySubCategory(
-		subCategory: SubCategoryID,
+		subCategory: Nanoid,
 	): Promise<Array<Transaction>>;
 }

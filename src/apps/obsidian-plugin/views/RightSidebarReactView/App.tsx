@@ -1,10 +1,7 @@
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
-import {
-	AccountsDashboard,
-	ScheduledItemsSection,
-} from "apps/obsidian-plugin/views";
 import { AppProviders } from "apps/obsidian-plugin/views/RightSidebarReactView/Contexts";
 import {
+	BarChart3,
 	CalendarClock,
 	LayoutDashboard,
 	LayoutList,
@@ -13,7 +10,10 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { LocalPersistenceSettings } from "../../components/LocalPersistenceSettings";
-import { CategoriesList } from "./AccountingSection/CategoriesList";
+import { AccountsDashboard } from "./AccountsDashboard/AccountsDashboard";
+import { CategoriesPage } from "./CategoriesPage/CategoriesPage";
+import { ReportsPage } from "./Reports/ReportsPage";
+import { ScheduledTransactionsList } from "./ScheduledTransactions/AllList/ScheduledTransactionsList";
 import { TransactionsList } from "./TransactionsList/TransactionsList";
 
 export type MainSections =
@@ -21,6 +21,7 @@ export type MainSections =
 	| "scheduled"
 	| "accounts"
 	| "categories"
+	| "reports"
 	| "settings";
 
 export const AppView = ({ plugin }: { plugin: SimpleBudgetHelperPlugin }) => {
@@ -42,9 +43,11 @@ export const AppView = ({ plugin }: { plugin: SimpleBudgetHelperPlugin }) => {
 			case "accounts":
 				return <AccountsDashboard />;
 			case "scheduled":
-				return <ScheduledItemsSection />;
+				return <ScheduledTransactionsList />;
 			case "categories":
-				return <CategoriesList />;
+				return <CategoriesPage />;
+			case "reports":
+				return <ReportsPage />;
 			case "settings":
 				return <LocalPersistenceSettings />;
 			default:
@@ -121,7 +124,7 @@ function Navigation({
 					</div>
 
 					{/* Navigation Buttons */}
-					<div className="flex items-center gap-1 overflow-x-auto scrollbar-hide min-w-0 flex-1">
+					<div className="flex! items-center! gap-1! overflow-x-auto! scrollbar-hide! min-w-0! flex-1! [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 						<NavButton
 							page="transactions"
 							currentPage={currentPage}
@@ -151,6 +154,14 @@ function Navigation({
 							currentPage={currentPage}
 							onClick={onPageChange}
 							icon={LayoutList}
+						>
+							Categories
+						</NavButton>
+						<NavButton
+							page="reports"
+							currentPage={currentPage}
+							onClick={onPageChange}
+							icon={BarChart3}
 						>
 							Reports
 						</NavButton>

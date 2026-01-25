@@ -1,4 +1,3 @@
-import { NumberValueObject } from "@juandardilag/value-objects";
 import { Service } from "contexts/Shared/application/service.abstract";
 import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { Nanoid } from "../../Shared/domain";
@@ -9,13 +8,13 @@ import {
 	IScheduledTransactionsRepository,
 	RecurrenceModification,
 	RecurrenceModificationPrimitives,
-	RecurrenceModificationState,
+	RecurrenceState,
 	ScheduledTransactionDate,
 } from "../domain";
 
 export class RecurrenceModificationsService
 	extends Service<
-		Nanoid,
+		string,
 		RecurrenceModification,
 		RecurrenceModificationPrimitives
 	>
@@ -49,7 +48,7 @@ export class RecurrenceModificationsService
 
 	async modifyOccurrence(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: NumberValueObject,
+		occurrenceIndex: number,
 		modifications: {
 			date?: ScheduledTransactionDate;
 			fromSplits?: AccountSplit[];
@@ -60,12 +59,12 @@ export class RecurrenceModificationsService
 		const existingModification =
 			await this.getByScheduledItemIdAndOccurrenceIndex(
 				scheduledItemId,
-				occurrenceIndex.value,
+				occurrenceIndex,
 			);
 
 		this.#logger.debug("modifyOccurrence", {
 			scheduledItemId,
-			occurrenceIndex: occurrenceIndex.value,
+			occurrenceIndex: occurrenceIndex,
 			modifications,
 			existingModification,
 		});
@@ -90,7 +89,7 @@ export class RecurrenceModificationsService
 			// Create new modification
 			const scheduledTransaction =
 				await this._scheduledTransactionsRepository.findById(
-					scheduledItemId,
+					scheduledItemId.value,
 				);
 			const modificationDate =
 				scheduledTransaction?.getOccurrenceDate(occurrenceIndex);
@@ -103,7 +102,7 @@ export class RecurrenceModificationsService
 				scheduledItemId,
 				occurrenceIndex,
 				modificationDate,
-				RecurrenceModificationState.PENDING,
+				RecurrenceState.PENDING,
 				modifications.date,
 				modifications.fromSplits,
 				modifications.toSplits,
@@ -118,17 +117,17 @@ export class RecurrenceModificationsService
 
 	async markOccurrenceAsCompleted(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: NumberValueObject,
+		occurrenceIndex: number,
 	): Promise<RecurrenceModification> {
 		let modification = await this.getByScheduledItemIdAndOccurrenceIndex(
 			scheduledItemId,
-			occurrenceIndex.value,
+			occurrenceIndex,
 		);
 
 		if (!modification) {
 			const scheduledTransaction =
 				await this._scheduledTransactionsRepository.findById(
-					scheduledItemId,
+					scheduledItemId.value,
 				);
 			const modificationDate =
 				scheduledTransaction?.getOccurrenceDate(occurrenceIndex);
@@ -142,7 +141,7 @@ export class RecurrenceModificationsService
 				scheduledItemId,
 				occurrenceIndex,
 				modificationDate,
-				RecurrenceModificationState.COMPLETED,
+				RecurrenceState.COMPLETED,
 			);
 		} else {
 			modification.markAsCompleted();
@@ -154,18 +153,18 @@ export class RecurrenceModificationsService
 
 	async markOccurrenceAsDeleted(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: NumberValueObject,
+		occurrenceIndex: number,
 	): Promise<RecurrenceModification> {
 		let modification = await this.getByScheduledItemIdAndOccurrenceIndex(
 			scheduledItemId,
-			occurrenceIndex.value,
+			occurrenceIndex,
 		);
 
 		if (!modification) {
 			// Create new modification with deleted state
 			const scheduledTransaction =
 				await this._scheduledTransactionsRepository.findById(
-					scheduledItemId,
+					scheduledItemId.value,
 				);
 			const modificationDate =
 				scheduledTransaction?.getOccurrenceDate(occurrenceIndex);
@@ -178,7 +177,7 @@ export class RecurrenceModificationsService
 				scheduledItemId,
 				occurrenceIndex,
 				modificationDate,
-				RecurrenceModificationState.DELETED,
+				RecurrenceState.DELETED,
 			);
 		} else {
 			modification.markAsDeleted();
@@ -202,7 +201,7 @@ export class RecurrenceModificationsService
 			// we can delete it entirely (since pending is the default)
 			if (
 				!modification.hasModifications() ||
-				(modification.state !== RecurrenceModificationState.PENDING &&
+				(modification.state !== RecurrenceState.PENDING &&
 					!modification.date &&
 					!modification.fromSplits &&
 					!modification.toSplits)
@@ -272,16 +271,16 @@ export class RecurrenceModificationsService
 
 		for (const modification of modifications) {
 			switch (modification.state) {
-				case RecurrenceModificationState.PENDING:
+				case RecurrenceState.PENDING:
 					stats.pending++;
 					break;
-				case RecurrenceModificationState.COMPLETED:
+				case RecurrenceState.COMPLETED:
 					stats.completed++;
 					break;
-				case RecurrenceModificationState.SKIPPED:
+				case RecurrenceState.SKIPPED:
 					stats.skipped++;
 					break;
-				case RecurrenceModificationState.DELETED:
+				case RecurrenceState.DELETED:
 					stats.deleted++;
 					break;
 			}

@@ -1,11 +1,8 @@
 import {
 	DateValueObject,
-	NumberValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
-import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
 import { ItemOperation } from "contexts/Shared/domain/Item/item-operation.valueobject";
-import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
 import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { describe, expect, it } from "vitest";
@@ -14,7 +11,7 @@ import {
 	ScheduledTransaction,
 	ScheduledTransactionDate,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
-import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
+import { Nanoid } from "../../../../src/contexts/Shared/domain";
 import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 import { buildTestItems } from "./buildTestItems";
 
@@ -30,9 +27,8 @@ describe("remainingDays", () => {
 		]);
 		const item = items[0];
 
-		const str = item.recurrencePattern.getNthOccurrence(
-			NumberValueObject.zero(),
-		)?.remainingDaysStr;
+		const str =
+			item.recurrencePattern.getNthOccurrence(0)?.remainingDaysStr;
 
 		expect(str).toBe("7 days");
 	});
@@ -47,9 +43,8 @@ describe("remainingDays", () => {
 			},
 		]);
 		const item = items[0];
-		const str = item.recurrencePattern.getNthOccurrence(
-			NumberValueObject.zero(),
-		)?.remainingDaysStr;
+		const str =
+			item.recurrencePattern.getNthOccurrence(0)?.remainingDaysStr;
 
 		expect(str).toBe("-7 days");
 	});
@@ -65,9 +60,8 @@ describe("remainingDays", () => {
 		]);
 		const item = items[0];
 
-		const str = item.recurrencePattern.getNthOccurrence(
-			NumberValueObject.zero(),
-		)?.remainingDaysStr;
+		const str =
+			item.recurrencePattern.getNthOccurrence(0)?.remainingDaysStr;
 
 		expect(str).toBe("1 day");
 	});
@@ -83,9 +77,8 @@ describe("remainingDays", () => {
 		]);
 		const item = items[0];
 
-		const str = item.recurrencePattern.getNthOccurrence(
-			NumberValueObject.zero(),
-		)?.remainingDaysStr;
+		const str =
+			item.recurrencePattern.getNthOccurrence(0)?.remainingDaysStr;
 
 		expect(str).toBe("-1 day");
 	});
@@ -124,7 +117,7 @@ describe("transfer operation validation", () => {
 		const accounts = buildTestAccounts(1);
 		const fromAccount = accounts[0];
 		const fromSplits = [
-			new AccountSplit(fromAccount, new TransactionAmount(100)),
+			new AccountSplit(fromAccount.nanoid, new TransactionAmount(100)),
 		];
 		const toSplits: AccountSplit[] = []; // Empty toSplits for transfer
 
@@ -137,13 +130,8 @@ describe("transfer operation validation", () => {
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
-				new TransactionCategory(
-					Category.create(new CategoryName("Test")),
-					SubCategory.create(
-						CategoryID.generate(),
-						new SubCategoryName("Test Subcategory"),
-					),
-				),
+				Nanoid.generate(),
+				Nanoid.generate(),
 			);
 		}).toThrow("Transfer operations must have a toSplits array");
 	});
@@ -153,10 +141,10 @@ describe("transfer operation validation", () => {
 		const fromAccount = accounts[0];
 		const toAccount = accounts[1];
 		const fromSplits = [
-			new AccountSplit(fromAccount, new TransactionAmount(100)),
+			new AccountSplit(fromAccount.nanoid, new TransactionAmount(100)),
 		];
 		const toSplits = [
-			new AccountSplit(toAccount, new TransactionAmount(100)),
+			new AccountSplit(toAccount.nanoid, new TransactionAmount(100)),
 		];
 
 		expect(() => {
@@ -168,13 +156,8 @@ describe("transfer operation validation", () => {
 				fromSplits,
 				toSplits,
 				ItemOperation.transfer(),
-				new TransactionCategory(
-					Category.create(new CategoryName("Test")),
-					SubCategory.create(
-						CategoryID.generate(),
-						new SubCategoryName("Test Subcategory"),
-					),
-				),
+				Nanoid.generate(),
+				Nanoid.generate(),
 			);
 		}).not.toThrow();
 	});
@@ -183,7 +166,7 @@ describe("transfer operation validation", () => {
 		const accounts = buildTestAccounts(1);
 		const fromAccount = accounts[0];
 		const fromSplits = [
-			new AccountSplit(fromAccount, new TransactionAmount(100)),
+			new AccountSplit(fromAccount.nanoid, new TransactionAmount(100)),
 		];
 		const toSplits: AccountSplit[] = []; // Empty toSplits
 
@@ -193,13 +176,8 @@ describe("transfer operation validation", () => {
 			fromSplits,
 			toSplits,
 			ItemOperation.expense(),
-			new TransactionCategory(
-				Category.create(new CategoryName("Test")),
-				SubCategory.create(
-					CategoryID.generate(),
-					new SubCategoryName("Test Subcategory"),
-				),
-			),
+			Nanoid.generate(),
+			Nanoid.generate(),
 		);
 
 		expect(() => {
@@ -212,10 +190,10 @@ describe("transfer operation validation", () => {
 		const fromAccount = accounts[0];
 		const toAccount = accounts[1];
 		const fromSplits = [
-			new AccountSplit(fromAccount, new TransactionAmount(100)),
+			new AccountSplit(fromAccount.nanoid, new TransactionAmount(100)),
 		];
 		const toSplits = [
-			new AccountSplit(toAccount, new TransactionAmount(100)),
+			new AccountSplit(toAccount.nanoid, new TransactionAmount(100)),
 		];
 
 		const item = ScheduledTransaction.create(
@@ -224,13 +202,8 @@ describe("transfer operation validation", () => {
 			fromSplits,
 			toSplits,
 			ItemOperation.expense(),
-			new TransactionCategory(
-				Category.create(new CategoryName("Test")),
-				SubCategory.create(
-					CategoryID.generate(),
-					new SubCategoryName("Test Subcategory"),
-				),
-			),
+			Nanoid.generate(),
+			Nanoid.generate(),
 		);
 
 		expect(() => {
