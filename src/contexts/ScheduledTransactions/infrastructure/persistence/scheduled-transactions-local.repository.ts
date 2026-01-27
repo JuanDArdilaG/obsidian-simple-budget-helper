@@ -1,8 +1,7 @@
-import { CategoryID } from "contexts/Categories/domain";
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
 import { LocalRepository } from "contexts/Shared/infrastructure/persistence/local/local.repository";
-import { SubCategoryID } from "contexts/Subcategories/domain";
+import { IAccountsRepository } from "../../../Accounts/domain";
 import { Nanoid } from "../../../Shared/domain";
 import {
 	IScheduledTransactionsRepository,
@@ -12,41 +11,40 @@ import {
 
 export class ScheduledTransactionsLocalRepository
 	extends LocalRepository<
-		Nanoid,
+		string,
 		ScheduledTransaction,
 		ScheduledTransactionPrimitives
 	>
 	implements IScheduledTransactionsRepository
 {
-	constructor(protected readonly _db: LocalDB) {
+	constructor(
+		protected readonly _db: LocalDB,
+		private readonly _accountsRepository: IAccountsRepository,
+	) {
 		super(_db, Config.scheduledTransactionsTableName);
 	}
 
 	protected mapToDomain(
-		record: ScheduledTransactionPrimitives
+		record: ScheduledTransactionPrimitives,
 	): ScheduledTransaction {
 		return ScheduledTransaction.fromPrimitives(record);
 	}
 
 	protected mapToPrimitives(
-		entity: ScheduledTransaction
+		entity: ScheduledTransaction,
 	): ScheduledTransactionPrimitives {
 		return entity.toPrimitives();
 	}
 
-	async findByCategory(
-		category: CategoryID
-	): Promise<ScheduledTransaction[]> {
-		return this.filter(
-			(record) => record.category.category.id === category.value
-		);
+	async findByCategory(category: Nanoid): Promise<ScheduledTransaction[]> {
+		return this.filter((record) => record.category === category.value);
 	}
 
 	async findBySubCategory(
-		subCategory: SubCategoryID
+		subCategory: Nanoid,
 	): Promise<ScheduledTransaction[]> {
 		return this.filter(
-			(record) => record.category.subCategory.id === subCategory.value
+			(record) => record.subcategory === subCategory.value,
 		);
 	}
 }

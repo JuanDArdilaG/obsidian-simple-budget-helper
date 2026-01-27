@@ -6,22 +6,22 @@ import { Entity } from "contexts/Shared/domain/entity.abstract";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { Nanoid } from "../../Shared/domain";
 
-export class Store extends Entity<Nanoid, StorePrimitives> {
+export class Store extends Entity<string, StorePrimitives> {
 	readonly _ = new Logger("Store");
 
 	constructor(
 		id: Nanoid,
 		private _name: StringValueObject,
-		updatedAt: DateValueObject
+		updatedAt: DateValueObject,
 	) {
-		super(id, updatedAt);
+		super(id.value, updatedAt);
 	}
 
 	static create(name: StringValueObject): Store {
 		return new Store(
 			Nanoid.generate(),
 			name,
-			DateValueObject.createNowDate()
+			DateValueObject.createNowDate(),
 		);
 	}
 
@@ -34,13 +34,9 @@ export class Store extends Entity<Nanoid, StorePrimitives> {
 		this.updateTimestamp();
 	}
 
-	copy(): Store {
-		return new Store(this._id, this._name, this._updatedAt);
-	}
-
 	toPrimitives(): StorePrimitives {
 		return {
-			id: this._id.value,
+			id: this._id,
 			name: this._name.value,
 			updatedAt: this._updatedAt.toISOString(),
 		};
@@ -50,7 +46,7 @@ export class Store extends Entity<Nanoid, StorePrimitives> {
 		return new Store(
 			new Nanoid(primitives.id),
 			new StringValueObject(primitives.name),
-			new DateValueObject(new Date(primitives.updatedAt))
+			new DateValueObject(new Date(primitives.updatedAt)),
 		);
 	}
 

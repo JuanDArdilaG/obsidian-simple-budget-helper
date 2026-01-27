@@ -21,9 +21,6 @@ import { DeleteCategoryUseCase } from "contexts/Categories/application/delete-ca
 import { GetAllCategoriesWithSubCategoriesUseCase } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 import { GetAllCategoriesUseCase } from "contexts/Categories/application/get-all-categories.usecase";
 import { CategoriesLocalRepository } from "contexts/Categories/infrastructure/persistence/local/categories-local.repository";
-import { GetTotalPerMonthUseCase } from "contexts/Reports/application/get-total-per-month.usecase";
-import { GetTotalUseCase } from "contexts/Reports/application/get-total.usecase";
-import { GroupByCategoryWithAccumulatedBalanceUseCase } from "contexts/Reports/application/group-by-category-with-accumulated-balance.service";
 import { ReportsService } from "contexts/Reports/application/reports.service";
 import { CreateScheduledItemUseCase } from "contexts/ScheduledTransactions/application/create-scheduled-item.usecase";
 import { DeleteItemRecurrenceUseCase } from "contexts/ScheduledTransactions/application/delete-scheduled-transaction-recurrence.usecase";
@@ -47,6 +44,7 @@ import { UpdateTransactionUseCase } from "contexts/Transactions/application/upda
 import { TransactionsLocalRepository } from "contexts/Transactions/infrastructure/persistence/local/transactions-local.repository";
 import { ChangeAccountNameUseCase } from "../../../Accounts/application/change-account-name.usecase";
 import { ChangeAccountSubtypeUseCase } from "../../../Accounts/application/change-account-subtype.usecase";
+import { UpdateCategoryUseCase } from "../../../Categories/application/update-category.usecase";
 import { GetExchangeRateUseCase } from "../../../Currencies/application/get-exchange-rate.usecase";
 import { ErExchangeRateGetter } from "../../../Currencies/infrastructure/er-exchange-rate-getter";
 import { ExchangeRateLocalRepository } from "../../../Currencies/infrastructure/persistence/exchange-rate-local.repository";
@@ -67,6 +65,11 @@ import { RecurrenceModificationsLocalRepository } from "../../../ScheduledTransa
 import { ScheduledTransactionsLocalRepository } from "../../../ScheduledTransactions/infrastructure/persistence/scheduled-transactions-local.repository";
 import { CreateStoreUseCase } from "../../../Stores/application/create-store.usecase";
 import { GetAllStoresUseCase } from "../../../Stores/application/get-all-stores.usecase";
+import { UpdateSubCategoryUseCase } from "../../../Subcategories/application/update-subcategory.usecase";
+import { GetTransactionsByAccountUseCase } from "../../../Transactions/application/get-transactions-by-account.usecase";
+import { GetTransactionsByCategoryUseCase } from "../../../Transactions/application/get-transactions-by-category.usecase";
+import { GetTransactionsBySubcategoryUseCase } from "../../../Transactions/application/get-transactions-by-subcategory.usecase";
+import { GetTransactionsWithPagination } from "../../../Transactions/application/get-transactions-with-pagination.usecase";
 import { Logger } from "../logger";
 
 const container = createContainer({
@@ -78,7 +81,7 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		_logger: asClass(Logger).singleton(),
 	});
 
-	// SCHEDULED TRANSACTIONS
+	//#region SCHEDULED TRANSACTIONS
 	container.register({
 		_storeRepository: asClass(StoresLocalRepository)
 			.singleton()
@@ -139,8 +142,9 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 			NextMonthsExpensesUseCase,
 		).singleton(),
 	});
+	//#endregion SCHEDULED TRANSACTIONS
 
-	// ACCOUNTS
+	//#region ACCOUNTS
 	container.register({
 		_accountsRepository: asClass(AccountsLocalRepository)
 			.singleton()
@@ -169,8 +173,9 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 			ChangeAccountSubtypeUseCase,
 		).singleton(),
 	});
+	//#endregion ACCOUNTS
 
-	// TRANSACTIONS
+	//#region TRANSACTIONS
 	container.register({
 		_transactionsRepository: asClass(TransactionsLocalRepository)
 			.singleton()
@@ -178,6 +183,18 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		_transactionsService: asClass(TransactionsService).singleton(),
 		getAllTransactionsUseCase: asClass(
 			GetAllTransactionsUseCase,
+		).singleton(),
+		getTransactionsWithPagination: asClass(
+			GetTransactionsWithPagination,
+		).singleton(),
+		getTransactionsByCategoryUseCase: asClass(
+			GetTransactionsByCategoryUseCase,
+		).singleton(),
+		getTransactionsBySubcategoryUseCase: asClass(
+			GetTransactionsBySubcategoryUseCase,
+		).singleton(),
+		getTransactionsByAccountUseCase: asClass(
+			GetTransactionsByAccountUseCase,
 		).singleton(),
 		getAllUniqueTransactionsByNameUseCase: asClass(
 			GetAllUniqueTransactionsByNameUseCase,
@@ -194,8 +211,9 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		updateTransactionUseCase: asClass(UpdateTransactionUseCase).singleton(),
 		adjustAccountUseCase: asClass(AdjustAccountUseCase).singleton(),
 	});
+	//#endregion TRANSACTIONS
 
-	// CATEGORIES
+	//#region CATEGORIES
 	container.register({
 		_categoriesRepository: asClass(CategoriesLocalRepository)
 			.singleton()
@@ -217,16 +235,14 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		).singleton(),
 		deleteCategoryUseCase: asClass(DeleteCategoryUseCase).singleton(),
 		deleteSubCategoryUseCase: asClass(DeleteSubCategoryUseCase).singleton(),
+		updateCategoryUseCase: asClass(UpdateCategoryUseCase).singleton(),
+		updateSubCategoryUseCase: asClass(UpdateSubCategoryUseCase).singleton(),
 	});
+	//#endregion CATEGORIES
 
 	// Reports
 	container.register({
 		_reportsService: asClass(ReportsService).singleton(),
-		getTotalPerMonthUseCase: asClass(GetTotalPerMonthUseCase).singleton(),
-		getTotalUseCase: asClass(GetTotalUseCase).singleton(),
-		groupByCategoryWithAccumulatedBalanceUseCase: asClass(
-			GroupByCategoryWithAccumulatedBalanceUseCase,
-		).singleton(),
 	});
 
 	// Exchange Rates

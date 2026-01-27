@@ -1,20 +1,12 @@
 import { CommandUseCase, Nanoid } from "contexts/Shared/domain";
 import { IScheduledTransactionsService } from "../domain";
 
-export type DeleteScheduledTransactionUseCaseInput = {
-	id: Nanoid;
-};
-
-export class DeleteScheduledTransactionUseCase
-	implements CommandUseCase<DeleteScheduledTransactionUseCaseInput>
-{
+export class DeleteScheduledTransactionUseCase implements CommandUseCase<Nanoid> {
 	constructor(
-		private readonly _scheduledTransactionsService: IScheduledTransactionsService
+		private readonly _scheduledTransactionsService: IScheduledTransactionsService,
 	) {}
 
-	async execute({
-		id,
-	}: DeleteScheduledTransactionUseCaseInput): Promise<void> {
-		await this._scheduledTransactionsService.delete(id);
+	async execute(id: Nanoid): Promise<void> {
+		await this._scheduledTransactionsService.delete(id.value);
 	}
 }

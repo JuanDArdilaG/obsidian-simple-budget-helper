@@ -1,7 +1,7 @@
 import { NumberValueObject } from "@juandardilag/value-objects";
 import { AccountBalance, IAccountsService } from "contexts/Accounts/domain";
 import {
-	CategoryID,
+	Category,
 	CategoryName,
 	ICategoriesService,
 } from "contexts/Categories/domain";
@@ -9,19 +9,18 @@ import { EntityNotFoundError, Nanoid } from "contexts/Shared/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import {
 	ISubCategoriesService,
-	SubCategoryID,
-	SubCategoryName,
+	SubcategoryName,
 } from "contexts/Subcategories/domain";
 import {
 	ITransactionsRepository,
 	ITransactionsService,
 	Transaction,
 	TransactionCriteria,
-	TransactionID,
+	TransactionDate,
 	TransactionName,
 	TransactionOperation,
 } from "contexts/Transactions/domain";
-import { PaymentSplit } from "../domain/payment-split.valueobject";
+import { AccountSplit } from "../domain/account-split.valueobject";
 
 export class TransactionsService implements ITransactionsService {
 	readonly #logger = new Logger("TransactionsService");
@@ -32,80 +31,95 @@ export class TransactionsService implements ITransactionsService {
 		private readonly subCategoriesService: ISubCategoriesService,
 	) {}
 
+	async getByAccount(accountId: Nanoid): Promise<Transaction[]> {
+		return this._transactionsRepository.findByAccountId(accountId);
+	}
+
 	async getAll(): Promise<Transaction[]> {
 		return this._transactionsRepository.findAll();
 	}
 
-	async getByID(id: TransactionID): Promise<Transaction> {
-		const transaction = await this._transactionsRepository.findById(id);
+	async getByID(id: Nanoid): Promise<Transaction> {
+		const transaction = await this._transactionsRepository.findById(
+			id.value,
+		);
 		if (!transaction) throw new EntityNotFoundError("Transaction", id);
 		return transaction;
 	}
 
-	async getByCategory(category: CategoryID): Promise<Transaction[]> {
+	async getByCategory(category: Nanoid): Promise<Transaction[]> {
 		return this._transactionsRepository.findByCriteria(
 			new TransactionCriteria().where("category", category.value),
 		);
 	}
 
-	async getBySubCategory(subCategory: SubCategoryID): Promise<Transaction[]> {
+	async getBySubCategory(subCategory: Nanoid): Promise<Transaction[]> {
 		return this._transactionsRepository.findByCriteria(
-			new TransactionCriteria().where("subCategory", subCategory.value),
+			new TransactionCriteria().where("subcategory", subCategory.value),
 		);
 	}
 
-	async hasTransactionsByCategory(category: CategoryID): Promise<boolean> {
+	async hasTransactionsByCategory(category: Nanoid): Promise<boolean> {
 		const transactions = await this.getByCategory(category);
 		return transactions.length > 0;
 	}
 
-	async hasTransactionsBySubCategory(
-		subCategory: SubCategoryID,
-	): Promise<boolean> {
+	async hasTransactionsBySubCategory(subCategory: Nanoid): Promise<boolean> {
 		const transactions = await this.getBySubCategory(subCategory);
 		return transactions.length > 0;
 	}
 
 	async reassignTransactionsCategory(
-		oldCategory: CategoryID,
-		newCategory: CategoryID,
+		oldCategory: Category,
+		newCategory: Category,
 	): Promise<void> {
-		const transactions = await this.getByCategory(oldCategory);
+		const transactions = await this.getByCategory(oldCategory.nanoid);
 
 		for (const transaction of transactions) {
-			transaction.updateCategory(newCategory);
+			transaction.updateCategory(newCategory.nanoid);
 			await this._transactionsRepository.persist(transaction);
 		}
 	}
 
 	async reassignTransactionsSubCategory(
-		oldSubCategory: SubCategoryID,
-		newSubCategory: SubCategoryID,
+		oldSubCategory: Nanoid,
+		newSubCategory: Nanoid,
 	): Promise<void> {
 		const transactions = await this.getBySubCategory(oldSubCategory);
 
 		// Get the new subcategory to find its parent category
-		const newSubCategoryEntity =
-			await this.subCategoriesService.getByID(newSubCategory);
-		const newCategory = newSubCategoryEntity.category;
+		const newSubCategoryEntity = await this.subCategoriesService.getByID(
+			newSubCategory.value,
+		);
+		const newCategory = newSubCategoryEntity.categoryId;
+		const newCategoryEntity = await this.categoriesService.getByID(
+			newCategory.value,
+		);
 
 		for (const transaction of transactions) {
-			transaction.updateSubCategory(newSubCategory);
-			transaction.updateCategory(newCategory);
+			transaction.updateSubCategory(newSubCategoryEntity.nanoid);
+			transaction.updateCategory(newCategoryEntity.nanoid);
 			await this._transactionsRepository.persist(transaction);
 		}
 	}
 
 	async reassignTransactionsCategoryAndSubcategory(
-		oldCategory: CategoryID,
-		newCategory: CategoryID,
-		newSubCategory: SubCategoryID,
+		oldSubcategory: Nanoid,
+		newCategory: Nanoid,
+		newSubcategory: Nanoid,
 	): Promise<void> {
-		const transactions = await this.getByCategory(oldCategory);
+		const transactions = await this.getBySubCategory(oldSubcategory);
+
+		const newCategoryEntity = await this.categoriesService.getByID(
+			newCategory.value,
+		);
+		const newSubCategoryEntity = await this.subCategoriesService.getByID(
+			newSubcategory.value,
+		);
 
 		for (const transaction of transactions) {
-			transaction.updateCategory(newCategory);
-			transaction.updateSubCategory(newSubCategory);
+			transaction.updateCategory(newCategoryEntity.nanoid);
+			transaction.updateSubCategory(newSubCategoryEntity.nanoid);
 			await this._transactionsRepository.persist(transaction);
 		}
 	}
@@ -125,7 +139,7 @@ export class TransactionsService implements ITransactionsService {
 		accountID: Nanoid,
 		newBalance: AccountBalance,
 	): Promise<void> {
-		const account = await this._accountsService.getByID(accountID);
+		const account = await this._accountsService.getByID(accountID.value);
 		let amountDifference = account.balance.adjust(newBalance.value);
 
 		this.#logger
@@ -142,8 +156,8 @@ export class TransactionsService implements ITransactionsService {
 		);
 		const subCategory =
 			await this.subCategoriesService.getByNameWithCreation(
-				category.id,
-				new SubCategoryName("Adjustment"),
+				category.nanoid,
+				new SubcategoryName("Adjustment"),
 			);
 
 		if (account.type.isLiability())
@@ -152,25 +166,26 @@ export class TransactionsService implements ITransactionsService {
 			);
 
 		const fromSplits = [
-			new PaymentSplit(accountID, amountDifference.abs()),
+			new AccountSplit(account.nanoid, amountDifference.abs()),
 		];
 
 		const transaction = Transaction.create(
+			TransactionDate.createNowDate(),
 			fromSplits,
 			[],
 			new TransactionName(`Adjustment for ${account.name}`),
 			new TransactionOperation(
 				amountDifference.isPositive() ? "income" : "expense",
 			),
-			category.id,
-			subCategory.id,
+			category.nanoid,
+			subCategory.nanoid,
 		);
 
 		await this.record(transaction);
 	}
 
 	async update(transaction: Transaction): Promise<void> {
-		const prevTransaction = await this.getByID(transaction.id);
+		const prevTransaction = await this.getByID(transaction.nanoid);
 		const allAccountIDs = [
 			...transaction.originAccounts.map((s) => s.accountId.value),
 			...transaction.destinationAccounts.map((s) => s.accountId.value),
@@ -184,7 +199,9 @@ export class TransactionsService implements ITransactionsService {
 		);
 
 		for (const accountID of uniqueAccountIDs) {
-			const account = await this._accountsService.getByID(accountID);
+			const account = await this._accountsService.getByID(
+				accountID.value,
+			);
 			account.adjustOnTransactionUpdate(prevTransaction, transaction);
 			await this._accountsService.update(account);
 		}
@@ -192,10 +209,10 @@ export class TransactionsService implements ITransactionsService {
 		await this._transactionsRepository.persist(transaction);
 	}
 
-	async delete(id: TransactionID): Promise<void> {
+	async delete(id: Nanoid): Promise<void> {
 		const transaction = await this.getByID(id);
 
-		await this._transactionsRepository.deleteById(id);
+		await this._transactionsRepository.deleteById(transaction.id);
 
 		await this.#adjustAccountsOnDeletion(transaction);
 	}
@@ -210,20 +227,22 @@ export class TransactionsService implements ITransactionsService {
 		);
 
 		for (const accountID of uniqueAccountIDs) {
-			const account = await this._accountsService.getByID(accountID);
+			const account = await this._accountsService.getByID(
+				accountID.value,
+			);
 			account.adjustOnTransactionDeletion(transaction);
 			await this._accountsService.update(account);
 		}
 	}
 
 	async getTransactionsByCategory(
-		category: CategoryID,
+		category: Nanoid,
 	): Promise<Array<Transaction>> {
 		return await this.getByCategory(category);
 	}
 
 	async getTransactionsBySubCategory(
-		subCategory: SubCategoryID,
+		subCategory: Nanoid,
 	): Promise<Array<Transaction>> {
 		return await this.getBySubCategory(subCategory);
 	}

@@ -1,5 +1,6 @@
-import { Account, IAccountsService } from "contexts/Accounts/domain";
+import { Account } from "contexts/Accounts/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
+import { AccountsMap } from "../../Accounts/application/get-all-accounts.usecase";
 import { ScheduledTransaction } from "../../ScheduledTransactions/domain";
 import { ReportBalance } from "../domain";
 import { IReportsService } from "../domain/reports-service.interface";
@@ -13,7 +14,6 @@ type ScheduledTransactionsWithAccounts = {
 
 export class ReportsService implements IReportsService {
 	readonly #logger = new Logger("ReportsService");
-	constructor(private readonly _accountsService: IAccountsService) {}
 
 	/**
 	 * Retrieve and map accounts to items
@@ -21,30 +21,39 @@ export class ReportsService implements IReportsService {
 	 * @returns {ScheduledTransactionsWithAccounts[]} an array containing the items with its corresponding account and toAccount (if applies)
 	 */
 	async #addAccountsToItems(
-		report: ScheduledMonthlyReport
+		accountsMap: AccountsMap,
+		report: ScheduledMonthlyReport,
 	): Promise<ScheduledTransactionsWithAccounts[]> {
 		return await Promise.all(
 			report.scheduledTransactionsWithAccounts.map(
 				async ({ scheduledTransaction }) => {
-					const account = await this._accountsService.getByID(
-						scheduledTransaction.originAccounts[0]?.accountId
+					const account = accountsMap.get(
+						scheduledTransaction.originAccounts[0].toString(),
 					);
-					const toAccount =
-						scheduledTransaction.destinationAccounts[0]
-							?.accountId &&
-						(await this._accountsService.getByID(
-							scheduledTransaction.destinationAccounts[0]
-								?.accountId
-						));
+					if (!account)
+						throw new Error(
+							`Account with ID ${scheduledTransaction.originAccounts[0].toString()} not found in accounts map`,
+						);
+
+					let toAccount: Account | undefined;
+					if (scheduledTransaction.operation.type.isTransfer()) {
+						toAccount = accountsMap.get(
+							scheduledTransaction.destinationAccounts[0].toString(),
+						);
+						if (!toAccount)
+							throw new Error(
+								`To Account with ID ${scheduledTransaction.destinationAccounts[0].toString()} not found in accounts map`,
+							);
+					}
 					return { scheduledTransaction, account, toAccount };
-				}
-			)
+				},
+			),
 		);
 	}
 
 	#filterItemsByType(
 		items: ScheduledTransactionsWithAccounts[],
-		type?: "expenses" | "incomes"
+		type?: "expenses" | "incomes",
 	): ScheduledTransactionsWithAccounts[] {
 		if (!type) return items;
 		return items.filter(
@@ -66,19 +75,20 @@ export class ReportsService implements IReportsService {
 				)
 					return true;
 				return false;
-			}
+			},
 		);
 	}
 
 	async getTotal(
+		accountsMap: AccountsMap,
 		report: ScheduledMonthlyReport,
-		type?: "expenses" | "incomes"
+		type?: "expenses" | "incomes",
 	): Promise<ReportBalance> {
 		this.#logger.debug("getTotal", { report, type });
 
 		const items = this.#filterItemsByType(
-			await this.#addAccountsToItems(report),
-			type
+			await this.#addAccountsToItems(accountsMap, report),
+			type,
 		);
 
 		this.#logger.debug("items", { items });
@@ -111,14 +121,15 @@ export class ReportsService implements IReportsService {
 	}
 
 	async getTotalPerMonth(
+		accountsMap: AccountsMap,
 		report: ScheduledMonthlyReport,
-		type: "expenses" | "incomes" | "all" = "all"
+		type: "expenses" | "incomes" | "all" = "all",
 	): Promise<ReportBalance> {
 		this.#logger.debug("getTotalPerMonth", { report, type });
 
 		const items = this.#filterItemsByType(
-			await this.#addAccountsToItems(report),
-			type !== "all" ? type : undefined
+			await this.#addAccountsToItems(accountsMap, report),
+			type === "all" ? undefined : type,
 		);
 
 		let total = ReportBalance.zero();
@@ -129,8 +140,8 @@ export class ReportsService implements IReportsService {
 		} of items) {
 			// Use the item's getPricePerMonthWithAccountTypes method to handle recurring conversions
 			const monthlyPrice = item.getPricePerMonthWithAccountTypes(
-				account.type,
-				toAccount?.type
+				account.type.value,
+				toAccount?.type.value,
 			);
 			total = total.plus(monthlyPrice);
 		}

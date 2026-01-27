@@ -1,5 +1,7 @@
-import { GetAllAccountsUseCase } from "contexts/Accounts/application/get-all-accounts.usecase";
-import { Account, AccountName } from "contexts/Accounts/domain";
+import {
+	AccountsMap,
+	GetAllAccountsUseCase,
+} from "contexts/Accounts/application/get-all-accounts.usecase";
 import { Nanoid } from "contexts/Shared/domain";
 import { useCallback, useEffect, useState } from "react";
 import { useLogger } from "./useLogger";
@@ -10,34 +12,46 @@ export const useAccounts = ({
 	getAllAccounts: GetAllAccountsUseCase;
 }) => {
 	const { logger } = useLogger("useAccounts");
-	const [accounts, setAccounts] = useState<Account[]>([]);
+	const [accountsMap, setAccountsMap] = useState<AccountsMap>(new Map());
 	const [updateAccounts, setUpdateAccounts] = useState(true);
 
 	useEffect(() => {
+		console.log("[useAccounts] Effect triggered", {
+			updateAccounts,
+			accountCount: accountsMap.size,
+		});
 		if (updateAccounts) {
+			console.log("[useAccounts] Starting accounts fetch");
 			setUpdateAccounts(false);
 			logger.debug("updating accounts", {
 				refreshAccounts: updateAccounts,
-				accounts,
+				accounts: accountsMap,
 			});
-			getAllAccounts.execute().then((accounts) => setAccounts(accounts));
+			getAllAccounts
+				.execute()
+				.then((newAccounts) => {
+					console.log("[useAccounts] Accounts fetched", {
+						count: newAccounts.size,
+					});
+					setAccountsMap(newAccounts);
+				})
+				.catch((error) => {
+					console.error(
+						"[useAccounts] Error fetching accounts:",
+						error,
+					);
+				});
 		}
 	}, [updateAccounts]);
 
 	const getAccountByID = useCallback(
-		(id: Nanoid) => accounts.find((acc) => acc.id.equalTo(id)),
-		[accounts],
-	);
-
-	const getAccountByName = useCallback(
-		(name: AccountName) => accounts.find((acc) => acc.name.equalTo(name)),
-		[accounts],
+		(id: Nanoid) => accountsMap.get(id.value) || null,
+		[accountsMap],
 	);
 
 	return {
-		accounts,
+		accountsMap,
 		updateAccounts: () => setUpdateAccounts(true),
 		getAccountByID,
-		getAccountByName,
 	};
 };

@@ -1,15 +1,11 @@
-import {
-	DateValueObject,
-	NumberValueObject,
-} from "@juandardilag/value-objects";
+import { DateValueObject } from "@juandardilag/value-objects";
 import { CommandUseCase } from "contexts/Shared/domain/command-use-case.interface";
 import { EntityNotFoundError } from "contexts/Shared/domain/errors/not-found.error";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { ITransactionsService } from "contexts/Transactions/domain";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionName } from "contexts/Transactions/domain/item-name.valueobject";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
 import { TransactionDate } from "contexts/Transactions/domain/transaction-date.valueobject";
-import { TransactionID } from "contexts/Transactions/domain/transaction-id.valueobject";
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 import { Nanoid } from "../../Shared/domain";
 import {
@@ -19,21 +15,19 @@ import {
 
 export type RecordScheduledTransactionUseCaseInput = {
 	scheduledTransactionID: Nanoid;
-	occurrenceIndex: NumberValueObject;
-	date?: TransactionDate;
-	fromSplits?: PaymentSplit[];
-	toSplits?: PaymentSplit[];
+	occurrenceIndex: number;
+	date?: Date;
+	fromSplits?: AccountSplit[];
+	toSplits?: AccountSplit[];
 };
 
-export class RecordScheduledTransactionUseCase
-	implements CommandUseCase<RecordScheduledTransactionUseCaseInput>
-{
+export class RecordScheduledTransactionUseCase implements CommandUseCase<RecordScheduledTransactionUseCaseInput> {
 	readonly #logger = new Logger("RecordOccurrenceV2UseCase");
 
 	constructor(
 		private readonly _transactionsService: ITransactionsService,
 		private readonly _scheduledTransactionsService: IScheduledTransactionsService,
-		private readonly _recurrenceModificationsService: IRecurrenceModificationsService
+		private readonly _recurrenceModificationsService: IRecurrenceModificationsService,
 	) {}
 
 	async execute({
@@ -44,18 +38,18 @@ export class RecordScheduledTransactionUseCase
 		toSplits,
 	}: RecordScheduledTransactionUseCaseInput): Promise<void> {
 		this.#logger.debug("Recording occurrence", {
-			occurrenceIndex: occurrenceIndex.value,
-			date: date?.value,
+			occurrenceIndex: occurrenceIndex,
+			date,
 		});
 
 		const scheduledTransaction =
 			await this._scheduledTransactionsService.getByID(
-				scheduledTransactionID
+				scheduledTransactionID.value,
 			);
 		if (!scheduledTransaction) {
 			throw new EntityNotFoundError(
 				"ScheduledTransaction",
-				scheduledTransactionID
+				scheduledTransactionID,
 			);
 		}
 
@@ -63,33 +57,33 @@ export class RecordScheduledTransactionUseCase
 		const recurrenceInfo =
 			await this._scheduledTransactionsService.getOccurrence(
 				scheduledTransactionID,
-				occurrenceIndex
+				occurrenceIndex,
 			);
 
 		if (!recurrenceInfo) {
-			throw new Error(
-				`Invalid occurrence index: ${occurrenceIndex.value}`
-			);
+			throw new Error(`Invalid occurrence index: ${occurrenceIndex}`);
 		}
 
 		// Determine effective transaction data
 		const effectiveFromSplits = fromSplits ?? recurrenceInfo.originAccounts;
 		const effectiveToSplits =
 			toSplits ?? recurrenceInfo.destinationAccounts;
-		const effectiveDate = date ?? recurrenceInfo.date;
+		const effectiveDate = date
+			? new TransactionDate(date)
+			: recurrenceInfo.date;
 
 		// Create transaction from the effective data
 		const transaction = new Transaction(
-			TransactionID.generate(),
+			Nanoid.generate(),
 			effectiveFromSplits,
 			effectiveToSplits,
 			new TransactionName(scheduledTransaction.name.value),
 			scheduledTransaction.operation.type,
-			scheduledTransaction.category.category.id,
-			scheduledTransaction.category.subCategory.id,
+			scheduledTransaction.category,
+			scheduledTransaction.category,
 			effectiveDate,
 			DateValueObject.createNowDate(),
-			recurrenceInfo.store
+			recurrenceInfo.store,
 		);
 
 		this.#logger.debug("Created transaction", {
@@ -99,7 +93,7 @@ export class RecordScheduledTransactionUseCase
 		// Mark the occurrence as completed
 		await this._recurrenceModificationsService.markOccurrenceAsCompleted(
 			scheduledTransactionID,
-			occurrenceIndex
+			occurrenceIndex,
 		);
 
 		// Record the transaction

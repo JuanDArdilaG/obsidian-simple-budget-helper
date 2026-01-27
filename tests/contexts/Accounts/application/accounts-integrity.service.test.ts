@@ -5,7 +5,7 @@ import {
 	AccountAssetSubtype,
 	AccountIntegrityResult,
 } from "contexts/Accounts/domain";
-import { Transaction, TransactionID } from "contexts/Transactions/domain";
+import { Transaction } from "contexts/Transactions/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Nanoid } from "../../../../src/contexts/Shared/domain";
 import { buildTestAccounts } from "../domain/buildTestAccounts";
@@ -39,7 +39,7 @@ const currency = "USD";
 // Mock transaction that behaves like a real transaction
 const createMockTransaction = (testAccountId: Nanoid, amount: number) => {
 	const mockTransaction = {
-		id: { value: TransactionID.generate().value },
+		id: { value: Nanoid.generate().value },
 		getRealAmountForAccount: vi
 			.fn()
 			.mockReturnValue({ value: new PriceValueObject(amount) }),
@@ -98,7 +98,7 @@ describe("AccountsIntegrityService", () => {
 			expect(result.accountId).toBe(testAccountId);
 			expect(result.hasIntegrity).toBe(true);
 			expect(mockAccountsRepository.findById).toHaveBeenCalledWith(
-				testAccountId,
+				testAccountId.value,
 			);
 			expect(
 				mockTransactionsRepository.findByAccountId,
@@ -173,10 +173,10 @@ describe("AccountsIntegrityService", () => {
 				.mockResolvedValueOnce(accounts[1]);
 			mockTransactionsRepository.findByAccountId
 				.mockResolvedValueOnce([
-					createMockTransaction(accounts[0].id, 100),
+					createMockTransaction(accounts[0].nanoid, 100),
 				])
 				.mockResolvedValueOnce([
-					createMockTransaction(accounts[1].id, 200),
+					createMockTransaction(accounts[1].nanoid, 200),
 				]);
 
 			// Act
@@ -202,7 +202,7 @@ describe("AccountsIntegrityService", () => {
 			mockTransactionsRepository.findByAccountId
 				.mockRejectedValueOnce(new Error("Database error"))
 				.mockResolvedValueOnce([
-					createMockTransaction(accounts[1].id, 200),
+					createMockTransaction(accounts[1].nanoid, 200),
 				]);
 
 			// Act

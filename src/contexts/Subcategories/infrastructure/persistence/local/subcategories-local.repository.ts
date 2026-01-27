@@ -1,37 +1,36 @@
-import {
-	SubCategory,
-	SubCategoryID,
-	SubcategoryPrimitives,
-	ISubCategoriesRepository,
-	SubCategoryName,
-} from "contexts/Subcategories/domain";
+import { Config } from "contexts/Shared/infrastructure/config/config";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
 import { LocalRepository } from "contexts/Shared/infrastructure/persistence/local/local.repository";
-import { CategoryID } from "contexts/Categories/domain";
-import { Config } from "contexts/Shared/infrastructure/config/config";
+import {
+	ISubcategoriesRepository,
+	Subcategory,
+	SubcategoryName,
+	SubcategoryPrimitives,
+} from "contexts/Subcategories/domain";
+import { Nanoid } from "../../../../Shared/domain";
 
 export class SubcategoriesLocalRepository
-	extends LocalRepository<SubCategoryID, SubCategory, SubcategoryPrimitives>
-	implements ISubCategoriesRepository
+	extends LocalRepository<string, Subcategory, SubcategoryPrimitives>
+	implements ISubcategoriesRepository
 {
 	constructor(protected readonly _db: LocalDB) {
 		super(_db, Config.subCategoriesTableName);
 	}
 
-	async findAllByCategory(categoryID: CategoryID): Promise<SubCategory[]> {
+	async findAllByCategory(categoryID: Nanoid): Promise<Subcategory[]> {
 		return await this.where("category", categoryID.toString());
 	}
 
-	async findByName(name: SubCategoryName): Promise<SubCategory | null> {
+	async findByName(name: SubcategoryName): Promise<Subcategory | null> {
 		const records = await this.where("name", name.toString());
 		return records.length > 0 ? records[0] : null;
 	}
 
-	protected mapToDomain(record: SubcategoryPrimitives): SubCategory {
-		return SubCategory.fromPrimitives(record);
+	protected mapToDomain(record: SubcategoryPrimitives): Subcategory {
+		return Subcategory.fromPrimitives(record);
 	}
 
-	protected mapToPrimitives(entity: SubCategory): SubcategoryPrimitives {
+	protected mapToPrimitives(entity: Subcategory): SubcategoryPrimitives {
 		return entity.toPrimitives();
 	}
 }

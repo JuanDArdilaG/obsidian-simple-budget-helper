@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+button {
+	height: auto;
+	border-radius: 0;
+}
+
+button:not(.clickable-icon) {
+	box-shadow: none;
+}

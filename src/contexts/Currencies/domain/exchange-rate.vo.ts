@@ -5,15 +5,15 @@ import {
 import { Entity, Nanoid } from "../../Shared/domain";
 import { Currency } from "./currency.vo";
 
-export class ExchangeRate extends Entity<Nanoid, ExchangeRatePrimitives> {
+export class ExchangeRate extends Entity<string, ExchangeRatePrimitives> {
 	constructor(
 		id: Nanoid,
 		public readonly fromCurrency: Currency,
 		public readonly toCurrency: Currency,
 		public readonly rate: NumberValueObject,
-		public readonly date: DateValueObject
+		public readonly date: DateValueObject,
 	) {
-		super(id, new DateValueObject(new Date()));
+		super(id.value, new DateValueObject(new Date()));
 		if (rate.isNegative() || rate.isZero()) {
 			throw new Error("Exchange rate must be greater than zero.");
 		}
@@ -23,26 +23,26 @@ export class ExchangeRate extends Entity<Nanoid, ExchangeRatePrimitives> {
 		fromCurrency: Currency,
 		toCurrency: Currency,
 		rate: number,
-		date: DateValueObject
+		date: DateValueObject,
 	): ExchangeRate {
 		return new ExchangeRate(
 			Nanoid.generate(),
 			fromCurrency,
 			toCurrency,
 			new NumberValueObject(rate),
-			date
+			date,
 		);
 	}
 
 	static fromPrimitives(
-		primitives: ExchangeRatePrimitives & { id: string }
+		primitives: ExchangeRatePrimitives & { id: string },
 	): ExchangeRate {
 		return new ExchangeRate(
 			new Nanoid(primitives.id),
 			new Currency(primitives.fromCurrency),
 			new Currency(primitives.toCurrency),
 			new NumberValueObject(primitives.rate),
-			new DateValueObject(new Date(primitives.date))
+			new DateValueObject(new Date(primitives.date)),
 		);
 	}
 

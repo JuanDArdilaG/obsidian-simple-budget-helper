@@ -43,17 +43,16 @@
 		"vitest": "latest"
 	},
 	"dependencies": {
-		"@emotion/react": "^11.14.0",
-		"@emotion/styled": "^11.14.1",
 		"@juandardilag/value-objects": "^2.2.2",
 		"@mui/icons-material": "^7.3.7",
 		"@mui/material": "^7.3.7",
 		"@mui/x-charts": "^8.25.0",
-		"@mui/x-date-pickers": "^8.25.0",
+		"@tailwindcss/cli": "^4.1.18",
 		"awilix": "^12.0.5",
 		"dayjs": "^1.11.19",
 		"dexie": "4.0.11",
 		"dexie-export-import": "^4.1.4",
+		"framer-motion": "^12.29.0",
 		"js-base64": "^3.7.8",
 		"lucide-react": "^0.562.0",
 		"mathjs": "^15.1.0",
@@ -62,6 +61,7 @@
 		"react-currency-input-field": "^4.0.3",
 		"react-dom": "^19.2.3",
 		"react-window": "^2.2.5",
-		"recharts": "^3.6.0"
+		"recharts": "^3.7.0",
+		"tailwindcss": "^4.1.18"
 	}
 }

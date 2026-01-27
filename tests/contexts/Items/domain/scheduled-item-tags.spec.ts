@@ -1,8 +1,8 @@
 import { StringValueObject } from "@juandardilag/value-objects";
-import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
+import { Category, CategoryName } from "contexts/Categories/domain";
 import { ItemOperation, Nanoid } from "contexts/Shared/domain";
-import { SubCategory, SubCategoryName } from "contexts/Subcategories/domain";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { Subcategory, SubcategoryName } from "contexts/Subcategories/domain";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
 import { describe, expect, it } from "vitest";
 import {
@@ -15,25 +15,23 @@ import {
 	ScheduledTransactionDate,
 	ScheduledTransactionPrimitives,
 } from "../../../../src/contexts/ScheduledTransactions/domain";
-import { TransactionCategory } from "../../../../src/contexts/Transactions/domain";
+import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
 
-const category = new TransactionCategory(
-	Category.create(new CategoryName("Test Category")),
-	SubCategory.create(
-		CategoryID.generate(),
-		new SubCategoryName("Test Subcategory"),
-	),
+const category = Category.create(new CategoryName("Test Category"));
+const subCategory = Subcategory.create(
+	Nanoid.generate(),
+	new SubcategoryName("Test Subcategory"),
 );
 
 describe("ScheduledTransaction Tags", () => {
 	const createTestItem = (tags: ItemTags = ItemTags.empty()) => {
 		const startDate = new ScheduledTransactionDate(new Date(2024, 0, 1));
 		const frequency = new ItemRecurrenceFrequency("monthly");
-		const accountId = Nanoid.generate();
+		const accounts = buildTestAccounts(1);
 		const fromSplits = [
-			new PaymentSplit(accountId, new TransactionAmount(100)),
+			new AccountSplit(accounts[0].nanoid, new TransactionAmount(100)),
 		];
-		const toSplits: PaymentSplit[] = [];
+		const toSplits: AccountSplit[] = [];
 
 		const scheduledTransaction = ScheduledTransaction.create(
 			new StringValueObject("Test Item"),
@@ -41,7 +39,8 @@ describe("ScheduledTransaction Tags", () => {
 			fromSplits,
 			toSplits,
 			ItemOperation.income(),
-			category,
+			category.nanoid,
+			subCategory.nanoid,
 		);
 
 		scheduledTransaction.updateTags(tags);
@@ -140,7 +139,8 @@ describe("ScheduledTransaction Tags", () => {
 				operation: {
 					type: "income" as const,
 				},
-				category: category.toPrimitives(),
+				category: category.id,
+				subcategory: subCategory.id,
 				store: "",
 				recurrencePattern: {
 					type: RecurrenceType.ONE_TIME,
@@ -176,7 +176,8 @@ describe("ScheduledTransaction Tags", () => {
 				operation: {
 					type: "income" as const,
 				},
-				category: category.toPrimitives(),
+				category: category.id,
+				subcategory: subCategory.id,
 				store: "",
 				recurrencePattern: {
 					type: RecurrenceType.ONE_TIME,
@@ -189,30 +190,6 @@ describe("ScheduledTransaction Tags", () => {
 			const item = ScheduledTransaction.fromPrimitives(primitives);
 
 			expect(item.tags?.isEmpty).toBe(true);
-		});
-	});
-
-	describe("copy functionality", () => {
-		it("should copy item with tags", () => {
-			const tags = ItemTags.fromStrings(["work", "important"]);
-			const item = createTestItem(tags);
-
-			const copiedItem = item.copy();
-
-			expect(copiedItem.tags?.count).toBe(2);
-			expect(copiedItem.tags?.has(new ItemTag("work"))).toBe(true);
-			expect(copiedItem.tags?.has(new ItemTag("important"))).toBe(true);
-		});
-
-		it("should have independent tags after copy", () => {
-			const tags = ItemTags.fromStrings(["work"]);
-			const item = createTestItem(tags);
-			const copiedItem = item.copy();
-
-			item.addTag(new ItemTag("new"));
-
-			expect(item.tags?.count).toBe(2);
-			expect(copiedItem.tags?.count).toBe(1);
 		});
 	});
 

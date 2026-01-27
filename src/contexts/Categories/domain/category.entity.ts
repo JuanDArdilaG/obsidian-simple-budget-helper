@@ -1,27 +1,22 @@
-import { DateValueObject } from "@juandardilag/value-objects";
-import { CategoryID } from "./category-id.valueobject";
-import { CategoryName } from "./category-name.valueobject";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
+import { Nanoid } from "../../Shared/domain/value-objects/id/nanoid.valueobject";
+import { CategoryName } from "./category-name.valueobject";
 
-export class Category extends Entity<CategoryID, CategoryPrimitives> {
+export class Category extends Entity<string, CategoryPrimitives> {
 	constructor(
-		id: CategoryID,
+		id: Nanoid,
 		private readonly _name: CategoryName,
-		updatedAt: DateValueObject
+		updatedAt: Date,
 	) {
-		super(id, updatedAt);
+		super(id.value, updatedAt);
 	}
 
 	static create(name: CategoryName): Category {
-		return new Category(
-			CategoryID.generate(),
-			name,
-			DateValueObject.createNowDate()
-		);
+		return new Category(Nanoid.generate(), name, new Date());
 	}
 
-	get id(): CategoryID {
-		return this._id;
+	get nanoid(): Nanoid {
+		return new Nanoid(this._id);
 	}
 
 	get name(): CategoryName {
@@ -30,7 +25,7 @@ export class Category extends Entity<CategoryID, CategoryPrimitives> {
 
 	toPrimitives(): CategoryPrimitives {
 		return {
-			id: this._id.value,
+			id: this._id,
 			name: this._name.value,
 			updatedAt: this._updatedAt.toISOString(),
 		};
@@ -42,11 +37,9 @@ export class Category extends Entity<CategoryID, CategoryPrimitives> {
 		updatedAt,
 	}: CategoryPrimitives): Category {
 		const category = new Category(
-			new CategoryID(id),
+			new Nanoid(id),
 			new CategoryName(name),
-			updatedAt
-				? new DateValueObject(new Date(updatedAt))
-				: DateValueObject.createNowDate()
+			updatedAt ? new Date(updatedAt) : new Date(),
 		);
 		return category;
 	}

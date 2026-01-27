@@ -1,6 +1,5 @@
 // created from 'create-ts-index'
 
-export * from './old';
 export * from './item-recurrence-frequency.valueobject';
 export * from './item-recurrence-info.valueobject';
 export * from './item-recurrence-untildate.valueobject';

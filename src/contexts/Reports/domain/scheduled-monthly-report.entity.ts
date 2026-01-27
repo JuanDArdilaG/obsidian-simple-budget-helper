@@ -1,37 +1,53 @@
 import { Account } from "contexts/Accounts/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
+import { AccountsMap } from "../../Accounts/application/get-all-accounts.usecase";
 import { ScheduledTransaction } from "../../ScheduledTransactions/domain";
 import { ReportBalance } from "./report-balance.valueobject";
 
 export class ScheduledMonthlyReport {
-	readonly #logger = new Logger("ScheduledMonthlyReport");
+	static readonly #logger = new Logger("ScheduledMonthlyReport");
 
 	readonly scheduledTransactionsWithAccounts: ScheduledTransactionsWithAccounts[];
 
 	constructor(
 		scheduledTransactions: ScheduledTransaction[],
-		private readonly accounts: Account[]
+		private readonly accounts: AccountsMap,
 	) {
 		this.scheduledTransactionsWithAccounts = scheduledTransactions
-			.map((scheduledTransaction) => ({
-				scheduledTransaction,
-				account: this.accounts.find((account) =>
-					account.id.equalTo(
-						scheduledTransaction.originAccounts[0].accountId
-					)
-				),
-				toAccount:
-					scheduledTransaction.destinationAccounts.length > 0
-						? accounts.find((account) =>
-								account.id.equalTo(
-									scheduledTransaction.destinationAccounts[0]
-										.accountId
-								)
-						  )
-						: undefined,
-			}))
+			.map((scheduledTransaction) => {
+				const originAccount = this.accounts.get(
+					scheduledTransaction.originAccounts[0].accountId.value,
+				);
+
+				if (!originAccount) {
+					ScheduledMonthlyReport.#logger.debug(
+						`Origin account with id ${scheduledTransaction.originAccounts[0].accountId} not found for scheduled transaction with id ${scheduledTransaction.id}`,
+					);
+					return {
+						scheduledTransaction,
+						account: undefined,
+					};
+				}
+				let destinationAccount: Account | undefined;
+				if (scheduledTransaction.destinationAccounts.length > 0) {
+					destinationAccount = this.accounts.get(
+						scheduledTransaction.destinationAccounts[0].accountId
+							.value,
+					);
+					if (!destinationAccount) {
+						ScheduledMonthlyReport.#logger.debug(
+							`Destination account with id ${scheduledTransaction.destinationAccounts[0].accountId} not found for scheduled transaction with id ${scheduledTransaction.id}`,
+						);
+					}
+				}
+				return {
+					scheduledTransaction,
+					account: originAccount,
+					toAccount: destinationAccount,
+				};
+			})
 			.filter(
-				(item) => !!item.account
+				(item) => !!item.account,
 			) as ScheduledTransactionsWithAccounts[];
 	}
 
@@ -39,10 +55,10 @@ export class ScheduledMonthlyReport {
 		return new ScheduledMonthlyReport(
 			this.scheduledTransactionsWithAccounts
 				.filter(({ scheduledTransaction }) =>
-					scheduledTransaction.operation.type.isExpense()
+					scheduledTransaction.operation.type.isExpense(),
 				)
 				.map(({ scheduledTransaction }) => scheduledTransaction),
-			this.accounts
+			this.accounts,
 		);
 	}
 
@@ -50,10 +66,10 @@ export class ScheduledMonthlyReport {
 		return new ScheduledMonthlyReport(
 			this.scheduledTransactionsWithAccounts
 				.filter(({ scheduledTransaction }) =>
-					scheduledTransaction.operation.type.isIncome()
+					scheduledTransaction.operation.type.isIncome(),
 				)
 				.map(({ scheduledTransaction }) => scheduledTransaction),
-			this.accounts
+			this.accounts,
 		);
 	}
 
@@ -63,10 +79,10 @@ export class ScheduledMonthlyReport {
 				.filter(
 					({ scheduledTransaction }) =>
 						scheduledTransaction.recurrencePattern
-							.totalOccurrences === -1
+							.totalOccurrences === -1,
 				)
 				.map(({ scheduledTransaction }) => scheduledTransaction),
-			this.accounts
+			this.accounts,
 		);
 	}
 
@@ -76,10 +92,10 @@ export class ScheduledMonthlyReport {
 				.filter(
 					({ scheduledTransaction }) =>
 						scheduledTransaction.recurrencePattern
-							.totalOccurrences !== -1
+							.totalOccurrences !== -1,
 				)
 				.map(({ scheduledTransaction }) => scheduledTransaction),
-			this.accounts
+			this.accounts,
 		);
 	}
 
@@ -89,7 +105,7 @@ export class ScheduledMonthlyReport {
 	getExpenseItems(): ScheduledTransaction[] {
 		return this.scheduledTransactionsWithAccounts
 			.filter(({ scheduledTransaction }) =>
-				scheduledTransaction.operation.type.isExpense()
+				scheduledTransaction.operation.type.isExpense(),
 			)
 			.map(({ scheduledTransaction }) => scheduledTransaction);
 	}
@@ -100,7 +116,7 @@ export class ScheduledMonthlyReport {
 	getIncomeItems(): ScheduledTransaction[] {
 		return this.scheduledTransactionsWithAccounts
 			.filter(({ scheduledTransaction }) =>
-				scheduledTransaction.operation.type.isIncome()
+				scheduledTransaction.operation.type.isIncome(),
 			)
 			.map(({ scheduledTransaction }) => scheduledTransaction);
 	}
@@ -111,7 +127,7 @@ export class ScheduledMonthlyReport {
 	getTransferItems(): ScheduledTransaction[] {
 		return this.scheduledTransactionsWithAccounts
 			.filter(({ scheduledTransaction }) =>
-				scheduledTransaction.operation.type.isTransfer()
+				scheduledTransaction.operation.type.isTransfer(),
 			)
 			.map(({ scheduledTransaction }) => scheduledTransaction);
 	}
@@ -124,7 +140,7 @@ export class ScheduledMonthlyReport {
 			.filter(
 				({ scheduledTransaction }) =>
 					scheduledTransaction.recurrencePattern.totalOccurrences ===
-					-1
+					-1,
 			)
 			.map(({ scheduledTransaction }) => scheduledTransaction);
 	}
@@ -137,7 +153,7 @@ export class ScheduledMonthlyReport {
 			.filter(
 				({ scheduledTransaction }) =>
 					scheduledTransaction.recurrencePattern.totalOccurrences !==
-					-1
+					-1,
 			)
 			.map(({ scheduledTransaction }) => scheduledTransaction);
 	}
@@ -146,7 +162,7 @@ export class ScheduledMonthlyReport {
 		return this.scheduledTransactionsWithAccounts.reduce(
 			(total, { scheduledTransaction }) =>
 				total.plus(scheduledTransaction.realPrice),
-			ReportBalance.zero()
+			ReportBalance.zero(),
 		);
 	}
 
@@ -155,11 +171,11 @@ export class ScheduledMonthlyReport {
 			(total, { scheduledTransaction, account, toAccount }) =>
 				total.plus(
 					scheduledTransaction.getPricePerMonthWithAccountTypes(
-						account.type,
-						toAccount?.type
-					)
+						account.type.value,
+						toAccount?.type.value,
+					),
 				),
-			ReportBalance.zero()
+			ReportBalance.zero(),
 		);
 	}
 }

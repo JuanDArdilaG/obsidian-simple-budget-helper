@@ -4,17 +4,17 @@ import {
 	AccountPrimitives,
 	IAccountsService,
 } from "contexts/Accounts/domain";
-import { Criteria, Nanoid } from "contexts/Shared/domain";
+import { Criteria } from "contexts/Shared/domain";
 import { Transaction } from "contexts/Transactions/domain";
 
 export class AccountsServiceMock implements IAccountsService {
 	constructor(private _accounts: Account[]) {}
 
-	delete(id: Nanoid): Promise<void> {
+	delete(id: string): Promise<void> {
 		throw new Error("Method not implemented.");
 	}
 
-	exists(id: Nanoid): Promise<boolean> {
+	exists(id: string): Promise<boolean> {
 		throw new Error("Method not implemented.");
 	}
 
@@ -30,8 +30,8 @@ export class AccountsServiceMock implements IAccountsService {
 		throw new Error("Method not implemented.");
 	}
 
-	async getByID(id: Nanoid): Promise<Account> {
-		const account = this._accounts.find((a) => a.id.equalTo(id));
+	async getByID(id: string): Promise<Account> {
+		const account = this._accounts.find((a) => a.id === id);
 		if (!account) throw new Error("account not found on get");
 		return account;
 	}
@@ -41,8 +41,8 @@ export class AccountsServiceMock implements IAccountsService {
 	}
 
 	async update(account: Account): Promise<void> {
-		const existingAccount = this._accounts.findIndex((a) =>
-			a.id.equalTo(account.id),
+		const existingAccount = this._accounts.findIndex(
+			(a) => a.id === account.id,
 		);
 		if (existingAccount === -1)
 			throw new Error("account not found on update");
@@ -50,15 +50,6 @@ export class AccountsServiceMock implements IAccountsService {
 	}
 
 	async adjustOnTransaction(transaction: Transaction): Promise<void> {
-		// Adjust all fromSplits
-		for (const split of transaction.originAccounts) {
-			const account = await this.getByID(split.accountId);
-			account.adjustFromTransaction(transaction);
-		}
-		// Adjust all toSplits
-		for (const split of transaction.destinationAccounts) {
-			const account = await this.getByID(split.accountId);
-			account.adjustFromTransaction(transaction);
-		}
+		throw new Error("Method not implemented.");
 	}
 }

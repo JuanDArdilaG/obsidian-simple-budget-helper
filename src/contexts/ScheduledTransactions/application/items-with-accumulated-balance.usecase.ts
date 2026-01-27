@@ -1,12 +1,12 @@
 import { DateValueObject } from "@juandardilag/value-objects";
-import {
-	Account,
-	AccountBalance,
-	IAccountsService,
-} from "contexts/Accounts/domain";
+import { Account, AccountBalance } from "contexts/Accounts/domain";
 import { QueryUseCase } from "contexts/Shared/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
-import { ItemRecurrenceInfo, RecurrenceModificationState } from "../domain";
+import {
+	AccountsMap,
+	GetAllAccountsUseCase,
+} from "../../Accounts/application/get-all-accounts.usecase";
+import { ItemRecurrenceInfo, RecurrenceState } from "../domain";
 import { GetScheduledTransactionsUntilDateUseCase } from "./get-items-until-date.usecase";
 
 export type ItemWithAccounts = {
@@ -23,26 +23,23 @@ export type ItemWithAccumulatedBalance = {
 	toAccountBalance?: AccountBalance;
 };
 
-export class ScheduledTransactionsWithAccumulatedBalanceUseCase
-	implements QueryUseCase<DateValueObject, ItemWithAccumulatedBalance[]>
-{
+export class ScheduledTransactionsWithAccumulatedBalanceUseCase implements QueryUseCase<
+	DateValueObject,
+	ItemWithAccumulatedBalance[]
+> {
 	readonly #logger = new Logger(
-		"ScheduledTransactionsWithAccumulatedBalanceUseCase"
+		"ScheduledTransactionsWithAccumulatedBalanceUseCase",
 	);
 
 	constructor(
-		private readonly _accountsService: IAccountsService,
-		private readonly getScheduledTransactionsUntilDateUseCase: GetScheduledTransactionsUntilDateUseCase
+		private readonly getAllAccountsUseCase: GetAllAccountsUseCase,
+		private readonly getScheduledTransactionsUntilDateUseCase: GetScheduledTransactionsUntilDateUseCase,
 	) {}
 
 	async getItems(untilDate: DateValueObject): Promise<ItemRecurrenceInfo[]> {
 		return await this.getScheduledTransactionsUntilDateUseCase.execute(
-			untilDate
+			untilDate,
 		);
-	}
-
-	async getAccounts(): Promise<Account[]> {
-		return this._accountsService.getAll();
 	}
 
 	preValidate(items: ItemRecurrenceInfo[]): boolean {
@@ -63,16 +60,18 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 	filter(scheduledTransactions: ItemRecurrenceInfo[]): ItemRecurrenceInfo[] {
 		this.#logger.debug("filter", {
 			totalItems: scheduledTransactions.length,
-			itemsByState: scheduledTransactions.reduce((acc, item) => {
-				acc[item.state] = (acc[item.state] || 0) + 1;
-				return acc;
-			}, {} as Record<string, number>),
+			itemsByState: scheduledTransactions.reduce(
+				(acc, item) => {
+					acc[item.state] = (acc[item.state] || 0) + 1;
+					return acc;
+				},
+				{} as Record<string, number>,
+			),
 		});
 
 		const filtered = scheduledTransactions.filter(
 			(scheduledTransaction) =>
-				scheduledTransaction.state !==
-				RecurrenceModificationState.DELETED
+				scheduledTransaction.state !== RecurrenceState.DELETED,
 		);
 
 		this.#logger.debug("filtered", {
@@ -82,54 +81,20 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 		return filtered;
 	}
 
-	addAccounts(
-		recurrences: ItemRecurrenceInfo[],
-		accounts: Account[]
-	): ItemWithAccounts[] {
-		return recurrences
-			.filter((item) => {
-				this.#logger.debug("addAccounts", {
-					account: accounts.find((acc) =>
-						acc.id.equalTo(item.originAccounts[0].accountId)
-					),
-				});
-				return accounts.find((acc) =>
-					acc.id.equalTo(item.originAccounts[0]?.accountId)
-				);
-			})
-			.map((item) => ({
-				recurrence: item,
-				account: accounts.find((acc) =>
-					acc.id.equalTo(item.originAccounts[0]?.accountId)
-				)!,
-				toAccount:
-					item.destinationAccounts[0]?.accountId &&
-					accounts.find((acc) =>
-						acc.id.equalTo(item.destinationAccounts[0].accountId)
-					),
-			}));
-	}
-
 	initialAccountsBalance(
-		itemsWithAccount: ItemWithAccounts[],
-		allAccounts: Account[]
+		items: ItemRecurrenceInfo[],
+		allAccounts: AccountsMap,
 	): Record<string, AccountBalance> {
 		const result: Record<string, AccountBalance> = {};
 
 		// Initialize all accounts with their current balance
 		allAccounts.forEach((account) => {
-			result[account.id.value] = account.balance;
-		});
-
-		// Override with any accounts that have transactions (this shouldn't change anything but ensures consistency)
-		itemsWithAccount.forEach(({ account, toAccount }) => {
-			result[account.id.value] = account.balance;
-			if (toAccount) result[toAccount.id.value] = toAccount.balance;
+			result[account.id] = account.balance;
 		});
 
 		this.#logger.debug("initialAccountsBalance", {
-			totalAccounts: allAccounts.length,
-			accountsWithTransactions: itemsWithAccount.length,
+			totalAccounts: allAccounts.size,
+			accountsWithTransactions: items.length,
 			accountBalances: Object.keys(result).map((accountId) => ({
 				accountId,
 				balance: result[accountId].value.toString(),
@@ -139,18 +104,20 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 	}
 
 	async addItemToAccountBalance(
-		{ recurrence, account, toAccount }: ItemWithAccounts,
+		recurrence: ItemRecurrenceInfo,
+		originAccount: Account,
+		toAccount: Account | undefined,
 		accountBalance: AccountBalance,
-		toAccountBalance?: AccountBalance
+		toAccountBalance?: AccountBalance,
 	): Promise<{
 		newAccountBalance: AccountBalance;
 		newToAccountBalance?: AccountBalance;
 	}> {
 		const recurrenceAmount = recurrence.getRealPriceForAccount(
 			recurrence.operation,
-			account,
+			originAccount,
 			recurrence.originAccounts,
-			recurrence.destinationAccounts
+			recurrence.destinationAccounts,
 		);
 		accountBalance = accountBalance.plus(recurrenceAmount);
 
@@ -160,8 +127,8 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 					recurrence.operation,
 					toAccount,
 					recurrence.originAccounts,
-					recurrence.destinationAccounts
-				)
+					recurrence.destinationAccounts,
+				),
 			);
 
 		this.#logger.debug("addItemToAccountBalance", {
@@ -178,7 +145,7 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 	}
 
 	async execute(
-		untilDate: DateValueObject
+		untilDate: DateValueObject,
 	): Promise<ItemWithAccumulatedBalance[]> {
 		this.#logger.debug("execute", { untilDate });
 
@@ -194,52 +161,58 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase
 
 		if (!this.preValidate(recurrenceItems)) return [];
 
-		const accounts = await this.getAccounts();
+		const accountsMap = await this.getAllAccountsUseCase.execute();
 		this.#logger.debug("accounts", {
-			count: accounts.length,
-			accounts: accounts.map((acc) => ({
-				name: acc.name.toString(),
-				balance: acc.balance.value.toString(),
-			})),
+			count: accountsMap.size,
+			accounts: accountsMap,
 		});
 
 		const sortedItems = this.sort(recurrenceItems);
 		const filteredItems = this.filter(sortedItems);
-		const itemsWithAccount = this.addAccounts(filteredItems, accounts);
 
-		this.#logger.debug("itemsWithAccount", {
-			itemsWithAccount,
+		this.#logger.debug("filteredItems", {
+			filteredItems,
 		});
 		const initialAccountsBalance: Record<string, AccountBalance> =
-			this.initialAccountsBalance(itemsWithAccount, accounts);
-
+			this.initialAccountsBalance(filteredItems, accountsMap);
 		const results = [];
 
-		for (const itemWithAccount of itemsWithAccount) {
-			const { recurrence, account, toAccount } = itemWithAccount;
-
-			const accountPrevBalance = initialAccountsBalance[account.id.value];
+		for (const item of filteredItems) {
+			const account = accountsMap.get(
+				item.originAccounts[0].accountId.value,
+			);
+			if (!account) {
+				this.#logger.error(
+					`Account with ID ${item.originAccounts[0].accountId.value} not found`,
+					new Error("Account not found"),
+				);
+				continue;
+			}
+			const toAccount =
+				item.destinationAccounts.length > 0
+					? accountsMap.get(
+							item.destinationAccounts[0].accountId.value,
+						)
+					: undefined;
+			const accountPrevBalance = initialAccountsBalance[account.id];
 			const toAccountPrevBalance =
-				toAccount && initialAccountsBalance[toAccount.id.value];
+				toAccount && initialAccountsBalance[toAccount.id];
 
 			const { newAccountBalance, newToAccountBalance } =
 				await this.addItemToAccountBalance(
-					{
-						recurrence,
-						account,
-						toAccount,
-					},
+					item,
+					account,
+					toAccount,
 					accountPrevBalance,
-					toAccountPrevBalance
+					toAccountPrevBalance,
 				);
 
-			initialAccountsBalance[account.id.value] = newAccountBalance;
+			initialAccountsBalance[account.id] = newAccountBalance;
 			if (toAccount && newToAccountBalance)
-				initialAccountsBalance[toAccount.id.value] =
-					newToAccountBalance;
+				initialAccountsBalance[toAccount.id] = newToAccountBalance;
 
 			results.push({
-				recurrence: recurrence,
+				recurrence: item,
 				accountPrevBalance,
 				accountBalance: newAccountBalance,
 				toAccountPrevBalance,

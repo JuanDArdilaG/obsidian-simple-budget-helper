@@ -17,7 +17,7 @@ type Filter = FilterCriterion;
 
 function makeFilter(
 	value: string | number | Date | undefined,
-	operator: Operator = "EQUAL"
+	operator: Operator = "EQUAL",
 ): FilterCriterion {
 	return { value, operator };
 }
@@ -34,24 +34,24 @@ export class Criteria<T> {
 	offset?: number;
 	readonly resultType: "ONE" | "MANY";
 
-	constructor(
-		filters: Record<keyof T, Filter> = {} as Record<keyof T, Filter>,
-		orders: IOrder<T>[] = [],
-		limit?: number,
-		offset?: number,
-		resultType: "ONE" | "MANY" = "MANY"
-	) {
-		this.filters = filters;
-		this.orders = orders;
-		this.limit = limit;
-		this.offset = offset;
-		this.resultType = resultType;
+	constructor(config?: {
+		filters?: Record<keyof T, Filter>;
+		orders?: IOrder<T>[];
+		limit?: number;
+		offset?: number;
+		resultType?: "ONE" | "MANY";
+	}) {
+		this.filters = config?.filters || ({} as Record<keyof T, Filter>);
+		this.orders = config?.orders || [];
+		this.limit = config?.limit;
+		this.offset = config?.offset;
+		this.resultType = config?.resultType || "MANY";
 	}
 
 	where(
 		field: keyof T,
 		value: string | number | Date | undefined,
-		operator: Operator = "EQUAL"
+		operator: Operator = "EQUAL",
 	): this {
 		const filter = makeFilter(value, operator);
 		this.filters[field] = filter;

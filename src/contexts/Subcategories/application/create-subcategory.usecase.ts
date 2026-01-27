@@ -1,17 +1,15 @@
 import { CommandUseCase } from "contexts/Shared/domain";
 import {
 	ISubCategoriesService,
-	SubCategory,
+	Subcategory,
 } from "contexts/Subcategories/domain";
 
-export type CreateSubCategoryUseCaseInput = SubCategory;
+export type CreateSubCategoryUseCaseInput = Subcategory;
 
-export class CreateSubCategoryUseCase
-	implements CommandUseCase<CreateSubCategoryUseCaseInput>
-{
+export class CreateSubCategoryUseCase implements CommandUseCase<CreateSubCategoryUseCaseInput> {
 	constructor(private readonly subCategoriesService: ISubCategoriesService) {}
 
-	async execute(subCategory: SubCategory): Promise<void> {
+	async execute(subCategory: Subcategory): Promise<void> {
 		await this.subCategoriesService.create(subCategory);
 	}
 }

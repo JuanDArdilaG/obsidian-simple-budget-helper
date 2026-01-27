@@ -1,6 +1,5 @@
 import {
 	Category,
-	CategoryID,
 	CategoryName,
 	CategoryPrimitives,
 	ICategoriesRepository,
@@ -10,7 +9,7 @@ import { DexieDB } from "contexts/Shared/infrastructure/persistence/dexie/dexie.
 import { DexieRepository } from "contexts/Shared/infrastructure/persistence/dexie/dexie.repository";
 
 export class CategoriesDexieRepository
-	extends DexieRepository<Category, CategoryID, CategoryPrimitives>
+	extends DexieRepository<Category, string, CategoryPrimitives>
 	implements ICategoriesRepository
 {
 	constructor(protected readonly _db: DexieDB) {

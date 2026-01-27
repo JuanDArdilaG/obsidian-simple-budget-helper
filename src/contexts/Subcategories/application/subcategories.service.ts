@@ -1,46 +1,45 @@
-import { InvalidArgumentError } from "contexts/Shared/domain/errors";
-import {
-	SubCategory,
-	SubCategoryName,
-	ISubCategoriesRepository,
-	SubcategoryPrimitives,
-	SubCategoryID,
-} from "../domain";
-import { CategoryID } from "contexts/Categories/domain/category-id.valueobject";
 import { Service } from "contexts/Shared/application/service.abstract";
+import { InvalidArgumentError } from "contexts/Shared/domain/errors";
+import { Nanoid } from "../../Shared/domain";
+import {
+	ISubcategoriesRepository,
+	Subcategory,
+	SubcategoryName,
+	SubcategoryPrimitives,
+} from "../domain";
 
 export class SubCategoriesService extends Service<
-	SubCategoryID,
-	SubCategory,
+	string,
+	Subcategory,
 	SubcategoryPrimitives
 > {
 	constructor(
-		private readonly _subCategoriesRepository: ISubCategoriesRepository
+		private readonly _subCategoriesRepository: ISubcategoriesRepository,
 	) {
 		super("Subcategory", _subCategoriesRepository);
 	}
 
-	async create(subCategory: SubCategory): Promise<void> {
+	async create(subCategory: Subcategory): Promise<void> {
 		const existingSubcategory =
 			await this._subCategoriesRepository.findByName(subCategory.name);
-		if (existingSubcategory?.category.equalTo(subCategory.category))
+		if (existingSubcategory?.categoryId.equalTo(subCategory.categoryId))
 			throw new InvalidArgumentError(
 				"Subcategory",
 				subCategory.name.toString(),
-				`subCategory with name ${subCategory.name} already exists`
+				`subCategory with name ${subCategory.name} already exists`,
 			);
 		await this._subCategoriesRepository.persist(subCategory);
 	}
 
 	async getByNameWithCreation(
-		categoryID: CategoryID,
-		name: SubCategoryName
-	): Promise<SubCategory> {
+		categoryID: Nanoid,
+		name: SubcategoryName,
+	): Promise<Subcategory> {
 		const existingSubcategory =
 			await this._subCategoriesRepository.findByName(name);
 		if (existingSubcategory) return existingSubcategory;
 
-		const subCategory = SubCategory.create(categoryID, name);
+		const subCategory = Subcategory.create(categoryID, name);
 		await this._subCategoriesRepository.persist(subCategory);
 
 		return subCategory;

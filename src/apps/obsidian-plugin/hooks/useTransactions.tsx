@@ -1,7 +1,4 @@
 import { StringValueObject } from "@juandardilag/value-objects";
-import { CategoryID } from "contexts/Categories/domain";
-import { Nanoid } from "contexts/Shared/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
 import { GetAllTransactionsUseCase } from "contexts/Transactions/application/get-all-transactions.usecase";
 import { GetAllUniqueItemStoresUseCase } from "contexts/Transactions/application/get-all-unique-item-stores.usecase";
 import { Transaction } from "contexts/Transactions/domain";
@@ -18,87 +15,83 @@ export const useTransactions = ({
 	const { logger } = useLogger("useTransactions");
 
 	const [transactions, setTransactions] = useState<Transaction[]>([]);
-	const [filteredTransactions, setFilteredTransactions] = useState<
-		Transaction[]
-	>([]);
+	const [isLoading, setIsLoading] = useState(false);
+
 	const [updateTransactions, setUpdateTransactions] = useState(true);
-	const [filters, setFilters] = useState<
-		[account?: Nanoid, category?: CategoryID, subCategory?: SubCategoryID]
-	>([undefined, undefined, undefined]);
-	const [updateFilteredTransactions, setUpdateFilteredTransactions] =
-		useState(true);
 
 	const [stores, setStores] = useState<StringValueObject[]>([]);
 	const [updateStores, setUpdateStores] = useState(true);
 
 	useEffect(() => {
+		console.log("[useTransactions] Effect triggered", {
+			updateTransactions,
+			transactionCount: transactions.length,
+		});
 		if (updateTransactions) {
-			setUpdateFilteredTransactions(false);
-			getAllTransactions.execute({}).then((transactions) => {
-				logger.debug("updating transactions", {
-					transactions: transactions.map((t) => t.toPrimitives()),
+			console.log("[useTransactions] Starting transaction fetch");
+			setUpdateTransactions(false);
+			setIsLoading(true);
+			getAllTransactions
+				.execute()
+				.then((newTransactions) => {
+					console.log("[useTransactions] Transactions fetched", {
+						count: newTransactions.length,
+					});
+					logger.debug("updating transactions", {
+						transactions: newTransactions.map((t) =>
+							t.toPrimitives(),
+						),
+					});
+					setTransactions(newTransactions);
+					setIsLoading(false);
+					console.log(
+						"[useTransactions] Transaction update complete",
+					);
+				})
+				.catch((error) => {
+					console.error(
+						"[useTransactions] Error fetching transactions:",
+						error,
+					);
+					setIsLoading(false);
 				});
-				setTransactions(transactions);
-			});
 		}
 	}, [updateTransactions]);
 
 	useEffect(() => {
-		getAllTransactions
-			.execute({
-				accountFilter: filters[0],
-				categoryFilter: filters[1],
-				subCategoryFilter: filters[2],
-			})
-			.then((transactions) => {
-				logger.debug("updating filtered transactions", {
-					filters,
-					transactions: transactions.map((t) => t.toPrimitives()),
-				});
-				setFilteredTransactions(transactions);
-			});
-	}, [filters]);
-
-	useEffect(() => {
-		if (updateTransactions) {
-			setUpdateFilteredTransactions(false);
-			getAllTransactions
-				.execute({
-					accountFilter: filters[0],
-					categoryFilter: filters[1],
-					subCategoryFilter: filters[2],
-				})
-				.then((transactions) => {
-					logger.debug("updating filtered transactions", {
-						filters,
-						transactions: transactions.map((t) => t.toPrimitives()),
-					});
-					setFilteredTransactions(transactions);
-				});
-		}
-	}, [updateFilteredTransactions]);
-
-	useEffect(() => {
+		console.log("[useTransactions] Stores effect triggered", {
+			updateStores,
+			storeCount: stores.length,
+		});
 		if (updateStores) {
+			console.log("[useTransactions] Starting stores fetch");
 			setUpdateStores(false);
-			getAllUniqueItemStores.execute().then((stores) => {
-				logger.debug("updating stores", {
-					updateStores,
+			getAllUniqueItemStores
+				.execute()
+				.then((newStores) => {
+					console.log("[useTransactions] Stores fetched", {
+						count: newStores.length,
+					});
+					logger.debug("updating stores", {
+						updateStores,
+					});
+					setStores(newStores);
+				})
+				.catch((error) => {
+					console.error(
+						"[useTransactions] Error fetching stores:",
+						error,
+					);
 				});
-				setStores(stores);
-			});
 		}
 	}, [updateStores]);
 
 	return {
+		isLoading,
 		transactions,
 		updateTransactions: () => {
 			setUpdateTransactions(true);
-			setUpdateFilteredTransactions(true);
 		},
-		filteredTransactions,
-		setFilters,
-		updateFilteredTransactions: () => setUpdateFilteredTransactions(true),
 		stores,
 		updateStores: () => setUpdateStores(true),
 	};

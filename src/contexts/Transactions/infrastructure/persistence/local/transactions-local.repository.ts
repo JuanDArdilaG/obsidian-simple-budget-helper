@@ -6,15 +6,22 @@ import { LocalRepository } from "contexts/Shared/infrastructure/persistence/loca
 import {
 	ITransactionsRepository,
 	Transaction,
-	TransactionID,
 	TransactionPrimitives,
 } from "contexts/Transactions/domain";
+import { IAccountsRepository } from "../../../../Accounts/domain";
+import { ICategoriesRepository } from "../../../../Categories/domain";
+import { ISubcategoriesRepository } from "../../../../Subcategories/domain";
 
 export class TransactionsLocalRepository
-	extends LocalRepository<TransactionID, Transaction, TransactionPrimitives>
+	extends LocalRepository<string, Transaction, TransactionPrimitives>
 	implements ITransactionsRepository
 {
-	constructor(protected readonly _db: LocalDB) {
+	constructor(
+		protected readonly _db: LocalDB,
+		readonly _accountsRepository: IAccountsRepository,
+		readonly _categoriesRepository: ICategoriesRepository,
+		readonly _subCategoriesRepository: ISubcategoriesRepository,
+	) {
 		super(_db, Config.transactionsTableName);
 	}
 

@@ -3,10 +3,10 @@ import {
 	AccountName,
 	AccountPrimitives,
 } from "contexts/Accounts/domain";
-import { IRepository, Nanoid } from "contexts/Shared/domain";
+import { IRepository } from "contexts/Shared/domain";
 
 export interface IAccountsRepository extends IRepository<
-	Nanoid,
+	string,
 	Account,
 	AccountPrimitives
 > {

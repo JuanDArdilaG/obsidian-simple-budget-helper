@@ -7,25 +7,22 @@ import { Logger } from "../../Shared/infrastructure/logger";
 import { IScheduledTransactionsService, ItemRecurrenceInfo } from "../domain";
 import { NextPendingOccurrenceUseCase } from "./next-pending-occurrence.usecase";
 
-export class NextMonthsExpensesUseCase
-	implements
-		QueryUseCase<
-			undefined,
-			{ info: ItemRecurrenceInfo; monthAmount: PriceValueObject }[]
-		>
-{
+export class NextMonthsExpensesUseCase implements QueryUseCase<
+	undefined,
+	{ info: ItemRecurrenceInfo; monthAmount: PriceValueObject }[]
+> {
 	readonly #logger = new Logger("NextMonthsExpensesUseCase");
 
 	constructor(
 		private readonly nextPendingOccurrenceUseCase: NextPendingOccurrenceUseCase,
-		private readonly _scheduledTransactionsService: IScheduledTransactionsService
+		private readonly _scheduledTransactionsService: IScheduledTransactionsService,
 	) {}
 
 	async execute(): Promise<
 		{ info: ItemRecurrenceInfo; monthAmount: PriceValueObject }[]
 	> {
 		this.#logger.debug(
-			"Fetching next month's occurrences for all scheduled transactions"
+			"Fetching next month's occurrences for all scheduled transactions",
 		);
 
 		const scheduledTransactions = (
@@ -35,7 +32,7 @@ export class NextMonthsExpensesUseCase
 			.filter((transaction) =>
 				transaction.recurrencePattern.frequency
 					?.toNumberOfDays()
-					.greaterOrEqualThan(new NumberValueObject(31))
+					.greaterOrEqualThan(new NumberValueObject(31)),
 			);
 
 		this.#logger.debug("Retrieved scheduled transactions", {
@@ -47,28 +44,28 @@ export class NextMonthsExpensesUseCase
 				scheduledTransactions.map(async (scheduledTransaction) => {
 					const info =
 						await this.nextPendingOccurrenceUseCase.execute(
-							scheduledTransaction.id
+							scheduledTransaction.nanoid,
 						);
 					return {
 						info,
 						monthAmount: scheduledTransaction.pricePerMonth,
 					};
-				})
+				}),
 			)
 		).filter(
 			(
-				info
+				info,
 			): info is {
 				info: ItemRecurrenceInfo;
 				monthAmount: PriceValueObject;
-			} => info.info !== null
+			} => info.info !== null,
 		);
 
 		this.#logger.debug(
 			"Retrieved next occurrences from scheduled transactions",
 			{
 				length: nextOccurrences.length,
-			}
+			},
 		);
 
 		return nextOccurrences;

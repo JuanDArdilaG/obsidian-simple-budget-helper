@@ -36,16 +36,11 @@ import {
 } from "@mui/material";
 import { BackupInfo } from "contexts/Shared/infrastructure/persistence/local/backup-manager";
 import { Notice } from "obsidian";
-import React, { useEffect, useState } from "react";
-import SimpleBudgetHelperPlugin from "../main";
+import React, { useContext, useEffect, useState } from "react";
+import { AppContext } from "../views";
 
-interface LocalPersistenceSettingsProps {
-	plugin: SimpleBudgetHelperPlugin; // Obsidian plugin instance
-}
-
-export const LocalPersistenceSettings: React.FC<
-	LocalPersistenceSettingsProps
-> = ({ plugin }) => {
+export const LocalPersistenceSettings: React.FC = () => {
+	const { plugin } = useContext(AppContext);
 	const [backups, setBackups] = useState<BackupInfo[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -54,7 +49,7 @@ export const LocalPersistenceSettings: React.FC<
 	const [restoreBackupDialog, setRestoreBackupDialog] = useState(false);
 	const [backupName, setBackupName] = useState("");
 	const [selectedBackup, setSelectedBackup] = useState<BackupInfo | null>(
-		null
+		null,
 	);
 	const [dataInfo, setDataInfo] = useState<{
 		exists: boolean;
@@ -263,7 +258,7 @@ export const LocalPersistenceSettings: React.FC<
 			await plugin.db.backupManager.cleanupOldBackups(maxBackups);
 
 			setSuccess(
-				`Old backups cleaned up. Keeping ${maxBackups} most recent backups.`
+				`Old backups cleaned up. Keeping ${maxBackups} most recent backups.`,
 			);
 			setCleanupDialog(false);
 			await loadBackups();
@@ -352,7 +347,7 @@ export const LocalPersistenceSettings: React.FC<
 									<Typography variant="body2" component="div">
 										<strong>Last Modified:</strong>{" "}
 										{formatDate(
-											dataInfo.lastModified || new Date()
+											dataInfo.lastModified || new Date(),
 										)}
 									</Typography>
 								</>
@@ -496,11 +491,11 @@ export const LocalPersistenceSettings: React.FC<
 													>
 														Size:{" "}
 														{formatFileSize(
-															backup.size
+															backup.size,
 														)}{" "}
 														| Created:{" "}
 														{formatDate(
-															backup.createdAt
+															backup.createdAt,
 														)}
 													</span>
 												</>
@@ -513,7 +508,7 @@ export const LocalPersistenceSettings: React.FC<
 												onClick={() => {
 													setSelectedBackup(backup);
 													setRestoreBackupDialog(
-														true
+														true,
 													);
 												}}
 												disabled={loading}

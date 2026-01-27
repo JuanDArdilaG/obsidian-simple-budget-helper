@@ -1,4 +1,3 @@
-import { NumberValueObject } from "@juandardilag/value-objects";
 import { DeleteItemRecurrenceUseCase } from "contexts/ScheduledTransactions/application/delete-scheduled-transaction-recurrence.usecase";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Nanoid } from "../../../../src/contexts/Shared/domain";
@@ -17,8 +16,10 @@ describe("DeleteItemRecurrenceUseCase", () => {
 
 	it("should call itemsService.deleteRecurrence with correct parameters", async () => {
 		const itemId = Nanoid.generate();
-		const n = new NumberValueObject(2);
+		const n = 2;
+
 		await useCase.execute({ id: itemId, n });
+
 		expect(itemsService.markOccurrenceAsDeleted).toHaveBeenCalled();
 	});
 });

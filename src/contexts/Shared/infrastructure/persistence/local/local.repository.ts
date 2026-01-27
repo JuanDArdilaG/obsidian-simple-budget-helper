@@ -4,32 +4,38 @@ import {
 	EntityComposedValue,
 } from "contexts/Shared/domain/entity.abstract";
 import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
-import { IDValueObject } from "contexts/Shared/domain/value-objects/id/id.valueobject";
 import { IndexableType } from "dexie";
+import { Logger } from "../../logger";
 import { LocalDB } from "./local.db";
 
 export abstract class LocalRepository<
-	ID extends IDValueObject,
+	ID extends string | number,
 	T extends Entity<ID, Primitives>,
-	Primitives extends EntityComposedValue
-> implements IRepository<ID, T, Primitives>
-{
+	Primitives extends EntityComposedValue,
+> implements IRepository<ID, T, Primitives> {
+	static readonly #logger = new Logger("LocalRepository");
 	protected constructor(
 		protected readonly _db: LocalDB,
-		protected readonly tableName: string
+		protected readonly tableName: string,
 	) {}
 
 	protected abstract mapToDomain(record: Primitives): T;
 	protected abstract mapToPrimitives(entity: T): Primitives;
 
 	async findById(id: ID): Promise<T | null> {
-		const record = await this._db.db.table(this.tableName).get(id.value);
+		const record = await this._db.db.table(this.tableName).get(id);
 		return record ? this.mapToDomain(record) : null;
 	}
 
 	async findAll(): Promise<T[]> {
+		LocalRepository.#logger.debug(
+			`Fetching all records from table: ${this.tableName}`,
+		);
 		const records = await this._db.db.table(this.tableName).toArray();
-		return records.map((record: Primitives) => this.mapToDomain(record));
+		LocalRepository.#logger.debug(
+			`Fetched ${records.length} records from table: ${this.tableName}`,
+		);
+		return records.map(this.mapToDomain);
 	}
 
 	async findByCriteria(criteria: Criteria<Primitives>): Promise<T[]> {
@@ -39,7 +45,7 @@ export abstract class LocalRepository<
 		if (criteria.filters && Object.keys(criteria.filters).length > 0) {
 			records = records.filter((record) => {
 				for (const [field, filter] of Object.entries(
-					criteria.filters
+					criteria.filters,
 				)) {
 					const recordValue = record[field];
 					const filterValue = filter.value;
@@ -111,7 +117,7 @@ export abstract class LocalRepository<
 	async deleteById(id: ID): Promise<boolean> {
 		const exists = await this.exists(id);
 		if (exists) {
-			await this._db.db.table(this.tableName).delete(id.value);
+			await this._db.db.table(this.tableName).delete(id);
 			// Sync to local files after data modification
 			await this._db.sync();
 			return true;
@@ -120,7 +126,7 @@ export abstract class LocalRepository<
 	}
 
 	async exists(id: ID): Promise<boolean> {
-		const record = await this._db.db.table(this.tableName).get(id.value);
+		const record = await this._db.db.table(this.tableName).get(id);
 		return !!record;
 	}
 
@@ -135,7 +141,7 @@ export abstract class LocalRepository<
 
 	async bulkAdd(entities: T[]): Promise<void> {
 		const primitives = entities.map((entity) =>
-			this.mapToPrimitives(entity)
+			this.mapToPrimitives(entity),
 		);
 		await this._db.db.table(this.tableName).bulkAdd(primitives);
 		// Sync to local files after data modification
@@ -144,7 +150,7 @@ export abstract class LocalRepository<
 
 	async bulkPut(entities: T[]): Promise<void> {
 		const primitives = entities.map((entity) =>
-			this.mapToPrimitives(entity)
+			this.mapToPrimitives(entity),
 		);
 		await this._db.db.table(this.tableName).bulkPut(primitives);
 		// Sync to local files after data modification

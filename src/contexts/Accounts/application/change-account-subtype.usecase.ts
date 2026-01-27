@@ -15,7 +15,7 @@ export class ChangeAccountSubtypeUseCase implements CommandUseCase<{
 		id: Nanoid;
 		subtype: AccountSubtype;
 	}): Promise<void> {
-		const account = await this._accountsService.getByID(id);
+		const account = await this._accountsService.getByID(id.value);
 		account.subtype = subtype;
 		await this._accountsService.update(account);
 	}

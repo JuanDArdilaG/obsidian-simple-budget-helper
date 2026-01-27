@@ -1,13 +1,12 @@
-import { MainSidebarSections } from "./components/SectionButtons";
-import { ScheduledItemsSectionSelection } from "./views";
+import { MainSections } from "./views";
 
 export type SimpleBudgetHelperSettings = {
 	dbId: string;
 	defaultCurrency: string;
 	debugMode: boolean;
 	lastTab: {
-		main: MainSidebarSections;
-		scheduled: ScheduledItemsSectionSelection;
+		main: MainSections;
+		// scheduled: ScheduledItemsSectionSelection;
 	};
 };
 
@@ -16,7 +15,7 @@ export const DEFAULT_SETTINGS: SimpleBudgetHelperSettings = {
 	defaultCurrency: "USD",
 	debugMode: false,
 	lastTab: {
-		main: "accounting",
-		scheduled: "calendar",
+		main: "transactions",
+		// scheduled: "calendar",
 	},
 };

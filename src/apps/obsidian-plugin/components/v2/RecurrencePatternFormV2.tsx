@@ -20,8 +20,6 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import dayjs, { Dayjs } from "dayjs";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	ItemRecurrenceFrequency,
@@ -58,19 +56,19 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 	onValidationChange,
 }) => {
 	const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(
-		initialPattern?.type ?? RecurrenceType.ONE_TIME
+		initialPattern?.type ?? RecurrenceType.ONE_TIME,
 	);
-	const [startDate, setStartDate] = useState<Dayjs>(
-		dayjs(initialPattern?.startDate.value ?? new Date())
+	const [startDate, setStartDate] = useState<Date>(
+		initialPattern?.startDate.value ?? new Date(),
 	);
-	const [endDate, setEndDate] = useState<Dayjs | null>(
-		initialPattern?.endDate ? dayjs(initialPattern.endDate.value) : null
+	const [endDate, setEndDate] = useState<Date | null>(
+		initialPattern?.endDate ? initialPattern.endDate.value : null,
 	);
 	const [maxOccurrences, setMaxOccurrences] = useState<number>(
-		initialPattern?.maxOccurrences?.value ?? 10
+		initialPattern?.maxOccurrences ?? 10,
 	);
 	const [frequencyPreset, setFrequencyPreset] = useState<string>(
-		initialPattern?.frequency?.value ?? "1w"
+		initialPattern?.frequency?.value ?? "1w",
 	);
 	const [customFrequency, setCustomFrequency] = useState<string>("");
 	const [useCustomFrequency, setUseCustomFrequency] =
@@ -82,10 +80,10 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 	const validatePattern = useCallback(
 		(
 			type: RecurrenceType,
-			start: Dayjs,
+			start: Date,
 			frequency?: string,
-			end?: Dayjs | null,
-			maxOcc?: number
+			end?: Date | null,
+			maxOcc?: number,
 		): string[] => {
 			const validationErrors: string[] = [];
 
@@ -98,15 +96,12 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 					}
 				} else {
 					validationErrors.push(
-						"Frequency is required for recurring items"
+						"Frequency is required for recurring items",
 					);
 				}
 			}
 
-			if (
-				type === RecurrenceType.UNTIL_DATE &&
-				(!end || end.isBefore(start) || end.isSame(start))
-			) {
+			if (type === RecurrenceType.UNTIL_DATE && (!end || end <= start)) {
 				validationErrors.push("End date must be after start date");
 			}
 
@@ -115,17 +110,17 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 				(!maxOcc || maxOcc <= 0)
 			) {
 				validationErrors.push(
-					"Number of occurrences must be greater than 0"
+					"Number of occurrences must be greater than 0",
 				);
 			}
 
 			return validationErrors;
 		},
-		[]
+		[],
 	);
 
 	const createPattern = useCallback(() => {
-		const startDateVO = new ScheduledTransactionDate(startDate.toDate());
+		const startDateVO = new ScheduledTransactionDate(startDate);
 		const effectiveFrequency = useCustomFrequency
 			? customFrequency
 			: frequencyPreset;
@@ -137,21 +132,21 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 			case RecurrenceType.INFINITE:
 				return RecurrencePattern.infinite(
 					startDateVO,
-					new ItemRecurrenceFrequency(effectiveFrequency)
+					new ItemRecurrenceFrequency(effectiveFrequency),
 				);
 
 			case RecurrenceType.UNTIL_DATE:
 				return RecurrencePattern.untilDate(
 					startDateVO,
 					new ItemRecurrenceFrequency(effectiveFrequency),
-					new DateValueObject(endDate!.toDate())
+					new DateValueObject(endDate!),
 				);
 
 			case RecurrenceType.N_OCCURRENCES:
 				return RecurrencePattern.untilNOccurrences(
 					startDateVO,
 					new ItemRecurrenceFrequency(effectiveFrequency),
-					new NumberValueObject(maxOccurrences)
+					new NumberValueObject(maxOccurrences),
 				);
 
 			default:
@@ -168,28 +163,30 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 	]);
 
 	const previewText = useMemo(() => {
+		const formatDate = (date: Date) => {
+			return new Intl.DateTimeFormat("en-US", {
+				month: "short",
+				day: "numeric",
+				year: "numeric",
+			}).format(date);
+		};
+
 		try {
 			const pattern = createPattern();
 			const freq = pattern.frequency;
 
 			switch (pattern.type) {
 				case RecurrenceType.ONE_TIME:
-					return `One-time on ${startDate.format("MMM D, YYYY")}`;
+					return `One-time on ${formatDate(startDate)}`;
 
 				case RecurrenceType.INFINITE:
-					return `Every ${freq?.value} starting ${startDate.format(
-						"MMM D, YYYY"
-					)}`;
+					return `Every ${freq?.value} starting ${formatDate(startDate)}`;
 
 				case RecurrenceType.UNTIL_DATE:
-					return `Every ${freq?.value} from ${startDate.format(
-						"MMM D, YYYY"
-					)} until ${endDate?.format("MMM D, YYYY")}`;
+					return `Every ${freq?.value} from ${formatDate(startDate)} until ${endDate ? formatDate(endDate) : ""}`;
 
 				case RecurrenceType.N_OCCURRENCES:
-					return `Every ${freq?.value} starting ${startDate.format(
-						"MMM D, YYYY"
-					)}, ${maxOccurrences} times`;
+					return `Every ${freq?.value} starting ${formatDate(startDate)}, ${maxOccurrences} times`;
 
 				default:
 					return "Invalid pattern";
@@ -224,7 +221,7 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 			startDate,
 			effectiveFrequency,
 			endDate,
-			maxOccurrences
+			maxOccurrences,
 		);
 
 		setErrors(validationErrors);
@@ -235,7 +232,10 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 				const pattern = createPattern();
 				onChange(pattern);
 			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : "Failed to create pattern";
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Failed to create pattern";
 				console.error("Failed to create pattern:", error);
 				setErrors([errorMessage]);
 				onValidationChange?.(false, [errorMessage]);
@@ -305,13 +305,13 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 
 				{/* Start Date */}
 				<Box margin="normal">
-					<DatePicker
+					<TextField
 						label="Start Date"
-						value={startDate}
-						onChange={(newValue) =>
-							newValue && setStartDate(newValue)
-						}
-						sx={{ width: "100%" }}
+						type="date"
+						value={startDate.toISOString().split("T")[0]}
+						onChange={(e) => setStartDate(new Date(e.target.value))}
+						InputLabelProps={{ shrink: true }}
+						fullWidth
 					/>
 				</Box>
 
@@ -345,7 +345,7 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 											}
 											onClick={() =>
 												handleFrequencyPresetChange(
-													preset.value
+													preset.value,
 												)
 											}
 											clickable
@@ -389,12 +389,26 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 				{/* End Date (for until date type) */}
 				{recurrenceType === RecurrenceType.UNTIL_DATE && (
 					<Box margin="normal">
-						<DatePicker
+						<TextField
 							label="End Date"
-							value={endDate}
-							onChange={(newValue) => setEndDate(newValue)}
-							minDate={startDate}
-							sx={{ width: "100%" }}
+							type="date"
+							value={
+								endDate
+									? endDate.toISOString().split("T")[0]
+									: ""
+							}
+							onChange={(e) =>
+								setEndDate(
+									e.target.value
+										? new Date(e.target.value)
+										: null,
+								)
+							}
+							InputLabelProps={{ shrink: true }}
+							inputProps={{
+								min: startDate.toISOString().split("T")[0],
+							}}
+							fullWidth
 						/>
 					</Box>
 				)}
@@ -409,7 +423,7 @@ export const RecurrencePatternFormV2: React.FC<RecurrencePatternFormProps> = ({
 							value={maxOccurrences}
 							onChange={(e) =>
 								setMaxOccurrences(
-									Number.parseInt(e.target.value, 10)
+									Number.parseInt(e.target.value, 10),
 								)
 							}
 							InputProps={{

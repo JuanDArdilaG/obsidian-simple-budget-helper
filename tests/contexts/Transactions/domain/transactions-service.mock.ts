@@ -1,21 +1,22 @@
 import { AccountBalance } from "contexts/Accounts/domain";
-import { CategoryID } from "contexts/Categories/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
+import { Category } from "contexts/Categories/domain";
 import {
 	ITransactionsService,
 	Transaction,
-	TransactionID,
 } from "contexts/Transactions/domain";
 import { Nanoid } from "../../../../src/contexts/Shared/domain";
 
 export class TransactionsServiceMock implements ITransactionsService {
 	constructor(public transactions: Transaction[]) {}
-
-	async getByID(id: TransactionID): Promise<Transaction> {
+	async getByAccount(accountId: Nanoid): Promise<Transaction[]> {
 		throw new Error("not implemented");
 	}
 
-	async delete(id: TransactionID): Promise<void> {
+	async getByID(id: Nanoid): Promise<Transaction> {
+		throw new Error("not implemented");
+	}
+
+	async delete(id: Nanoid): Promise<void> {
 		throw new Error("not implemented");
 	}
 
@@ -30,42 +31,40 @@ export class TransactionsServiceMock implements ITransactionsService {
 		throw new Error("not implemented");
 	}
 
-	async getByCategory(category: CategoryID): Promise<Transaction[]> {
+	async getByCategory(category: Nanoid): Promise<Transaction[]> {
 		throw new Error("not implemented");
 	}
 
-	async getBySubCategory(subCategory: SubCategoryID): Promise<Transaction[]> {
+	async getBySubCategory(subCategory: Nanoid): Promise<Transaction[]> {
 		throw new Error("not implemented");
 	}
 
-	async hasTransactionsByCategory(category: CategoryID): Promise<boolean> {
+	async hasTransactionsByCategory(category: Nanoid): Promise<boolean> {
 		throw new Error("not implemented");
 	}
 
-	async hasTransactionsBySubCategory(
-		subCategory: SubCategoryID,
-	): Promise<boolean> {
+	async hasTransactionsBySubCategory(subCategory: Nanoid): Promise<boolean> {
 		throw new Error("not implemented");
 	}
 
 	async reassignTransactionsCategory(
-		oldCategory: CategoryID,
-		newCategory: CategoryID,
+		oldCategory: Category,
+		newCategory: Category,
 	): Promise<void> {
 		throw new Error("not implemented");
 	}
 
 	async reassignTransactionsSubCategory(
-		oldSubCategory: SubCategoryID,
-		newSubCategory: SubCategoryID,
+		oldSubCategory: Nanoid,
+		newSubCategory: Nanoid,
 	): Promise<void> {
 		throw new Error("not implemented");
 	}
 
 	async reassignTransactionsCategoryAndSubcategory(
-		oldCategory: CategoryID,
-		newCategory: CategoryID,
-		newSubCategory: SubCategoryID,
+		oldCategory: Nanoid,
+		newCategory: Nanoid,
+		newSubCategory: Nanoid,
 	): Promise<void> {
 		throw new Error("not implemented");
 	}
@@ -79,13 +78,13 @@ export class TransactionsServiceMock implements ITransactionsService {
 	}
 
 	async getTransactionsByCategory(
-		category: CategoryID,
+		category: Nanoid,
 	): Promise<Array<Transaction>> {
 		throw new Error("not implemented");
 	}
 
 	async getTransactionsBySubCategory(
-		subCategory: SubCategoryID,
+		subCategory: Nanoid,
 	): Promise<Array<Transaction>> {
 		throw new Error("not implemented");
 	}

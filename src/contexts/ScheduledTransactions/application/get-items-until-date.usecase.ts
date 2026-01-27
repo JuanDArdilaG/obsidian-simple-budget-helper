@@ -1,27 +1,24 @@
-import {
-	DateValueObject,
-	NumberValueObject,
-} from "@juandardilag/value-objects";
 import { QueryUseCase } from "contexts/Shared/domain/query-use-case.interface";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import {
 	IRecurrenceModificationsService,
 	IScheduledTransactionsService,
 	ItemRecurrenceInfo,
-	RecurrenceModificationState,
+	RecurrenceState,
 } from "../domain";
 
-export class GetScheduledTransactionsUntilDateUseCase
-	implements QueryUseCase<DateValueObject, ItemRecurrenceInfo[]>
-{
+export class GetScheduledTransactionsUntilDateUseCase implements QueryUseCase<
+	Date,
+	ItemRecurrenceInfo[]
+> {
 	readonly #logger = new Logger("GetScheduledTransactionsUntilDateUse");
 
 	constructor(
 		private readonly _scheduledTransactionsService: IScheduledTransactionsService,
-		private readonly _recurrenceModificationsService: IRecurrenceModificationsService
+		private readonly _recurrenceModificationsService: IRecurrenceModificationsService,
 	) {}
 
-	async execute(to: DateValueObject): Promise<ItemRecurrenceInfo[]> {
+	async execute(to: Date): Promise<ItemRecurrenceInfo[]> {
 		this.#logger.debug("execute", { to });
 		const scheduledTransactions =
 			await this._scheduledTransactionsService.getAll();
@@ -35,7 +32,7 @@ export class GetScheduledTransactionsUntilDateUseCase
 		for (const scheduledTransaction of scheduledTransactions) {
 			const modifications =
 				await this._recurrenceModificationsService.getByScheduledItemId(
-					scheduledTransaction.id
+					scheduledTransaction.nanoid,
 				);
 			recurrences.push(
 				...scheduledTransaction.recurrencePattern
@@ -44,13 +41,12 @@ export class GetScheduledTransactionsUntilDateUseCase
 					.map((date, index) => ({ date, index }))
 					.filter(({ date }) => {
 						const modification = modifications.find(
-							(mod) => mod.originalDate.compareTo(date) === 0
+							(mod) => mod.originalDate.compareTo(date) === 0,
 						);
 						// Exclude skipped/deleted/completed occurrences
 						if (modification) {
 							return (
-								modification.state ===
-								RecurrenceModificationState.PENDING
+								modification.state === RecurrenceState.PENDING
 							);
 						}
 						return true;
@@ -58,25 +54,25 @@ export class GetScheduledTransactionsUntilDateUseCase
 					.map(({ date, index }) => {
 						// Check for modification on this date
 						const modification = modifications.find(
-							(mod) => mod.originalDate.compareTo(date) === 0
+							(mod) => mod.originalDate.compareTo(date) === 0,
 						);
 						let recurrenceInfo: ItemRecurrenceInfo;
 						if (modification) {
 							recurrenceInfo =
 								ItemRecurrenceInfo.fromModification(
 									scheduledTransaction,
-									modification
+									modification,
 								);
 						} else {
 							recurrenceInfo =
 								ItemRecurrenceInfo.fromScheduledTransaction(
 									scheduledTransaction,
-									new NumberValueObject(index),
-									date
+									index,
+									date,
 								);
 						}
 						return recurrenceInfo;
-					})
+					}),
 			);
 		}
 

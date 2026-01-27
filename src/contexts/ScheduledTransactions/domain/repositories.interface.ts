@@ -1,6 +1,4 @@
-import { CategoryID } from "contexts/Categories/domain";
 import { IRepository, Nanoid } from "contexts/Shared/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
 import {
 	RecurrenceModification,
 	RecurrenceModificationPrimitives,
@@ -10,30 +8,26 @@ import {
 	ScheduledTransactionPrimitives,
 } from "./scheduled-transaction.entity";
 
-export interface IScheduledTransactionsRepository
-	extends IRepository<
-		Nanoid,
-		ScheduledTransaction,
-		ScheduledTransactionPrimitives
-	> {
-	findByCategory(category: CategoryID): Promise<ScheduledTransaction[]>;
-	findBySubCategory(
-		subCategory: SubCategoryID
-	): Promise<ScheduledTransaction[]>;
+export interface IScheduledTransactionsRepository extends IRepository<
+	string,
+	ScheduledTransaction,
+	ScheduledTransactionPrimitives
+> {
+	findByCategory(category: Nanoid): Promise<ScheduledTransaction[]>;
+	findBySubCategory(subCategory: Nanoid): Promise<ScheduledTransaction[]>;
 }
 
-export interface IRecurrenceModificationsRepository
-	extends IRepository<
-		Nanoid,
-		RecurrenceModification,
-		RecurrenceModificationPrimitives
-	> {
+export interface IRecurrenceModificationsRepository extends IRepository<
+	string,
+	RecurrenceModification,
+	RecurrenceModificationPrimitives
+> {
 	findByScheduledItemId(
-		scheduledItemId: Nanoid
+		scheduledItemId: Nanoid,
 	): Promise<RecurrenceModification[]>;
 	findByScheduledItemIdAndOccurrenceIndex(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: number
+		occurrenceIndex: number,
 	): Promise<RecurrenceModification | null>;
 	deleteByScheduledItemId(scheduledItemId: Nanoid): Promise<void>;
 	countByScheduledItemId(scheduledItemId: Nanoid): Promise<number>;

@@ -1,15 +1,14 @@
 import { Criteria } from "../criteria";
 import { Entity, EntityComposedValue } from "../entity.abstract";
-import { IDValueObject } from "../value-objects/id/id.valueobject";
 
 /**
  * Generic repository interface that defines common operations
  * for domain entities
  */
 export interface IRepository<
-	ID extends IDValueObject,
+	ID extends string | number,
 	T extends Entity<ID, P>,
-	P extends EntityComposedValue
+	P extends EntityComposedValue,
 > {
 	/**
 	 * Find entity by its ID
@@ -56,9 +55,9 @@ export interface IRepository<
  * Extended repository interface with pagination support
  */
 export interface IPaginatedRepository<
-	ID extends IDValueObject,
+	ID extends string | number,
 	T extends Entity<ID, P>,
-	P extends EntityComposedValue
+	P extends EntityComposedValue,
 > extends IRepository<ID, T, P> {
 	/**
 	 * Find entities with pagination

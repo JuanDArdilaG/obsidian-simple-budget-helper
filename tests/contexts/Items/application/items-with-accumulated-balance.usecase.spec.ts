@@ -1,5 +1,6 @@
 import { DateValueObject } from "@juandardilag/value-objects";
 import { describe, expect, it, vi } from "vitest";
+import { GetAllAccountsUseCase } from "../../../../src/contexts/Accounts/application/get-all-accounts.usecase";
 import { GetScheduledTransactionsUntilDateUseCase } from "../../../../src/contexts/ScheduledTransactions/application/get-items-until-date.usecase";
 import { ScheduledTransactionsWithAccumulatedBalanceUseCase } from "../../../../src/contexts/ScheduledTransactions/application/items-with-accumulated-balance.usecase";
 import { IRecurrenceModificationsService } from "../../../../src/contexts/ScheduledTransactions/domain";
@@ -13,10 +14,10 @@ describe("execute", () => {
 		const accounts = buildTestAccounts(1);
 		const items = buildTestItems([
 			{
-				account: accounts[0].id,
+				account: accounts[0],
 			},
 			{
-				account: accounts[0].id,
+				account: accounts[0],
 			},
 		]);
 		const scheduledTransactionsService =
@@ -47,16 +48,20 @@ describe("execute", () => {
 				update: vi.fn(),
 			};
 
-		const useCase = new ScheduledTransactionsWithAccumulatedBalanceUseCase(
+		const getAllAccountsUseCase = new GetAllAccountsUseCase(
 			accountsService,
+		);
+
+		const useCase = new ScheduledTransactionsWithAccumulatedBalanceUseCase(
+			getAllAccountsUseCase,
 			new GetScheduledTransactionsUntilDateUseCase(
 				scheduledTransactionsService,
-				recurrenceModificationsService
-			)
+				recurrenceModificationsService,
+			),
 		);
 
 		const itemsWithBalance = await useCase.execute(
-			DateValueObject.createNowDate()
+			DateValueObject.createNowDate(),
 		);
 
 		expect(itemsWithBalance.length).toBe(2);
@@ -67,7 +72,7 @@ describe("execute", () => {
 
 		// Verify that the mock was called
 		expect(
-			recurrenceModificationsService.getByScheduledItemId
+			recurrenceModificationsService.getByScheduledItemId,
 		).toHaveBeenCalledTimes(2);
 	});
 });

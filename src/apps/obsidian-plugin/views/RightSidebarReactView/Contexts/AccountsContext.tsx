@@ -2,12 +2,16 @@ import { useAccounts } from "apps/obsidian-plugin/hooks";
 import { AwilixContainer } from "awilix";
 import { CreateAccountUseCase } from "contexts/Accounts/application/create-account.usecase";
 import { DeleteAccountUseCase } from "contexts/Accounts/application/delete-account.usecase";
-import { GetAllAccountsUseCase } from "contexts/Accounts/application/get-all-accounts.usecase";
-import { Account, AccountName } from "contexts/Accounts/domain";
+import {
+	AccountsMap,
+	GetAllAccountsUseCase,
+} from "contexts/Accounts/application/get-all-accounts.usecase";
+import { Account } from "contexts/Accounts/domain";
 import { createContext } from "react";
 import { ChangeAccountNameUseCase } from "../../../../../contexts/Accounts/application/change-account-name.usecase";
 import { ChangeAccountSubtypeUseCase } from "../../../../../contexts/Accounts/application/change-account-subtype.usecase";
 import { Nanoid } from "../../../../../contexts/Shared/domain";
+import { AdjustAccountUseCase } from "../../../../../contexts/Transactions/application/adjust-account.usecase";
 
 export type AccountsContextType = {
 	useCases: {
@@ -16,11 +20,11 @@ export type AccountsContextType = {
 		deleteAccount: DeleteAccountUseCase;
 		changeAccountName: ChangeAccountNameUseCase;
 		changeAccountSubtype: ChangeAccountSubtypeUseCase;
+		adjustAccount: AdjustAccountUseCase;
 	};
-	accounts: Account[];
+	accountsMap: AccountsMap;
 	updateAccounts: () => void;
-	getAccountByID: (id: Nanoid) => Account | undefined;
-	getAccountByName: (name: AccountName) => Account | undefined;
+	getAccountByID: (id: Nanoid) => Account | null;
 };
 
 export const AccountsContext = createContext<AccountsContextType>({
@@ -30,11 +34,11 @@ export const AccountsContext = createContext<AccountsContextType>({
 		deleteAccount: {} as DeleteAccountUseCase,
 		changeAccountName: {} as ChangeAccountNameUseCase,
 		changeAccountSubtype: {} as ChangeAccountSubtypeUseCase,
+		adjustAccount: {} as AdjustAccountUseCase,
 	},
-	accounts: [],
+	accountsMap: new Map(),
 	updateAccounts: () => {},
-	getAccountByID: () => undefined,
-	getAccountByName: () => undefined,
+	getAccountByID: () => null,
 });
 
 export const getAccountsContextValues = (
@@ -50,10 +54,13 @@ export const getAccountsContextValues = (
 		"deleteAccountUseCase",
 	);
 
-	const { accounts, updateAccounts, getAccountByID, getAccountByName } =
-		useAccounts({
-			getAllAccounts,
-		});
+	const { accountsMap, updateAccounts, getAccountByID } = useAccounts({
+		getAllAccounts,
+	});
+
+	console.log("[AccountsContext] Context value created", {
+		accountCount: accountsMap.size,
+	});
 
 	return {
 		useCases: {
@@ -67,10 +74,12 @@ export const getAccountsContextValues = (
 				container.resolve<ChangeAccountSubtypeUseCase>(
 					"changeAccountSubtypeUseCase",
 				),
+			adjustAccount: container.resolve<AdjustAccountUseCase>(
+				"adjustAccountUseCase",
+			),
 		},
-		accounts,
+		accountsMap,
 		updateAccounts,
 		getAccountByID,
-		getAccountByName,
 	};
 };
