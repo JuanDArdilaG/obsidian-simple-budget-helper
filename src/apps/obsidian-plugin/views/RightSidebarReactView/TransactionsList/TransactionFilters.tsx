@@ -1,19 +1,18 @@
 import { Filter, X } from "lucide-react";
-import { memo, useContext } from "react";
+import { memo, useContext, useMemo } from "react";
 import { AccountsMap } from "../../../../../contexts/Accounts/application/get-all-accounts.usecase";
-import { CategoriesWithSubcategoriesMap } from "../../../../../contexts/Categories/application/get-all-categories-with-subcategories.usecase";
+import { Nanoid } from "../../../../../contexts/Shared/domain";
 import { CategoriesContext } from "../Contexts";
 
 interface TransactionFiltersProps {
 	accountsMap: AccountsMap;
-	selectedAccounts: string[];
-	onAccountChange: (accountId: string) => void;
+	selectedAccounts: Nanoid[];
+	onAccountChange: (accountId: Nanoid) => void;
 	selectedCategory: string;
 	onCategoryChange: (category: string) => void;
 	selectedSubcategory: string;
 	onSubcategoryChange: (subcategory: string) => void;
 	onClearFilters: () => void;
-	categoriesWithSubcategories: CategoriesWithSubcategoriesMap;
 }
 
 const TransactionFiltersComponent = ({
@@ -25,26 +24,33 @@ const TransactionFiltersComponent = ({
 	selectedSubcategory,
 	onSubcategoryChange,
 	onClearFilters,
-	categoriesWithSubcategories,
 }: Readonly<TransactionFiltersProps>) => {
-	const { categoriesMap } = useContext(CategoriesContext);
-	const hasActiveFilters =
-		selectedAccounts.length > 0 ||
-		selectedCategory !== "" ||
-		selectedSubcategory !== "";
+	const { categoriesMap, categoriesWithSubcategories } =
+		useContext(CategoriesContext);
+
+	const hasActiveFilters = useMemo<boolean>(
+		() =>
+			selectedAccounts.length > 0 ||
+			selectedCategory !== "" ||
+			selectedSubcategory !== "",
+		[selectedAccounts, selectedCategory, selectedSubcategory],
+	);
+
 	return (
-		<div className="bg-white border-b border-gray-200 py-4 px-4 sm:px-6 lg:px-8 sticky top-16 z-10 shadow-sm">
-			<div className="max-w-7xl mx-auto flex flex-wrap items-center gap-4">
-				<div className="flex items-center gap-2 text-gray-500 text-sm font-medium mr-2">
+		<div className="bg-white! border-b! border-gray-200! py-4! px-4! sm:px-6! lg:px-8! sticky! top-16! z-10! shadow-sm!">
+			<div className="max-w-7xl! mx-auto! flex! flex-wrap! items-center! gap-4!">
+				<div className="flex! items-center! gap-2! text-gray-500! text-sm! font-medium! mr-2!">
 					<Filter size={16} />
 					<span>Filters:</span>
 				</div>
 
 				{/* Account Filter */}
-				<div className="relative">
+				<div className="relative!">
 					<select
 						value=""
-						onChange={(e) => onAccountChange(e.target.value)}
+						onChange={(e) =>
+							onAccountChange(new Nanoid(e.target.value))
+						}
 						className="appearance-none! bg-gray-50! border! border-gray-300! text-gray-700! py-1.5! pl-3! pr-8! rounded-md! text-sm! focus:outline-none! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 					>
 						<option value="" disabled>
@@ -61,9 +67,9 @@ const TransactionFiltersComponent = ({
 								</option>
 							))}
 					</select>
-					<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+					<div className="pointer-events-none! absolute! inset-y-0! right-0! flex! items-center! px-2! text-gray-500!">
 						<svg
-							className="h-4 w-4"
+							className="h-4! w-4!"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
@@ -80,19 +86,19 @@ const TransactionFiltersComponent = ({
 
 				{/* Selected Accounts Tags */}
 				{selectedAccounts.map((accountId) => {
-					const account = accountsMap.get(accountId);
+					const account = accountsMap.get(accountId.value);
 					if (!account) return null;
 					return (
 						<span
-							key={accountId}
-							className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+							key={accountId.value}
+							className="inline-flex! items-center! px-2.5! py-0.5! rounded-full! text-xs! font-medium! bg-indigo-100! text-indigo-800!"
 						>
 							{account.name.value}
 							<button
 								onClick={() => onAccountChange(accountId)}
-								className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-600 focus:outline-none"
+								className="ml-1.5! inline-flex! items-center! justify-center! w-4! h-4! rounded-full! text-indigo-400! hover:bg-indigo-200! hover:text-indigo-600! focus:outline-none!"
 							>
-								<span className="sr-only">Remove filter</span>
+								<span className="sr-only!">Remove filter</span>
 								<X size={10} />
 							</button>
 						</span>
@@ -100,7 +106,7 @@ const TransactionFiltersComponent = ({
 				})}
 
 				{/* Category Filter */}
-				<div className="relative">
+				<div className="relative!">
 					<select
 						value={selectedCategory}
 						onChange={(e) => onCategoryChange(e.target.value)}
@@ -118,9 +124,9 @@ const TransactionFiltersComponent = ({
 								</option>
 							))}
 					</select>
-					<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+					<div className="pointer-events-none! absolute! inset-y-0! right-0! flex! items-center! px-2! text-gray-500!">
 						<svg
-							className="h-4 w-4"
+							className="h-4! w-4!"
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
@@ -137,7 +143,7 @@ const TransactionFiltersComponent = ({
 
 				{/* Subcategory Filter */}
 				{selectedCategory && (
-					<div className="relative">
+					<div className="relative!">
 						<select
 							value={selectedSubcategory}
 							onChange={(e) =>
@@ -164,9 +170,9 @@ const TransactionFiltersComponent = ({
 									</option>
 								))}
 						</select>
-						<div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+						<div className="pointer-events-none! absolute! inset-y-0! right-0! flex! items-center! px-2! text-gray-500!">
 							<svg
-								className="h-4 w-4"
+								className="h-4! w-4!"
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"

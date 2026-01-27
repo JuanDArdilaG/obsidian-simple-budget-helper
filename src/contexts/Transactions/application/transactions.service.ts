@@ -31,6 +31,10 @@ export class TransactionsService implements ITransactionsService {
 		private readonly subCategoriesService: ISubCategoriesService,
 	) {}
 
+	async getByAccount(accountId: Nanoid): Promise<Transaction[]> {
+		return this._transactionsRepository.findByAccountId(accountId);
+	}
+
 	async getAll(): Promise<Transaction[]> {
 		return this._transactionsRepository.findAll();
 	}

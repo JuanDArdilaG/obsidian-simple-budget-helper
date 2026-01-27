@@ -211,7 +211,7 @@ export function AddScheduledTransactionModal({
 	};
 	if (!isOpen) return null;
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm overflow-y-auto">
+		<div className="fixed! inset-0! z-50! flex! items-center! justify-center! p-4! bg-black/20! backdrop-blur-sm! overflow-y-auto!">
 			<motion.div
 				initial={{
 					opacity: 0,
@@ -225,70 +225,70 @@ export function AddScheduledTransactionModal({
 					opacity: 0,
 					scale: 0.95,
 				}}
-				className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-6 border border-gray-100 my-8 overflow-hidden flex flex-col max-h-[90vh]"
+				className="bg-white! rounded-xl! shadow-xl! max-w-3xl! w-full! p-6! border! border-gray-100! my-8! overflow-hidden! flex! flex-col! max-h-[90vh]!"
 			>
-				<div className="flex justify-between items-center mb-6 flex-shrink-0">
-					<h2 className="text-xl font-bold text-gray-900">
+				<div className="flex! justify-between! items-center! mb-6! flex-shrink-0!">
+					<h2 className="text-xl! font-bold! text-gray-900!">
 						{isEditMode
 							? "Edit Scheduled Transaction"
 							: "Add Scheduled Transaction"}
 					</h2>
 					<button
 						onClick={onClose}
-						className="text-gray-400 hover:text-gray-600"
+						className="text-gray-400! hover:text-gray-600!"
 					>
 						<X size={24} />
 					</button>
 				</div>
 
-				<div className="overflow-y-auto flex-1 pr-2 -mr-2">
+				<div className="overflow-y-auto! flex-1! pr-2! -mr-2!">
 					{/* Operation Selection */}
-					<div className="grid grid-cols-3 gap-4 mb-6 p-2">
+					<div className="grid! grid-cols-3! gap-4! mb-6! p-2!">
 						<button
 							onClick={() => setOperation("expense")}
-							className={`p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${operation === "expense" ? "bg-rose-50 border-rose-200 text-rose-700 ring-2 ring-rose-500 ring-offset-2" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+							className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${operation === "expense" ? "bg-rose-50! border-rose-200! text-rose-700! ring-2! ring-rose-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
 						>
 							<ArrowUpRight
 								className={
 									operation === "expense"
-										? "text-rose-600"
-										: "text-gray-400"
+										? "text-rose-600!"
+										: "text-gray-400!"
 								}
 							/>
-							<span className="font-medium">Expense</span>
+							<span className="font-medium!">Expense</span>
 						</button>
 						<button
 							onClick={() => setOperation("income")}
-							className={`p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${operation === "income" ? "bg-emerald-50 border-emerald-200 text-emerald-700 ring-2 ring-emerald-500 ring-offset-2" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+							className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${operation === "income" ? "bg-emerald-50! border-emerald-200! text-emerald-700! ring-2! ring-emerald-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
 						>
 							<ArrowDownLeft
 								className={
 									operation === "income"
-										? "text-emerald-600"
-										: "text-gray-400"
+										? "text-emerald-600!"
+										: "text-gray-400!"
 								}
 							/>
-							<span className="font-medium">Income</span>
+							<span className="font-medium!">Income</span>
 						</button>
 						<button
 							onClick={() => setOperation("transfer")}
-							className={`p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${operation === "transfer" ? "bg-blue-50 border-blue-200 text-blue-700 ring-2 ring-blue-500 ring-offset-2" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+							className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${operation === "transfer" ? "bg-blue-50! border-blue-200! text-blue-700! ring-2! ring-blue-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
 						>
 							<RefreshCw
 								className={
 									operation === "transfer"
-										? "text-blue-600"
-										: "text-gray-400"
+										? "text-blue-600!"
+										: "text-gray-400!"
 								}
 							/>
-							<span className="font-medium">Transfer</span>
+							<span className="font-medium!">Transfer</span>
 						</button>
 					</div>
 
 					{/* Basic Info */}
-					<div className="space-y-4 mb-6">
+					<div className="space-y-4! mb-6!">
 						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1">
+							<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 								Transaction Name *
 							</label>
 							<input
@@ -296,13 +296,13 @@ export function AddScheduledTransactionModal({
 								value={name}
 								onChange={(e) => setName(e.target.value)}
 								placeholder="e.g. Rent Payment, Netflix Subscription"
-								className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+								className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 							/>
 						</div>
 
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+						<div className="grid! grid-cols-1! sm:grid-cols-2! gap-4!">
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
+								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Category *
 								</label>
 								<select
@@ -311,7 +311,7 @@ export function AddScheduledTransactionModal({
 										setCategory(e.target.value);
 										setSubcategory("");
 									}}
-									className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+									className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 								>
 									<option value="">Select Category</option>
 									{Array.from(categoriesWithSubcategoriesMap)
@@ -329,7 +329,7 @@ export function AddScheduledTransactionModal({
 							</div>
 
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
+								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Subcategory
 								</label>
 								<select
@@ -338,7 +338,7 @@ export function AddScheduledTransactionModal({
 										setSubcategory(e.target.value)
 									}
 									disabled={!category}
-									className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
+									className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500! disabled:bg-gray-100!"
 								>
 									<option value="">Select Subcategory</option>
 									{category &&
@@ -361,13 +361,13 @@ export function AddScheduledTransactionModal({
 							</div>
 						</div>
 
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+						<div className="grid! grid-cols-1! sm:grid-cols-2! gap-4!">
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
+								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Amount *
 								</label>
-								<div className="relative">
-									<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+								<div className="relative!">
+									<span className="absolute! left-3! top-1/2! -translate-y-1/2! text-gray-500!">
 										$
 									</span>
 									<input
@@ -379,13 +379,13 @@ export function AddScheduledTransactionModal({
 											)
 										}
 										placeholder="0.00"
-										className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+										className="w-full! pl-7! pr-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 									/>
 								</div>
 							</div>
 
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
+								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Store / Payee (Optional)
 								</label>
 								<input
@@ -393,24 +393,24 @@ export function AddScheduledTransactionModal({
 									value={store}
 									onChange={(e) => setStore(e.target.value)}
 									placeholder="e.g. Netflix, Landlord"
-									className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+									className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 								/>
 							</div>
 						</div>
 					</div>
 
 					{/* Recurrence Pattern */}
-					<div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-						<div className="flex items-center gap-2 mb-4">
-							<Repeat size={18} className="text-gray-500" />
-							<h3 className="font-medium text-gray-900">
+					<div className="mb-6! p-4! bg-gray-50! rounded-lg! border! border-gray-200!">
+						<div className="flex! items-center! gap-2! mb-4!">
+							<Repeat size={18} className="text-gray-500!" />
+							<h3 className="font-medium! text-gray-900!">
 								Recurrence Pattern
 							</h3>
 						</div>
 
-						<div className="space-y-4">
+						<div className="space-y-4!">
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
+								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Start Date *
 								</label>
 								<input
@@ -419,12 +419,12 @@ export function AddScheduledTransactionModal({
 									onChange={(e) =>
 										setStartDate(e.target.value)
 									}
-									className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+									className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 								/>
 							</div>
 
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
+								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Recurrence Type *
 								</label>
 								<select
@@ -434,7 +434,7 @@ export function AddScheduledTransactionModal({
 											e.target.value as RecurrenceType,
 										)
 									}
-									className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+									className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 								>
 									<option value={RecurrenceType.ONE_TIME}>
 										One-time
@@ -455,10 +455,10 @@ export function AddScheduledTransactionModal({
 
 							{recurrenceType !== RecurrenceType.ONE_TIME && (
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">
+									<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 										Frequency *
 									</label>
-									<div className="flex gap-2">
+									<div className="flex! gap-2!">
 										<input
 											type="number"
 											min="1"
@@ -469,7 +469,7 @@ export function AddScheduledTransactionModal({
 														1,
 												)
 											}
-											className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+											className="w-20! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 										/>
 										<select
 											value={frequencyUnit}
@@ -482,7 +482,7 @@ export function AddScheduledTransactionModal({
 														| "y",
 												)
 											}
-											className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+											className="flex-1! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 										>
 											<option value="d">Day(s)</option>
 											<option value="w">Week(s)</option>
@@ -495,7 +495,7 @@ export function AddScheduledTransactionModal({
 
 							{recurrenceType === RecurrenceType.UNTIL_DATE && (
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">
+									<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 										End Date *
 									</label>
 									<input
@@ -505,7 +505,7 @@ export function AddScheduledTransactionModal({
 											setEndDate(e.target.value)
 										}
 										min={startDate}
-										className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+										className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 									/>
 								</div>
 							)}
@@ -513,7 +513,7 @@ export function AddScheduledTransactionModal({
 							{recurrenceType ===
 								RecurrenceType.N_OCCURRENCES && (
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">
+									<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 										Number of Occurrences *
 									</label>
 									<input
@@ -525,7 +525,7 @@ export function AddScheduledTransactionModal({
 												parseInt(e.target.value) || 1,
 											)
 										}
-										className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+										className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 									/>
 								</div>
 							)}
@@ -533,7 +533,7 @@ export function AddScheduledTransactionModal({
 					</div>
 
 					{/* Account Splits */}
-					<div className="space-y-6 mb-6">
+					<div className="space-y-6! mb-6!">
 						<AccountSplitter
 							label={
 								operation === "income"
@@ -559,16 +559,16 @@ export function AddScheduledTransactionModal({
 				</div>
 
 				{/* Footer */}
-				<div className="flex gap-3 pt-4 border-t border-gray-100 mt-auto">
+				<div className="flex! gap-3! pt-4! border-t! border-gray-100! mt-auto!">
 					<button
 						onClick={onClose}
-						className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+						className="flex-1! px-4! py-2.5! border! border-gray-300! rounded-lg! text-gray-700! font-medium! hover:bg-gray-50! transition-colors!"
 					>
 						Cancel
 					</button>
 					<button
 						onClick={handleSubmit}
-						className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"
+						className="flex-1! px-4! py-2.5! bg-indigo-600! text-white! rounded-lg! font-medium! hover:bg-indigo-700! transition-colors! shadow-sm!"
 					>
 						{isEditMode ? "Update" : "Create"} Scheduled Transaction
 					</button>
@@ -610,19 +610,19 @@ function AccountSplitter({
 		onChange(newSplits);
 	};
 	return (
-		<div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-			<div className="flex justify-between items-center mb-3">
-				<div className="flex items-center gap-2">
-					<Wallet size={16} className="text-gray-500" />
-					<span className="font-medium text-gray-700">{label}</span>
+		<div className="bg-gray-50! rounded-lg! p-4! border! border-gray-200!">
+			<div className="flex! justify-between! items-center! mb-3!">
+				<div className="flex! items-center! gap-2!">
+					<Wallet size={16} className="text-gray-500!" />
+					<span className="font-medium! text-gray-700!">{label}</span>
 				</div>
 				<div
-					className={`text-sm font-medium ${isBalanced ? "text-green-600" : "text-amber-600"}`}
+					className={`text-sm! font-medium! ${isBalanced ? "text-green-600!" : "text-amber-600!"}`}
 				>
 					{isBalanced ? (
-						<span className="flex items-center gap-1">
+						<span className="flex! items-center! gap-1!">
 							Match{" "}
-							<div className="w-2 h-2 rounded-full bg-green-500" />
+							<div className="w-2! h-2! rounded-full! bg-green-500!" />
 						</span>
 					) : (
 						<span>
@@ -636,18 +636,18 @@ function AccountSplitter({
 				</div>
 			</div>
 
-			<div className="space-y-2">
+			<div className="space-y-2!">
 				{splits.map((split, index) => (
 					<div
 						key={split.accountId.value}
-						className="flex gap-2 items-center"
+						className="flex! gap-2! items-center!"
 					>
 						<select
 							value={split.accountId.value}
 							onChange={(e) =>
 								updateSplit(index, "accountId", e.target.value)
 							}
-							className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-500 bg-white"
+							className="flex-1! px-3! py-2! text-sm! border! border-gray-300! rounded-lg! focus:ring-1! focus:ring-indigo-500! bg-white!"
 						>
 							{Array.from(accountsMap)
 								.toSorted(([_, accA], [__, accB]) =>
@@ -659,8 +659,8 @@ function AccountSplitter({
 									</option>
 								))}
 						</select>
-						<div className="relative w-32">
-							<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+						<div className="relative! w-32!">
+							<span className="absolute! left-3! top-1/2! -translate-y-1/2! text-gray-500! text-sm!">
 								$
 							</span>
 							<input
@@ -673,7 +673,7 @@ function AccountSplitter({
 										Number.parseFloat(e.target.value),
 									)
 								}
-								className="w-full pl-6 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-500"
+								className="w-full! pl-6! pr-3! py-2! text-sm! border! border-gray-300! rounded-lg! focus:ring-1! focus:ring-indigo-500!"
 							/>
 						</div>
 					</div>

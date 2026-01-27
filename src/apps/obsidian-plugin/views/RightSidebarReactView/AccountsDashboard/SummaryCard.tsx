@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { useCallback, useMemo } from "react";
 
 interface SummaryCardProps {
 	title: string;
@@ -7,6 +8,7 @@ interface SummaryCardProps {
 	trend: number;
 	delay?: number;
 	isCurrency?: boolean;
+	reductionIsPositive?: boolean;
 }
 export function SummaryCard({
 	title,
@@ -14,9 +16,10 @@ export function SummaryCard({
 	trend,
 	delay = 0,
 	isCurrency = true,
+	reductionIsPositive = false,
 }: Readonly<SummaryCardProps>) {
-	const isPositive = trend > 0;
-	const isNeutral = trend === 0;
+	const isPositive = useMemo(() => trend > 0, [trend]);
+	const isNeutral = useMemo(() => trend === 0, [trend]);
 
 	const formatCurrency = (value: number) => {
 		return new Intl.NumberFormat("en-US", {
@@ -27,11 +30,22 @@ export function SummaryCard({
 		}).format(value);
 	};
 
-	const getTrendStyles = () => {
+	const getTrendStyles = useCallback(() => {
+		const positiveStyle = "bg-emerald-50 text-emerald-700";
+		const negativeStyle = "bg-rose-50 text-rose-700";
+		const positiveIcon = <TrendingUp className="w-3 h-3 mr-1" />;
+		const negativeIcon = <TrendingDown className="w-3 h-3 mr-1" />;
+
 		if (isPositive) {
+			if (reductionIsPositive) {
+				return {
+					style: negativeStyle,
+					icon: positiveIcon,
+				};
+			}
 			return {
-				style: "bg-emerald-50 text-emerald-700",
-				icon: <TrendingUp className="w-3 h-3 mr-1" />,
+				style: positiveStyle,
+				icon: positiveIcon,
 			};
 		}
 		if (isNeutral) {
@@ -40,11 +54,17 @@ export function SummaryCard({
 				icon: <Minus className="w-3 h-3 mr-1" />,
 			};
 		}
+		if (reductionIsPositive) {
+			return {
+				style: positiveStyle,
+				icon: negativeIcon,
+			};
+		}
 		return {
-			style: "bg-rose-50 text-rose-700",
-			icon: <TrendingDown className="w-3 h-3 mr-1" />,
+			style: negativeStyle,
+			icon: negativeIcon,
 		};
-	};
+	}, [isPositive, isNeutral]);
 
 	const { style, icon } = getTrendStyles();
 

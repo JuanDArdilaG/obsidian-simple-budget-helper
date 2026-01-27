@@ -14,6 +14,7 @@ export interface ITransactionsService {
 	getByID(id: Nanoid): Promise<Transaction>;
 	getByCategory(category: Nanoid): Promise<Transaction[]>;
 	getBySubCategory(subCategory: Nanoid): Promise<Transaction[]>;
+	getByAccount(accountId: Nanoid): Promise<Transaction[]>;
 	hasTransactionsByCategory(category: Nanoid): Promise<boolean>;
 	hasTransactionsBySubCategory(subCategory: Nanoid): Promise<boolean>;
 	reassignTransactionsCategory(

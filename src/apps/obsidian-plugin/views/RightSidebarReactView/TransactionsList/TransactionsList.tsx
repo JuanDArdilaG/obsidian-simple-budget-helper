@@ -8,26 +8,24 @@ import {
 } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { TransactionWithAccumulatedBalance } from "../../../../../contexts/Reports/domain";
+import { Nanoid } from "../../../../../contexts/Shared/domain";
 import { Transaction } from "../../../../../contexts/Transactions/domain";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
-import {
-	AccountsContext,
-	CategoriesContext,
-	TransactionsContext,
-} from "../Contexts";
+import { AccountsContext, TransactionsContext } from "../Contexts";
 import { AddTransactionModal } from "./AddTransactionModal";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
+import { SelectedTransactionsBar } from "./SelectedTransactionsBar";
 import { TransactionFilters } from "./TransactionFilters";
 import { TransactionRow } from "./TransactionRow";
 
 // Pagination constant
-const ITEMS_PER_PAGE = 25;
+const ITEMS_PER_PAGE = 50;
 
 export function TransactionsList() {
-	const { accountsMap } = useContext(AccountsContext);
-	const { categoriesWithSubcategories, categoriesMap } =
-		useContext(CategoriesContext);
+	const { accountsMap, updateAccounts } = useContext(AccountsContext);
 	const {
+		transactions,
+		updateTransactions,
 		useCases: {
 			recordTransaction,
 			updateTransaction,
@@ -44,10 +42,13 @@ export function TransactionsList() {
 	const [deletingTransaction, setDeletingTransaction] =
 		useState<Transaction | null>(null);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [selectedTransactions, setSelectedTransactions] = useState<
+		Transaction[]
+	>([]);
 	// Pagination state
 	const [currentPage, setCurrentPage] = useState(1);
 	// Filters
-	const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+	const [selectedAccounts, setSelectedAccounts] = useState<Nanoid[]>([]);
 	const [selectedCategory, setSelectedCategory] = useState("");
 	const [selectedSubcategory, setSelectedSubcategory] = useState("");
 
@@ -64,6 +65,9 @@ export function TransactionsList() {
 		await Promise.all(
 			newTransactions.map((t) => recordTransaction.execute(t)),
 		);
+		setIsRefreshing(true);
+		updateTransactions();
+		updateAccounts();
 		setCurrentPage(1); // Go to first page to see new transactions
 	};
 
@@ -74,6 +78,9 @@ export function TransactionsList() {
 	const handleUpdateTransaction = async (updatedTransaction: Transaction) => {
 		if (!editingTransaction) return;
 		await updateTransaction.execute(updatedTransaction);
+		setIsRefreshing(true);
+		updateTransactions();
+		updateAccounts();
 		setEditingTransaction(null);
 	};
 
@@ -85,6 +92,9 @@ export function TransactionsList() {
 		if (deletingTransaction) {
 			await deleteTransaction.execute(deletingTransaction.nanoid);
 			setDeletingTransaction(null);
+			updateTransactions();
+			updateAccounts();
+			setIsRefreshing(true);
 		}
 	};
 
@@ -97,7 +107,6 @@ export function TransactionsList() {
 		setFilteredAndPaginatedTransactions,
 	] = useState<TransactionWithAccumulatedBalance[]>([]);
 	useEffect(() => {
-		if (!isRefreshing) return;
 		getTransactionsWithPagination
 			.execute({
 				page: currentPage,
@@ -162,15 +171,31 @@ export function TransactionsList() {
 		});
 	};
 
+	const handleToggleSelect = (transaction: Transaction) => {
+		console.log("Toggling selection for transaction:", transaction);
+		setSelectedTransactions((prev) => {
+			const isSelected = prev.some((t) => t.id === transaction.id);
+			if (isSelected) {
+				return prev.filter((t) => t.id !== transaction.id);
+			} else {
+				return [...prev, transaction];
+			}
+		});
+	};
+
+	const handleClearSelection = () => {
+		setSelectedTransactions([]);
+	};
+
 	if (isRefreshing) {
 		return <LoadingSpinner />;
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 font-sans">
+		<div className="min-h-screen! bg-gray-50! font-sans! pb-24!">
 			{/* Header */}
-			<header className="bg-white border-b border-gray-200 sticky top-0 z-20">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+			<header className="bg-white! border-b! border-gray-200! sticky! top-0! z-20!">
+				<div className="max-w-7xl! mx-auto! px-4! sm:px-6! lg:px-8! h-16! flex! items-center! justify-between! gap-4!">
 					<button
 						onClick={handleRefresh}
 						disabled={isRefreshing}
@@ -190,9 +215,9 @@ export function TransactionsList() {
 						</motion.div>
 					</button>
 
-					<div className="flex-1 max-w-lg relative">
+					<div className="flex-1! max-w-lg! relative!">
 						<Search
-							className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+							className="absolute! left-3! top-1/2! -translate-y-1/2! text-gray-400!"
 							size={18}
 						/>
 						<input
@@ -209,7 +234,7 @@ export function TransactionsList() {
 						className="flex! items-center! gap-2! px-4! py-2! bg-indigo-600! text-white! rounded-lg! hover:bg-indigo-700! transition-colors! shadow-sm! font-medium!"
 					>
 						<Plus size={18} />
-						<span className="hidden sm:inline">
+						<span className="hidden! sm:inline!">
 							Add Transaction
 						</span>
 					</button>
@@ -233,7 +258,6 @@ export function TransactionsList() {
 				onCategoryChange={setSelectedCategory}
 				selectedSubcategory={selectedSubcategory}
 				onSubcategoryChange={setSelectedSubcategory}
-				categoriesWithSubcategories={categoriesWithSubcategories}
 				onClearFilters={() => {
 					setSelectedAccounts([]);
 					setSelectedCategory("");
@@ -243,11 +267,11 @@ export function TransactionsList() {
 			/>
 
 			{/* List */}
-			<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+			<main className="max-w-7xl! mx-auto! px-4! sm:px-6! lg:px-8! py-6!">
 				{groupedTransactions.length > 0 ? (
 					<>
 						{/* Transactions count */}
-						<div className="mb-4 text-sm text-gray-600">
+						<div className="mb-4! text-sm! text-gray-600!">
 							Showing{" "}
 							{Math.min(
 								ITEMS_PER_PAGE,
@@ -256,13 +280,13 @@ export function TransactionsList() {
 							of {totalCount} transactions
 						</div>
 
-						<div className="space-y-6">
+						<div className="space-y-6!">
 							{groupedTransactions.map((group, groupIndex) => (
 								<div key={group.date}>
 									<h3 className="text-sm! font-semibold! text-gray-500! uppercase! tracking-wider! mb-3! sticky! top-44! md:top-32! bg-gray-50/95! backdrop-blur-sm! py-2! z-10!">
 										{group.date}
 									</h3>
-									<div className="space-y-2">
+									<div className="space-y-2!">
 										{group.transactions.map((twb) => (
 											<TransactionRow
 												key={twb.transaction.id}
@@ -273,6 +297,14 @@ export function TransactionsList() {
 												onDelete={
 													handleDeleteTransaction
 												}
+												isSelected={selectedTransactions.some(
+													(t) =>
+														t.id ===
+														twb.transaction.id,
+												)}
+												onToggleSelect={
+													handleToggleSelect
+												}
 											/>
 										))}
 									</div>
@@ -282,22 +314,22 @@ export function TransactionsList() {
 
 						{/* Pagination Controls */}
 						{totalPages > 1 && (
-							<div className="mt-8 flex items-center justify-between border-t border-gray-200 pt-6">
-								<div className="flex items-center gap-2">
+							<div className="mt-8! flex! items-center! justify-between! border-t! border-gray-200! pt-6!">
+								<div className="flex! items-center! gap-2!">
 									<button
 										onClick={() =>
 											handlePageChange(currentPage - 1)
 										}
 										disabled={currentPage === 1}
-										className="flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+										className="flex! items-center! gap-1! px-3! py-2! border! border-gray-300! rounded-lg! text-sm! font-medium! text-gray-700! hover:bg-gray-50! disabled:opacity-50! disabled:cursor-not-allowed! disabled:hover:bg-white! transition-colors!"
 									>
 										<ChevronLeft size={16} />
-										<span className="hidden sm:inline">
+										<span className="hidden! sm:inline!">
 											Previous
 										</span>
 									</button>
 
-									<div className="flex items-center gap-1">
+									<div className="flex! items-center! gap-1!">
 										{Array.from(
 											{
 												length: totalPages,
@@ -317,7 +349,7 @@ export function TransactionsList() {
 													return (
 														<span
 															key={page}
-															className="px-2 text-gray-400 hidden sm:inline"
+															className="px-2! text-gray-400! hidden! sm:inline!"
 														>
 															...
 														</span>
@@ -331,7 +363,7 @@ export function TransactionsList() {
 													onClick={() =>
 														handlePageChange(page)
 													}
-													className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === page ? "bg-indigo-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+													className={`px-3! py-2! rounded-lg! text-sm! font-medium! transition-colors! ${currentPage === page ? "bg-indigo-600! text-white!" : "text-gray-700! hover:bg-gray-100!"}`}
 												>
 													{page}
 												</button>
@@ -344,33 +376,39 @@ export function TransactionsList() {
 											handlePageChange(currentPage + 1)
 										}
 										disabled={currentPage === totalPages}
-										className="flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+										className="flex! items-center! gap-1! px-3! py-2! border! border-gray-300! rounded-lg! text-sm! font-medium! text-gray-700! hover:bg-gray-50! disabled:opacity-50! disabled:cursor-not-allowed! disabled:hover:bg-white! transition-colors!"
 									>
-										<span className="hidden sm:inline">
+										<span className="hidden! sm:inline!">
 											Next
 										</span>
 										<ChevronRight size={16} />
 									</button>
 								</div>
 
-								<div className="text-sm text-gray-600 hidden md:block">
+								<div className="text-sm! text-gray-600! hidden! md:block!">
 									Page {currentPage} of {totalPages}
 								</div>
 							</div>
 						)}
 					</>
 				) : (
-					<div className="flex flex-col items-center justify-center h-64 text-gray-500">
-						<Search size={48} className="mb-4 text-gray-300" />
-						<p className="text-lg font-medium">
+					<div className="flex! flex-col! items-center! justify-center! h-64! text-gray-500!">
+						<Search size={48} className="mb-4! text-gray-300!" />
+						<p className="text-lg! font-medium!">
 							No transactions found
 						</p>
-						<p className="text-sm">
+						<p className="text-sm!">
 							Try adjusting your filters or search query
 						</p>
 					</div>
 				)}
 			</main>
+
+			{/* Selected Transactions Bar */}
+			<SelectedTransactionsBar
+				selectedTransactions={selectedTransactions}
+				onClearSelection={handleClearSelection}
+			/>
 
 			{/* Add Transaction Modal */}
 			<AddTransactionModal
@@ -378,8 +416,7 @@ export function TransactionsList() {
 				onClose={() => setIsAddModalOpen(false)}
 				onSave={handleAddTransaction}
 				accountsMap={accountsMap}
-				categoriesMap={categoriesMap}
-				categoriesWithSubcategories={categoriesWithSubcategories}
+				existingTransactions={transactions}
 			/>
 
 			{/* Edit Transaction Modal */}
@@ -393,9 +430,8 @@ export function TransactionsList() {
 					}
 				}}
 				accountsMap={accountsMap}
-				categoriesMap={categoriesMap}
-				categoriesWithSubcategories={categoriesWithSubcategories}
 				editTransaction={editingTransaction}
+				existingTransactions={transactions}
 			/>
 
 			{/* Delete Confirmation Modal */}

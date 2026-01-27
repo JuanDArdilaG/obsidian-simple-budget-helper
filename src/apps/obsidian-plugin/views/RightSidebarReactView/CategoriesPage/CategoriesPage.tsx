@@ -207,22 +207,22 @@ export function CategoriesPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 font-sans">
+		<div className="min-h-screen! bg-gray-50! font-sans!">
 			{/* Header */}
-			<header className="bg-white border-b border-gray-200 sticky top-0 z-20">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-					<div className="flex items-center gap-3">
-						<div className="p-2 bg-indigo-50 rounded-lg">
-							<FolderOpen className="w-5 h-5 text-indigo-600" />
+			<header className="bg-white! border-b! border-gray-200! sticky! top-0! z-20!">
+				<div className="max-w-7xl! mx-auto! px-4! sm:px-6! lg:px-8! h-16! flex! items-center! justify-between! gap-4!">
+					<div className="flex! items-center! gap-3!">
+						<div className="p-2! bg-indigo-50! rounded-lg!">
+							<FolderOpen className="w-5! h-5! text-indigo-600!" />
 						</div>
-						<h1 className="text-xl font-bold text-gray-900">
+						<h1 className="text-xl! font-bold! text-gray-900!">
 							Categories
 						</h1>
 					</div>
 
-					<div className="flex-1 max-w-lg relative">
+					<div className="flex-1! max-w-lg! relative!">
 						<Search
-							className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+							className="absolute! left-3! top-1/2! -translate-y-1/2! text-gray-400!"
 							size={18}
 						/>
 						<input
@@ -230,28 +230,28 @@ export function CategoriesPage() {
 							placeholder="Search categories and subcategories..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-gray-50 focus:bg-white transition-colors"
+							className="w-full! pl-10! pr-4! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500! bg-gray-50! focus:bg-white! transition-colors!"
 						/>
 					</div>
 
 					<button
 						onClick={() => setIsAddCategoryModalOpen(true)}
-						className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm font-medium"
+						className="flex! items-center! gap-2! px-4! py-2! bg-indigo-600! text-white! rounded-lg! hover:bg-indigo-700! transition-colors! shadow-sm! font-medium!"
 					>
 						<Plus size={18} />
-						<span className="hidden sm:inline">Add Category</span>
+						<span className="hidden! sm:inline!">Add Category</span>
 					</button>
 				</div>
 			</header>
 
 			{/* Content */}
-			<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-				<div className="mb-4 text-sm text-gray-600">
+			<main className="max-w-7xl! mx-auto! px-4! sm:px-6! lg:px-8! py-6!">
+				<div className="mb-4! text-sm! text-gray-600!">
 					{filteredCategories.length} categor
 					{filteredCategories.length !== 1 ? "ies" : "y"}
 				</div>
 
-				<div className="space-y-3">
+				<div className="space-y-3!">
 					{filteredCategories.map((item, index) => (
 						<motion.div
 							key={item.category.id}
@@ -266,16 +266,16 @@ export function CategoriesPage() {
 							transition={{
 								delay: index * 0.05,
 							}}
-							className="bg-white rounded-lg border border-gray-200 overflow-hidden"
+							className="bg-white! rounded-lg! border! border-gray-200! overflow-hidden!"
 						>
 							{/* Category Header */}
-							<div className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-								<div className="flex items-center gap-3 flex-1">
+							<div className="p-4! flex! items-center! justify-between! hover:bg-gray-50! transition-colors!">
+								<div className="flex! items-center! gap-3! flex-1!">
 									<button
 										onClick={() =>
 											toggleCategory(item.category.id)
 										}
-										className="p-1 hover:bg-gray-100 rounded transition-colors"
+										className="p-1! hover:bg-gray-100! rounded! transition-colors!"
 									>
 										<motion.div
 											animate={{
@@ -291,18 +291,18 @@ export function CategoriesPage() {
 										>
 											<ChevronRight
 												size={18}
-												className="text-gray-500"
+												className="text-gray-500!"
 											/>
 										</motion.div>
 									</button>
-									<div className="p-2 bg-indigo-50 rounded-lg">
-										<FolderOpen className="w-5 h-5 text-indigo-600" />
-									</div>
-									<div className="flex-1">
-										<h3 className="font-semibold text-gray-900">
+								<div className="p-2! bg-indigo-50! rounded-lg!">
+									<FolderOpen className="w-5! h-5! text-indigo-600!" />
+								</div>
+								<div className="flex-1!">
+									<h3 className="font-semibold! text-gray-900!">
 											{item.category.name}
 										</h3>
-										<p className="text-sm text-gray-500">
+									<p className="text-sm! text-gray-500!">
 											{item.subcategories.length}{" "}
 											subcategor
 											{item.subcategories.length !== 1
@@ -322,7 +322,7 @@ export function CategoriesPage() {
 									</div>
 								</div>
 
-								<div className="flex items-center gap-2">
+							<div className="flex! items-center! gap-2!">
 									<button
 										onClick={() => {
 											setSelectedCategoryForNewSub(
@@ -330,7 +330,7 @@ export function CategoriesPage() {
 											);
 											setIsAddSubcategoryModalOpen(true);
 										}}
-										className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+									className="p-2! text-gray-600! hover:text-indigo-600! hover:bg-indigo-50! rounded-lg! transition-all!"
 										title="Add subcategory"
 									>
 										<Plus size={16} />
@@ -339,16 +339,16 @@ export function CategoriesPage() {
 										onClick={() =>
 											setEditingCategory(item.category)
 										}
-										className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-										title="Edit category"
-									>
-										<Pencil size={16} />
-									</button>
-									<button
-										onClick={() =>
-											setDeletingCategory(item.category)
-										}
-										className="p-2 text-gray-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+									className="p-2! text-gray-600! hover:text-indigo-600! hover:bg-indigo-50! rounded-lg! transition-all!"
+									title="Edit category"
+								>
+									<Pencil size={16} />
+								</button>
+								<button
+									onClick={() =>
+										setDeletingCategory(item.category)
+									}
+									className="p-2! text-gray-600! hover:text-rose-600! hover:bg-rose-50! rounded-lg! transition-all!"
 										title="Delete category"
 									>
 										<Trash2 size={16} />
@@ -374,27 +374,27 @@ export function CategoriesPage() {
 									transition={{
 										duration: 0.2,
 									}}
-									className="border-t border-gray-200 bg-gray-50"
-								>
-									{item.subcategories.length > 0 ? (
-										<div className="divide-y divide-gray-200">
+								className="border-t! border-gray-200! bg-gray-50!"
+							>
+								{item.subcategories.length > 0 ? (
+									<div className="divide-y! divide-gray-200!">
 											{item.subcategories.map(
 												(subcategory) => (
 													<div
 														key={subcategory.id}
-														className="p-4 pl-16 flex items-center justify-between hover:bg-gray-100 transition-colors"
-													>
-														<div className="flex items-center gap-3 flex-1">
-															<div className="p-1.5 bg-white rounded border border-gray-200">
-																<Tag className="w-4 h-4 text-gray-600" />
-															</div>
-															<div>
-																<h4 className="font-medium text-gray-900">
+													className="p-4! pl-16! flex! items-center! justify-between! hover:bg-gray-100! transition-colors!"
+												>
+													<div className="flex! items-center! gap-3! flex-1!">
+														<div className="p-1.5! bg-white! rounded! border! border-gray-200!">
+															<Tag className="w-4! h-4! text-gray-600!" />
+														</div>
+														<div>
+															<h4 className="font-medium! text-gray-900!">
 																	{
 																		subcategory.name
 																	}
 																</h4>
-																<p className="text-sm text-gray-500">
+															<p className="text-sm! text-gray-500!">
 																	{getTransactionCount(
 																		item
 																			.category
@@ -414,27 +414,27 @@ export function CategoriesPage() {
 															</div>
 														</div>
 
-														<div className="flex items-center gap-2">
+													<div className="flex! items-center! gap-2!">
 															<button
 																onClick={() =>
 																	setEditingSubcategory(
 																		subcategory,
 																	)
 																}
-																className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-																title="Edit subcategory"
-															>
-																<Pencil
-																	size={14}
-																/>
-															</button>
-															<button
-																onClick={() =>
-																	setDeletingSubcategory(
-																		subcategory,
-																	)
-																}
-																className="p-2 text-gray-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+															className="p-2! text-gray-600! hover:text-indigo-600! hover:bg-indigo-50! rounded-lg! transition-all!"
+															title="Edit subcategory"
+														>
+															<Pencil
+																size={14}
+															/>
+														</button>
+														<button
+															onClick={() =>
+																setDeletingSubcategory(
+																	subcategory,
+																)
+															}
+															className="p-2! text-gray-600! hover:text-rose-600! hover:bg-rose-50! rounded-lg! transition-all!"
 																title="Delete subcategory"
 															>
 																<Trash2
@@ -447,12 +447,12 @@ export function CategoriesPage() {
 											)}
 										</div>
 									) : (
-										<div className="p-8 text-center text-gray-500">
+										<div className="p-8! text-center! text-gray-500!">
 											<Tag
 												size={32}
-												className="mx-auto mb-2 text-gray-300"
+												className="mx-auto! mb-2! text-gray-300!"
 											/>
-											<p className="text-sm">
+											<p className="text-sm!">
 												No subcategories yet
 											</p>
 											<button
@@ -464,7 +464,7 @@ export function CategoriesPage() {
 														true,
 													);
 												}}
-												className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+												className="mt-2! text-sm! text-indigo-600! hover:text-indigo-700! font-medium!"
 											>
 												Add one now
 											</button>
@@ -477,12 +477,12 @@ export function CategoriesPage() {
 				</div>
 
 				{filteredCategories.length === 0 && (
-					<div className="flex flex-col items-center justify-center h-64 text-gray-500">
-						<FolderOpen size={48} className="mb-4 text-gray-300" />
-						<p className="text-lg font-medium">
+					<div className="flex! flex-col! items-center! justify-center! h-64! text-gray-500!">
+						<FolderOpen size={48} className="mb-4! text-gray-300!" />
+						<p className="text-lg! font-medium!">
 							No categories found
 						</p>
-						<p className="text-sm">
+						<p className="text-sm!">
 							{searchQuery
 								? "Try adjusting your search query"
 								: "Create your first category"}

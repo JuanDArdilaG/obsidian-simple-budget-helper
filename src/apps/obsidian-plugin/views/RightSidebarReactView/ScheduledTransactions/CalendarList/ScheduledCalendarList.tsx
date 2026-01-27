@@ -222,15 +222,15 @@ export function ScheduledCalendarList({
 	return (
 		<>
 			{/* Filters */}
-			<div className="bg-white border-b border-gray-200 py-4 px-4 sm:px-6 lg:px-8">
-				<div className="max-w-7xl mx-auto">
-					<div className="flex flex-col sm:flex-row gap-4">
+			<div className="bg-white! border-b! border-gray-200! py-4! px-4! sm:px-6! lg:px-8!">
+				<div className="max-w-7xl! mx-auto!">
+					<div className="flex! flex-col! sm:flex-row! gap-4!">
 						{/* Quick Filters */}
-						<div className="flex-1">
-							<label className="block text-xs font-medium text-gray-600 mb-2">
+						<div className="flex-1!">
+							<label className="block! text-xs! font-medium! text-gray-600! mb-2!">
 								Time Range
 							</label>
-							<div className="flex flex-wrap gap-2">
+							<div className="flex! flex-wrap! gap-2!">
 								{QUICK_FILTERS.map((filter) => (
 									<button
 										key={filter.label}
@@ -238,7 +238,7 @@ export function ScheduledCalendarList({
 											setSelectedQuickFilter(filter);
 											setShowCustomDate(false);
 										}}
-										className={`px-3 py-1.5 text-sm rounded-lg border transition-all ${selectedQuickFilter === filter && !showCustomDate ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
+										className={`px-3! py-1.5! text-sm! rounded-lg! border! transition-all! ${selectedQuickFilter === filter && !showCustomDate ? "bg-indigo-600! text-white! border-indigo-600!" : "bg-white! text-gray-700! border-gray-300! hover:bg-gray-50!"}`}
 									>
 										{filter.label}
 									</button>
@@ -247,7 +247,7 @@ export function ScheduledCalendarList({
 									onClick={() =>
 										setShowCustomDate(!showCustomDate)
 									}
-									className={`px-3 py-1.5 text-sm rounded-lg border transition-all flex items-center gap-1 ${showCustomDate ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
+									className={`px-3! py-1.5! text-sm! rounded-lg! border! transition-all! flex! items-center! gap-1! ${showCustomDate ? "bg-indigo-600! text-white! border-indigo-600!" : "bg-white! text-gray-700! border-gray-300! hover:bg-gray-50!"}`}
 								>
 									<Calendar size={14} />
 									Custom
@@ -271,9 +271,9 @@ export function ScheduledCalendarList({
 									opacity: 0,
 									height: 0,
 								}}
-								className="sm:w-48"
+								className="sm:w-48!"
 							>
-								<label className="block text-xs font-medium text-gray-600 mb-2">
+								<label className="block! text-xs! font-medium! text-gray-600! mb-2!">
 									Until Date
 								</label>
 								<input
@@ -283,15 +283,15 @@ export function ScheduledCalendarList({
 										setCustomUntilDate(e.target.value)
 									}
 									min={new Date().toISOString().split("T")[0]}
-									className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+									className="w-full! px-3! py-1.5! text-sm! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 								/>
 							</motion.div>
 						)}
 					</div>
 
-					<div className="mt-3 text-xs text-gray-500">
+					<div className="mt-3! text-xs! text-gray-500!">
 						Showing occurrences until{" "}
-						<span className="font-medium text-gray-700">
+						<span className="font-medium! text-gray-700!">
 							{untilDate.toLocaleDateString(undefined, {
 								month: "long",
 								day: "numeric",
@@ -306,10 +306,10 @@ export function ScheduledCalendarList({
 			<FinancialSummary untilDate={untilDate} recurrences={recurrences} />
 
 			{/* List */}
-			<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+			<main className="max-w-7xl mx-auto px-4! sm:px-6! lg:px-8! py-6!">
 				{groupedRecurrences.length > 0 ? (
 					<>
-						<div className="mb-4 text-sm text-gray-600">
+						<div className="mb-4! text-sm! text-gray-600!">
 							{filteredAndSortedRecurrences.length} upcoming
 							occurrence
 							{filteredAndSortedRecurrences.length !== 1
@@ -317,7 +317,7 @@ export function ScheduledCalendarList({
 								: ""}
 						</div>
 
-						<div className="space-y-6">
+						<div className="space-y-6!">
 							{groupedRecurrences.map((group, groupIndex) => (
 								<motion.div
 									key={group.date}
@@ -333,10 +333,10 @@ export function ScheduledCalendarList({
 										delay: groupIndex * 0.05,
 									}}
 								>
-									<h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 sticky top-32 bg-gray-50/95 backdrop-blur-sm py-2 z-10">
+									<h3 className="text-sm! font-semibold! text-gray-500! uppercase! tracking-wider! mb-3! sticky! top-32! bg-gray-50/95! backdrop-blur-sm! py-2! z-10!">
 										{group.date}
 									</h3>
-									<div className="space-y-2">
+									<div className="space-y-2!">
 										{group.recurrences.map((recurrence) => (
 											<ScheduledItemRow
 												key={`${recurrence.scheduledTransactionId}-${recurrence.occurrenceIndex}`}
@@ -362,12 +362,12 @@ export function ScheduledCalendarList({
 						</div>
 					</>
 				) : (
-					<div className="flex flex-col items-center justify-center h-64 text-gray-500">
-						<Calendar size={48} className="mb-4 text-gray-300" />
-						<p className="text-lg font-medium">
+					<div className="flex! flex-col! items-center! justify-center! h-64! text-gray-500!">
+						<Calendar size={48} className="mb-4! text-gray-300!" />
+						<p className="text-lg! font-medium!">
 							No upcoming occurrences found
 						</p>
-						<p className="text-sm">
+						<p className="text-sm!">
 							{searchQuery
 								? "Try adjusting your search query"
 								: "No scheduled transactions in this time range"}

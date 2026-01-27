@@ -41,12 +41,12 @@ function CustomTooltip({ active, payload, label }: any) {
 			}}
 			className="bg-white! border! border-gray-200! rounded-lg! shadow-lg! p-4! min-w-[280px]!"
 		>
-			<h4 className="font-semibold text-gray-900 mb-3">{label}</h4>
-			<div className="space-y-2 text-sm">
+			<h4 className="font-semibold! text-gray-900! mb-3!">{label}</h4>
+			<div className="space-y-2! text-sm!">
 				{payload.map((entry) => (
 					<div
 						key={entry.value}
-						className="flex justify-between items-center"
+						className="flex! justify-between! items-center!"
 					>
 						<span
 							style={{
@@ -56,7 +56,7 @@ function CustomTooltip({ active, payload, label }: any) {
 							{entry.name}:
 						</span>
 						<span
-							className="font-semibold"
+							className="font-semibold!"
 							style={{
 								color: entry.color,
 							}}
@@ -90,14 +90,14 @@ export function MonthlyFinancialChart({
 	data,
 }: Readonly<MonthlyFinancialChartProps>) {
 	return (
-		<div className="bg-white rounded-lg border border-gray-200 p-6">
-			<h2 className="text-xl font-bold text-gray-900 mb-6">
+		<div className="bg-white! rounded-lg! border! border-gray-200! p-6!">
+			<h2 className="text-xl! font-bold! text-gray-900! mb-6!">
 				Monthly Financial Summary
 			</h2>
 
 			{/* Chart Container */}
 			<div
-				className="w-full"
+				className="w-full!"
 				style={{
 					height: 400,
 				}}

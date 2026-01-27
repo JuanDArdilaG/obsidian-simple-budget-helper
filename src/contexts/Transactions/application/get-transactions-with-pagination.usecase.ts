@@ -1,4 +1,4 @@
-import { QueryUseCase } from "contexts/Shared/domain";
+import { Nanoid, QueryUseCase } from "contexts/Shared/domain";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { GetAllAccountsUseCase } from "../../Accounts/application/get-all-accounts.usecase";
 import {
@@ -11,7 +11,7 @@ export type TransactionsPagination = {
 	page: number;
 	pageSize: number;
 	searchQuery?: string;
-	selectedAccounts?: string[];
+	selectedAccounts?: Nanoid[];
 	selectedCategory?: string;
 	selectedSubcategory?: string;
 };
@@ -97,7 +97,7 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 
 	#filterByAccounts(
 		transactions: TransactionWithAccumulatedBalance[],
-		selectedAccounts?: string[],
+		selectedAccounts?: Nanoid[],
 	): TransactionWithAccumulatedBalance[] {
 		if (!selectedAccounts || selectedAccounts.length === 0)
 			return transactions;
@@ -108,7 +108,7 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 					.map((split) => split.accountId.value),
 			);
 			return selectedAccounts.some((accountId) =>
-				involvedAccountIds.has(accountId),
+				involvedAccountIds.has(accountId.value),
 			);
 		});
 	}

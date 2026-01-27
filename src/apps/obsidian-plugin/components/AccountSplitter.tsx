@@ -1,27 +1,34 @@
 import { Plus, Trash2, Wallet } from "lucide-react";
-import { AccountsMap } from "../../../contexts/Accounts/application/get-all-accounts.usecase";
+import { useContext, useEffect, useMemo } from "react";
 import { Nanoid } from "../../../contexts/Shared/domain";
 import {
 	AccountSplit,
 	TransactionAmount,
 } from "../../../contexts/Transactions/domain";
+import { AccountsContext } from "../views";
 
 export function AccountSplitter({
 	label,
 	splits,
 	onChange,
-	accountsMap,
 	totalAmount,
 }: Readonly<{
 	label: string;
 	splits: AccountSplit[];
 	onChange: (splits: AccountSplit[]) => void;
-	accountsMap: AccountsMap;
 	totalAmount: number;
 }>) {
-	const currentTotal = splits.reduce((sum, s) => sum + s.amount.value, 0);
-	const remaining = totalAmount - currentTotal;
-	const isBalanced = Math.abs(remaining) < 0.01;
+	const { accountsMap } = useContext(AccountsContext);
+	const currentTotal = useMemo(
+		() => splits.reduce((sum, s) => sum + s.amount.value, 0),
+		[splits],
+	);
+	const remaining = useMemo(
+		() => totalAmount - currentTotal,
+		[totalAmount, currentTotal],
+	);
+	const isBalanced = useMemo(() => Math.abs(remaining) < 0.01, [remaining]);
+
 	const addSplit = () => {
 		const usedIds = new Set(splits.map((s) => s.accountId.value));
 		const nextAccount = Array.from(accountsMap.values()).find(
@@ -32,10 +39,11 @@ export function AccountSplitter({
 			...splits,
 			new AccountSplit(
 				nextAccount.nanoid,
-				new TransactionAmount(remaining > 0 ? remaining : 0),
+				new TransactionAmount(Math.max(remaining, 0)),
 			),
 		]);
 	};
+
 	const updateSplit = (
 		index: number,
 		field: keyof AccountSplit,
@@ -52,41 +60,50 @@ export function AccountSplitter({
 		);
 		onChange(newSplits);
 	};
+
 	const removeSplit = (index: number) => {
 		onChange(splits.filter((_, i) => i !== index));
 	};
+
+	useEffect(() => {
+		if (isBalanced) return;
+		if (splits.length === 1) {
+			// Auto-adjust the single split to match the total amount
+			updateSplit(0, "amount", totalAmount);
+		}
+	}, [totalAmount]);
+
 	return (
-		<div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-			<div className="flex justify-between items-center mb-3">
-				<div className="flex items-center gap-2">
-					<Wallet size={16} className="text-gray-500" />
-					<span className="font-medium text-gray-700">{label}</span>
+		<div className="bg-gray-50! rounded-lg! p-4! border! border-gray-200!">
+			<div className="flex! justify-between! items-center! mb-3!">
+				<div className="flex! items-center! gap-2!">
+					<Wallet size={16} className="text-gray-500!" />
+					<span className="font-medium! text-gray-700!">{label}</span>
 				</div>
 				<div
-					className={`text-sm font-medium ${isBalanced ? "text-green-600" : "text-amber-600"}`}
+					className={`text-sm! font-medium! ${isBalanced ? "text-green-600!" : "text-amber-600!"}`}
 				>
 					{isBalanced ? (
-						<span className="flex items-center gap-1">
+						<span className="flex! items-center! gap-1!">
 							Match{" "}
-							<div className="w-2 h-2 rounded-full bg-green-500" />
+							<div className="w-2! h-2! rounded-full bg-green-500!" />
 						</span>
 					) : (
 						<span>
 							{remaining > 0 ? "Remaining: " : "Over: "}
-							{new Intl.NumberFormat("en-US", {
-								style: "currency",
-								currency: "USD",
-							}).format(Math.abs(remaining))}
+							{new TransactionAmount(
+								Math.abs(remaining),
+							).toString()}
 						</span>
 					)}
 				</div>
 			</div>
 
-			<div className="space-y-2">
+			<div className="space-y-2!">
 				{splits.map((split, index) => (
 					<div
 						key={split.accountId.value}
-						className="flex gap-2 items-center"
+						className="flex! gap-2! items-center!"
 					>
 						<select
 							value={split.accountId.value}
@@ -101,18 +118,20 @@ export function AccountSplitter({
 								</option>
 							))}
 						</select>
-						<div className="relative w-32">
-							<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+						<div className="relative! w-32!">
+							<span className="absolute! left-3! top-1/2! -translate-y-1/2! text-gray-500! text-sm!">
 								$
 							</span>
 							<input
-								type="number"
-								value={split.amount.value}
+								type="string"
+								value={split.amount.toString()}
 								onChange={(e) =>
 									updateSplit(
 										index,
 										"amount",
-										Number.parseFloat(e.target.value),
+										TransactionAmount.fromString(
+											e.target.value,
+										).toNumber(),
 									)
 								}
 								className="w-full! pl-6! pr-3! py-2! text-sm! border! border-gray-300! rounded-lg! focus:ring-1! focus:ring-indigo-500!"

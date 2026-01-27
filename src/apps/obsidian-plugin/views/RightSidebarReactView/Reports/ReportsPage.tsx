@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Calendar, PieChart, TrendingUp } from "lucide-react";
+import { Calendar, FileText, PieChart, TrendingUp } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { ItemRecurrenceInfo } from "../../../../../contexts/ScheduledTransactions/domain";
 import { TransactionAmount } from "../../../../../contexts/Transactions/domain";
@@ -8,12 +8,13 @@ import {
 	ScheduledTransactionsContext,
 	TransactionsContext,
 } from "../Contexts";
+import { AccountReportPage } from "./AccountReportPage/AccountReportPage";
 import {
 	MonthlyDataPoint,
 	MonthlyFinancialChart,
 } from "./MonthlyProjection/MonthlyFinancialChart";
 
-type ReportTab = "projection" | "spending" | "income";
+type ReportTab = "projection" | "spending" | "income" | "account";
 
 export function ReportsPage() {
 	const { accountsMap } = useContext(AccountsContext);
@@ -29,6 +30,12 @@ export function ReportsPage() {
 			icon: TrendingUp,
 			description:
 				"View projected financial position over upcoming months",
+		},
+		{
+			id: "account" as ReportTab,
+			label: "Account Report",
+			icon: FileText,
+			description: "Detailed analysis of individual accounts",
 		},
 		{
 			id: "spending" as ReportTab,
@@ -174,24 +181,28 @@ export function ReportsPage() {
 		});
 	}, [monthlyData]);
 
+	if (activeTab === "account") {
+		return <AccountReportPage onBack={() => setActiveTab("projection")} />;
+	}
+
 	return (
-		<div className="min-h-screen bg-gray-50 font-sans">
+		<div className="min-h-screen! bg-gray-50! font-sans!">
 			{/* Header */}
-			<header className="bg-white border-b border-gray-200">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-					<h1 className="text-2xl font-bold text-gray-900">
+			<header className="bg-white! border-b! border-gray-200!">
+				<div className="max-w-7xl! mx-auto! px-4! sm:px-6! lg:px-8! py-6!">
+					<h1 className="text-2xl! font-bold! text-gray-900!">
 						Reports
 					</h1>
-					<p className="text-sm text-gray-600 mt-1">
+					<p className="text-sm! text-gray-600! mt-1!">
 						Analyze your financial data and projections
 					</p>
 				</div>
 			</header>
 
 			{/* Tabs */}
-			<div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-					<div className="flex gap-1 overflow-x-auto">
+			<div className="bg-white! border-b! border-gray-200! sticky! top-0! z-10!">
+				<div className="max-w-7xl! mx-auto! px-4! sm:px-6! lg:px-8!">
+					<div className="flex! gap-1! overflow-x-auto!">
 						{tabs.map((tab) => {
 							const Icon = tab.icon;
 							const isActive = activeTab === tab.id;
@@ -199,7 +210,7 @@ export function ReportsPage() {
 								return (
 									<div
 										key={tab.id}
-										className="flex items-center gap-2 px-4 py-3 border-b-2 border-transparent text-gray-400 cursor-not-allowed text-sm font-medium whitespace-nowrap"
+										className="flex! items-center! gap-2! px-4! py-3! border-b-2! border-transparent! text-gray-400! cursor-not-allowed! text-sm! font-medium! whitespace-nowrap!"
 									>
 										<Icon size={18} />
 										<span>{tab.label}</span>
@@ -210,7 +221,7 @@ export function ReportsPage() {
 								<button
 									key={tab.id}
 									onClick={() => setActiveTab(tab.id)}
-									className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-all font-medium text-sm whitespace-nowrap ${isActive ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"}`}
+									className={`flex! items-center! gap-2! px-4! py-3! border-b-2! transition-all! font-medium! text-sm! whitespace-nowrap! ${isActive ? "border-indigo-600! text-indigo-600!" : "border-transparent! text-gray-600! hover:text-gray-900! hover:border-gray-300!"}`}
 								>
 									<Icon size={18} />
 									<span>{tab.label}</span>
@@ -222,7 +233,7 @@ export function ReportsPage() {
 			</div>
 
 			{/* Content */}
-			<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+			<main className="max-w-7xl! mx-auto! px-4! sm:px-6! lg:px-8! py-6!">
 				{activeTab === "projection" && (
 					<motion.div
 						initial={{
@@ -237,11 +248,11 @@ export function ReportsPage() {
 							duration: 0.3,
 						}}
 					>
-						<div className="mb-6">
-							<h2 className="text-lg font-semibold text-gray-900 mb-2">
+						<div className="mb-6!">
+							<h2 className="text-lg! font-semibold! text-gray-900! mb-2!">
 								Monthly Financial Projection
 							</h2>
-							<p className="text-sm text-gray-600">
+							<p className="text-sm! text-gray-600!">
 								Based on recorded transactions and scheduled
 								transactions for upcoming months
 							</p>
@@ -250,34 +261,34 @@ export function ReportsPage() {
 						<MonthlyFinancialChart data={monthlyData} />
 
 						{/* Additional Info */}
-						<div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-							<div className="bg-white rounded-lg border border-gray-200 p-4">
-								<h3 className="text-sm font-medium text-gray-600 mb-1">
+						<div className="mt-6! grid! grid-cols-1! md:grid-cols-3! gap-4!">
+							<div className="bg-white! rounded-lg! border! border-gray-200! p-4!">
+								<h3 className="text-sm! font-medium! text-gray-600! mb-1!">
 									Average Monthly Income
 								</h3>
-								<p className="text-2xl font-bold text-emerald-600">
+								<p className="text-2xl! font-bold! text-emerald-600!">
 									{new TransactionAmount(
 										summary.averageMonthlyIncome,
 									).toString()}
 								</p>
 							</div>
 
-							<div className="bg-white rounded-lg border border-gray-200 p-4">
-								<h3 className="text-sm font-medium text-gray-600 mb-1">
+							<div className="bg-white! rounded-lg! border! border-gray-200! p-4!">
+								<h3 className="text-sm! font-medium! text-gray-600! mb-1!">
 									Average Monthly Expenses
 								</h3>
-								<p className="text-2xl font-bold text-rose-600">
+								<p className="text-2xl! font-bold! text-rose-600!">
 									{new TransactionAmount(
 										summary.averageMonthlyExpenses,
 									).toString()}
 								</p>
 							</div>
 
-							<div className="bg-white rounded-lg border border-gray-200 p-4">
-								<h3 className="text-sm font-medium text-gray-600 mb-1">
+							<div className="bg-white! rounded-lg! border! border-gray-200! p-4!">
+								<h3 className="text-sm! font-medium! text-gray-600! mb-1!">
 									Projected Year-End Balance
 								</h3>
-								<p className="text-2xl font-bold text-indigo-600">
+								<p className="text-2xl! font-bold! text-indigo-600!">
 									{new TransactionAmount(
 										summary.projectedYearEndBalance,
 									).toString()}
@@ -288,18 +299,20 @@ export function ReportsPage() {
 				)}
 
 				{activeTab === "spending" && (
-					<div className="flex flex-col items-center justify-center h-64 text-gray-500">
-						<PieChart size={48} className="mb-4 text-gray-300" />
-						<p className="text-lg font-medium">Spending Analysis</p>
-						<p className="text-sm">Coming Soon</p>
+					<div className="flex! flex-col! items-center! justify-center! h-64! text-gray-500!">
+						<PieChart size={48} className="mb-4! text-gray-300!" />
+						<p className="text-lg! font-medium!">
+							Spending Analysis
+						</p>
+						<p className="text-sm!">Coming Soon</p>
 					</div>
 				)}
 
 				{activeTab === "income" && (
-					<div className="flex flex-col items-center justify-center h-64 text-gray-500">
-						<Calendar size={48} className="mb-4 text-gray-300" />
-						<p className="text-lg font-medium">Income Analysis</p>
-						<p className="text-sm">Coming Soon</p>
+					<div className="flex! flex-col! items-center! justify-center! h-64! text-gray-500!">
+						<Calendar size={48} className="mb-4! text-gray-300!" />
+						<p className="text-lg! font-medium!">Income Analysis</p>
+						<p className="text-sm!">Coming Soon</p>
 					</div>
 				)}
 			</main>

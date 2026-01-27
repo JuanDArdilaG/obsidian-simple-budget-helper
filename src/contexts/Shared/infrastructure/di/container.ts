@@ -66,6 +66,7 @@ import { ScheduledTransactionsLocalRepository } from "../../../ScheduledTransact
 import { CreateStoreUseCase } from "../../../Stores/application/create-store.usecase";
 import { GetAllStoresUseCase } from "../../../Stores/application/get-all-stores.usecase";
 import { UpdateSubCategoryUseCase } from "../../../Subcategories/application/update-subcategory.usecase";
+import { GetTransactionsByAccountUseCase } from "../../../Transactions/application/get-transactions-by-account.usecase";
 import { GetTransactionsByCategoryUseCase } from "../../../Transactions/application/get-transactions-by-category.usecase";
 import { GetTransactionsBySubcategoryUseCase } from "../../../Transactions/application/get-transactions-by-subcategory.usecase";
 import { GetTransactionsWithPagination } from "../../../Transactions/application/get-transactions-with-pagination.usecase";
@@ -191,6 +192,9 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		).singleton(),
 		getTransactionsBySubcategoryUseCase: asClass(
 			GetTransactionsBySubcategoryUseCase,
+		).singleton(),
+		getTransactionsByAccountUseCase: asClass(
+			GetTransactionsByAccountUseCase,
 		).singleton(),
 		getAllUniqueTransactionsByNameUseCase: asClass(
 			GetAllUniqueTransactionsByNameUseCase,

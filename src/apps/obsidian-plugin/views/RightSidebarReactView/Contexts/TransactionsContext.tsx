@@ -10,6 +10,7 @@ import { RecordTransactionUseCase } from "contexts/Transactions/application/reco
 import { UpdateTransactionUseCase } from "contexts/Transactions/application/update-transaction.usecase";
 import { Transaction } from "contexts/Transactions/domain";
 import { createContext, useMemo } from "react";
+import { GetTransactionsByAccountUseCase } from "../../../../../contexts/Transactions/application/get-transactions-by-account.usecase";
 import { GetTransactionsByCategoryUseCase } from "../../../../../contexts/Transactions/application/get-transactions-by-category.usecase";
 import { GetTransactionsBySubcategoryUseCase } from "../../../../../contexts/Transactions/application/get-transactions-by-subcategory.usecase";
 import { GetTransactionsWithPagination } from "../../../../../contexts/Transactions/application/get-transactions-with-pagination.usecase";
@@ -23,6 +24,7 @@ export type TransactionsContextType = {
 		getTransactionsWithPagination: GetTransactionsWithPagination;
 		getTransactionsByCategory: GetTransactionsByCategoryUseCase;
 		getTransactionsBySubcategory: GetTransactionsBySubcategoryUseCase;
+		getTransactionsByAccount: GetTransactionsByAccountUseCase;
 		getAllUniqueTransactionsByNameUseCase: GetAllUniqueTransactionsByNameUseCase;
 		getAllUniqueItemStores: GetAllUniqueItemStoresUseCase;
 	};
@@ -46,6 +48,7 @@ export const TransactionsContext = createContext<TransactionsContextType>({
 		getTransactionsWithPagination: {} as GetTransactionsWithPagination,
 		getTransactionsByCategory: {} as GetTransactionsByCategoryUseCase,
 		getTransactionsBySubcategory: {} as GetTransactionsBySubcategoryUseCase,
+		getTransactionsByAccount: {} as GetTransactionsByAccountUseCase,
 	},
 	transactions: [] as Transaction[],
 	updateTransactions: () => {},
@@ -116,6 +119,10 @@ export const getTransactionsContextValues = (
 			getTransactionsByCategory:
 				container.resolve<GetTransactionsByCategoryUseCase>(
 					"getTransactionsByCategoryUseCase",
+				),
+			getTransactionsByAccount:
+				container.resolve<GetTransactionsByAccountUseCase>(
+					"getTransactionsByAccountUseCase",
 				),
 		},
 		isLoading,

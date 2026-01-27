@@ -12,7 +12,7 @@ export type SimpleBudgetHelperSettings = {
 
 export const DEFAULT_SETTINGS: SimpleBudgetHelperSettings = {
 	dbId: "",
-	defaultCurrency: "COP",
+	defaultCurrency: "USD",
 	debugMode: false,
 	lastTab: {
 		main: "transactions",

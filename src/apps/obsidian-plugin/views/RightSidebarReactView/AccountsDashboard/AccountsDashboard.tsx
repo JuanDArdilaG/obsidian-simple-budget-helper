@@ -102,6 +102,7 @@ export function AccountsDashboard() {
 	const accountsReport = useMemo(() => {
 		return new AccountsReport(accountsWithExchangeRates);
 	}, [accountsWithExchangeRates]);
+
 	const transactionsReport = useMemo(() => {
 		return new TransactionsReport(transactions);
 	}, [transactions]);
@@ -180,12 +181,14 @@ export function AccountsDashboard() {
 					})
 				: Promise.resolve(),
 		]);
+		updateAccounts();
 	};
 
 	const handleDeleteAccount = async (id: Nanoid) => {
-		new ConfirmationModal(plugin.app, (confirmed) => {
+		new ConfirmationModal(plugin.app, async (confirmed) => {
 			if (confirmed) {
-				deleteAccount.execute(id);
+				await deleteAccount.execute(id);
+				updateAccounts();
 			}
 		}).open();
 	};
@@ -194,7 +197,7 @@ export function AccountsDashboard() {
 		setIsAddingAccount({
 			type,
 		});
-		setNewAccountCurrency("USD");
+		setNewAccountCurrency(plugin.settings.defaultCurrency);
 	};
 
 	const confirmAddAccount = async () => {
@@ -214,6 +217,8 @@ export function AccountsDashboard() {
 			);
 		}
 		await createAccount.execute(newAccount);
+		setIsAddingAccount(null);
+		updateAccounts();
 	};
 
 	const handleRefresh = () => {
@@ -242,15 +247,15 @@ export function AccountsDashboard() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20 relative">
+		<div className="min-h-screen! bg-gray-50! text-gray-900! font-sans! pb-20! relative!">
 			{/* Header */}
-			<header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-end">
-					<div className="flex items-center gap-4">
+			<header className="bg-white! border-b! border-gray-200! sticky! top-0! z-10!">
+				<div className="max-w-7xl! mx-auto! px-4! sm:px-6! lg:px-8! h-16! flex! items-center! justify-end!">
+					<div className="flex! items-center! gap-4!">
 						<button
 							onClick={handleRefresh}
 							disabled={isRefreshing}
-							className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+							className="p-2! text-gray-400! hover:text-indigo-600! hover:bg-gray-100! rounded-full! transition-colors! focus:outline-none! focus:ring-2! focus:ring-indigo-500! focus:ring-offset-2!"
 							aria-label="Refresh data"
 						>
 							<motion.div
@@ -266,18 +271,18 @@ export function AccountsDashboard() {
 								<RefreshCw size={20} />
 							</motion.div>
 						</button>
-						<div className="text-sm text-gray-500 hidden sm:block">
+						<div className="text-sm! text-gray-500! hidden! sm:block!">
 							Last updated: {lastUpdated}
 						</div>
 					</div>
 				</div>
 			</header>
 
-			<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+			<main className="max-w-7xl! mx-auto! px-4! sm:px-6! lg:px-8! py-8!">
 				{/* Top Section: Summary Cards & Chart */}
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+				<div className="grid! grid-cols-1! lg:grid-cols-3! gap-6! mb-8!">
 					{/* Summary Cards Column */}
-					<div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+					<div className="lg:col-span-2! grid! grid-cols-1! sm:grid-cols-3! gap-4!">
 						<SummaryCard
 							title="Total Assets"
 							amount={summary.assets}
@@ -288,6 +293,7 @@ export function AccountsDashboard() {
 							title="Total Liabilities"
 							amount={summary.liabilities}
 							trend={summary.liabilitiesTrend}
+							reductionIsPositive
 							delay={0.1}
 						/>
 						<SummaryCard
@@ -299,7 +305,7 @@ export function AccountsDashboard() {
 					</div>
 
 					{/* Chart Column */}
-					<div className="lg:col-span-1 h-64 lg:h-auto">
+					<div className="lg:col-span-1! h-64! lg:h-auto!">
 						<DonutChart
 							assets={summary.assets}
 							liabilities={summary.liabilities}
@@ -362,7 +368,7 @@ export function AccountsDashboard() {
 			{/* Currency Selection Modal */}
 			<AnimatePresence>
 				{isAddingAccount && (
-					<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
+					<div className="fixed! inset-0! z-50! flex! items-center! justify-center! p-4! bg-black/20! backdrop-blur-sm!">
 						<motion.div
 							initial={{
 								opacity: 0,
@@ -376,9 +382,9 @@ export function AccountsDashboard() {
 								opacity: 0,
 								scale: 0.95,
 							}}
-							className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6 border border-gray-100"
+							className="bg-white! rounded-xl! shadow-xl! max-w-sm! w-full! p-6! border! border-gray-100!"
 						>
-							<div className="flex justify-between items-center mb-4">
+							<div className="flex! justify-between! items-center! mb-4!">
 								<h3 className="text-lg! font-semibold! text-gray-900!">
 									Add New{" "}
 									{isAddingAccount.type === "asset"
@@ -393,10 +399,10 @@ export function AccountsDashboard() {
 								</button>
 							</div>
 
-							<div className="mb-6">
+							<div className="mb-6!">
 								<label
 									htmlFor="currency-select"
-									className="block text-sm! font-medium! text-gray-700! mb-2!"
+									className="block! text-sm! font-medium! text-gray-700! mb-2!"
 								>
 									Select Currency
 								</label>
@@ -414,21 +420,21 @@ export function AccountsDashboard() {
 										</option>
 									))}
 								</select>
-								<p className="mt-2 text-xs text-gray-500">
+								<p className="mt-2! text-xs! text-gray-500!">
 									Currency cannot be changed after creation.
 								</p>
 							</div>
 
-							<div className="flex gap-3">
+							<div className="flex! gap-3!">
 								<button
 									onClick={() => setIsAddingAccount(null)}
-									className="flex-1 px-4! py-2! border! border-gray-300! rounded-lg! text-gray-700! font-medium! hover:bg-gray-50 transition-colors"
+									className="flex-1! px-4! py-2! border! border-gray-300! rounded-lg! text-gray-700! font-medium! hover:bg-gray-50! transition-colors!"
 								>
 									Cancel
 								</button>
 								<button
 									onClick={confirmAddAccount}
-									className="flex-1 px-4! py-2! bg-indigo-600! text-white! rounded-lg! font-medium! hover:bg-indigo-700 transition-colors"
+									className="flex-1! px-4! py-2! bg-indigo-600! text-white! rounded-lg! font-medium! hover:bg-indigo-700! transition-colors!"
 								>
 									Create Account
 								</button>
