@@ -382,7 +382,6 @@ export function ScheduledCalendarList({
 				onClose={() => setRecordingRecurrence(null)}
 				onRecord={handleRecord}
 				recurrence={recordingRecurrence}
-				accountsMap={accountsMap}
 			/>
 
 			<EditScheduledTransactionModal

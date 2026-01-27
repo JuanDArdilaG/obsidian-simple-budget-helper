@@ -355,7 +355,6 @@ export function EditScheduledTransactionModal({
 										}
 										splits={singleFromSplits}
 										onChange={setSingleFromSplits}
-										accountsMap={accountsMap}
 										totalAmount={singleAmount}
 									/>
 								)}
@@ -367,7 +366,6 @@ export function EditScheduledTransactionModal({
 											label="Transfer To"
 											splits={singleToSplits}
 											onChange={setSingleToSplits}
-											accountsMap={accountsMap}
 											totalAmount={singleAmount}
 										/>
 									)}
@@ -717,7 +715,6 @@ export function EditScheduledTransactionModal({
 									}
 									splits={fromSplits}
 									onChange={setFromSplits}
-									accountsMap={accountsMap}
 									totalAmount={amount}
 								/>
 
@@ -726,7 +723,6 @@ export function EditScheduledTransactionModal({
 										label="Transfer To"
 										splits={toSplits}
 										onChange={setToSplits}
-										accountsMap={accountsMap}
 										totalAmount={amount}
 									/>
 								)}

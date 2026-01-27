@@ -43,7 +43,7 @@ function CustomTooltip({ active, payload, label }: any) {
 		>
 			<h4 className="font-semibold! text-gray-900! mb-3!">{label}</h4>
 			<div className="space-y-2! text-sm!">
-				{payload.map((entry) => (
+				{payload.map((entry: any) => (
 					<div
 						key={entry.value}
 						className="flex! justify-between! items-center!"

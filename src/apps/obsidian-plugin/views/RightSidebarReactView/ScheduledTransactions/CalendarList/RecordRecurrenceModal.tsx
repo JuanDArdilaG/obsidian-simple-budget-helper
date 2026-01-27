@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
 import { CheckCircle, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { AccountsMap } from "../../../../../../contexts/Accounts/application/get-all-accounts.usecase";
+import { useContext, useEffect, useState } from "react";
 import { ItemRecurrenceInfo } from "../../../../../../contexts/ScheduledTransactions/domain";
 import { AccountSplit } from "../../../../../../contexts/Transactions/domain";
 import { AccountSplitter } from "../../../../components/AccountSplitter";
+import { AccountsContext } from "../../Contexts";
 
 interface RecordRecurrenceModalProps {
 	isOpen: boolean;
@@ -17,19 +17,19 @@ interface RecordRecurrenceModalProps {
 		toSplits: AccountSplit[],
 	) => void;
 	recurrence: ItemRecurrenceInfo | null;
-	accountsMap: AccountsMap;
 }
 export function RecordRecurrenceModal({
 	isOpen,
 	onClose,
 	onRecord,
 	recurrence,
-	accountsMap,
 }: Readonly<RecordRecurrenceModalProps>) {
 	const [date, setDate] = useState("");
 	const [amount, setAmount] = useState(0);
 	const [fromSplits, setFromSplits] = useState<AccountSplit[]>([]);
 	const [toSplits, setToSplits] = useState<AccountSplit[]>([]);
+	const { accountsMap } = useContext(AccountsContext);
+
 	useEffect(() => {
 		if (isOpen && recurrence && accountsMap.size > 0) {
 			setDate(new Date(recurrence.date).toISOString().split("T")[0]);
@@ -42,6 +42,7 @@ export function RecordRecurrenceModal({
 			setToSplits([...destinationAccounts]);
 		}
 	}, [isOpen, recurrence, accountsMap]);
+
 	const handleSubmit = () => {
 		if (!recurrence || !date || amount <= 0) {
 			alert("Please fill in all required fields");
@@ -205,7 +206,6 @@ export function RecordRecurrenceModal({
 								}
 								splits={fromSplits}
 								onChange={setFromSplits}
-								accountsMap={accountsMap}
 								totalAmount={amount}
 							/>
 						)}
@@ -216,7 +216,6 @@ export function RecordRecurrenceModal({
 									label="Transfer To"
 									splits={toSplits}
 									onChange={setToSplits}
-									accountsMap={accountsMap}
 									totalAmount={amount}
 								/>
 							)}

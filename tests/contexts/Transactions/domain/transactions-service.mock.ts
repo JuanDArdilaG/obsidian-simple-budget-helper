@@ -8,6 +8,9 @@ import { Nanoid } from "../../../../src/contexts/Shared/domain";
 
 export class TransactionsServiceMock implements ITransactionsService {
 	constructor(public transactions: Transaction[]) {}
+	async getByAccount(accountId: Nanoid): Promise<Transaction[]> {
+		throw new Error("not implemented");
+	}
 
 	async getByID(id: Nanoid): Promise<Transaction> {
 		throw new Error("not implemented");
