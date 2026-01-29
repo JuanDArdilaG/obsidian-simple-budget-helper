@@ -24,7 +24,7 @@ type EditMode = "single" | "all";
 interface EditScheduledTransactionModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSaveSingle: (
+	onEditSingle: (
 		recurrence: ItemRecurrenceInfo,
 		updates: {
 			date: Date;
@@ -32,7 +32,7 @@ interface EditScheduledTransactionModalProps {
 			toSplits: AccountSplit[];
 		},
 	) => Promise<void>;
-	onSaveAll: (transaction: ScheduledTransaction) => Promise<void>;
+	onEditAll: (transaction: ScheduledTransaction) => Promise<void>;
 	recurrence: ItemRecurrenceInfo | null;
 	scheduledTransaction: ScheduledTransaction | null;
 	accountsMap: AccountsMap;
@@ -41,14 +41,15 @@ interface EditScheduledTransactionModalProps {
 export function EditScheduledTransactionModal({
 	isOpen,
 	onClose,
-	onSaveSingle,
-	onSaveAll,
+	onEditSingle,
+	onEditAll,
 	recurrence,
 	scheduledTransaction,
 	accountsMap,
 	categories,
 }: Readonly<EditScheduledTransactionModalProps>) {
 	const [editMode, setEditMode] = useState<EditMode>("single");
+	const [isSaving, setIsSaving] = useState(false);
 	// Single recurrence edit fields
 	const [singleDate, setSingleDate] = useState("");
 	const [singleAmount, setSingleAmount] = useState(0);
@@ -67,7 +68,7 @@ export function EditScheduledTransactionModal({
 		RecurrenceType.INFINITE,
 	);
 	const [startDate, setStartDate] = useState(
-		new Date().toISOString().split("T")[0],
+		`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`,
 	);
 	const [frequencyNum, setFrequencyNum] = useState(1);
 	const [frequencyUnit, setFrequencyUnit] = useState<"d" | "w" | "mo" | "y">(
@@ -86,7 +87,7 @@ export function EditScheduledTransactionModal({
 		) {
 			// Initialize single recurrence edit fields
 			setSingleDate(
-				new Date(recurrence.date).toISOString().split("T")[0],
+				`${new Date(recurrence.date).getFullYear()}-${String(new Date(recurrence.date).getMonth() + 1).padStart(2, "0")}-${String(new Date(recurrence.date).getDate()).padStart(2, "0")}`,
 			);
 			const originAmount = recurrence.originAmount.value;
 			setSingleAmount(originAmount);
@@ -105,7 +106,7 @@ export function EditScheduledTransactionModal({
 			const pattern = scheduledTransaction.recurrencePattern;
 			setRecurrenceType(pattern.type);
 			setStartDate(
-				new Date(pattern.startDate).toISOString().split("T")[0],
+				`${new Date(pattern.startDate).getFullYear()}-${String(new Date(pattern.startDate).getMonth() + 1).padStart(2, "0")}-${String(new Date(pattern.startDate).getDate()).padStart(2, "0")}`,
 			);
 			if (pattern.frequency) {
 				const match = pattern.frequency.match(/(\d+)(d|w|mo|y)/);
@@ -116,7 +117,7 @@ export function EditScheduledTransactionModal({
 			}
 			if (pattern.endDate) {
 				setEndDate(
-					new Date(pattern.endDate).toISOString().split("T")[0],
+					`${new Date(pattern.endDate).getFullYear()}-${String(new Date(pattern.endDate).getMonth() + 1).padStart(2, "0")}-${String(new Date(pattern.endDate).getDate()).padStart(2, "0")}`,
 				);
 			}
 			if (pattern.maxOccurrences) {
@@ -127,7 +128,7 @@ export function EditScheduledTransactionModal({
 		}
 	}, [isOpen, recurrence, scheduledTransaction, accountsMap]);
 
-	const handleSubmitSingle = () => {
+	const handleSubmitSingle = async () => {
 		if (!recurrence || !singleDate || singleAmount <= 0) {
 			alert("Please fill in all required fields");
 			return;
@@ -152,19 +153,28 @@ export function EditScheduledTransactionModal({
 				return;
 			}
 		}
-		onSaveSingle(recurrence, {
+	try {
+		setIsSaving(true);
+		await onEditSingle(recurrence, {
 			date: new Date(singleDate),
 			fromSplits: singleFromSplits,
 			toSplits: singleToSplits,
 		});
 		onClose();
-	};
-	const handleSubmitAll = () => {
-		if (!name || !category || amount <= 0) {
-			alert("Please fill in all required fields");
-			return;
-		}
-		const fromTotal = fromSplits.reduce(
+	} catch (error) {
+		console.error("Error saving single recurrence:", error);
+		alert("Failed to save changes. Please try again.");
+	} finally {
+		setIsSaving(false);
+	}
+};
+
+const handleSubmitAll = async () => {
+	if (!name || !category || amount <= 0) {
+		alert("Please fill in all required fields");
+		return;
+	}
+	const fromTotal = fromSplits.reduce(
 			(sum, s) => sum + s.amount.value,
 			0,
 		);
@@ -214,12 +224,20 @@ export function EditScheduledTransactionModal({
 			store: store || undefined,
 			updatedAt: new Date().toISOString(),
 		});
-		onSaveAll(transaction);
-		onClose();
+		try {
+			setIsSaving(true);
+			await onEditAll(transaction);
+			onClose();
+		} catch (error) {
+			console.error("Error saving all recurrences:", error);
+			alert("Failed to save changes. Please try again.");
+		} finally {
+			setIsSaving(false);
+		}
 	};
 	if (!isOpen || !recurrence || !scheduledTransaction) return null;
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm overflow-y-auto">
+		<div className="fixed! inset-0! z-50! flex! items-center! justify-center! p-4! bg-black/20! backdrop-blur-sm! overflow-y-auto!">
 			<motion.div
 				initial={{
 					opacity: 0,
@@ -233,18 +251,18 @@ export function EditScheduledTransactionModal({
 					opacity: 0,
 					scale: 0.95,
 				}}
-				className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-6 border border-gray-100 my-8 overflow-hidden flex flex-col max-h-[90vh]"
+				className="bg-white! rounded-xl! shadow-xl! max-w-3xl! w-full! p-6! border! border-gray-100! my-8! overflow-hidden! flex! flex-col! max-h-[90vh]!"
 			>
-				<div className="flex justify-between items-center mb-6 flex-shrink-0">
-					<div className="flex items-center gap-3">
-						<div className="p-2 bg-indigo-50 rounded-lg">
-							<Pencil className="w-6 h-6 text-indigo-600" />
+				<div className="flex! justify-between! items-center! mb-6! flex-shrink-0!">
+					<div className="flex! items-center! gap-3!">
+						<div className="p-2! bg-indigo-50! rounded-lg!">
+							<Pencil className="w-6! h-6! text-indigo-600!" />
 						</div>
 						<div>
-							<h2 className="text-xl font-bold text-gray-900">
+							<h2 className="text-xl! font-bold! text-gray-900!">
 								Edit Scheduled Transaction
 							</h2>
-							<p className="text-sm text-gray-600">
+							<p className="text-sm! text-gray-600!">
 								{recurrence.name} - Occurrence #
 								{recurrence.occurrenceIndex}
 							</p>
@@ -252,54 +270,54 @@ export function EditScheduledTransactionModal({
 					</div>
 					<button
 						onClick={onClose}
-						className="text-gray-400 hover:text-gray-600"
+						className="text-gray-400! hover:text-gray-600!"
 					>
 						<X size={24} />
 					</button>
 				</div>
 
 				{/* Edit Mode Selection */}
-				<div className="mb-6 flex-shrink-0">
-					<label className="block text-sm font-medium text-gray-700 mb-2">
+				<div className="mb-6! flex-shrink-0!">
+					<label className="block! text-sm! font-medium! text-gray-700! mb-2!">
 						Edit Scope
 					</label>
-					<div className="grid grid-cols-2 gap-3">
+					<div className="grid! grid-cols-2! gap-3!">
 						<button
 							onClick={() => setEditMode("single")}
-							className={`p-4 rounded-lg border transition-all ${editMode === "single" ? "bg-indigo-50 border-indigo-200 text-indigo-700 ring-2 ring-indigo-500 ring-offset-2" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+							className={`p-4! rounded-lg! border! transition-all! ${editMode === "single" ? "bg-indigo-50! border-indigo-200! text-indigo-700! ring-2! ring-indigo-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
 						>
-							<div className="font-medium mb-1">
+							<div className="font-medium! mb-1!">
 								This Occurrence Only
 							</div>
-							<div className="text-xs text-gray-500">
+							<div className="text-xs! text-gray-500!">
 								Edit date and amount for occurrence #
 								{recurrence.occurrenceIndex}
 							</div>
 						</button>
 						<button
 							onClick={() => setEditMode("all")}
-							className={`p-4 rounded-lg border transition-all ${editMode === "all" ? "bg-indigo-50 border-indigo-200 text-indigo-700 ring-2 ring-indigo-500 ring-offset-2" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+							className={`p-4! rounded-lg! border! transition-all! ${editMode === "all" ? "bg-indigo-50! border-indigo-200! text-indigo-700! ring-2! ring-indigo-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
 						>
-							<div className="font-medium mb-1">
+							<div className="font-medium! mb-1!">
 								All Future Occurrences
 							</div>
-							<div className="text-xs text-gray-500">
+							<div className="text-xs! text-gray-500!">
 								Edit the entire scheduled transaction
 							</div>
 						</button>
 					</div>
 				</div>
 
-				<div className="overflow-y-auto flex-1 pr-2 -mr-2">
+				<div className="overflow-y-auto! flex-1! pr-2! -mr-2!">
 					{editMode === "single" ? (
 						// Single Recurrence Edit Form
-						<div className="space-y-6">
-							<div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex gap-3">
+						<div className="space-y-6!!">
+							<div className="bg-amber-50! border! border-amber-200! rounded-lg! p-4! flex! gap-3!">
 								<AlertCircle
 									size={20}
-									className="text-amber-600 flex-shrink-0 mt-0.5"
+									className="text-amber-600! flex-shrink-0! mt-0.5!"
 								/>
-								<div className="text-sm text-amber-800">
+								<div className="text-sm! text-amber-800!">
 									<strong>Single occurrence edit:</strong>{" "}
 									Changes will only apply to this specific
 									occurrence. Other occurrences will remain
@@ -308,7 +326,7 @@ export function EditScheduledTransactionModal({
 							</div>
 
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
+								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Date *
 								</label>
 								<input
@@ -317,16 +335,16 @@ export function EditScheduledTransactionModal({
 									onChange={(e) =>
 										setSingleDate(e.target.value)
 									}
-									className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+									className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 								/>
 							</div>
 
 							<div>
-								<label className="block text-sm font-medium text-gray-700 mb-1">
+								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Amount *
 								</label>
-								<div className="relative">
-									<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+								<div className="relative!">
+									<span className="absolute! left-3! top-1/2! -translate-y-1/2! text-gray-500!">
 										$
 									</span>
 									<input
@@ -339,12 +357,12 @@ export function EditScheduledTransactionModal({
 										}
 										placeholder="0.00"
 										step="0.01"
-										className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+										className="w-full! pl-7! pr-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 									/>
 								</div>
 							</div>
 
-							<div className="space-y-4">
+							<div className="space-y-4!">
 								{singleFromSplits.length > 0 && (
 									<AccountSplitter
 										label={
@@ -373,13 +391,13 @@ export function EditScheduledTransactionModal({
 						</div>
 					) : (
 						// Full Scheduled Transaction Edit Form
-						<div className="space-y-6">
-							<div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
+						<div className="space-y-6!">
+							<div className="bg-blue-50! border! border-blue-200! rounded-lg! p-4! flex! gap-3!">
 								<AlertCircle
 									size={20}
-									className="text-blue-600 flex-shrink-0 mt-0.5"
+									className="text-blue-600! flex-shrink-0! mt-0.5!"
 								/>
-								<div className="text-sm text-blue-800">
+								<div className="text-sm! text-blue-800!">
 									<strong>All occurrences edit:</strong>{" "}
 									Changes will apply to all future occurrences
 									of this scheduled transaction.
@@ -387,7 +405,7 @@ export function EditScheduledTransactionModal({
 							</div>
 
 							{/* Operation Selection */}
-							<div className="grid grid-cols-3 gap-4">
+							<div className="grid! grid-cols-3! gap-4!">
 								<button
 									onClick={() => setOperation("expense")}
 									className={`p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${operation === "expense" ? "bg-rose-50 border-rose-200 text-rose-700 ring-2 ring-rose-500 ring-offset-2" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
@@ -399,42 +417,44 @@ export function EditScheduledTransactionModal({
 												: "text-gray-400"
 										}
 									/>
-									<span className="font-medium">Expense</span>
+									<span className="font-medium!">
+										Expense
+									</span>
 								</button>
 								<button
 									onClick={() => setOperation("income")}
-									className={`p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${operation === "income" ? "bg-emerald-50 border-emerald-200 text-emerald-700 ring-2 ring-emerald-500 ring-offset-2" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+									className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${operation === "income" ? "bg-emerald-50! border-emerald-200! text-emerald-700! ring-2! ring-emerald-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
 								>
 									<ArrowDownLeft
 										className={
 											operation === "income"
-												? "text-emerald-600"
-												: "text-gray-400"
+												? "text-emerald-600!"
+												: "text-gray-400!"
 										}
 									/>
-									<span className="font-medium">Income</span>
+									<span className="font-medium!">Income</span>
 								</button>
 								<button
 									onClick={() => setOperation("transfer")}
-									className={`p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${operation === "transfer" ? "bg-blue-50 border-blue-200 text-blue-700 ring-2 ring-blue-500 ring-offset-2" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+									className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${operation === "transfer" ? "bg-blue-50! border-blue-200! text-blue-700! ring-2! ring-blue-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
 								>
 									<RefreshCw
 										className={
 											operation === "transfer"
-												? "text-blue-600"
-												: "text-gray-400"
+												? "text-blue-600!"
+												: "text-gray-400!"
 										}
 									/>
-									<span className="font-medium">
+									<span className="font-medium!">
 										Transfer
 									</span>
 								</button>
 							</div>
 
 							{/* Basic Info */}
-							<div className="space-y-4">
+							<div className="space-y-4!">
 								<div>
-									<label className="block text-sm font-medium text-gray-700 mb-1">
+									<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 										Transaction Name *
 									</label>
 									<input
@@ -444,13 +464,13 @@ export function EditScheduledTransactionModal({
 											setName(e.target.value)
 										}
 										placeholder="e.g. Rent Payment, Netflix Subscription"
-										className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+										className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 									/>
 								</div>
 
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+								<div className="grid! grid-cols-1! sm:grid-cols-2! gap-4!">
 									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
+										<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 											Category *
 										</label>
 										<select
@@ -459,7 +479,7 @@ export function EditScheduledTransactionModal({
 												setCategory(e.target.value);
 												setSubcategory("");
 											}}
-											className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+											className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 										>
 											<option value="">
 												Select Category
@@ -475,7 +495,7 @@ export function EditScheduledTransactionModal({
 									</div>
 
 									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
+										<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 											Subcategory
 										</label>
 										<select
@@ -484,7 +504,7 @@ export function EditScheduledTransactionModal({
 												setSubcategory(e.target.value)
 											}
 											disabled={!category}
-											className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
+											className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500! disabled:bg-gray-100!"
 										>
 											<option value="">
 												Select Subcategory
@@ -502,13 +522,13 @@ export function EditScheduledTransactionModal({
 									</div>
 								</div>
 
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+								<div className="grid! grid-cols-1! sm:grid-cols-2! gap-4!">
 									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
+										<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 											Amount *
 										</label>
-										<div className="relative">
-											<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+										<div className="relative!">
+											<span className="absolute! left-3! top-1/2! -translate-y-1/2! text-gray-500!">
 												$
 											</span>
 											<input
@@ -523,13 +543,13 @@ export function EditScheduledTransactionModal({
 												}
 												placeholder="0.00"
 												step="0.01"
-												className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+												className="w-full! pl-7! pr-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 											/>
 										</div>
 									</div>
 
 									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
+										<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 											Store / Payee (Optional)
 										</label>
 										<input
@@ -539,27 +559,27 @@ export function EditScheduledTransactionModal({
 												setStore(e.target.value)
 											}
 											placeholder="e.g. Netflix, Landlord"
-											className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+											className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 										/>
 									</div>
 								</div>
 							</div>
 
 							{/* Recurrence Pattern */}
-							<div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-								<div className="flex items-center gap-2 mb-4">
+							<div className="p-4! bg-gray-50! rounded-lg! border! border-gray-200!">
+								<div className="flex! items-center! gap-2! mb-4!">
 									<Repeat
 										size={18}
-										className="text-gray-500"
+										className="text-gray-500!"
 									/>
-									<h3 className="font-medium text-gray-900">
+									<h3 className="font-medium! text-gray-900!">
 										Recurrence Pattern
 									</h3>
 								</div>
 
-								<div className="space-y-4">
+								<div className="space-y-4!">
 									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
+										<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 											Start Date *
 										</label>
 										<input
@@ -568,12 +588,12 @@ export function EditScheduledTransactionModal({
 											onChange={(e) =>
 												setStartDate(e.target.value)
 											}
-											className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+											className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 										/>
 									</div>
 
 									<div>
-										<label className="block text-sm font-medium text-gray-700 mb-1">
+										<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 											Recurrence Type *
 										</label>
 										<select
@@ -584,7 +604,7 @@ export function EditScheduledTransactionModal({
 														.value as RecurrenceType,
 												)
 											}
-											className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+											className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 										>
 											<option
 												value={RecurrenceType.ONE_TIME}
@@ -616,10 +636,10 @@ export function EditScheduledTransactionModal({
 									{recurrenceType !==
 										RecurrenceType.ONE_TIME && (
 										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
+											<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 												Frequency *
 											</label>
-											<div className="flex gap-2">
+											<div className="flex! gap-2!">
 												<input
 													type="number"
 													min="1"
@@ -631,7 +651,7 @@ export function EditScheduledTransactionModal({
 															) || 1,
 														)
 													}
-													className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+													className="w-20! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 												/>
 												<select
 													value={frequencyUnit}
@@ -644,7 +664,7 @@ export function EditScheduledTransactionModal({
 																| "y",
 														)
 													}
-													className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+													className="flex-1! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 												>
 													<option value="d">
 														Day(s)
@@ -666,7 +686,7 @@ export function EditScheduledTransactionModal({
 									{recurrenceType ===
 										RecurrenceType.UNTIL_DATE && (
 										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
+											<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 												End Date *
 											</label>
 											<input
@@ -676,7 +696,7 @@ export function EditScheduledTransactionModal({
 													setEndDate(e.target.value)
 												}
 												min={startDate}
-												className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+												className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 											/>
 										</div>
 									)}
@@ -684,7 +704,7 @@ export function EditScheduledTransactionModal({
 									{recurrenceType ===
 										RecurrenceType.N_OCCURRENCES && (
 										<div>
-											<label className="block text-sm font-medium text-gray-700 mb-1">
+											<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
 												Number of Occurrences *
 											</label>
 											<input
@@ -698,7 +718,7 @@ export function EditScheduledTransactionModal({
 														) || 1,
 													)
 												}
-												className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+												className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 											/>
 										</div>
 									)}
@@ -706,7 +726,7 @@ export function EditScheduledTransactionModal({
 							</div>
 
 							{/* Account Splits */}
-							<div className="space-y-4">
+							<div className="space-y-4!">
 								<AccountSplitter
 									label={
 										operation === "income"
@@ -732,10 +752,11 @@ export function EditScheduledTransactionModal({
 				</div>
 
 				{/* Footer */}
-				<div className="flex gap-3 pt-4 border-t border-gray-100 mt-auto flex-shrink-0">
+				<div className="flex! gap-3! pt-4! border-t! border-gray-100! mt-auto! flex-shrink-0!">
 					<button
 						onClick={onClose}
-						className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+						disabled={isSaving}
+						className="flex-1! px-4! py-2.5! border! border-gray-300! rounded-lg! text-gray-700! font-medium! hover:bg-gray-50! transition-colors! disabled:opacity-50! disabled:cursor-not-allowed!"
 					>
 						Cancel
 					</button>
@@ -745,11 +766,19 @@ export function EditScheduledTransactionModal({
 								? handleSubmitSingle
 								: handleSubmitAll
 						}
-						className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"
+						disabled={isSaving}
+						className="flex-1! px-4! py-2.5! bg-indigo-600! text-white! rounded-lg! font-medium! hover:bg-indigo-700! transition-colors! shadow-sm! disabled:opacity-50! disabled:cursor-not-allowed! flex! items-center! justify-center! gap-2!"
 					>
-						{editMode === "single"
-							? "Save This Occurrence"
-							: "Save All Future Occurrences"}
+						{isSaving ? (
+							<>
+								<RefreshCw className="animate-spin" size={16} />
+								Saving...
+							</>
+						) : editMode === "single" ? (
+							"Save This Occurrence"
+						) : (
+							"Save All Future Occurrences"
+						)}
 					</button>
 				</div>
 			</motion.div>

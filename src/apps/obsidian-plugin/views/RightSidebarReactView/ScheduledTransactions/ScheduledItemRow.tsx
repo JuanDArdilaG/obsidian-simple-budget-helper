@@ -78,7 +78,6 @@ export function ScheduledItemRow({
 			};
 		} else {
 			const r = item.data;
-			console.log("Recurrence data:", r);
 			return {
 				name: r.name,
 				operation: r.operation.type.value,

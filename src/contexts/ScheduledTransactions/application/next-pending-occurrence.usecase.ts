@@ -21,10 +21,6 @@ export class NextPendingOccurrenceUseCase implements QueryUseCase<
 	async execute(
 		scheduledTransactionID: Nanoid,
 	): Promise<ItemRecurrenceInfo | null> {
-		this.#logger.debug(
-			`Fetching next pending occurrence for scheduled transaction ID: ${scheduledTransactionID.value}`,
-		);
-
 		const scheduledTransaction =
 			await this._scheduledTransactionsService.getByID(
 				scheduledTransactionID.value,
@@ -63,9 +59,6 @@ export class NextPendingOccurrenceUseCase implements QueryUseCase<
 				);
 			}
 			if (info.state === RecurrenceState.PENDING) {
-				this.#logger.debug(
-					`Found next pending occurrence at index ${i} for scheduled transaction ID: ${scheduledTransactionID.value}`,
-				);
 				break;
 			}
 			info = null;

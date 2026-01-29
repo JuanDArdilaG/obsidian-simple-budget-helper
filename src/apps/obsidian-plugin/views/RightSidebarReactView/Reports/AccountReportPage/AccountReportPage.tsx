@@ -144,11 +144,24 @@ export function AccountReportPage({
 			// Set default dates if not already set
 			if (!customStartDate) {
 				const defaultStart = new Date();
-				defaultStart.setMonth(defaultStart.getMonth() - 1);
-				setCustomStartDate(defaultStart.toISOString().split("T")[0]);
+				defaultStart.setMonth(defaultStart.getMonth() - 1); // Use local date methods to avoid UTC timezone shift
+				const year = defaultStart.getFullYear();
+				const month = String(defaultStart.getMonth() + 1).padStart(
+					2,
+					"0",
+				);
+				const day = String(defaultStart.getDate()).padStart(2, "0");
+				setCustomStartDate(`${year}-${month}-${day}`);
 			}
 			if (!customEndDate) {
-				setCustomEndDate(new Date().toISOString().split("T")[0]);
+				const defaultEnd = new Date();
+				const year = defaultEnd.getFullYear();
+				const month = String(defaultEnd.getMonth() + 1).padStart(
+					2,
+					"0",
+				);
+				const day = String(defaultEnd.getDate()).padStart(2, "0");
+				setCustomEndDate(`${year}-${month}-${day}`);
 			}
 		} else {
 			setShowCustomDatePicker(false);
@@ -412,9 +425,7 @@ export function AccountReportPage({
 														undefined
 													}
 													max={
-														new Date()
-															.toISOString()
-															.split("T")[0]
+														`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}` /* Prevent future dates */
 													}
 													className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 												/>

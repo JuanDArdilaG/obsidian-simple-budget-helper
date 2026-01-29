@@ -60,7 +60,9 @@ export function AddTransactionModal({
 		useCases: { createCategory, createSubCategory },
 	} = useContext(CategoriesContext);
 	const [operation, setOperation] = useState<OperationType>("expense");
-	const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+	const [date, setDate] = useState(
+		`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`,
+	);
 	const [time, setTime] = useState(new Date().toTimeString().slice(0, 5));
 	const [store, setStore] = useState("");
 	const [items, setItems] = useState<TransactionItem[]>([
@@ -188,8 +190,11 @@ export function AddTransactionModal({
 			});
 			// Use local date methods to avoid UTC timezone shift
 			const year = transactionDate.getFullYear();
-			const month = String(transactionDate.getMonth() + 1).padStart(2, '0');
-			const day = String(transactionDate.getDate()).padStart(2, '0');
+			const month = String(transactionDate.getMonth() + 1).padStart(
+				2,
+				"0",
+			);
+			const day = String(transactionDate.getDate()).padStart(2, "0");
 			setDate(`${year}-${month}-${day}`);
 			setTime(transactionDate.toTimeString().slice(0, 5));
 			setStore(editTransaction.store?.value || "");
@@ -212,8 +217,11 @@ export function AddTransactionModal({
 			setToSplits(editTransaction.destinationAccounts || []);
 		} else {
 			// Reset form for new transaction
-			setOperation("expense");
-			setDate(new Date().toISOString().split("T")[0]);
+			setOperation("expense"); // Use local date methods to avoid UTC timezone shift
+			const year = new Date().getFullYear();
+			const month = String(new Date().getMonth() + 1).padStart(2, "0");
+			const day = String(new Date().getDate()).padStart(2, "0");
+			setDate(`${year}-${month}-${day}`);
 			setTime(new Date().toTimeString().slice(0, 5));
 			setStore("");
 			setItems([

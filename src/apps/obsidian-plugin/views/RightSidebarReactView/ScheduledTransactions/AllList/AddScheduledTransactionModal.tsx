@@ -57,7 +57,7 @@ export function AddScheduledTransactionModal({
 		RecurrenceType.INFINITE,
 	);
 	const [startDate, setStartDate] = useState(
-		new Date().toISOString().split("T")[0],
+		`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`,
 	);
 	const [frequencyNum, setFrequencyNum] = useState(1);
 	const [frequencyUnit, setFrequencyUnit] = useState<"d" | "w" | "mo" | "y">(
@@ -79,10 +79,14 @@ export function AddScheduledTransactionModal({
 			setFromSplits(editTransaction.originAccounts);
 			setToSplits(editTransaction.destinationAccounts);
 			const pattern = editTransaction.recurrencePattern;
-			setRecurrenceType(pattern.type);
-			setStartDate(
-				new Date(pattern.startDate).toISOString().split("T")[0],
+			setRecurrenceType(pattern.type); // Use local date methods to avoid UTC timezone shift
+			const year = pattern.startDate.getFullYear();
+			const month = String(pattern.startDate.getMonth() + 1).padStart(
+				2,
+				"0",
 			);
+			const day = String(pattern.startDate.getDate()).padStart(2, "0");
+			setStartDate(`${year}-${month}-${day}`);
 			if (pattern.frequency) {
 				const match = pattern.frequency.match(/(\d+)(d|w|mo|y)/);
 				if (match) {
@@ -91,9 +95,14 @@ export function AddScheduledTransactionModal({
 				}
 			}
 			if (pattern.endDate) {
-				setEndDate(
-					new Date(pattern.endDate).toISOString().split("T")[0],
+				// Use local date methods to avoid UTC timezone shift
+				const year = pattern.endDate.getFullYear();
+				const month = String(pattern.endDate.getMonth() + 1).padStart(
+					2,
+					"0",
 				);
+				const day = String(pattern.endDate.getDate()).padStart(2, "0");
+				setEndDate(`${year}-${month}-${day}`);
 			}
 			if (pattern.maxOccurrences) {
 				setMaxOccurrences(pattern.maxOccurrences);
@@ -107,8 +116,11 @@ export function AddScheduledTransactionModal({
 			setSubcategory("");
 			setStore("");
 			setAmount(0);
-			setRecurrenceType(RecurrenceType.INFINITE);
-			setStartDate(new Date().toISOString().split("T")[0]);
+			setRecurrenceType(RecurrenceType.INFINITE); // Use local date methods to avoid UTC timezone shift
+			const year = new Date().getFullYear();
+			const month = String(new Date().getMonth() + 1).padStart(2, "0");
+			const day = String(new Date().getDate()).padStart(2, "0");
+			setStartDate(`${year}-${month}-${day}`);
 			setFrequencyNum(1);
 			setFrequencyUnit("mo");
 			setEndDate("");

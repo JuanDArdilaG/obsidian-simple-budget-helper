@@ -142,11 +142,12 @@ export function ScheduledCalendarList({
 
 	const [recurrences, setRecurrences] = useState<ItemRecurrenceInfo[]>([]);
 
+	// Fetch recurrences when untilDate or scheduledItems change
 	useEffect(() => {
 		getScheduledTransactionsUntilDate
 			.execute(untilDate)
 			.then(setRecurrences);
-	}, [untilDate, getScheduledTransactionsUntilDate]);
+	}, [untilDate, getScheduledTransactionsUntilDate, scheduledItems]);
 
 	const [updateUntilDateTransactions, setUpdateUntilDateTransactions] =
 		useState<boolean>(false);
@@ -155,12 +156,14 @@ export function ScheduledCalendarList({
 		if (updateUntilDateTransactions) {
 			getScheduledTransactionsUntilDate
 				.execute(untilDate)
-				.then(setRecurrences);
+				.then(setRecurrences)
+				.finally(() => setUpdateUntilDateTransactions(false));
 		}
 	}, [
 		updateUntilDateTransactions,
 		untilDate,
 		getScheduledTransactionsUntilDate,
+		scheduledItems,
 	]);
 
 	const handleRecord = async (
@@ -216,6 +219,7 @@ export function ScheduledCalendarList({
 		// Sort by date (earliest first)
 		return filtered.sort((a, b) => a.date.getTime() - b.date.getTime());
 	}, [recurrences, searchQuery]);
+
 	// Group by date
 	const groupedRecurrences = useMemo(() => {
 		const groups: {
@@ -304,7 +308,7 @@ export function ScheduledCalendarList({
 									onChange={(e) =>
 										setCustomUntilDate(e.target.value)
 									}
-									min={new Date().toISOString().split("T")[0]}
+									min={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`}
 									className="w-full! px-3! py-1.5! text-sm! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 								/>
 							</motion.div>
@@ -409,21 +413,58 @@ export function ScheduledCalendarList({
 			<EditScheduledTransactionModal
 				isOpen={!!editingRecurrence}
 				onClose={() => setEditingRecurrence(null)}
-				onSaveSingle={onSaveSingle}
-				onSaveAll={onSaveAll}
 				recurrence={editingRecurrence}
-				accountsMap={accountsMap}
-				categories={categories}
 				scheduledTransaction={
 					editingRecurrence
-						? scheduledItems.find(
-								(item) =>
-									item.id.toString() ===
-									editingRecurrence.scheduledTransactionId
-										.value,
-							) || null
+						? (() => {
+								const found = scheduledItems.find(
+									(item) =>
+										item.id ===
+										editingRecurrence.scheduledTransactionId
+											.value,
+								);
+								console.log(
+									"Looking for scheduled transaction:",
+									{
+										searchingFor:
+											editingRecurrence
+												.scheduledTransactionId.value,
+										availableIds: scheduledItems.map(
+											(item) => item.id,
+										),
+										found: found?.id ?? "NOT FOUND",
+									},
+								);
+								return found ?? null;
+							})()
 						: null
 				}
+				accountsMap={accountsMap}
+				categories={categories}
+				onEditSingle={async (
+					recurrence: ItemRecurrenceInfo,
+					updates: {
+						date: Date;
+						fromSplits: AccountSplit[];
+						toSplits: AccountSplit[];
+					},
+				) => {
+					console.log("onEditSingle called with:", {
+						recurrence,
+						updates,
+					});
+					await onSaveSingle(recurrence, updates);
+					console.log("onSaveSingle completed");
+					setUpdateUntilDateTransactions(true);
+					setEditingRecurrence(null);
+				}}
+				onEditAll={async (transaction: ScheduledTransaction) => {
+					console.log("onEditAll called with:", transaction);
+					await onSaveAll(transaction);
+					console.log("onSaveAll completed");
+					setUpdateUntilDateTransactions(true);
+					setEditingRecurrence(null);
+				}}
 			/>
 
 			<DeleteRecurrenceModal

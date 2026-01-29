@@ -219,28 +219,42 @@ export function ScheduledTransactionsList() {
 
 	const [viewMode, setViewMode] = useState<ViewMode>("list");
 
+	useEffect(() => {
+		if (isRefreshing) {
+			// Reset refreshing state after a short delay to allow data to load
+			const timer = setTimeout(() => {
+				setIsRefreshing(false);
+			}, 500);
+			return () => clearTimeout(timer);
+		}
+	}, [isRefreshing, scheduledItems]);
+
 	const handleEditSingle = async (
 		recurrence: ItemRecurrenceInfo,
 		updates: {
 			date: Date;
-			amount: number;
 			fromSplits: AccountSplit[];
 			toSplits: AccountSplit[];
 		},
 	) => {
-		console.log("Updating recurrence:", {
+		console.log("handleEditSingle called:", {
 			recurrence,
 			updates,
 		});
-		await modifyNItemRecurrence.execute({
-			scheduledItemId: recurrence.scheduledTransactionId,
-			occurrenceIndex: recurrence.occurrenceIndex,
-			date: updates.date,
-			fromSplits: updates.fromSplits,
-			toSplits: updates.toSplits,
-		});
+		try {
+			await modifyNItemRecurrence.execute({
+				scheduledItemId: recurrence.scheduledTransactionId,
+				occurrenceIndex: recurrence.occurrenceIndex,
+				date: updates.date,
+				fromSplits: updates.fromSplits,
+				toSplits: updates.toSplits,
+			});
+			console.log("modifyNItemRecurrence.execute completed successfully");
+		} catch (error) {
+			console.error("Error in modifyNItemRecurrence.execute:", error);
+			throw error;
+		}
 		updateScheduledTransactions();
-		handleRefresh();
 	};
 
 	const handleRefresh = () => {
@@ -261,22 +275,31 @@ export function ScheduledTransactionsList() {
 	const handleUpdateTransaction = async (
 		updatedTransaction: ScheduledTransaction,
 	) => {
-		if (!editingTransaction) return;
+		console.log("handleUpdateTransaction called with:", updatedTransaction);
 		// TODO: Replace with a single use case that updates all fields
-		await editScheduledTransactionName.execute({
-			id: editingTransaction.nanoid,
-			name: updatedTransaction.name,
-		});
-		await editScheduledTransactionRecurrencePattern.execute({
-			id: editingTransaction.nanoid,
-			recurrencePattern: updatedTransaction.recurrencePattern,
-		});
-		await editScheduledTransactionStartDate.execute({
-			id: editingTransaction.nanoid,
-			startDate: updatedTransaction.recurrencePattern.startDate,
-		});
+		try {
+			await editScheduledTransactionName.execute({
+				id: updatedTransaction.nanoid,
+				name: updatedTransaction.name,
+			});
+			console.log("editScheduledTransactionName completed");
+			await editScheduledTransactionRecurrencePattern.execute({
+				id: updatedTransaction.nanoid,
+				recurrencePattern: updatedTransaction.recurrencePattern,
+			});
+			console.log("editScheduledTransactionRecurrencePattern completed");
+			await editScheduledTransactionStartDate.execute({
+				id: updatedTransaction.nanoid,
+				startDate: updatedTransaction.recurrencePattern.startDate,
+			});
+			console.log("editScheduledTransactionStartDate completed");
+		} catch (error) {
+			console.error("Error updating transaction:", error);
+			throw error;
+		}
+
+		updateScheduledTransactions();
 		setEditingTransaction(null);
-		handleRefresh();
 	};
 
 	const handleDelete = (transaction: ScheduledTransaction) => {
@@ -289,7 +312,7 @@ export function ScheduledTransactionsList() {
 				deletingTransaction.nanoid,
 			);
 			setDeletingTransaction(null);
-			handleRefresh();
+			updateScheduledTransactions();
 		}
 	};
 	// Filter and sort transactions
@@ -301,11 +324,12 @@ export function ScheduledTransactionsList() {
 			return matchesSearch;
 		});
 		// Sort by next occurrence date (soonest first)
-		return filtered.sort((a, b) => {
+		const sorted = filtered.toSorted((a, b) => {
 			const nextA = calculateNextOccurrence(a);
 			const nextB = calculateNextOccurrence(b);
 			return nextA.getTime() - nextB.getTime();
 		});
+		return sorted;
 	}, [scheduledItems, searchQuery]);
 
 	if (isRefreshing) {
@@ -482,8 +506,8 @@ export function ScheduledTransactionsList() {
 			<EditScheduledTransactionModal
 				isOpen={!!editingTransaction}
 				onClose={() => setEditingTransaction(null)}
-				onSaveAll={handleUpdateTransaction}
-				onSaveSingle={handleEditSingle}
+				onEditAll={handleUpdateTransaction}
+				onEditSingle={handleEditSingle}
 				accountsMap={accountsMap}
 				categories={categoriesWithSubcategories}
 				recurrence={
