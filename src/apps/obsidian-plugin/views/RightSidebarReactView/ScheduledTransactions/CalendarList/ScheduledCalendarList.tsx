@@ -199,6 +199,8 @@ export function ScheduledCalendarList({
 				id: deletingRecurrence.scheduledTransactionId,
 				n: deletingRecurrence.occurrenceIndex,
 			});
+			updateScheduledTransactions();
+			setUpdateUntilDateTransactions(true);
 			setDeletingRecurrence(null);
 		}
 	};

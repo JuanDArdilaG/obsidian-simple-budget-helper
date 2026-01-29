@@ -201,6 +201,7 @@ export function ScheduledTransactionsList() {
 	const [nextPendingOccurrences, setNextPendingOccurrences] = useState<
 		Record<string, ItemRecurrenceInfo>
 	>({});
+
 	useEffect(() => {
 		Promise.all(
 			scheduledItems.map(async (item) => {
@@ -238,12 +239,13 @@ export function ScheduledTransactionsList() {
 			fromSplits: updates.fromSplits,
 			toSplits: updates.toSplits,
 		});
+		updateScheduledTransactions();
+		handleRefresh();
 	};
 
 	const handleRefresh = () => {
 		setIsRefreshing(true);
 		updateScheduledTransactions();
-		setTimeout(() => setIsRefreshing(false), 1000);
 	};
 
 	const handleAddTransaction = async (
@@ -274,6 +276,7 @@ export function ScheduledTransactionsList() {
 			startDate: updatedTransaction.recurrencePattern.startDate,
 		});
 		setEditingTransaction(null);
+		handleRefresh();
 	};
 
 	const handleDelete = (transaction: ScheduledTransaction) => {
@@ -286,6 +289,7 @@ export function ScheduledTransactionsList() {
 				deletingTransaction.nanoid,
 			);
 			setDeletingTransaction(null);
+			handleRefresh();
 		}
 	};
 	// Filter and sort transactions
@@ -351,7 +355,9 @@ export function ScheduledTransactionsList() {
 						className="flex! items-center! gap-2! px-4! py-2! bg-indigo-600! text-white! rounded-lg! hover:bg-indigo-700! transition-colors! shadow-sm! font-medium!"
 					>
 						<Plus size={18} />
-						<span className="hidden! sm:inline!">Add Scheduled</span>
+						<span className="hidden! sm:inline!">
+							Add Scheduled
+						</span>
 					</button>
 				</div>
 			</header>{" "}
