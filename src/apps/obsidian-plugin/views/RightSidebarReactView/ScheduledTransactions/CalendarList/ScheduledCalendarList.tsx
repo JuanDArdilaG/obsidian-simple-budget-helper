@@ -8,7 +8,7 @@ import {
 	ScheduledTransaction,
 } from "../../../../../../contexts/ScheduledTransactions/domain";
 import { AccountSplit } from "../../../../../../contexts/Transactions/domain";
-import { ScheduledTransactionsContext } from "../../Contexts";
+import { AccountsContext, ScheduledTransactionsContext } from "../../Contexts";
 import { EditScheduledTransactionModal } from "../EditScheduledTransactionModal";
 import { ScheduledItemRow } from "../ScheduledItemRow";
 import { DeleteRecurrenceModal } from "./DeleteRecurrenceModal";
@@ -98,6 +98,7 @@ export function ScheduledCalendarList({
 	onRefresh,
 }: Readonly<ScheduledCalendarPageProps>) {
 	const {
+		updateScheduledTransactions,
 		scheduledItems,
 		useCases: {
 			deleteItemRecurrence,
@@ -105,6 +106,7 @@ export function ScheduledCalendarList({
 			getScheduledTransactionsUntilDate,
 		},
 	} = useContext(ScheduledTransactionsContext);
+	const { updateAccounts } = useContext(AccountsContext);
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedQuickFilter, setSelectedQuickFilter] = useState(
@@ -119,43 +121,6 @@ export function ScheduledCalendarList({
 		useState<ItemRecurrenceInfo | null>(null);
 	const [deletingRecurrence, setDeletingRecurrence] =
 		useState<ItemRecurrenceInfo | null>(null);
-
-	const handleRecord = async (
-		recurrence: ItemRecurrenceInfo,
-		date: Date,
-		amount: number,
-		fromSplits: AccountSplit[],
-		toSplits: AccountSplit[],
-	) => {
-		console.log("Recording transaction:", {
-			recurrence,
-			date,
-			amount,
-			fromSplits,
-			toSplits,
-		});
-
-		await recordItemRecurrence.execute({
-			scheduledTransactionID: recurrence.scheduledTransactionId,
-			occurrenceIndex: recurrence.occurrenceIndex,
-			date,
-			fromSplits,
-			toSplits,
-		});
-
-		setRecordingRecurrence(null);
-	};
-
-	const handleDelete = async () => {
-		if (deletingRecurrence) {
-			console.log("Deleting recurrence:", deletingRecurrence);
-			await deleteItemRecurrence.execute({
-				id: deletingRecurrence.scheduledTransactionId,
-				n: deletingRecurrence.occurrenceIndex,
-			});
-			setDeletingRecurrence(null);
-		}
-	};
 
 	// Calculate until date based on filter
 	const untilDate = useMemo(() => {
@@ -182,6 +147,61 @@ export function ScheduledCalendarList({
 			.execute(untilDate)
 			.then(setRecurrences);
 	}, [untilDate, getScheduledTransactionsUntilDate]);
+
+	const [updateUntilDateTransactions, setUpdateUntilDateTransactions] =
+		useState<boolean>(false);
+
+	useEffect(() => {
+		if (updateUntilDateTransactions) {
+			getScheduledTransactionsUntilDate
+				.execute(untilDate)
+				.then(setRecurrences);
+		}
+	}, [
+		updateUntilDateTransactions,
+		untilDate,
+		getScheduledTransactionsUntilDate,
+	]);
+
+	const handleRecord = async (
+		recurrence: ItemRecurrenceInfo,
+		date: Date,
+		amount: number,
+		fromSplits: AccountSplit[],
+		toSplits: AccountSplit[],
+	) => {
+		console.log("Recording transaction:", {
+			recurrence,
+			date,
+			amount,
+			fromSplits,
+			toSplits,
+		});
+
+		await recordItemRecurrence.execute({
+			scheduledTransactionID: recurrence.scheduledTransactionId,
+			occurrenceIndex: recurrence.occurrenceIndex,
+			date,
+			fromSplits,
+			toSplits,
+		});
+
+		updateAccounts();
+		updateScheduledTransactions();
+		setUpdateUntilDateTransactions(true);
+		setRecordingRecurrence(null);
+	};
+
+	const handleDelete = async () => {
+		if (deletingRecurrence) {
+			console.log("Deleting recurrence:", deletingRecurrence);
+			await deleteItemRecurrence.execute({
+				id: deletingRecurrence.scheduledTransactionId,
+				n: deletingRecurrence.occurrenceIndex,
+			});
+			setDeletingRecurrence(null);
+		}
+	};
 
 	// Filter and sort recurrences
 	const filteredAndSortedRecurrences = useMemo(() => {

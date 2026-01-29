@@ -32,7 +32,14 @@ export function RecordRecurrenceModal({
 
 	useEffect(() => {
 		if (isOpen && recurrence && accountsMap.size > 0) {
-			setDate(new Date(recurrence.date).toISOString().split("T")[0]);
+			// Use local date methods to avoid UTC timezone shift
+			const year = recurrence.date.getFullYear();
+			const month = String(recurrence.date.getMonth() + 1).padStart(
+				2,
+				"0",
+			);
+			const day = String(recurrence.date.getDate()).padStart(2, "0");
+			setDate(`${year}-${month}-${day}`);
 			const originAmount = recurrence.originAmount.value;
 			setAmount(originAmount);
 			// Ensure we have at least one split, even if the recurrence has none
