@@ -8,7 +8,7 @@ import {
 interface DeleteScheduledTransactionModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onConfirm: () => void;
+	onConfirm: () => Promise<void>;
 	transaction: ScheduledTransaction | null;
 }
 export function DeleteScheduledTransactionModal({
