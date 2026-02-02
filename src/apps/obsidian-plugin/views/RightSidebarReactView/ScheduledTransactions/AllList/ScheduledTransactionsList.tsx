@@ -189,8 +189,7 @@ export function ScheduledTransactionsList() {
 		};
 	}, [scheduledReport]);
 
-	const { categoriesMap, categoriesWithSubcategories } =
-		useContext(CategoriesContext);
+	const { categoriesWithSubcategories } = useContext(CategoriesContext);
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -499,7 +498,6 @@ export function ScheduledTransactionsList() {
 				onClose={() => setIsAddModalOpen(false)}
 				onSave={handleAddTransaction}
 				accountsMap={accountsMap}
-				categoriesMap={categoriesMap}
 				categoriesWithSubcategoriesMap={categoriesWithSubcategories}
 			/>
 			{/* Edit Transaction Modal */}

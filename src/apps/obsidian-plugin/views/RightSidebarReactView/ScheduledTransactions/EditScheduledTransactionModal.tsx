@@ -153,28 +153,28 @@ export function EditScheduledTransactionModal({
 				return;
 			}
 		}
-	try {
-		setIsSaving(true);
-		await onEditSingle(recurrence, {
-			date: new Date(singleDate),
-			fromSplits: singleFromSplits,
-			toSplits: singleToSplits,
-		});
-		onClose();
-	} catch (error) {
-		console.error("Error saving single recurrence:", error);
-		alert("Failed to save changes. Please try again.");
-	} finally {
-		setIsSaving(false);
-	}
-};
+		try {
+			setIsSaving(true);
+			await onEditSingle(recurrence, {
+				date: new Date(singleDate),
+				fromSplits: singleFromSplits,
+				toSplits: singleToSplits,
+			});
+			onClose();
+		} catch (error) {
+			console.error("Error saving single recurrence:", error);
+			alert("Failed to save changes. Please try again.");
+		} finally {
+			setIsSaving(false);
+		}
+	};
 
-const handleSubmitAll = async () => {
-	if (!name || !category || amount <= 0) {
-		alert("Please fill in all required fields");
-		return;
-	}
-	const fromTotal = fromSplits.reduce(
+	const handleSubmitAll = async () => {
+		if (!name || !category || amount <= 0) {
+			alert("Please fill in all required fields");
+			return;
+		}
+		const fromTotal = fromSplits.reduce(
 			(sum, s) => sum + s.amount.value,
 			0,
 		);
@@ -264,7 +264,7 @@ const handleSubmitAll = async () => {
 							</h2>
 							<p className="text-sm! text-gray-600!">
 								{recurrence.name} - Occurrence #
-								{recurrence.occurrenceIndex}
+								{recurrence.occurrenceIndex + 1}
 							</p>
 						</div>
 					</div>

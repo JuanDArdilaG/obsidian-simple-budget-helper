@@ -378,7 +378,9 @@ export function ScheduledItemRow({
 									/>
 									<span className="text-xs text-gray-500">
 										Occurrence #
-										{String(itemData.occurrenceIndex)}
+										{String(
+											(itemData.occurrenceIndex || 0) + 1,
+										)}
 									</span>
 								</>
 							) : (

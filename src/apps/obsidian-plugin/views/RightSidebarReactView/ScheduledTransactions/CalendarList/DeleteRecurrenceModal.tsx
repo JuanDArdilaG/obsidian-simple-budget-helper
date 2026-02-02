@@ -71,7 +71,7 @@ export function DeleteRecurrenceModal({
 								Occurrence:
 							</span>
 							<span className="text-sm font-medium text-gray-900">
-								#{String(recurrence.occurrenceIndex)}
+								#{String(recurrence.occurrenceIndex + 1)}
 							</span>
 						</div>
 						{recurrence.store && (

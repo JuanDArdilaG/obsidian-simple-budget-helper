@@ -11,7 +11,6 @@ import {
 import { useEffect, useState } from "react";
 import { AccountsMap } from "../../../../../../contexts/Accounts/application/get-all-accounts.usecase";
 import { CategoriesWithSubcategoriesMap } from "../../../../../../contexts/Categories/application/get-all-categories-with-subcategories.usecase";
-import { CategoriesMap } from "../../../../../../contexts/Categories/application/get-all-categories.usecase";
 import {
 	RecurrencePattern,
 	RecurrenceType,
@@ -32,7 +31,6 @@ interface AddScheduledTransactionModalProps {
 	onClose: () => void;
 	onSave: (transaction: ScheduledTransaction) => void;
 	accountsMap: AccountsMap;
-	categoriesMap: CategoriesMap;
 	categoriesWithSubcategoriesMap: CategoriesWithSubcategoriesMap;
 	editTransaction?: ScheduledTransaction | null;
 }
@@ -41,7 +39,6 @@ export function AddScheduledTransactionModal({
 	onClose,
 	onSave,
 	accountsMap,
-	categoriesMap,
 	categoriesWithSubcategoriesMap,
 	editTransaction = null,
 }: Readonly<AddScheduledTransactionModalProps>) {
@@ -68,6 +65,7 @@ export function AddScheduledTransactionModal({
 	// Split state
 	const [fromSplits, setFromSplits] = useState<AccountSplit[]>([]);
 	const [toSplits, setToSplits] = useState<AccountSplit[]>([]);
+
 	// Load transaction data when editing
 	useEffect(() => {
 		if (editTransaction) {
@@ -195,15 +193,18 @@ export function AddScheduledTransactionModal({
 			recurrenceType === RecurrenceType.ONE_TIME
 				? undefined
 				: `${frequencyNum}${frequencyUnit}`;
+
+		// Append T00:00:00 to parse dates as local time instead of UTC
+		// This prevents the date from shifting due to timezone offset
 		const transaction = ScheduledTransaction.create(
 			new StringValueObject(name),
 			RecurrencePattern.fromPrimitives({
 				type: recurrenceType,
-				startDate: new Date(startDate),
+				startDate: new Date(`${startDate}T00:00:00`),
 				frequency,
 				endDate:
 					recurrenceType === RecurrenceType.UNTIL_DATE && endDate
-						? new Date(endDate)
+						? new Date(`${endDate}T00:00:00`)
 						: undefined,
 				maxOccurrences:
 					recurrenceType === RecurrenceType.N_OCCURRENCES
@@ -534,7 +535,9 @@ export function AddScheduledTransactionModal({
 										value={maxOccurrences}
 										onChange={(e) =>
 											setMaxOccurrences(
-												parseInt(e.target.value) || 1,
+												Number.parseInt(
+													e.target.value,
+												) || 1,
 											)
 										}
 										className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
