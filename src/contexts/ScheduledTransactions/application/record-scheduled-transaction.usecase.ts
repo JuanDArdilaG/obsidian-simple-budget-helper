@@ -80,7 +80,7 @@ export class RecordScheduledTransactionUseCase implements CommandUseCase<RecordS
 			new TransactionName(scheduledTransaction.name.value),
 			scheduledTransaction.operation.type,
 			scheduledTransaction.category,
-			scheduledTransaction.category,
+			scheduledTransaction.subcategory,
 			effectiveDate,
 			DateValueObject.createNowDate(),
 			recurrenceInfo.store,

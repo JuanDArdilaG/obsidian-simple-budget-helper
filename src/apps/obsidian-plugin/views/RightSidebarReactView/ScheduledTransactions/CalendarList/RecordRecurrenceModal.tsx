@@ -18,7 +18,7 @@ interface RecordRecurrenceModalProps {
 		amount: number,
 		fromSplits: AccountSplit[],
 		toSplits: AccountSplit[],
-	) => void;
+	) => Promise<void>;
 	recurrence: ItemRecurrenceInfo | null;
 }
 export function RecordRecurrenceModal({
@@ -53,7 +53,7 @@ export function RecordRecurrenceModal({
 		}
 	}, [isOpen, recurrence, accountsMap]);
 
-	const handleSubmit = () => {
+	const handleSubmit = async () => {
 		if (!recurrence || !date || amount.value <= 0) {
 			alert("Please fill in all required fields");
 			return;
@@ -78,7 +78,7 @@ export function RecordRecurrenceModal({
 				return;
 			}
 		}
-		onRecord(
+		await onRecord(
 			recurrence,
 			new Date(date),
 			amount.value,
