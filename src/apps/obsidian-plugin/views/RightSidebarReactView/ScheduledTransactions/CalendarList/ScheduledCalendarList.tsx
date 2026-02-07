@@ -125,7 +125,7 @@ export function ScheduledCalendarList({
 	// Calculate until date based on filter
 	const untilDate = useMemo(() => {
 		if (showCustomDate && customUntilDate) {
-			return new Date(customUntilDate);
+			return new Date(customUntilDate + "T23:59:59");
 		}
 		// Handle special filter types
 		if (selectedQuickFilter.type === "week") {
