@@ -42,8 +42,8 @@ export function FinancialSummary({
 	);
 
 	const total = useMemo(
-		() => scheduledTransactionsReport.totalAmount,
-		[scheduledTransactionsReport],
+		() => scheduledTransactionsReport.getTotalAmount(accountsMap),
+		[scheduledTransactionsReport, accountsMap],
 	);
 
 	const isDeficit = useMemo(() => total < 0, [total]);
@@ -95,8 +95,9 @@ export function FinancialSummary({
 								</span>
 								<span className="text-base font-semibold text-emerald-600">
 									{new TransactionAmount(
-										scheduledTransactionsReport.onlyIncomes()
-											.totalAmount,
+										scheduledTransactionsReport
+											.onlyIncomes(accountsMap)
+											.getTotalAmount(accountsMap),
 									).toString()}
 								</span>
 							</div>
@@ -108,8 +109,9 @@ export function FinancialSummary({
 								</span>
 								<span className="text-base font-semibold text-rose-600">
 									{new TransactionAmount(
-										scheduledTransactionsReport.onlyExpenses()
-											.totalAmount,
+										scheduledTransactionsReport
+											.onlyExpenses(accountsMap)
+											.getTotalAmount(accountsMap),
 									).toString()}
 								</span>
 							</div>
