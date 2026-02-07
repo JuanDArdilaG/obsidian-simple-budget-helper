@@ -7,12 +7,14 @@ import { ReportBalance } from "./report-balance.valueobject";
 export class ScheduledMonthlyReport {
 	static readonly #logger = new Logger("ScheduledMonthlyReport");
 
+	readonly scheduledTransactions: ScheduledTransaction[];
 	readonly scheduledTransactionsWithAccounts: ScheduledTransactionsWithAccounts[];
 
 	constructor(
 		scheduledTransactions: ScheduledTransaction[],
 		private readonly accounts: AccountsMap,
 	) {
+		this.scheduledTransactions = scheduledTransactions;
 		this.scheduledTransactionsWithAccounts = scheduledTransactions
 			.map((scheduledTransaction) => {
 				const originAccount = this.accounts.get(

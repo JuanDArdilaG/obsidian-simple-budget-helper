@@ -60,13 +60,103 @@ export function ScheduledTransactionsList() {
 
 	const monthlySummaryData = useMemo<MonthlySummaryData>(() => {
 		return {
-			savingsForNextMonth: nextMonthExpenses.reduce(
-				(acc, curr) => acc + curr.monthAmount.toNumber(),
-				0,
-			),
-			totalIncomePerMonth: scheduledReport
-				.onlyIncomes()
-				.scheduledTransactionsWithAccounts.reduce(
+			savingsForNextMonth: {
+				total: nextMonthExpenses.reduce(
+					(acc, curr) => acc + curr.monthAmount.toNumber(),
+					0,
+				),
+				transactions:
+					scheduledItems.length > 0
+						? nextMonthExpenses.map((e) => {
+								const scheduledTransaction =
+									scheduledItems.find(
+										(t) =>
+											t.nanoid.value ===
+											e.info.scheduledTransactionId.value,
+									);
+								if (!scheduledTransaction) {
+									throw new Error(
+										`Scheduled transaction with ID ${e.info.scheduledTransactionId} not found`,
+									);
+								}
+								return scheduledTransaction;
+							})
+						: [],
+			},
+			totalIncomePerMonth: {
+				total: scheduledReport
+					.onlyIncomes()
+					.scheduledTransactionsWithAccounts.reduce(
+						(acc, { scheduledTransaction, account, toAccount }) =>
+							acc +
+							scheduledTransaction
+								.getPricePerMonthWithAccountTypes(
+									account.type.value,
+									toAccount?.type.value,
+								)
+								.toNumber(),
+						0,
+					),
+				transactions:
+					scheduledReport.onlyIncomes().scheduledTransactions,
+			},
+			totalExpensesPerMonth: {
+				total: scheduledReport
+					.onlyExpenses()
+					.scheduledTransactionsWithAccounts.reduce(
+						(acc, { scheduledTransaction, account, toAccount }) =>
+							acc +
+							scheduledTransaction
+								.getPricePerMonthWithAccountTypes(
+									account.type.value,
+									toAccount?.type.value,
+								)
+								.toNumber(),
+						0,
+					),
+				transactions:
+					scheduledReport.onlyExpenses().scheduledTransactions,
+			},
+			longTermExpensesPerMonth: {
+				total: scheduledReport
+					.onlyExpenses()
+					.onlyInfiniteRecurrent()
+					.scheduledTransactionsWithAccounts.reduce(
+						(acc, { scheduledTransaction, account, toAccount }) =>
+							acc +
+							scheduledTransaction
+								.getPricePerMonthWithAccountTypes(
+									account.type.value,
+									toAccount?.type.value,
+								)
+								.toNumber(),
+						0,
+					),
+				transactions: scheduledReport
+					.onlyExpenses()
+					.onlyInfiniteRecurrent().scheduledTransactions,
+			},
+			shortTermExpensesPerMonth: {
+				total: scheduledReport
+					.onlyExpenses()
+					.onlyFiniteRecurrent()
+					.scheduledTransactionsWithAccounts.reduce(
+						(acc, { scheduledTransaction, account, toAccount }) =>
+							acc +
+							scheduledTransaction
+								.getPricePerMonthWithAccountTypes(
+									account.type.value,
+									toAccount?.type.value,
+								)
+								.toNumber(),
+						0,
+					),
+				transactions: scheduledReport
+					.onlyExpenses()
+					.onlyFiniteRecurrent().scheduledTransactions,
+			},
+			totalPerMonth: {
+				total: scheduledReport.scheduledTransactionsWithAccounts.reduce(
 					(acc, { scheduledTransaction, account, toAccount }) =>
 						acc +
 						scheduledTransaction
@@ -77,61 +167,10 @@ export function ScheduledTransactionsList() {
 							.toNumber(),
 					0,
 				),
-			totalExpensesPerMonth: scheduledReport
-				.onlyExpenses()
-				.scheduledTransactionsWithAccounts.reduce(
-					(acc, { scheduledTransaction, account, toAccount }) =>
-						acc +
-						scheduledTransaction
-							.getPricePerMonthWithAccountTypes(
-								account.type.value,
-								toAccount?.type.value,
-							)
-							.toNumber(),
-					0,
-				),
-			longTermExpensesPerMonth: scheduledReport
-				.onlyExpenses()
-				.onlyInfiniteRecurrent()
-				.scheduledTransactionsWithAccounts.reduce(
-					(acc, { scheduledTransaction, account, toAccount }) =>
-						acc +
-						scheduledTransaction
-							.getPricePerMonthWithAccountTypes(
-								account.type.value,
-								toAccount?.type.value,
-							)
-							.toNumber(),
-					0,
-				),
-			shortTermExpensesPerMonth: scheduledReport
-				.onlyExpenses()
-				.onlyFiniteRecurrent()
-				.scheduledTransactionsWithAccounts.reduce(
-					(acc, { scheduledTransaction, account, toAccount }) =>
-						acc +
-						scheduledTransaction
-							.getPricePerMonthWithAccountTypes(
-								account.type.value,
-								toAccount?.type.value,
-							)
-							.toNumber(),
-					0,
-				),
-			totalPerMonth:
-				scheduledReport.scheduledTransactionsWithAccounts.reduce(
-					(acc, { scheduledTransaction, account, toAccount }) =>
-						acc +
-						scheduledTransaction
-							.getPricePerMonthWithAccountTypes(
-								account.type.value,
-								toAccount?.type.value,
-							)
-							.toNumber(),
-					0,
-				),
+				transactions: scheduledReport.scheduledTransactions,
+			},
 		};
-	}, [scheduledReport]);
+	}, [scheduledReport, nextMonthExpenses]);
 
 	const { categoriesWithSubcategories } = useContext(CategoriesContext);
 	const [isRefreshing, setIsRefreshing] = useState(false);

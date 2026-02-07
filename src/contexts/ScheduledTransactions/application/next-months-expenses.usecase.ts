@@ -37,6 +37,7 @@ export class NextMonthsExpensesUseCase implements QueryUseCase<
 
 		this.#logger.debug("Retrieved scheduled transactions", {
 			length: scheduledTransactions.length,
+			scheduledTransactions,
 		});
 
 		const nextOccurrences = (
