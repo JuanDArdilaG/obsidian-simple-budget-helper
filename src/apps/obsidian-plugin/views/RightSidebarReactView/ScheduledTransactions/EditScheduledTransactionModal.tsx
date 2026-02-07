@@ -210,11 +210,11 @@ export function EditScheduledTransactionModal({
 			toSplits: toSplits.map((s) => s.toPrimitives()),
 			recurrencePattern: {
 				type: recurrenceType,
-				startDate: new Date(startDate),
+				startDate: new Date(startDate + "T00:00:00"), // Ensure time is set to start of day
 				frequency,
 				endDate:
 					recurrenceType === RecurrenceType.UNTIL_DATE && endDate
-						? new Date(endDate)
+						? new Date(endDate + "T00:00:00")
 						: undefined,
 				maxOccurrences:
 					recurrenceType === RecurrenceType.N_OCCURRENCES

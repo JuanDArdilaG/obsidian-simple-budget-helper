@@ -241,7 +241,7 @@ export function ScheduledCalendarList({
 				});
 				currentDate = dateStr;
 			}
-			groups[groups.length - 1].recurrences.push(r);
+			groups.at(-1)?.recurrences.push(r);
 		});
 		return groups;
 	}, [filteredAndSortedRecurrences]);
@@ -308,7 +308,7 @@ export function ScheduledCalendarList({
 									onChange={(e) =>
 										setCustomUntilDate(e.target.value)
 									}
-									min={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`}
+									min={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}T00:00:00`}
 									className="w-full! px-3! py-1.5! text-sm! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 								/>
 							</motion.div>
@@ -338,9 +338,9 @@ export function ScheduledCalendarList({
 						<div className="mb-4! text-sm! text-gray-600!">
 							{filteredAndSortedRecurrences.length} upcoming
 							occurrence
-							{filteredAndSortedRecurrences.length !== 1
-								? "s"
-								: ""}
+							{filteredAndSortedRecurrences.length === 1
+								? ""
+								: "s"}
 						</div>
 
 						<div className="space-y-6!">
