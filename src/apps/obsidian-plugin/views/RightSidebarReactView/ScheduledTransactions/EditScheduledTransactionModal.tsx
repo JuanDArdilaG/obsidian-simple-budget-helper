@@ -156,7 +156,7 @@ export function EditScheduledTransactionModal({
 		try {
 			setIsSaving(true);
 			await onEditSingle(recurrence, {
-				date: new Date(singleDate),
+				date: new Date(singleDate + "T00:00:00"),
 				fromSplits: singleFromSplits,
 				toSplits: singleToSplits,
 			});
@@ -210,7 +210,7 @@ export function EditScheduledTransactionModal({
 			toSplits: toSplits.map((s) => s.toPrimitives()),
 			recurrencePattern: {
 				type: recurrenceType,
-				startDate: new Date(startDate + "T00:00:00"), // Ensure time is set to start of day
+				startDate: new Date(startDate + "T00:00:00"),
 				frequency,
 				endDate:
 					recurrenceType === RecurrenceType.UNTIL_DATE && endDate
