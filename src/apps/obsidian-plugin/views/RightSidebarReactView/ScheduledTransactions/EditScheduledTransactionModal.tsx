@@ -38,6 +38,9 @@ interface EditScheduledTransactionModalProps {
 	accountsMap: AccountsMap;
 	categories: CategoriesWithSubcategoriesMap;
 }
+
+export type FrequencyUnits = "d" | "w" | "mo" | "y";
+
 export function EditScheduledTransactionModal({
 	isOpen,
 	onClose,
@@ -71,13 +74,12 @@ export function EditScheduledTransactionModal({
 		`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`,
 	);
 	const [frequencyNum, setFrequencyNum] = useState(1);
-	const [frequencyUnit, setFrequencyUnit] = useState<"d" | "w" | "mo" | "y">(
-		"mo",
-	);
+	const [frequencyUnit, setFrequencyUnit] = useState<FrequencyUnits>("mo");
 	const [endDate, setEndDate] = useState("");
 	const [maxOccurrences, setMaxOccurrences] = useState(12);
 	const [fromSplits, setFromSplits] = useState<AccountSplit[]>([]);
 	const [toSplits, setToSplits] = useState<AccountSplit[]>([]);
+
 	useEffect(() => {
 		if (
 			isOpen &&
@@ -106,18 +108,18 @@ export function EditScheduledTransactionModal({
 			const pattern = scheduledTransaction.recurrencePattern;
 			setRecurrenceType(pattern.type);
 			setStartDate(
-				`${new Date(pattern.startDate).getFullYear()}-${String(new Date(pattern.startDate).getMonth() + 1).padStart(2, "0")}-${String(new Date(pattern.startDate).getDate()).padStart(2, "0")}`,
+				`${new Date(pattern.startDate).getFullYear()}-${String(new Date(pattern.startDate).getMonth() + 1).padStart(2, "0")}-${String(new Date(pattern.startDate).getDate()).padStart(2, "0")}T00:00:00`,
 			);
 			if (pattern.frequency) {
 				const match = pattern.frequency.match(/(\d+)(d|w|mo|y)/);
 				if (match) {
-					setFrequencyNum(parseInt(match[1]));
-					setFrequencyUnit(match[2] as "d" | "w" | "mo" | "y");
+					setFrequencyNum(Number.parseInt(match[1]));
+					setFrequencyUnit(match[2] as FrequencyUnits);
 				}
 			}
 			if (pattern.endDate) {
 				setEndDate(
-					`${new Date(pattern.endDate).getFullYear()}-${String(new Date(pattern.endDate).getMonth() + 1).padStart(2, "0")}-${String(new Date(pattern.endDate).getDate()).padStart(2, "0")}`,
+					`${new Date(pattern.endDate).getFullYear()}-${String(new Date(pattern.endDate).getMonth() + 1).padStart(2, "0")}-${String(new Date(pattern.endDate).getDate()).padStart(2, "0")}T00:00:00`,
 				);
 			}
 			if (pattern.maxOccurrences) {
@@ -198,6 +200,7 @@ export function EditScheduledTransactionModal({
 			recurrenceType === RecurrenceType.ONE_TIME
 				? undefined
 				: `${frequencyNum}${frequencyUnit}`;
+
 		const transaction = ScheduledTransaction.fromPrimitives({
 			id: scheduledTransaction!.id,
 			name,
@@ -235,7 +238,9 @@ export function EditScheduledTransactionModal({
 			setIsSaving(false);
 		}
 	};
+
 	if (!isOpen || !recurrence || !scheduledTransaction) return null;
+
 	return (
 		<div className="fixed! inset-0! z-50! flex! items-center! justify-center! p-4! bg-black/20! backdrop-blur-sm! overflow-y-auto!">
 			<motion.div
@@ -253,7 +258,7 @@ export function EditScheduledTransactionModal({
 				}}
 				className="bg-white! rounded-xl! shadow-xl! max-w-3xl! w-full! p-6! border! border-gray-100! my-8! overflow-hidden! flex! flex-col! max-h-[90vh]!"
 			>
-				<div className="flex! justify-between! items-center! mb-6! flex-shrink-0!">
+				<div className="flex! justify-between! items-center! mb-6! shrink-0!">
 					<div className="flex! items-center! gap-3!">
 						<div className="p-2! bg-indigo-50! rounded-lg!">
 							<Pencil className="w-6! h-6! text-indigo-600!" />
@@ -277,45 +282,56 @@ export function EditScheduledTransactionModal({
 				</div>
 
 				{/* Edit Mode Selection */}
-				<div className="mb-6! flex-shrink-0!">
-					<label className="block! text-sm! font-medium! text-gray-700! mb-2!">
-						Edit Scope
-					</label>
-					<div className="grid! grid-cols-2! gap-3!">
-						<button
-							onClick={() => setEditMode("single")}
-							className={`p-4! rounded-lg! border! transition-all! ${editMode === "single" ? "bg-indigo-50! border-indigo-200! text-indigo-700! ring-2! ring-indigo-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
-						>
-							<div className="font-medium! mb-1!">
-								This Occurrence Only
+				<div className="mb-6! shrink-0!">
+					{!scheduledTransaction.recurrencePattern.isOneTime && (
+						<>
+							<label
+								htmlFor="edition-scope"
+								className="block! text-sm! font-medium! text-gray-700! mb-2!"
+							>
+								Edit Scope
+							</label>
+							<div
+								id="edition-scope"
+								className="grid! grid-cols-2! gap-3!"
+							>
+								<button
+									onClick={() => setEditMode("single")}
+									className={`p-4! rounded-lg! border! transition-all! ${editMode === "single" ? "bg-indigo-50! border-indigo-200! text-indigo-700! ring-2! ring-indigo-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
+								>
+									<div className="font-medium! mb-1!">
+										This Occurrence Only
+									</div>
+									<div className="text-xs! text-gray-500!">
+										Edit date and amount for occurrence #
+										{recurrence.occurrenceIndex}
+									</div>
+								</button>
+								<button
+									onClick={() => setEditMode("all")}
+									className={`p-4! rounded-lg! border! transition-all! ${editMode === "all" ? "bg-indigo-50! border-indigo-200! text-indigo-700! ring-2! ring-indigo-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
+								>
+									<div className="font-medium! mb-1!">
+										All Future Occurrences
+									</div>
+									<div className="text-xs! text-gray-500!">
+										Edit the entire scheduled transaction
+									</div>
+								</button>
 							</div>
-							<div className="text-xs! text-gray-500!">
-								Edit date and amount for occurrence #
-								{recurrence.occurrenceIndex}
-							</div>
-						</button>
-						<button
-							onClick={() => setEditMode("all")}
-							className={`p-4! rounded-lg! border! transition-all! ${editMode === "all" ? "bg-indigo-50! border-indigo-200! text-indigo-700! ring-2! ring-indigo-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
-						>
-							<div className="font-medium! mb-1!">
-								All Future Occurrences
-							</div>
-							<div className="text-xs! text-gray-500!">
-								Edit the entire scheduled transaction
-							</div>
-						</button>
-					</div>
+						</>
+					)}
 				</div>
 
 				<div className="overflow-y-auto! flex-1! pr-2! -mr-2!">
-					{editMode === "single" ? (
+					{editMode === "single" ||
+					scheduledTransaction.recurrencePattern.isOneTime ? (
 						// Single Recurrence Edit Form
 						<div className="space-y-6!!">
 							<div className="bg-amber-50! border! border-amber-200! rounded-lg! p-4! flex! gap-3!">
 								<AlertCircle
 									size={20}
-									className="text-amber-600! flex-shrink-0! mt-0.5!"
+									className="text-amber-600! shrink-0! mt-0.5!"
 								/>
 								<div className="text-sm! text-amber-800!">
 									<strong>Single occurrence edit:</strong>{" "}
@@ -326,10 +342,14 @@ export function EditScheduledTransactionModal({
 							</div>
 
 							<div>
-								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+								<label
+									htmlFor="single-date"
+									className="block! text-sm! font-medium! text-gray-700! mb-1!"
+								>
 									Date *
 								</label>
 								<input
+									id="single-date"
 									type="date"
 									value={singleDate}
 									onChange={(e) =>
@@ -340,7 +360,10 @@ export function EditScheduledTransactionModal({
 							</div>
 
 							<div>
-								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+								<label
+									htmlFor="single-amount"
+									className="block! text-sm! font-medium! text-gray-700! mb-1!"
+								>
 									Amount *
 								</label>
 								<div className="relative!">
@@ -348,11 +371,14 @@ export function EditScheduledTransactionModal({
 										$
 									</span>
 									<input
+										id="single-amount"
 										type="number"
 										value={singleAmount || ""}
 										onChange={(e) =>
 											setSingleAmount(
-												parseFloat(e.target.value) || 0,
+												Number.parseFloat(
+													e.target.value,
+												) || 0,
 											)
 										}
 										placeholder="0.00"
@@ -395,7 +421,7 @@ export function EditScheduledTransactionModal({
 							<div className="bg-blue-50! border! border-blue-200! rounded-lg! p-4! flex! gap-3!">
 								<AlertCircle
 									size={20}
-									className="text-blue-600! flex-shrink-0! mt-0.5!"
+									className="text-blue-600! shrink-0! mt-0.5!"
 								/>
 								<div className="text-sm! text-blue-800!">
 									<strong>All occurrences edit:</strong>{" "}
@@ -454,10 +480,14 @@ export function EditScheduledTransactionModal({
 							{/* Basic Info */}
 							<div className="space-y-4!">
 								<div>
-									<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+									<label
+										htmlFor="single-name"
+										className="block! text-sm! font-medium! text-gray-700! mb-1!"
+									>
 										Transaction Name *
 									</label>
 									<input
+										id="single-name"
 										type="text"
 										value={name}
 										onChange={(e) =>
@@ -470,10 +500,14 @@ export function EditScheduledTransactionModal({
 
 								<div className="grid! grid-cols-1! sm:grid-cols-2! gap-4!">
 									<div>
-										<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+										<label
+											htmlFor="single-category"
+											className="block! text-sm! font-medium! text-gray-700! mb-1!"
+										>
 											Category *
 										</label>
 										<select
+											id="single-category"
 											value={category}
 											onChange={(e) => {
 												setCategory(e.target.value);
@@ -495,10 +529,14 @@ export function EditScheduledTransactionModal({
 									</div>
 
 									<div>
-										<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+										<label
+											htmlFor="single-subcategory"
+											className="block! text-sm! font-medium! text-gray-700! mb-1!"
+										>
 											Subcategory
 										</label>
 										<select
+											id="single-subcategory"
 											value={subcategory}
 											onChange={(e) =>
 												setSubcategory(e.target.value)
@@ -524,7 +562,10 @@ export function EditScheduledTransactionModal({
 
 								<div className="grid! grid-cols-1! sm:grid-cols-2! gap-4!">
 									<div>
-										<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+										<label
+											htmlFor="single-amount"
+											className="block! text-sm! font-medium! text-gray-700! mb-1!"
+										>
 											Amount *
 										</label>
 										<div className="relative!">
@@ -532,11 +573,12 @@ export function EditScheduledTransactionModal({
 												$
 											</span>
 											<input
+												id="single-amount"
 												type="number"
 												value={amount || ""}
 												onChange={(e) =>
 													setAmount(
-														parseFloat(
+														Number.parseFloat(
 															e.target.value,
 														) || 0,
 													)
@@ -549,10 +591,14 @@ export function EditScheduledTransactionModal({
 									</div>
 
 									<div>
-										<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+										<label
+											htmlFor="single-store"
+											className="block! text-sm! font-medium! text-gray-700! mb-1!"
+										>
 											Store / Payee (Optional)
 										</label>
 										<input
+											id="single-store"
 											type="text"
 											value={store}
 											onChange={(e) =>
@@ -579,10 +625,14 @@ export function EditScheduledTransactionModal({
 
 								<div className="space-y-4!">
 									<div>
-										<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+										<label
+											htmlFor="single-start-date"
+											className="block! text-sm! font-medium! text-gray-700! mb-1!"
+										>
 											Start Date *
 										</label>
 										<input
+											id="single-start-date"
 											type="date"
 											value={startDate}
 											onChange={(e) =>
@@ -593,10 +643,14 @@ export function EditScheduledTransactionModal({
 									</div>
 
 									<div>
-										<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+										<label
+											htmlFor="single-recurrence-type"
+											className="block! text-sm! font-medium! text-gray-700! mb-1!"
+										>
 											Recurrence Type *
 										</label>
 										<select
+											id="single-recurrence-type"
 											value={recurrenceType}
 											onChange={(e) =>
 												setRecurrenceType(
@@ -636,17 +690,21 @@ export function EditScheduledTransactionModal({
 									{recurrenceType !==
 										RecurrenceType.ONE_TIME && (
 										<div>
-											<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+											<label
+												htmlFor="single-frequency"
+												className="block! text-sm! font-medium! text-gray-700! mb-1!"
+											>
 												Frequency *
 											</label>
 											<div className="flex! gap-2!">
 												<input
+													id="single-frequency"
 													type="number"
 													min="1"
 													value={frequencyNum}
 													onChange={(e) =>
 														setFrequencyNum(
-															parseInt(
+															Number.parseInt(
 																e.target.value,
 															) || 1,
 														)
@@ -686,10 +744,14 @@ export function EditScheduledTransactionModal({
 									{recurrenceType ===
 										RecurrenceType.UNTIL_DATE && (
 										<div>
-											<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+											<label
+												htmlFor="single-end-date"
+												className="block! text-sm! font-medium! text-gray-700! mb-1!"
+											>
 												End Date *
 											</label>
 											<input
+												id="single-end-date"
 												type="date"
 												value={endDate}
 												onChange={(e) =>
@@ -704,16 +766,20 @@ export function EditScheduledTransactionModal({
 									{recurrenceType ===
 										RecurrenceType.N_OCCURRENCES && (
 										<div>
-											<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+											<label
+												htmlFor="single-max-occurrences"
+												className="block! text-sm! font-medium! text-gray-700! mb-1!"
+											>
 												Number of Occurrences *
 											</label>
 											<input
+												id="single-max-occurrences"
 												type="number"
 												min="1"
 												value={maxOccurrences}
 												onChange={(e) =>
 													setMaxOccurrences(
-														parseInt(
+														Number.parseInt(
 															e.target.value,
 														) || 1,
 													)
@@ -752,7 +818,7 @@ export function EditScheduledTransactionModal({
 				</div>
 
 				{/* Footer */}
-				<div className="flex! gap-3! pt-4! border-t! border-gray-100! mt-auto! flex-shrink-0!">
+				<div className="flex! gap-3! pt-4! border-t! border-gray-100! mt-auto! shrink-0!">
 					<button
 						onClick={onClose}
 						disabled={isSaving}
