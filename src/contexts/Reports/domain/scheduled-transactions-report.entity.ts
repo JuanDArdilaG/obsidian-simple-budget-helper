@@ -21,7 +21,7 @@ export class ScheduledTransactionsReport {
 
 	get totalAmount(): number {
 		return this._recurrences.reduce(
-			(total, rec) => total + rec.realOriginAmount.value,
+			(total, rec) => total + rec.effectiveAmount.value,
 			0,
 		);
 	}

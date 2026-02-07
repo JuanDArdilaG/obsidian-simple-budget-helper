@@ -9,7 +9,7 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { CategoriesContext } from "../..";
 import { AccountsMap } from "../../../../../contexts/Accounts/application/get-all-accounts.usecase";
 import {
@@ -238,10 +238,11 @@ export function AddTransactionModal({
 			setToSplits([]);
 		}
 	}, [editTransaction, isOpen]);
+
 	// Calculate total from items
-	const totalAmount = items.reduce(
-		(sum, item) => sum + item.price * item.quantity,
-		0,
+	const totalAmount = useMemo(
+		() => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+		[items],
 	);
 
 	const handleItemNameChange = (id: number, value: string) => {
@@ -352,7 +353,7 @@ export function AddTransactionModal({
 		}
 	};
 
-	const handleSubmit = () => {
+	const handleSubmit = async () => {
 		// Basic validation
 		if (items.some((i) => !i.name || i.price <= 0)) {
 			alert("Please fill in all item names and prices");
@@ -382,6 +383,7 @@ export function AddTransactionModal({
 		// Combine date and time into Date object
 		const dateTimeString = `${date}T${time}:00`;
 		const transactionDate = new Date(dateTimeString);
+
 		// Create individual transactions for each item
 		const transactions: Transaction[] = items.map((item) => {
 			const itemTotal = item.price * item.quantity;
@@ -409,7 +411,7 @@ export function AddTransactionModal({
 				updatedAt: new Date().toISOString(),
 			});
 		});
-		onSave(transactions);
+		await onSave(transactions);
 		onClose();
 	};
 

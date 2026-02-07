@@ -2,12 +2,13 @@ import { QueryUseCase } from "contexts/Shared/domain/query-use-case.interface";
 import { Logger } from "contexts/Shared/infrastructure/logger";
 import { IScheduledTransactionsService, ScheduledTransaction } from "../domain";
 
-export class GetAllScheduledTransactionsUseCase
-	implements QueryUseCase<void, ScheduledTransaction[]>
-{
-	readonly #logger = new Logger("GetScheduledTransactionsUntilDateUse");
+export class GetAllScheduledTransactionsUseCase implements QueryUseCase<
+	void,
+	ScheduledTransaction[]
+> {
+	readonly #logger = new Logger("GetAllScheduledTransactionsUseCase");
 	constructor(
-		private readonly _scheduledTransactionsService: IScheduledTransactionsService
+		private readonly _scheduledTransactionsService: IScheduledTransactionsService,
 	) {}
 
 	async execute(): Promise<ScheduledTransaction[]> {

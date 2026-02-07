@@ -5,7 +5,6 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { ScheduledMonthlyReport } from "../../../../../../contexts/Reports/domain";
 import {
 	ItemRecurrenceInfo,
-	RecurrenceType,
 	ScheduledTransaction,
 } from "../../../../../../contexts/ScheduledTransactions/domain";
 import { AccountSplit } from "../../../../../../contexts/Transactions/domain/account-split.valueobject";
@@ -26,61 +25,6 @@ import { AddScheduledTransactionModal } from "./AddScheduledTransactionModal";
 import { DeleteScheduledTransactionModal } from "./DeleteScheduledTransactionModal";
 
 type ViewMode = "list" | "calendar";
-
-// Calculate next occurrence date for a scheduled transaction
-const calculateNextOccurrence = (transaction: ScheduledTransaction): Date => {
-	const { startDate, frequency, type, endDate, maxOccurrences } =
-		transaction.recurrencePattern;
-	if (type === RecurrenceType.ONE_TIME) {
-		return new Date(startDate);
-	}
-	if (!frequency) return new Date(startDate);
-	const match = frequency.match(/(\d+)(d|w|mo|y)/);
-	if (!match) return new Date(startDate);
-	const [, num, unit] = match;
-	const count = Number.parseInt(num);
-	const now = new Date();
-	const start = new Date(startDate);
-	// If start date is in the future, return it
-	if (start > now) return start;
-	const next = new Date(start);
-	let occurrenceCount = 0;
-	// Calculate next occurrence
-	while (next <= now) {
-		occurrenceCount++;
-		// Check if we've reached max occurrences
-		if (
-			type === RecurrenceType.N_OCCURRENCES &&
-			maxOccurrences &&
-			occurrenceCount >= maxOccurrences
-		) {
-			return new Date(8640000000000000); // Max date (far future) to sort completed schedules last
-		}
-		switch (unit) {
-			case "d":
-				next.setDate(next.getDate() + count);
-				break;
-			case "w":
-				next.setDate(next.getDate() + count * 7);
-				break;
-			case "mo":
-				next.setMonth(next.getMonth() + count);
-				break;
-			case "y":
-				next.setFullYear(next.getFullYear() + count);
-				break;
-		}
-	}
-	// Check if next occurrence is past end date
-	if (
-		type === RecurrenceType.UNTIL_DATE &&
-		endDate &&
-		next > new Date(endDate)
-	) {
-		return new Date(8640000000000000); // Max date (far future) to sort completed schedules last
-	}
-	return next;
-};
 
 export function ScheduledTransactionsList() {
 	const {
@@ -216,7 +160,7 @@ export function ScheduledTransactionsList() {
 		});
 	}, [scheduledItems, nextPendingOccurrenceUseCase]);
 
-	const [viewMode, setViewMode] = useState<ViewMode>("list");
+	const [viewMode, setViewMode] = useState<ViewMode>("calendar");
 
 	useEffect(() => {
 		if (isRefreshing) {
@@ -322,12 +266,14 @@ export function ScheduledTransactionsList() {
 				t.store?.toLowerCase().includes(searchQuery.toLowerCase());
 			return matchesSearch;
 		});
+
 		// Sort by next occurrence date (soonest first)
 		const sorted = filtered.toSorted((a, b) => {
-			const nextA = calculateNextOccurrence(a);
-			const nextB = calculateNextOccurrence(b);
+			const nextA = nextPendingOccurrences[a.id]?.date || new Date(0);
+			const nextB = nextPendingOccurrences[b.id]?.date || new Date(0);
 			return nextA.getTime() - nextB.getTime();
 		});
+
 		return sorted;
 	}, [scheduledItems, searchQuery]);
 
@@ -389,18 +335,18 @@ export function ScheduledTransactionsList() {
 				<div className="max-w-7xl! mx-auto! px-4! sm:px-6! lg:px-8!">
 					<div className="flex! gap-1!">
 						<button
-							onClick={() => setViewMode("list")}
-							className={`flex! items-center! gap-2! px-4! py-3! border-b-2! transition-all! font-medium! text-sm! ${viewMode === "list" ? "border-indigo-600! text-indigo-600!" : "border-transparent! text-gray-600! hover:text-gray-900! hover:border-gray-300!"}`}
-						>
-							<List size={18} />
-							<span>Scheduled List</span>
-						</button>
-						<button
 							onClick={() => setViewMode("calendar")}
 							className={`flex! items-center! gap-2! px-4! py-3! border-b-2! transition-all! font-medium! text-sm! ${viewMode === "calendar" ? "border-indigo-600! text-indigo-600!" : "border-transparent! text-gray-600! hover:text-gray-900! hover:border-gray-300!"}`}
 						>
 							<Calendar size={18} />
 							<span>Calendar View</span>
+						</button>
+						<button
+							onClick={() => setViewMode("list")}
+							className={`flex! items-center! gap-2! px-4! py-3! border-b-2! transition-all! font-medium! text-sm! ${viewMode === "list" ? "border-indigo-600! text-indigo-600!" : "border-transparent! text-gray-600! hover:text-gray-900! hover:border-gray-300!"}`}
+						>
+							<List size={18} />
+							<span>Scheduled List</span>
 						</button>
 					</div>
 				</div>

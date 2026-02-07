@@ -127,7 +127,10 @@ export class ItemRecurrenceInfo {
 		);
 	}
 
-	get realOriginAmount(): PriceValueObject {
+	get effectiveAmount(): PriceValueObject {
+		if (this.operation.type.isTransfer()) {
+			return PriceValueObject.zero();
+		}
 		const amount = this.originAmount;
 		if (this.operation.type.isExpense()) {
 			return new PriceValueObject(-amount.value);
