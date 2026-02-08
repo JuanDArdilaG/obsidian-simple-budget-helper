@@ -385,30 +385,36 @@ export function AddTransactionModal({
 		const transactionDate = new Date(dateTimeString);
 
 		// Create individual transactions for each item
-		const transactions: Transaction[] = items.map((item) => {
-			const itemTotal = item.price * item.quantity;
+		const transactions: Transaction[] = items.flatMap((item) => {
+			const itemTotal = item.price;
 			const itemRatio = itemTotal / totalAmount;
-			return Transaction.fromPrimitives({
-				id: editTransaction?.id ?? Nanoid.generate().value,
-				date: transactionDate,
-				fromSplits: fromSplits.map((split) =>
-					new AccountSplit(
-						split.accountId,
-						new TransactionAmount(split.amount.value * itemRatio),
-					).toPrimitives(),
-				),
-				toSplits: toSplits.map((split) =>
-					new AccountSplit(
-						split.accountId,
-						new TransactionAmount(split.amount.value * itemRatio),
-					).toPrimitives(),
-				),
-				name: item.name,
-				operation: operation,
-				category: item.category,
-				subcategory: item.subcategory,
-				store: store || undefined,
-				updatedAt: new Date().toISOString(),
+			return Array.from({ length: item.quantity }, () => {
+				return Transaction.fromPrimitives({
+					id: editTransaction?.id ?? Nanoid.generate().value,
+					date: transactionDate,
+					fromSplits: fromSplits.map((split) =>
+						new AccountSplit(
+							split.accountId,
+							new TransactionAmount(
+								split.amount.value * itemRatio,
+							),
+						).toPrimitives(),
+					),
+					toSplits: toSplits.map((split) =>
+						new AccountSplit(
+							split.accountId,
+							new TransactionAmount(
+								split.amount.value * itemRatio,
+							),
+						).toPrimitives(),
+					),
+					name: item.name,
+					operation: operation,
+					category: item.category,
+					subcategory: item.subcategory,
+					store: store || undefined,
+					updatedAt: new Date().toISOString(),
+				});
 			});
 		});
 		await onSave(transactions);
