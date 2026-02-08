@@ -32,9 +32,7 @@ export function ScheduledTransactionsList() {
 		updateScheduledTransactions,
 		useCases: {
 			createScheduledItem,
-			editScheduledTransactionName,
-			editScheduledTransactionRecurrencePattern,
-			editScheduledTransactionStartDate,
+			editScheduledTransaction,
 			deleteScheduledTransaction,
 			modifyNItemRecurrence,
 			nextPendingOccurrenceUseCase,
@@ -257,24 +255,10 @@ export function ScheduledTransactionsList() {
 	const handleUpdateTransaction = async (
 		updatedTransaction: ScheduledTransaction,
 	) => {
-		console.log("handleUpdateTransaction called with:", updatedTransaction);
-		// TODO: Replace with a single use case that updates all fields
 		try {
-			await editScheduledTransactionName.execute({
-				id: updatedTransaction.nanoid,
-				name: updatedTransaction.name,
+			await editScheduledTransaction.execute({
+				scheduledTransaction: updatedTransaction,
 			});
-			console.log("editScheduledTransactionName completed");
-			await editScheduledTransactionRecurrencePattern.execute({
-				id: updatedTransaction.nanoid,
-				recurrencePattern: updatedTransaction.recurrencePattern,
-			});
-			console.log("editScheduledTransactionRecurrencePattern completed");
-			await editScheduledTransactionStartDate.execute({
-				id: updatedTransaction.nanoid,
-				startDate: updatedTransaction.recurrencePattern.startDate,
-			});
-			console.log("editScheduledTransactionStartDate completed");
 		} catch (error) {
 			console.error("Error updating transaction:", error);
 			throw error;
@@ -497,6 +481,7 @@ export function ScheduledTransactionsList() {
 					nextPendingOccurrences[editingTransaction?.id || ""]
 				}
 				scheduledTransaction={editingTransaction}
+				initialEditMode="all"
 			/>
 			{/* Delete Confirmation Modal */}
 			<DeleteScheduledTransactionModal

@@ -49,7 +49,7 @@ import { GetExchangeRateUseCase } from "../../../Currencies/application/get-exch
 import { ErExchangeRateGetter } from "../../../Currencies/infrastructure/er-exchange-rate-getter";
 import { ExchangeRateLocalRepository } from "../../../Currencies/infrastructure/persistence/exchange-rate-local.repository";
 import { DeleteScheduledTransactionUseCase } from "../../../ScheduledTransactions/application/delete-scheduled-transaction.usecase";
-import { EditScheduledTransactionAmountUseCase } from "../../../ScheduledTransactions/application/edit-scheduled-transaction-amount.usecase";
+import { EditScheduledTransactionUseCase } from "../../../ScheduledTransactions/application/edit-scheduled-transaction-amount.usecase";
 import { EditScheduledTransactionRecurrencePatternUseCase } from "../../../ScheduledTransactions/application/edit-scheduled-transaction-frequency.usecase";
 import { EditScheduledTransactionNameUseCase } from "../../../ScheduledTransactions/application/edit-scheduled-transaction-name.usecase";
 import { EditScheduledTransactionStartDateUseCase } from "../../../ScheduledTransactions/application/edit-scheduled-transaction-start-date.usecase";
@@ -117,8 +117,8 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		editScheduledTransactionNameUseCase: asClass(
 			EditScheduledTransactionNameUseCase,
 		).singleton(),
-		editScheduledTransactionAmountUseCase: asClass(
-			EditScheduledTransactionAmountUseCase,
+		editScheduledTransactionUseCase: asClass(
+			EditScheduledTransactionUseCase,
 		).singleton(),
 		editScheduledTransactionStartDateUseCase: asClass(
 			EditScheduledTransactionStartDateUseCase,

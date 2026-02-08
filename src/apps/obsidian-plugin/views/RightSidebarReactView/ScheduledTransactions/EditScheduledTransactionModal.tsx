@@ -21,6 +21,7 @@ import { AccountSplit } from "../../../../../contexts/Transactions/domain";
 import { AccountSplitter } from "../../../components/AccountSplitter";
 
 type EditMode = "single" | "all";
+
 interface EditScheduledTransactionModalProps {
 	isOpen: boolean;
 	onClose: () => void;
@@ -37,6 +38,7 @@ interface EditScheduledTransactionModalProps {
 	scheduledTransaction: ScheduledTransaction | null;
 	accountsMap: AccountsMap;
 	categories: CategoriesWithSubcategoriesMap;
+	initialEditMode?: EditMode;
 }
 
 export type FrequencyUnits = "d" | "w" | "mo" | "y";
@@ -50,8 +52,9 @@ export function EditScheduledTransactionModal({
 	scheduledTransaction,
 	accountsMap,
 	categories,
+	initialEditMode = "single",
 }: Readonly<EditScheduledTransactionModalProps>) {
-	const [editMode, setEditMode] = useState<EditMode>("single");
+	const [editMode, setEditMode] = useState<EditMode>(initialEditMode);
 	const [isSaving, setIsSaving] = useState(false);
 	// Single recurrence edit fields
 	const [singleDate, setSingleDate] = useState("");
@@ -108,7 +111,7 @@ export function EditScheduledTransactionModal({
 			const pattern = scheduledTransaction.recurrencePattern;
 			setRecurrenceType(pattern.type);
 			setStartDate(
-				`${new Date(pattern.startDate).getFullYear()}-${String(new Date(pattern.startDate).getMonth() + 1).padStart(2, "0")}-${String(new Date(pattern.startDate).getDate()).padStart(2, "0")}T00:00:00`,
+				`${new Date(pattern.startDate).getFullYear()}-${String(new Date(pattern.startDate).getMonth() + 1).padStart(2, "0")}-${String(new Date(pattern.startDate).getDate()).padStart(2, "0")}`,
 			);
 			if (pattern.frequency) {
 				const match = pattern.frequency.match(/(\d+)(d|w|mo|y)/);
@@ -119,7 +122,7 @@ export function EditScheduledTransactionModal({
 			}
 			if (pattern.endDate) {
 				setEndDate(
-					`${new Date(pattern.endDate).getFullYear()}-${String(new Date(pattern.endDate).getMonth() + 1).padStart(2, "0")}-${String(new Date(pattern.endDate).getDate()).padStart(2, "0")}T00:00:00`,
+					`${new Date(pattern.endDate).getFullYear()}-${String(new Date(pattern.endDate).getMonth() + 1).padStart(2, "0")}-${String(new Date(pattern.endDate).getDate()).padStart(2, "0")}`,
 				);
 			}
 			if (pattern.maxOccurrences) {
@@ -297,7 +300,7 @@ export function EditScheduledTransactionModal({
 							>
 								<button
 									onClick={() => setEditMode("single")}
-									className={`p-4! rounded-lg! border! transition-all! ${editMode === "single" ? "bg-indigo-50! border-indigo-200! text-indigo-700! ring-2! ring-indigo-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
+									className={`flex flex-col p-4! rounded-lg! border! transition-all! ${editMode === "single" ? "bg-indigo-50! border-indigo-200! text-indigo-700! ring-2! ring-indigo-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
 								>
 									<div className="font-medium! mb-1!">
 										This Occurrence Only
@@ -309,7 +312,7 @@ export function EditScheduledTransactionModal({
 								</button>
 								<button
 									onClick={() => setEditMode("all")}
-									className={`p-4! rounded-lg! border! transition-all! ${editMode === "all" ? "bg-indigo-50! border-indigo-200! text-indigo-700! ring-2! ring-indigo-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
+									className={`flex flex-col p-4! rounded-lg! border! transition-all! ${editMode === "all" ? "bg-indigo-50! border-indigo-200! text-indigo-700! ring-2! ring-indigo-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
 								>
 									<div className="font-medium! mb-1!">
 										All Future Occurrences
