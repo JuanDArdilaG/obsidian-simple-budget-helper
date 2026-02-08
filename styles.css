@@ -714,6 +714,9 @@
   .shrink-0 {
     flex-shrink: 0 !important;
   }
+  .shrink-0\! {
+    flex-shrink: 0 !important;
+  }
   .-translate-y-1\/2 {
     --tw-translate-y: calc(calc(1/2 * 100%) * -1) !important;
     translate: var(--tw-translate-x) var(--tw-translate-y) !important;
