@@ -62,9 +62,9 @@ export function TransactionsList() {
 	};
 
 	const handleAddTransaction = async (newTransactions: Transaction[]) => {
-		await Promise.all(
-			newTransactions.map((t) => recordTransaction.execute(t)),
-		);
+		for (const t of newTransactions) {
+			await recordTransaction.execute(t);
+		}
 		setIsRefreshing(true);
 		updateTransactions();
 		updateAccounts();
