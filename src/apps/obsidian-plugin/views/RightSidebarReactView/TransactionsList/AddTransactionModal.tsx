@@ -317,7 +317,7 @@ export function AddTransactionModal({
 		newItems[id] = {
 			...newItems[id],
 			name: transaction.name.value,
-			price: items[id].price ?? amount,
+			price: items[id].price || amount,
 			category: transaction.category.value,
 			subcategory: transaction.subcategory.value,
 		};
