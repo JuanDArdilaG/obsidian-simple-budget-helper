@@ -80,7 +80,7 @@ export function RecordRecurrenceModal({
 		}
 		await onRecord(
 			recurrence,
-			new Date(date),
+			new Date(`${date}T00:00:00`),
 			amount.value,
 			fromSplits,
 			toSplits,
