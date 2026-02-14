@@ -51,11 +51,20 @@ export function TransactionsList() {
 	const [selectedAccounts, setSelectedAccounts] = useState<Nanoid[]>([]);
 	const [selectedCategory, setSelectedCategory] = useState("");
 	const [selectedSubcategory, setSelectedSubcategory] = useState("");
+	const [dateFrom, setDateFrom] = useState("");
+	const [dateTo, setDateTo] = useState("");
 
 	// Reset to page 1 when filters change
 	useEffect(() => {
 		setCurrentPage(1);
-	}, [searchQuery, selectedAccounts, selectedCategory, selectedSubcategory]);
+	}, [
+		searchQuery,
+		selectedAccounts,
+		selectedCategory,
+		selectedSubcategory,
+		dateFrom,
+		dateTo,
+	]);
 
 	const handleRefresh = () => {
 		setIsRefreshing(true);
@@ -258,11 +267,17 @@ export function TransactionsList() {
 				onCategoryChange={setSelectedCategory}
 				selectedSubcategory={selectedSubcategory}
 				onSubcategoryChange={setSelectedSubcategory}
+				dateFrom={dateFrom}
+				dateTo={dateTo}
+				onDateFromChange={setDateFrom}
+				onDateToChange={setDateTo}
 				onClearFilters={() => {
 					setSelectedAccounts([]);
 					setSelectedCategory("");
 					setSelectedSubcategory("");
 					setSearchQuery("");
+					setDateFrom("");
+					setDateTo("");
 				}}
 			/>
 

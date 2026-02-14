@@ -11,7 +11,9 @@
     --color-red-200: oklch(88.5% 0.062 18.334);
     --color-red-700: oklch(50.5% 0.213 27.518);
     --color-amber-50: oklch(98.7% 0.022 95.277);
+    --color-amber-100: oklch(96.2% 0.059 95.617);
     --color-amber-200: oklch(92.4% 0.12 95.746);
+    --color-amber-400: oklch(82.8% 0.189 84.429);
     --color-amber-600: oklch(66.6% 0.179 58.318);
     --color-amber-800: oklch(47.3% 0.137 46.201);
     --color-green-50: oklch(98.2% 0.018 155.826);
@@ -262,6 +264,17 @@
   .visible {
     visibility: visible !important;
   }
+  .sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    border-width: 0 !important;
+  }
   .sr-only\! {
     position: absolute !important;
     width: 1px !important;
@@ -492,6 +505,9 @@
   .mb-8\! {
     margin-bottom: calc(var(--spacing) * 8) !important;
   }
+  .ml-1\.5 {
+    margin-left: calc(var(--spacing) * 1.5) !important;
+  }
   .ml-1\.5\! {
     margin-left: calc(var(--spacing) * 1.5) !important;
   }
@@ -524,6 +540,9 @@
   }
   .inline {
     display: inline !important;
+  }
+  .inline-flex {
+    display: inline-flex !important;
   }
   .inline-flex\! {
     display: inline-flex !important;
@@ -739,6 +758,9 @@
   }
   .cursor-pointer {
     cursor: pointer !important;
+  }
+  .appearance-none {
+    appearance: none !important;
   }
   .appearance-none\! {
     appearance: none !important;
@@ -1133,6 +1155,9 @@
   }
   .bg-amber-50\! {
     background-color: var(--color-amber-50) !important;
+  }
+  .bg-amber-100 {
+    background-color: var(--color-amber-100) !important;
   }
   .bg-black {
     background-color: var(--color-black) !important;
@@ -1559,6 +1584,9 @@
   .whitespace-nowrap\! {
     white-space: nowrap !important;
   }
+  .text-amber-400 {
+    color: var(--color-amber-400) !important;
+  }
   .text-amber-600 {
     color: var(--color-amber-600) !important;
   }
@@ -1915,6 +1943,13 @@
       }
     }
   }
+  .hover\:bg-amber-200 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-amber-200) !important;
+      }
+    }
+  }
   .hover\:bg-emerald-50 {
     &:hover {
       @media (hover: hover) {
@@ -2041,6 +2076,13 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-rose-700) !important;
+      }
+    }
+  }
+  .hover\:text-amber-600 {
+    &:hover {
+      @media (hover: hover) {
+        color: var(--color-amber-600) !important;
       }
     }
   }

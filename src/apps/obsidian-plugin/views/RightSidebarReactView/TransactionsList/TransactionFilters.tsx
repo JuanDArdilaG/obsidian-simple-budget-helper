@@ -1,4 +1,4 @@
-import { Filter, X } from "lucide-react";
+import { CalendarDays, Filter, X } from "lucide-react";
 import { memo, useContext, useMemo } from "react";
 import { AccountsMap } from "../../../../../contexts/Accounts/application/get-all-accounts.usecase";
 import { Nanoid } from "../../../../../contexts/Shared/domain";
@@ -13,6 +13,10 @@ interface TransactionFiltersProps {
 	selectedSubcategory: string;
 	onSubcategoryChange: (subcategory: string) => void;
 	onClearFilters: () => void;
+	dateFrom: string;
+	dateTo: string;
+	onDateFromChange: (date: string) => void;
+	onDateToChange: (date: string) => void;
 }
 
 const TransactionFiltersComponent = ({
@@ -23,6 +27,10 @@ const TransactionFiltersComponent = ({
 	onCategoryChange,
 	selectedSubcategory,
 	onSubcategoryChange,
+	dateFrom,
+	dateTo,
+	onDateFromChange,
+	onDateToChange,
 	onClearFilters,
 }: Readonly<TransactionFiltersProps>) => {
 	const { categoriesMap, categoriesWithSubcategories } =
@@ -32,7 +40,9 @@ const TransactionFiltersComponent = ({
 		() =>
 			selectedAccounts.length > 0 ||
 			selectedCategory !== "" ||
-			selectedSubcategory !== "",
+			selectedSubcategory !== "" ||
+			dateFrom !== "" ||
+			dateTo !== "",
 		[selectedAccounts, selectedCategory, selectedSubcategory],
 	);
 
@@ -43,6 +53,66 @@ const TransactionFiltersComponent = ({
 					<Filter size={16} />
 					<span>Filters:</span>
 				</div>
+
+				{/* Date Range Filter */}
+				<div className="flex items-center gap-1.5">
+					<CalendarDays size={14} className="text-gray-400" />
+					<input
+						type="date"
+						value={dateFrom}
+						onChange={(e) => onDateFromChange(e.target.value)}
+						max={dateTo || undefined}
+						className="appearance-none bg-gray-50 border border-gray-300 text-gray-700 py-1.5 px-2.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+					/>
+					<span className="text-xs text-gray-400">to</span>
+					<input
+						type="date"
+						value={dateTo}
+						onChange={(e) => onDateToChange(e.target.value)}
+						min={dateFrom || undefined}
+						className="appearance-none bg-gray-50 border border-gray-300 text-gray-700 py-1.5 px-2.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+					/>
+				</div>
+				{/* Date Tags */}
+				{(dateFrom || dateTo) && (
+					<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+						{dateFrom && dateTo
+							? `${new Date(
+									dateFrom + "T00:00",
+								).toLocaleDateString(undefined, {
+									month: "short",
+									day: "numeric",
+								})} – ${new Date(
+									dateTo + "T00:00",
+								).toLocaleDateString(undefined, {
+									month: "short",
+									day: "numeric",
+								})}`
+							: dateFrom
+								? `From ${new Date(
+										dateFrom + "T00:00",
+									).toLocaleDateString(undefined, {
+										month: "short",
+										day: "numeric",
+									})}`
+								: `Until ${new Date(
+										dateTo + "T00:00",
+									).toLocaleDateString(undefined, {
+										month: "short",
+										day: "numeric",
+									})}`}
+						<button
+							onClick={() => {
+								onDateFromChange("");
+								onDateToChange("");
+							}}
+							className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-amber-400 hover:bg-amber-200 hover:text-amber-600 focus:outline-none"
+						>
+							<span className="sr-only">Remove date filter</span>
+							<X size={10} />
+						</button>
+					</span>
+				)}
 
 				{/* Account Filter */}
 				<div className="relative!">

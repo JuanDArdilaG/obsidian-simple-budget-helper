@@ -14,6 +14,8 @@ export type TransactionsPagination = {
 	selectedAccounts?: Nanoid[];
 	selectedCategory?: string;
 	selectedSubcategory?: string;
+	dateFrom?: string;
+	dateTo?: string;
 };
 
 export type TransactionsWithPagination = {
@@ -39,6 +41,8 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 		selectedAccounts,
 		selectedCategory,
 		selectedSubcategory,
+		dateFrom,
+		dateTo,
 	}: TransactionsPagination): Promise<TransactionsWithPagination> {
 		GetTransactionsWithPagination.#logger.debug(
 			"Fetching transactions with pagination",
@@ -63,6 +67,11 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 		filteredTransactions = this.#filterBySubcategory(
 			filteredTransactions,
 			selectedSubcategory,
+		);
+		filteredTransactions = this.#filterByDate(
+			filteredTransactions,
+			dateFrom,
+			dateTo,
 		);
 
 		const startIndex = (page - 1) * pageSize;
@@ -133,5 +142,18 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 			({ transaction }) =>
 				transaction.subcategory.value === selectedSubcategory,
 		);
+	}
+
+	#filterByDate(
+		transactions: TransactionWithAccumulatedBalance[],
+		dateFrom?: string,
+		dateTo?: string,
+	): TransactionWithAccumulatedBalance[] {
+		if (!dateFrom && !dateTo) return transactions;
+		return transactions.filter(({ transaction }) => {
+			if (dateFrom && transaction.date < new Date(dateFrom)) return false;
+			if (dateTo && transaction.date > new Date(dateTo)) return false;
+			return true;
+		});
 	}
 }
