@@ -10,7 +10,6 @@ import {
 	X,
 } from "lucide-react";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { CategoriesContext } from "../..";
 import { AccountsMap } from "../../../../../contexts/Accounts/application/get-all-accounts.usecase";
 import {
 	Category,
@@ -24,6 +23,7 @@ import {
 	TransactionAmount,
 } from "../../../../../contexts/Transactions/domain";
 import { AccountSplitter } from "../../../components/AccountSplitter";
+import { CategoriesContext } from "../Contexts";
 
 export interface TransactionItem {
 	id: number;
@@ -94,7 +94,13 @@ export function AddTransactionModal({
 	const [filteredSuggestions, setFilteredSuggestions] = useState<
 		Transaction[]
 	>([]);
-	const suggestionsRef = useRef<HTMLDivElement>(null);
+	const suggestionsRef = useRef<HTMLDivElement>(null); // Keyboard navigation state for suggestions
+
+	const [highlightedIndex, setHighlightedIndex] = useState(-1);
+	// Reset highlighted index when suggestions change
+	useEffect(() => {
+		setHighlightedIndex(-1);
+	}, [filteredSuggestions]);
 
 	// Close suggestions when clicking outside
 	useEffect(() => {
@@ -259,6 +265,46 @@ export function AddTransactionModal({
 		} else {
 			setShowSuggestions(null);
 			setFilteredSuggestions([]);
+		}
+	};
+
+	const handleSuggestionKeyDown = (
+		e: React.KeyboardEvent<HTMLInputElement>,
+		itemIndex: number,
+	) => {
+		if (showSuggestions !== itemIndex || filteredSuggestions.length === 0)
+			return;
+		switch (e.key) {
+			case "ArrowDown":
+				e.preventDefault();
+				setHighlightedIndex((prev) =>
+					prev < filteredSuggestions.length - 1 ? prev + 1 : 0,
+				);
+				break;
+			case "ArrowUp":
+				e.preventDefault();
+				setHighlightedIndex((prev) =>
+					prev > 0 ? prev - 1 : filteredSuggestions.length - 1,
+				);
+				break;
+			case "Enter":
+				e.preventDefault();
+				if (
+					highlightedIndex >= 0 &&
+					highlightedIndex < filteredSuggestions.length
+				) {
+					handleSelectSuggestion(
+						itemIndex,
+						filteredSuggestions[highlightedIndex],
+					);
+				}
+				break;
+			case "Escape":
+				e.preventDefault();
+				setShowSuggestions(null);
+				setFilteredSuggestions([]);
+				setHighlightedIndex(-1);
+				break;
 		}
 	};
 
@@ -556,7 +602,7 @@ export function AddTransactionModal({
 							)}
 						</div>
 						<div className="space-y-3!">
-							{items.map((item) => (
+							{items.map((item, index) => (
 								<div
 									key={item.id}
 									className="flex! gap-2! items-start! p-3! bg-gray-50! rounded-lg! border! border-gray-200!"
@@ -573,6 +619,12 @@ export function AddTransactionModal({
 														handleItemNameChange(
 															item.id,
 															e.target.value,
+														)
+													}
+													onKeyDown={(e) =>
+														handleSuggestionKeyDown(
+															e,
+															index,
 														)
 													}
 													onFocus={() => {
@@ -632,22 +684,44 @@ export function AddTransactionModal({
 																{filteredSuggestions.map(
 																	(
 																		suggestion,
+																		idx,
 																	) => {
 																		const suggestionAmount =
 																			suggestion.originAmount;
+																		const isHighlighted =
+																			idx ===
+																			highlightedIndex;
 																		return (
-																			<div
+																			<button
 																				key={
 																					suggestion.id
 																				}
-																				role="button"
+																				ref={(
+																					el,
+																				) => {
+																					if (
+																						isHighlighted &&
+																						el
+																					) {
+																						el.scrollIntoView(
+																							{
+																								block: "nearest",
+																							},
+																						);
+																					}
+																				}}
 																				onClick={() =>
 																					handleSelectSuggestion(
 																						item.id,
 																						suggestion,
 																					)
 																				}
-																				className="w-full! px-3! py-3! text-left! hover:bg-indigo-50! transition-colors! border-b! border-gray-100! last:border-b-0! flex! items-center! justify-between! gap-2"
+																				onMouseEnter={() =>
+																					setHighlightedIndex(
+																						idx,
+																					)
+																				}
+																				className={`w-full px-3 py-2 text-left transition-colors border-b border-gray-100 last:border-b-0 flex items-center justify-between gap-2 ${isHighlighted ? "bg-indigo-50" : "hover:bg-indigo-50"}`}
 																			>
 																				<div className="flex-1! min-w-0">
 																					<div className="font-medium! text-sm! text-gray-900! truncate!">
@@ -681,7 +755,7 @@ export function AddTransactionModal({
 																						className="text-gray-400!"
 																					/>
 																				</div>
-																			</div>
+																			</button>
 																		);
 																	},
 																)}
