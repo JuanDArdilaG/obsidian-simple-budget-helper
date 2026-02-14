@@ -317,7 +317,7 @@ export function AddTransactionModal({
 		newItems[id] = {
 			...newItems[id],
 			name: transaction.name.value,
-			price: amount,
+			price: items[id].price ?? amount,
 			category: transaction.category.value,
 			subcategory: transaction.subcategory.value,
 		};
@@ -325,7 +325,7 @@ export function AddTransactionModal({
 		// Update operation type
 		setOperation(transaction.operation.value);
 		// Update store
-		if (transaction.store) {
+		if (!store && transaction.store) {
 			setStore(transaction.store.value);
 		}
 		// Update splits
