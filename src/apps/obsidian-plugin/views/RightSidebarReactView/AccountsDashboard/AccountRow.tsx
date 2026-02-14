@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Check, Edit2, Trash2, X } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Account,
 	AccountAssetSubtype,
@@ -10,6 +10,7 @@ import {
 import { Nanoid } from "../../../../../contexts/Shared/domain";
 
 interface AccountRowProps {
+	defaultCurrency: string;
 	account: Account;
 	onUpdate: (
 		id: Nanoid,
@@ -19,6 +20,7 @@ interface AccountRowProps {
 }
 
 export function AccountRow({
+	defaultCurrency,
 	account,
 	onUpdate,
 	onDelete,
@@ -30,6 +32,11 @@ export function AccountRow({
 		account.balance.value.value.toString(),
 	);
 	const nameInputRef = useRef<HTMLInputElement>(null);
+
+	const isNonDefaultCurrency = useMemo(
+		() => account.currency.value !== defaultCurrency,
+		[account.currency.value, defaultCurrency],
+	);
 
 	useEffect(() => {
 		if (isEditing && nameInputRef.current) {
@@ -191,13 +198,31 @@ export function AccountRow({
 					</div>
 
 					<div className="flex items-center gap-6">
-						<span
-							className={`font-semibold tabular-nums cursor-pointer hover:text-indigo-600 transition-colors ${account.type.isAsset() ? "text-gray-900" : "text-rose-600"}`}
+						<div
+							className="flex flex-col items-end cursor-pointer hover:text-indigo-600 transition-colors"
 							onClick={() => setIsEditing(true)}
 						>
-							{account.type.isLiability() && "-"}
-							{account.balance.value.toString()}
-						</span>
+							<span
+								className={`font-semibold tabular-nums ${account.type.isAsset() ? "text-gray-900" : "text-rose-600"}`}
+							>
+								{account.type.isLiability() && "-"}
+								{new Intl.NumberFormat("en-US", {
+									style: "currency",
+									currency: account.currency.value,
+									minimumFractionDigits: 0,
+								}).format(account.balance.value.value)}
+							</span>
+							{isNonDefaultCurrency && (
+								<span className="text-xs text-gray-400 tabular-nums mt-0.5">
+									≈ {account.type.isLiability() && "-"}
+									{new Intl.NumberFormat("en-US", {
+										style: "currency",
+										currency: defaultCurrency,
+										minimumFractionDigits: 0,
+									}).format(account.convertedBalance)}
+								</span>
+							)}
+						</div>
 
 						<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity w-16 justify-end">
 							<button

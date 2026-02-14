@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import {
 	Account,
 	AccountSubtype,
 } from "../../../../../contexts/Accounts/domain";
 import { Nanoid } from "../../../../../contexts/Shared/domain";
+import { AppContext } from "../Contexts";
 import { AccountRow } from "./AccountRow";
 
 interface AccountSectionProps {
@@ -27,6 +28,7 @@ export function AccountSection({
 	onDelete,
 	onAdd,
 }: Readonly<AccountSectionProps>) {
+	const { plugin } = useContext(AppContext);
 	const [isOpen, setIsOpen] = useState(true);
 	const total = useMemo(
 		() => accounts.reduce((sum, acc) => sum + acc.convertedBalance, 0),
@@ -99,6 +101,10 @@ export function AccountSection({
 										.map((account) => (
 											<AccountRow
 												key={account.id}
+												defaultCurrency={
+													plugin.settings
+														.defaultCurrency
+												}
 												account={account}
 												onUpdate={onUpdate}
 												onDelete={onDelete}
