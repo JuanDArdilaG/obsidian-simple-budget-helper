@@ -1,5 +1,5 @@
 import { UUIDValueObject } from "@juandardilag/value-objects";
-import { AppRoot, JsonViewerViewRoot } from "apps/obsidian-plugin/views";
+import { JsonViewerViewRoot } from "apps/obsidian-plugin/views";
 import { AwilixContainer } from "awilix";
 import { buildContainer } from "contexts/Shared/infrastructure/di/container";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
@@ -11,6 +11,7 @@ import { views } from "./config";
 import { DEFAULT_SETTINGS, SimpleBudgetHelperSettings } from "./PluginSettings";
 import { LeftMenuItems } from "./ribbonIcon";
 import { SettingTab } from "./SettingTab";
+import { AppRoot } from "./views/RightSidebarReactView/AppRoot";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;

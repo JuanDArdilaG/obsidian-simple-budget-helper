@@ -5,7 +5,7 @@ import {
 	AccountSplit,
 	TransactionAmount,
 } from "../../../contexts/Transactions/domain";
-import { AccountsContext } from "../views";
+import { AccountsContext } from "../views/RightSidebarReactView/Contexts";
 
 export function AccountSplitter({
 	label,

@@ -1,16 +1,4 @@
 import {
-	Backup as BackupIcon,
-	CleaningServices as CleanupIcon,
-	Delete as DeleteIcon,
-	Download as DownloadIcon,
-	Info as InfoIcon,
-	Restore as RestoreIcon,
-	Storage as StorageIcon,
-	Sync as SyncIcon,
-	Upload as UploadIcon,
-	Warning as WarningIcon,
-} from "@mui/icons-material";
-import {
 	Alert,
 	Box,
 	Button,
@@ -35,9 +23,21 @@ import {
 	Typography,
 } from "@mui/material";
 import { BackupInfo } from "contexts/Shared/infrastructure/persistence/local/backup-manager";
+import {
+	CloudBackup as BackupIcon,
+	BrushCleaning as CleanupIcon,
+	Delete as DeleteIcon,
+	Download as DownloadIcon,
+	Info as InfoIcon,
+	RefreshCw as RestoreIcon,
+	PaintBucket as StorageIcon,
+	RefreshCcw as SyncIcon,
+	Upload as UploadIcon,
+	FileWarning as WarningIcon,
+} from "lucide-react";
 import { Notice } from "obsidian";
 import React, { useContext, useEffect, useState } from "react";
-import { AppContext } from "../views";
+import { AppContext } from "../views/RightSidebarReactView/Contexts";
 
 export const LocalPersistenceSettings: React.FC = () => {
 	const { plugin } = useContext(AppContext);
@@ -312,7 +312,7 @@ export const LocalPersistenceSettings: React.FC = () => {
 			<Card sx={{ mb: 2 }}>
 				<CardContent>
 					<Typography variant="h6" gutterBottom>
-						<InfoIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+						<InfoIcon />
 						Data Information
 					</Typography>
 					{dataInfo && (
@@ -361,7 +361,7 @@ export const LocalPersistenceSettings: React.FC = () => {
 			<Card sx={{ mb: 2 }}>
 				<CardContent>
 					<Typography variant="h6" gutterBottom>
-						<StorageIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+						<StorageIcon />
 						Database Operations
 					</Typography>
 					<Box sx={{ display: "flex", gap: 2, mb: 2 }}>
@@ -392,7 +392,7 @@ export const LocalPersistenceSettings: React.FC = () => {
 			<Card sx={{ mb: 2 }}>
 				<CardContent>
 					<Typography variant="h6" gutterBottom>
-						<SyncIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+						<SyncIcon />
 						Sync Controls
 					</Typography>
 					<Button
@@ -427,7 +427,7 @@ export const LocalPersistenceSettings: React.FC = () => {
 					>
 						<Typography variant="h6">
 							<BackupIcon
-								sx={{ mr: 1, verticalAlign: "middle" }}
+							// sx={{ mr: 1, verticalAlign: "middle" }}
 							/>
 							Backup Management
 						</Typography>
@@ -584,7 +584,7 @@ export const LocalPersistenceSettings: React.FC = () => {
 				<DialogTitle>Restore Backup</DialogTitle>
 				<DialogContent>
 					<Alert severity="warning" sx={{ mb: 2 }}>
-						<WarningIcon sx={{ mr: 1 }} />
+						<WarningIcon />
 						This will replace all current data with the backup data.
 						This action cannot be undone.
 					</Alert>
@@ -657,7 +657,7 @@ export const LocalPersistenceSettings: React.FC = () => {
 				<DialogTitle>Import Database</DialogTitle>
 				<DialogContent>
 					<Alert severity="warning" sx={{ mb: 2 }}>
-						<WarningIcon sx={{ mr: 1 }} />
+						<WarningIcon />
 						This will replace all current data with the imported
 						data. This action cannot be undone.
 					</Alert>
@@ -709,7 +709,7 @@ export const LocalPersistenceSettings: React.FC = () => {
 				<DialogTitle>Cleanup Old Backups</DialogTitle>
 				<DialogContent>
 					<Alert severity="info" sx={{ mb: 2 }}>
-						<InfoIcon sx={{ mr: 1 }} />
+						<InfoIcon />
 						This will delete old backups, keeping only the most
 						recent ones.
 					</Alert>

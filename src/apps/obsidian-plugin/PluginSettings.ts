@@ -1,4 +1,4 @@
-import { MainSections } from "./views";
+import { MainSections } from "./views/RightSidebarReactView/App";
 
 export type SimpleBudgetHelperSettings = {
 	dbId: string;

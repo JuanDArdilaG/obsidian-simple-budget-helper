@@ -2,8 +2,7 @@ import { IntegrityCheckReport } from "contexts/Accounts/domain";
 import { Nanoid } from "contexts/Shared/domain";
 import React, { useContext, useState } from "react";
 import { TransactionAmount } from "../../../contexts/Transactions/domain";
-import { AccountsContext } from "../views";
-import { Button } from "./Button";
+import { AccountsContext } from "../views/RightSidebarReactView/Contexts";
 import { ConfirmationDialog } from "./ConfirmationDialog";
 import { PriceLabel } from "./PriceLabel";
 
@@ -113,15 +112,9 @@ export const IntegrityCheckModal: React.FC<IntegrityCheckModalProps> = ({
 				</div>
 
 				<div style={{ marginBottom: "16px" }}>
-					<Button
-						label={
-							isRunning
-								? "Running Check..."
-								: "Run Integrity Check"
-						}
-						onClick={handleRunCheck}
-						disabled={isRunning}
-					/>
+					<button onClick={handleRunCheck} disabled={isRunning}>
+						{isRunning ? "Running Check..." : "Run Integrity Check"}
+					</button>
 				</div>
 
 				{reportPrimitives && (
@@ -331,15 +324,16 @@ const AccountIntegrityItem: React.FC<AccountIntegrityItemProps> = ({
 					)}
 				</div>
 				{!result.hasIntegrity && showResolveButton && (
-					<Button
-						label={isResolving ? "Resolving..." : "Resolve"}
+					<button
 						onClick={onResolve}
 						disabled={isResolving}
 						style={{
 							backgroundColor: "var(--text-error)",
 							color: "white",
 						}}
-					/>
+					>
+						{isResolving ? "Resolving..." : "Resolve"}
+					</button>
 				)}
 			</div>
 		</div>
