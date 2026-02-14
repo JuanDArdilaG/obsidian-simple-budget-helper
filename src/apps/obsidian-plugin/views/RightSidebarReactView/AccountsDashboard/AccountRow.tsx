@@ -176,9 +176,14 @@ export function AccountRow({
 							className="flex flex-col cursor-pointer group/name"
 							onClick={() => setIsEditing(true)}
 						>
-							<span className="font-medium text-gray-900 group-hover/name:text-indigo-600 transition-colors">
-								{account.name}
-							</span>
+							<div className="flex items-center gap-2">
+								<span className="font-medium text-gray-900 group-hover/name:text-indigo-600 transition-colors">
+									{account.name}
+								</span>
+								<span className="text-[10px] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
+									{account.currency}
+								</span>
+							</div>
 							<span className="text-xs text-gray-500 group-hover/name:text-indigo-400 transition-colors">
 								{account.subtype}
 							</span>

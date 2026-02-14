@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Plus } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
 	Account,
 	AccountSubtype,
@@ -28,7 +28,10 @@ export function AccountSection({
 	onAdd,
 }: Readonly<AccountSectionProps>) {
 	const [isOpen, setIsOpen] = useState(true);
-	const total = accounts.reduce((sum, acc) => sum + acc.convertedBalance, 0);
+	const total = useMemo(
+		() => accounts.reduce((sum, acc) => sum + acc.convertedBalance, 0),
+		[accounts],
+	);
 	return (
 		<div className="bg-white! rounded-xl! shadow-sm! border! border-gray-100! overflow-hidden! mb-6!">
 			<button
