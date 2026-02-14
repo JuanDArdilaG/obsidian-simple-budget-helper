@@ -592,14 +592,6 @@ export function AddTransactionModal({
 									</span>
 								)}
 							</label>
-							{!isEditMode && (
-								<button
-									onClick={handleAddItem}
-									className="text-sm! text-indigo-600! hover:text-indigo-700! font-medium! flex! items-center! gap-1!"
-								>
-									<Plus size={16} /> Add Item
-								</button>
-							)}
 						</div>
 						<div className="space-y-3!">
 							{items.map((item, index) => (
@@ -1037,6 +1029,14 @@ export function AddTransactionModal({
 								</div>
 							))}
 						</div>
+						{!isEditMode && (
+							<button
+								onClick={handleAddItem}
+								className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-indigo-600 hover:text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50/50 font-medium flex items-center justify-center gap-1.5 transition-colors"
+							>
+								<Plus size={16} /> Add Item
+							</button>
+						)}
 					</div>
 
 					{/* Account Splitting Section */}
