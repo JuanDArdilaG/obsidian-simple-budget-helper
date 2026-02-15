@@ -117,9 +117,9 @@ export function TransactionRow({
 		split: AccountSplit,
 		isFrom: boolean,
 	) => {
-		const balances = twb.originAccounts.find(
-			(s) => s.account.id === split.accountId.value,
-		);
+		const balances = (
+			isFrom ? twb.originAccounts : twb.destinationAccounts
+		)?.find((s) => s.account.id === split.accountId.value);
 		return (
 			<div key={twb.transaction.id} className="mt-1 pl-8">
 				{/* Account name - full width on mobile */}
@@ -308,7 +308,7 @@ export function TransactionRow({
 			{/* Account Details */}
 			<div className="border-t border-gray-200/50 pt-2 mt-2 space-y-1">
 				{transaction.operation.isTransfer() &&
-				transaction.destinationAccounts ? (
+				transaction.destinationAccounts.length > 0 ? (
 					<>
 						<div className="text-xs font-semibold text-gray-500 uppercase tracking-wider pl-8 mb-1">
 							From
