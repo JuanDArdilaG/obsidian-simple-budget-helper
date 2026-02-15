@@ -1,6 +1,14 @@
 import { PriceValueObject } from "@juandardilag/value-objects";
 import { motion } from "framer-motion";
-import { Calendar, List, Plus, RefreshCw, Search } from "lucide-react";
+import {
+	ArrowDown,
+	ArrowUp,
+	Calendar,
+	List,
+	Plus,
+	RefreshCw,
+	Search,
+} from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { ScheduledMonthlyReport } from "../../../../../../contexts/Reports/domain";
 import {
@@ -25,6 +33,8 @@ import { AddScheduledTransactionModal } from "./AddScheduledTransactionModal";
 import { DeleteScheduledTransactionModal } from "./DeleteScheduledTransactionModal";
 
 type ViewMode = "list" | "calendar";
+type SortField = "nextOccurrence" | "name";
+type SortDirection = "asc" | "desc";
 
 export function ScheduledTransactionsList() {
 	const {
@@ -173,6 +183,8 @@ export function ScheduledTransactionsList() {
 	const { categoriesWithSubcategories } = useContext(CategoriesContext);
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [sortField, setSortField] = useState<SortField>("nextOccurrence");
+	const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 	const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 	const [editingTransaction, setEditingTransaction] =
 		useState<ScheduledTransaction | null>(null);
@@ -281,6 +293,16 @@ export function ScheduledTransactionsList() {
 			updateScheduledTransactions();
 		}
 	};
+
+	const handleToggleSort = (field: SortField) => {
+		if (sortField === field) {
+			setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+		} else {
+			setSortField(field);
+			setSortDirection("asc");
+		}
+	};
+
 	// Filter and sort transactions
 	const filteredAndSortedTransactions = useMemo(() => {
 		const filtered = scheduledItems.filter((t) => {
@@ -292,13 +314,25 @@ export function ScheduledTransactionsList() {
 
 		// Sort by next occurrence date (soonest first)
 		const sorted = filtered.toSorted((a, b) => {
-			const nextA = nextPendingOccurrences[a.id]?.date || new Date(0);
-			const nextB = nextPendingOccurrences[b.id]?.date || new Date(0);
-			return nextA.getTime() - nextB.getTime();
+			let comparison = 0;
+			if (sortField === "nextOccurrence") {
+				const nextA = nextPendingOccurrences[a.id]?.date || new Date(0);
+				const nextB = nextPendingOccurrences[b.id]?.date || new Date(0);
+				comparison = nextA.getTime() - nextB.getTime();
+			} else if (sortField === "name") {
+				comparison = a.name.localeCompare(b.name.value);
+			}
+			return sortDirection === "asc" ? comparison : -comparison;
 		});
 
 		return sorted;
-	}, [scheduledItems, searchQuery]);
+	}, [
+		scheduledItems,
+		searchQuery,
+		nextPendingOccurrences,
+		sortField,
+		sortDirection,
+	]);
 
 	if (isRefreshing) {
 		return <LoadingSpinner />;
@@ -389,12 +423,62 @@ export function ScheduledTransactionsList() {
 					<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 						{filteredAndSortedTransactions.length > 0 ? (
 							<>
-								<div className="mb-4! text-sm! text-gray-600!">
-									{filteredAndSortedTransactions.length}{" "}
-									scheduled transaction
-									{filteredAndSortedTransactions.length === 1
-										? ""
-										: "s"}
+								<div className="mb-4 flex items-center justify-between">
+									<div className="text-sm text-gray-600">
+										{filteredAndSortedTransactions.length}{" "}
+										scheduled transaction
+										{filteredAndSortedTransactions.length ===
+										1
+											? ""
+											: "s"}
+									</div>
+									<div className="flex items-center gap-1">
+										<span className="text-xs text-gray-500 mr-1.5">
+											Sort by:
+										</span>
+										<button
+											onClick={() =>
+												handleToggleSort(
+													"nextOccurrence",
+												)
+											}
+											className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${sortField === "nextOccurrence" ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-100"}`}
+										>
+											Next Date
+											{sortField === "nextOccurrence" &&
+												(sortDirection === "asc" ? (
+													<ArrowUp
+														size={12}
+														className="text-indigo-500"
+													/>
+												) : (
+													<ArrowDown
+														size={12}
+														className="text-indigo-500"
+													/>
+												))}
+										</button>
+										<button
+											onClick={() =>
+												handleToggleSort("name")
+											}
+											className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${sortField === "name" ? "bg-indigo-50 text-indigo-700" : "text-gray-600 hover:bg-gray-100"}`}
+										>
+											Name
+											{sortField === "name" &&
+												(sortDirection === "asc" ? (
+													<ArrowUp
+														size={12}
+														className="text-indigo-500"
+													/>
+												) : (
+													<ArrowDown
+														size={12}
+														className="text-indigo-500"
+													/>
+												))}
+										</button>
+									</div>
 								</div>
 
 								<div className="space-y-2!">

@@ -470,6 +470,9 @@
   .mr-1 {
     margin-right: calc(var(--spacing) * 1) !important;
   }
+  .mr-1\.5 {
+    margin-right: calc(var(--spacing) * 1.5) !important;
+  }
   .mr-2\! {
     margin-right: calc(var(--spacing) * 2) !important;
   }
@@ -1738,11 +1741,17 @@
   .text-indigo-400\! {
     color: var(--color-indigo-400) !important;
   }
+  .text-indigo-500 {
+    color: var(--color-indigo-500) !important;
+  }
   .text-indigo-600 {
     color: var(--color-indigo-600) !important;
   }
   .text-indigo-600\! {
     color: var(--color-indigo-600) !important;
+  }
+  .text-indigo-700 {
+    color: var(--color-indigo-700) !important;
   }
   .text-indigo-700\! {
     color: var(--color-indigo-700) !important;
