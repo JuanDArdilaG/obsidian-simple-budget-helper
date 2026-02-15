@@ -337,7 +337,7 @@ export function TransactionRow({
 							renderAccountSplit(
 								transactionWithAccumulatedBalance,
 								split,
-								transaction.operation.isIncome(),
+								true,
 							),
 						)}
 					</>
