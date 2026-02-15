@@ -380,6 +380,7 @@ export function ScheduledCalendarList({
 												onDeleteRecurrence={(r) =>
 													setDeletingRecurrence(r)
 												}
+												daysUntilNext={recurrence.date.getRemainingDays()}
 											/>
 										))}
 									</div>

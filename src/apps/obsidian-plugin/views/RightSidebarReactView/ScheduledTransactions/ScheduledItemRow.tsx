@@ -240,7 +240,9 @@ export function ScheduledItemRow({
 	}, [item.type, itemData.date, daysUntilNext]);
 
 	const daysDisplay = useMemo(
-		() => calculatedDaysUntil && formatDaysUntil(calculatedDaysUntil),
+		() =>
+			calculatedDaysUntil !== undefined &&
+			formatDaysUntil(calculatedDaysUntil),
 		[calculatedDaysUntil],
 	);
 
