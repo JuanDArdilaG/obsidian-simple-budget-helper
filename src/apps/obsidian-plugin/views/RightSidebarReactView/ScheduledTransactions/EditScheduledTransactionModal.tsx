@@ -327,8 +327,8 @@ export function EditScheduledTransactionModal({
 				</div>
 
 				<div className="overflow-y-auto! flex-1! pr-2! -mr-2!">
-					{editMode === "single" ||
-					scheduledTransaction.recurrencePattern.isOneTime ? (
+					{editMode === "single" &&
+					!scheduledTransaction.recurrencePattern.isOneTime ? (
 						// Single Recurrence Edit Form
 						<div className="space-y-6!!">
 							<div className="bg-amber-50! border! border-amber-200! rounded-lg! p-4! flex! gap-3!">
@@ -421,17 +421,21 @@ export function EditScheduledTransactionModal({
 					) : (
 						// Full Scheduled Transaction Edit Form
 						<div className="space-y-6!">
-							<div className="bg-blue-50! border! border-blue-200! rounded-lg! p-4! flex! gap-3!">
-								<AlertCircle
-									size={20}
-									className="text-blue-600! shrink-0! mt-0.5!"
-								/>
-								<div className="text-sm! text-blue-800!">
-									<strong>All occurrences edit:</strong>{" "}
-									Changes will apply to all future occurrences
-									of this scheduled transaction.
+							{!scheduledTransaction.recurrencePattern
+								.isOneTime && (
+								<div className="bg-blue-50! border! border-blue-200! rounded-lg! p-4! flex! gap-3!">
+									<AlertCircle
+										size={20}
+										className="text-blue-600! shrink-0! mt-0.5!"
+									/>
+									<div className="text-sm! text-blue-800!">
+										<strong>All occurrences edit:</strong>{" "}
+										Changes will apply to all future
+										occurrences of this scheduled
+										transaction.
+									</div>
 								</div>
-							</div>
+							)}
 
 							{/* Operation Selection */}
 							<div className="grid! grid-cols-3! gap-4!">
@@ -831,7 +835,8 @@ export function EditScheduledTransactionModal({
 					</button>
 					<button
 						onClick={
-							editMode === "single"
+							editMode === "single" &&
+							!scheduledTransaction.recurrencePattern.isOneTime
 								? handleSubmitSingle
 								: handleSubmitAll
 						}
@@ -843,7 +848,8 @@ export function EditScheduledTransactionModal({
 								<RefreshCw className="animate-spin" size={16} />
 								Saving...
 							</>
-						) : editMode === "single" ? (
+						) : editMode === "single" &&
+						  !scheduledTransaction.recurrencePattern.isOneTime ? (
 							"Save This Occurrence"
 						) : (
 							"Save All Future Occurrences"
