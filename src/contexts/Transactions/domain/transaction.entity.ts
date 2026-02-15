@@ -54,7 +54,7 @@ export class Transaction extends Entity<string, TransactionPrimitives> {
 			if (!this.originAmount.equalTo(this.destinationAmount)) {
 				throw new InvalidArgumentError(
 					"Transaction",
-					`from amount: ${this.originAmount}. to amount: ${this.destinationAmount}`,
+					`from amount: ${this.originAmount.value}. to amount: ${this.destinationAmount.value}`,
 					"From amount and to amount should be the same",
 				);
 			}

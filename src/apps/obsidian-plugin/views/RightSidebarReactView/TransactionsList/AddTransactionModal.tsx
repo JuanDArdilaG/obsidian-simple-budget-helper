@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
 	ArrowDownLeft,
+	ArrowRightLeft,
 	ArrowUpRight,
 	Check,
 	Clock,
@@ -9,7 +10,14 @@ import {
 	Trash2,
 	X,
 } from "lucide-react";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { AccountsMap } from "../../../../../contexts/Accounts/application/get-all-accounts.usecase";
 import {
 	Category,
@@ -23,7 +31,7 @@ import {
 	TransactionAmount,
 } from "../../../../../contexts/Transactions/domain";
 import { AccountSplitter } from "../../../components/AccountSplitter";
-import { CategoriesContext } from "../Contexts";
+import { AppContext, CategoriesContext } from "../Contexts";
 
 export interface TransactionItem {
 	id: number;
@@ -51,6 +59,7 @@ export function AddTransactionModal({
 	editTransaction = null,
 	existingTransactions = [],
 }: Readonly<AddTransactionModalProps>) {
+	const { plugin } = useContext(AppContext);
 	const isEditMode = !!editTransaction;
 	const {
 		categoriesWithSubcategories,
@@ -87,7 +96,10 @@ export function AddTransactionModal({
 		number | null
 	>(null);
 	const [newCategoryName, setNewCategoryName] = useState("");
-	const [newSubcategoryName, setNewSubcategoryName] = useState("");
+	const [newSubcategoryName, setNewSubcategoryName] = useState(""); // Exchange rate state
+	const [exchangeRate, setExchangeRate] = useState<TransactionAmount>(
+		TransactionAmount.zero(),
+	);
 
 	// Autocomplete state
 	const [showSuggestions, setShowSuggestions] = useState<number | null>(null);
@@ -399,6 +411,70 @@ export function AddTransactionModal({
 		}
 	};
 
+	// Determine currencies for transfer cross-currency detection
+	const getAccountCurrency = useCallback(
+		(accountId: string): string => {
+			const account = accountsMap.get(accountId);
+			return account?.currency.value || plugin.settings.defaultCurrency;
+		},
+		[accountsMap, plugin.settings.defaultCurrency],
+	);
+
+	const fromCurrency = useMemo<string | null>(
+		() =>
+			fromSplits.length > 0
+				? getAccountCurrency(fromSplits[0].accountId.value)
+				: null,
+		[fromSplits, getAccountCurrency],
+	);
+	const toCurrency = useMemo<string | null>(
+		() =>
+			toSplits.length > 0
+				? getAccountCurrency(toSplits[0].accountId.value)
+				: null,
+		[toSplits, getAccountCurrency],
+	);
+	const isCrossCurrencyTransfer = useMemo(
+		() =>
+			operation === "transfer" &&
+			fromCurrency &&
+			toCurrency &&
+			fromCurrency !== toCurrency,
+		[operation, fromCurrency, toCurrency],
+	);
+
+	// Auto-update to-splits amount when exchange rate or from amount changes
+	useEffect(() => {
+		if (
+			isCrossCurrencyTransfer &&
+			exchangeRate.value > 0 &&
+			fromSplits.length > 0 &&
+			toSplits.length > 0
+		) {
+			const fromTotal = fromSplits.reduce(
+				(sum, s) => sum + s.amount.value,
+				0,
+			);
+			const convertedAmount = fromTotal * exchangeRate.value;
+			const newToSplits = toSplits.map((split, index) => {
+				if (index === 0) {
+					return new AccountSplit(
+						split.accountId,
+						new TransactionAmount(
+							Math.round(convertedAmount * 100) / 100,
+						),
+					);
+				}
+				return split;
+			});
+			// Only update if the amount actually changed to avoid infinite loops
+			const currentToTotal = toSplits[0].amount.value;
+			if (Math.abs(currentToTotal - convertedAmount) > 0.01) {
+				setToSplits(newToSplits);
+			}
+		}
+	}, [exchangeRate, fromSplits, isCrossCurrencyTransfer]);
+
 	const handleSubmit = async () => {
 		// Basic validation
 		if (items.some((i) => !i.name || i.price <= 0)) {
@@ -414,7 +490,7 @@ export function AddTransactionModal({
 			alert("Account splits must match transaction total");
 			return;
 		}
-		if (operation === "transfer") {
+		if (operation === "transfer" && !isCrossCurrencyTransfer) {
 			const toTotal = toSplits.reduce(
 				(sum, s) => sum + s.amount.value,
 				0,
@@ -450,7 +526,12 @@ export function AddTransactionModal({
 						new AccountSplit(
 							split.accountId,
 							new TransactionAmount(
-								split.amount.value * itemRatio,
+								Number.parseFloat(
+									(
+										(split.amount.value * itemRatio) /
+										exchangeRate.value
+									).toFixed(2),
+								),
 							),
 						).toPrimitives(),
 					),
@@ -459,6 +540,9 @@ export function AddTransactionModal({
 					category: item.category,
 					subcategory: item.subcategory,
 					store: store || undefined,
+					exchangeRate: isCrossCurrencyTransfer
+						? exchangeRate.value
+						: undefined,
 					updatedAt: new Date().toISOString(),
 				});
 			});
@@ -1052,12 +1136,96 @@ export function AddTransactionModal({
 							totalAmount={totalAmount}
 						/>
 
+						{/* Cross-currency exchange rate field */}
+						{isCrossCurrencyTransfer && (
+							<motion.div
+								initial={{ opacity: 0, height: 0 }}
+								animate={{ opacity: 1, height: "auto" }}
+								exit={{ opacity: 0, height: 0 }}
+								className="bg-blue-50 rounded-lg p-4 border border-blue-200"
+							>
+								<div className="flex items-center gap-2 mb-3">
+									<ArrowRightLeft
+										size={16}
+										className="text-blue-600"
+									/>
+									<span className="font-medium text-blue-800 text-sm">
+										Currency Conversion
+									</span>
+								</div>
+								<div className="flex items-center gap-3">
+									<div className="flex items-center gap-2 flex-1">
+										<span className="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-1 rounded">
+											1 {fromCurrency}
+										</span>
+										<span className="text-blue-400">=</span>
+										<div className="relative flex-1">
+											<input
+												type="text"
+												value={
+													exchangeRate.toString() ||
+													""
+												}
+												onChange={(e) => {
+													console.log(
+														"New exchange rate input:",
+														e.target.value,
+													);
+													const val =
+														TransactionAmount.fromString(
+															e.target.value ||
+																"0",
+														);
+													setExchangeRate(val);
+												}}
+												className="w-full px-3 py-2 text-sm border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white tabular-nums"
+											/>
+										</div>
+										<span className="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-1 rounded">
+											{toCurrency}
+										</span>
+									</div>
+								</div>
+								{fromSplits.length > 0 && (
+									<p className="text-xs text-blue-600 mt-2.5">
+										{new Intl.NumberFormat("en-US", {
+											minimumFractionDigits: 2,
+											maximumFractionDigits: 2,
+										}).format(
+											fromSplits.reduce(
+												(s, sp) => s + sp.amount.value,
+												0,
+											),
+										)}{" "}
+										{fromCurrency} →{" "}
+										{new Intl.NumberFormat("en-US", {
+											minimumFractionDigits: 2,
+											maximumFractionDigits: 2,
+										}).format(
+											fromSplits.reduce(
+												(s, sp) => s + sp.amount.value,
+												0,
+											) * exchangeRate.value,
+										)}{" "}
+										{toCurrency}
+									</p>
+								)}
+							</motion.div>
+						)}
+
 						{operation === "transfer" && (
 							<AccountSplitter
 								label="Transfer To"
 								splits={toSplits}
 								onChange={setToSplits}
-								totalAmount={totalAmount}
+								totalAmount={
+									isCrossCurrencyTransfer
+										? fromSplits.reduce(
+												(s, sp) => s + sp.amount.value,
+												0,
+											) * exchangeRate.value
+										: totalAmount
+								}
 							/>
 						)}
 					</div>
