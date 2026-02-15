@@ -9,6 +9,7 @@ import {
 	TransactionsContext,
 } from "../Contexts";
 import { AccountReportPage } from "./AccountReportPage/AccountReportPage";
+import { CategorySpendingReport } from "./CategorySpendingReport/CategorySpendingReport";
 import {
 	MonthlyDataPoint,
 	MonthlyFinancialChart,
@@ -41,8 +42,7 @@ export function ReportsPage() {
 			id: "spending" as ReportTab,
 			label: "Spending Analysis",
 			icon: PieChart,
-			description: "Coming Soon",
-			disabled: true,
+			description: "Analyze expenses by category",
 		},
 		{
 			id: "income" as ReportTab,
@@ -299,13 +299,21 @@ export function ReportsPage() {
 				)}
 
 				{activeTab === "spending" && (
-					<div className="flex! flex-col! items-center! justify-center! h-64! text-gray-500!">
-						<PieChart size={48} className="mb-4! text-gray-300!" />
-						<p className="text-lg! font-medium!">
-							Spending Analysis
-						</p>
-						<p className="text-sm!">Coming Soon</p>
-					</div>
+					<motion.div
+						initial={{
+							opacity: 0,
+							y: 20,
+						}}
+						animate={{
+							opacity: 1,
+							y: 0,
+						}}
+						transition={{
+							duration: 0.3,
+						}}
+					>
+						<CategorySpendingReport />
+					</motion.div>
 				)}
 
 				{activeTab === "income" && (
