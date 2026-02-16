@@ -4,6 +4,10 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { AccountsMap } from "../../../../../../contexts/Accounts/application/get-all-accounts.usecase";
 import { CategoriesWithSubcategoriesMap } from "../../../../../../contexts/Categories/application/get-all-categories-with-subcategories.usecase";
 import {
+	ScheduledTransactionsReport,
+	ScheduledTransactionWithAccumulatedBalance,
+} from "../../../../../../contexts/Reports/domain";
+import {
 	ItemRecurrenceInfo,
 	ScheduledTransaction,
 } from "../../../../../../contexts/ScheduledTransactions/domain";
@@ -208,32 +212,51 @@ export function ScheduledCalendarList({
 		}
 	};
 
+	const scheduledTransactionsWithAccumulatedBalance = useMemo(() => {
+		return new ScheduledTransactionsReport(
+			recurrences,
+		).withAccumulatedBalance(accountsMap);
+	}, [recurrences, accountsMap]);
+
 	// Filter and sort recurrences
 	const filteredAndSortedRecurrences = useMemo(() => {
-		const filtered = recurrences.filter((r) => {
-			const matchesSearch =
-				r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				r.store?.toLowerCase().includes(searchQuery.toLowerCase());
-			return matchesSearch;
-		});
+		const filtered = scheduledTransactionsWithAccumulatedBalance.filter(
+			({ recurrence }) => {
+				const matchesSearch =
+					recurrence.name
+						.toLowerCase()
+						.includes(searchQuery.toLowerCase()) ||
+					recurrence.store
+						?.toLowerCase()
+						.includes(searchQuery.toLowerCase());
+				return matchesSearch;
+			},
+		);
 		// Sort by date (earliest first)
-		return filtered.sort((a, b) => a.date.getTime() - b.date.getTime());
+		return filtered.sort(
+			({ recurrence: a }, { recurrence: b }) =>
+				a.date.getTime() - b.date.getTime(),
+		);
 	}, [recurrences, searchQuery]);
 
 	// Group by date
 	const groupedRecurrences = useMemo(() => {
 		const groups: {
 			date: string;
-			recurrences: ItemRecurrenceInfo[];
+			recurrences: ScheduledTransactionWithAccumulatedBalance[];
 		}[] = [];
 		let currentDate = "";
-		filteredAndSortedRecurrences.forEach((r) => {
-			const dateStr = new Date(r.date).toLocaleDateString(undefined, {
-				weekday: "long",
-				year: "numeric",
-				month: "long",
-				day: "numeric",
-			});
+		filteredAndSortedRecurrences.forEach((swb) => {
+			const { recurrence } = swb;
+			const dateStr = new Date(recurrence.date).toLocaleDateString(
+				undefined,
+				{
+					weekday: "long",
+					year: "numeric",
+					month: "long",
+					day: "numeric",
+				},
+			);
 			if (dateStr !== currentDate) {
 				groups.push({
 					date: dateStr,
@@ -241,10 +264,11 @@ export function ScheduledCalendarList({
 				});
 				currentDate = dateStr;
 			}
-			groups.at(-1)?.recurrences.push(r);
+			groups.at(-1)?.recurrences.push(swb);
 		});
 		return groups;
 	}, [filteredAndSortedRecurrences]);
+
 	return (
 		<>
 			{/* Filters */}
@@ -363,26 +387,40 @@ export function ScheduledCalendarList({
 										{group.date}
 									</h3>
 									<div className="space-y-2!">
-										{group.recurrences.map((recurrence) => (
-											<ScheduledItemRow
-												key={`${recurrence.scheduledTransactionId}-${recurrence.occurrenceIndex}`}
-												item={{
-													type: "recurrence",
-													data: recurrence,
-												}}
-												accountsMap={accountsMap}
-												onEditRecurrence={(r) =>
-													setEditingRecurrence(r)
-												}
-												onRecordRecurrence={(r) =>
-													setRecordingRecurrence(r)
-												}
-												onDeleteRecurrence={(r) =>
-													setDeletingRecurrence(r)
-												}
-												daysUntilNext={recurrence.date.getRemainingDays()}
-											/>
-										))}
+										{group.recurrences.map(
+											({
+												recurrence,
+												originAccounts,
+												destinationAccounts,
+											}) => (
+												<ScheduledItemRow
+													key={`${recurrence.scheduledTransactionId}-${recurrence.occurrenceIndex}`}
+													item={{
+														type: "recurrence",
+														data: recurrence,
+													}}
+													accountsMap={accountsMap}
+													onEditRecurrence={(r) =>
+														setEditingRecurrence(r)
+													}
+													onRecordRecurrence={(r) =>
+														setRecordingRecurrence(
+															r,
+														)
+													}
+													onDeleteRecurrence={(r) =>
+														setDeletingRecurrence(r)
+													}
+													daysUntilNext={recurrence.date.getRemainingDays()}
+													originAccounts={
+														originAccounts
+													}
+													destinationAccounts={
+														destinationAccounts
+													}
+												/>
+											),
+										)}
 									</div>
 								</motion.div>
 							))}

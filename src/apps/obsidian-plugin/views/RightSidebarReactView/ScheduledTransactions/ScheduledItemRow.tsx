@@ -9,9 +9,12 @@ import {
 	RefreshCw,
 	Repeat,
 	Trash2,
+	TrendingDown,
+	TrendingUp,
 } from "lucide-react";
 import { useContext, useMemo, useState } from "react";
 import { AccountsMap } from "../../../../../contexts/Accounts/application/get-all-accounts.usecase";
+import { Account } from "../../../../../contexts/Accounts/domain";
 import {
 	ItemRecurrenceInfo,
 	RecurrenceState,
@@ -34,6 +37,16 @@ type ScheduledItemData =
 
 interface ScheduledItemRowProps {
 	item: ScheduledItemData;
+	originAccounts: {
+		account: Account;
+		balance: number;
+		prevBalance: number;
+	}[];
+	destinationAccounts?: {
+		account: Account;
+		balance: number;
+		prevBalance: number;
+	}[];
 	accountsMap: AccountsMap;
 	// Scheduled transaction actions
 	onEditScheduled?: (transaction: ScheduledTransaction) => void;
@@ -47,6 +60,8 @@ interface ScheduledItemRowProps {
 }
 export function ScheduledItemRow({
 	item,
+	originAccounts,
+	destinationAccounts,
 	accountsMap,
 	onEditScheduled,
 	onDeleteScheduled,
@@ -246,9 +261,72 @@ export function ScheduledItemRow({
 		[calculatedDaysUntil],
 	);
 
-	const isPending =
-		itemData.state === null || itemData.state === RecurrenceState.PENDING;
-	const isRecurrence = item.type === "recurrence";
+	const isPending = useMemo(
+		() =>
+			itemData.state === null ||
+			itemData.state === RecurrenceState.PENDING,
+		[itemData.state],
+	);
+	const isRecurrence = useMemo(() => item.type === "recurrence", [item.type]);
+
+	const hasMultipleSplits = useMemo(() => {
+		return itemData.operation === "transfer"
+			? itemData.fromSplits.length + itemData.toSplits.length > 2
+			: itemData.fromSplits.length > 1 || itemData.toSplits.length > 1;
+	}, [itemData.operation, itemData.fromSplits, itemData.toSplits]);
+
+	const renderAccountSplit = (
+		accountId: string,
+		amount: TransactionAmount,
+		isFrom: boolean,
+	) => {
+		const balances = (
+			isFrom ? originAccounts : (destinationAccounts ?? [])
+		).find((a) => a.account.id === accountId);
+		return (
+			<div key={accountId} className="mt-1 pl-8">
+				<div className="flex items-center justify-between mb-1">
+					<span className="font-medium text-gray-600 text-xs truncate pr-2">
+						{getAccountName(accountId)}
+					</span>
+					{hasMultipleSplits && (
+						<div className="flex items-center gap-1 shrink-0">
+							{isFrom ? (
+								<TrendingDown className="w-3 h-3 text-rose-500" />
+							) : (
+								<TrendingUp className="w-3 h-3 text-emerald-500" />
+							)}
+							<span
+								className={`font-bold text-xs ${isFrom ? "text-rose-600" : "text-emerald-600"}`}
+							>
+								{isFrom ? "-" : "+"}
+								{amount.toString()}
+							</span>
+						</div>
+					)}
+				</div>
+				<div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-1 sm:gap-3 text-[10px]">
+					<div className="flex items-center gap-1 text-gray-500">
+						<span className="text-gray-400">Prev:</span>
+						<span className="font-medium">
+							{new TransactionAmount(
+								balances?.prevBalance ?? 0,
+							).toString()}
+						</span>
+					</div>
+					<div className="flex items-center gap-1 text-gray-700">
+						<span className="text-gray-400">New:</span>
+						<span className="font-semibold">
+							{new TransactionAmount(
+								balances?.balance ?? 0,
+							).toString()}
+						</span>
+					</div>
+				</div>
+			</div>
+		);
+	};
+
 	return (
 		<div
 			onMouseEnter={() => setIsHovered(true)}
@@ -346,7 +424,7 @@ export function ScheduledItemRow({
 			<div className="flex items-start justify-between mb-2 gap-2">
 				<div className="flex items-start gap-3 flex-1 md:pr-32 min-w-0">
 					<div
-						className={`p-2 rounded-full bg-white ${styles.text} shadow-sm mt-1 flex-shrink-0`}
+						className={`p-2 rounded-full bg-white ${styles.text} shadow-sm mt-1 shrink-0`}
 					>
 						{styles.icon}
 					</div>
@@ -404,7 +482,7 @@ export function ScheduledItemRow({
 						)}
 					</div>
 				</div>
-				<div className="text-right flex-shrink-0 min-w-fit">
+				<div className="text-right shrink-0 min-w-fit">
 					<div
 						className={`font-bold text-lg ${styles.text} whitespace-nowrap`}
 					>
@@ -519,46 +597,53 @@ export function ScheduledItemRow({
 
 			{/* Account Details */}
 			<div className="border-t border-gray-200/50 pt-2 mt-2 space-y-1">
-				<div className="text-xs font-semibold text-gray-500 uppercase tracking-wider pl-8 mb-1">
-					{itemData.operation === "income"
-						? "Deposit To"
-						: "Paid From"}
-				</div>
-				{itemData.fromSplits.map((split, index) => (
-					<div
-						key={split.accountId.value}
-						className="flex items-center justify-between text-xs text-gray-500 pl-8"
-					>
-						<span className="font-medium text-gray-600">
-							{getAccountName(split.accountId.value)}
-						</span>
-						<span className="font-medium text-gray-700">
-							{split.amount.toString()}
-						</span>
-					</div>
-				))}
-
 				{itemData.operation === "transfer" &&
-					itemData.toSplits.length > 0 && (
-						<>
-							<div className="text-xs font-semibold text-gray-500 uppercase tracking-wider pl-8 mt-2 mb-1">
-								Transfer To
-							</div>
-							{itemData.toSplits.map((split, index) => (
-								<div
-									key={split.accountId.value}
-									className="flex items-center justify-between text-xs text-gray-500 pl-8"
-								>
-									<span className="font-medium text-gray-600">
-										{getAccountName(split.accountId.value)}
-									</span>
-									<span className="font-medium text-gray-700">
-										{split.amount.toString()}
-									</span>
-								</div>
-							))}
-						</>
-					)}
+				itemData.toSplits.length > 0 ? (
+					<>
+						<div className="text-xs font-semibold text-gray-500 uppercase tracking-wider pl-8 mb-1">
+							From
+						</div>
+						{itemData.fromSplits.map((split) =>
+							renderAccountSplit(
+								split.accountId.value,
+								split.amount,
+								true,
+							),
+						)}
+						<div className="text-xs font-semibold text-gray-500 uppercase tracking-wider pl-8 mt-2 mb-1">
+							To
+						</div>
+						{itemData.toSplits.map((split) =>
+							renderAccountSplit(
+								split.accountId.value,
+								split.amount,
+								false,
+							),
+						)}
+					</>
+				) : (
+					<>
+						<div className="text-xs font-semibold text-gray-500 uppercase tracking-wider pl-8 mb-1">
+							{itemData.operation === "income"
+								? "Deposit To"
+								: "Paid From"}
+						</div>
+						{itemData.fromSplits.map((split) =>
+							renderAccountSplit(
+								split.accountId.value,
+								split.amount,
+								true,
+							),
+						)}
+						{itemData.toSplits.map((split) =>
+							renderAccountSplit(
+								split.accountId.value,
+								split.amount,
+								true,
+							),
+						)}
+					</>
+				)}
 			</div>
 		</div>
 	);

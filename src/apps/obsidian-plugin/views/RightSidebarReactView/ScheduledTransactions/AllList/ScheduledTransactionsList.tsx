@@ -10,7 +10,10 @@ import {
 	Search,
 } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { ScheduledMonthlyReport } from "../../../../../../contexts/Reports/domain";
+import {
+	ScheduledMonthlyReport,
+	ScheduledTransactionsReport,
+} from "../../../../../../contexts/Reports/domain";
 import {
 	ItemRecurrenceInfo,
 	ScheduledTransaction,
@@ -303,6 +306,12 @@ export function ScheduledTransactionsList() {
 		}
 	};
 
+	const scheduledTransactionsWithAccumulatedBalance = useMemo(() => {
+		return new ScheduledTransactionsReport(
+			Object.values(nextPendingOccurrences),
+		).withAccumulatedBalance(accountsMap);
+	}, [nextPendingOccurrences, accountsMap]);
+
 	// Filter and sort transactions
 	const filteredAndSortedTransactions = useMemo(() => {
 		const filtered = scheduledItems.filter((t) => {
@@ -514,6 +523,24 @@ export function ScheduledTransactionsList() {
 													monthlyTotal={
 														transaction
 															.pricePerMonth.value
+													}
+													originAccounts={
+														scheduledTransactionsWithAccumulatedBalance.find(
+															({ recurrence }) =>
+																recurrence
+																	.scheduledTransactionId
+																	.value ===
+																transaction.id,
+														)?.originAccounts || []
+													}
+													destinationAccounts={
+														scheduledTransactionsWithAccumulatedBalance.find(
+															({ recurrence }) =>
+																recurrence
+																	.scheduledTransactionId
+																	.value ===
+																transaction.id,
+														)?.destinationAccounts
 													}
 												/>
 											</motion.div>
