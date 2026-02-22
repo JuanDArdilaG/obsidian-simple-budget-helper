@@ -98,7 +98,7 @@ export function AddTransactionModal({
 	const [newCategoryName, setNewCategoryName] = useState("");
 	const [newSubcategoryName, setNewSubcategoryName] = useState(""); // Exchange rate state
 	const [exchangeRate, setExchangeRate] = useState<TransactionAmount>(
-		TransactionAmount.zero(),
+		new TransactionAmount(1),
 	);
 
 	// Autocomplete state
