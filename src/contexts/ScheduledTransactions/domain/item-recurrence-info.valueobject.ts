@@ -10,6 +10,7 @@ import {
 	RecurrenceModification,
 	RecurrenceState,
 } from "./recurrence-modification.entity";
+import { RecurrenceType } from "./recurrence-pattern.vo";
 import { ScheduledTransactionDate } from "./scheduled-transaction-date.vo";
 import { ScheduledTransaction } from "./scheduled-transaction.entity";
 
@@ -25,6 +26,7 @@ export class ItemRecurrenceInfo {
 		private _state: RecurrenceState,
 		private _originAccounts: AccountSplit[],
 		private _destinationAccounts: AccountSplit[],
+		private readonly _type: RecurrenceType,
 		private _store?: StringValueObject,
 		private readonly _tags?: ItemTags,
 	) {}
@@ -45,6 +47,7 @@ export class ItemRecurrenceInfo {
 			RecurrenceState.PENDING,
 			scheduledTransaction.originAccounts,
 			scheduledTransaction.destinationAccounts,
+			scheduledTransaction.recurrencePattern.type,
 			scheduledTransaction.store,
 			scheduledTransaction.tags,
 		);
@@ -67,6 +70,7 @@ export class ItemRecurrenceInfo {
 			modification.state,
 			modification.fromSplits ?? scheduledTransaction.originAccounts,
 			modification.toSplits ?? scheduledTransaction.destinationAccounts,
+			scheduledTransaction.recurrencePattern.type,
 			scheduledTransaction.store,
 			scheduledTransaction.tags,
 		);
@@ -151,6 +155,10 @@ export class ItemRecurrenceInfo {
 
 	updateToSplits(toSplits: AccountSplit[]): void {
 		this._destinationAccounts = toSplits;
+	}
+
+	get type(): RecurrenceType {
+		return this._type;
 	}
 
 	get store(): StringValueObject | undefined {

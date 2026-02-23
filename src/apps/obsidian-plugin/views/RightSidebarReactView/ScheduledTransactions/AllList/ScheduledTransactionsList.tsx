@@ -1,8 +1,8 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
 import { motion } from "framer-motion";
 import {
 	ArrowDown,
 	ArrowUp,
+	BarChart3,
 	Calendar,
 	List,
 	Plus,
@@ -10,10 +10,7 @@ import {
 	Search,
 } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
-import {
-	ScheduledMonthlyReport,
-	ScheduledTransactionsReport,
-} from "../../../../../../contexts/Reports/domain";
+import { ScheduledTransactionsReport } from "../../../../../../contexts/Reports/domain";
 import {
 	ItemRecurrenceInfo,
 	ScheduledTransaction,
@@ -25,17 +22,14 @@ import {
 	CategoriesContext,
 	ScheduledTransactionsContext,
 } from "../../Contexts";
-import {
-	MonthlySummaryData,
-	ScheduledMonthlySummary,
-} from "../../Reports/MonthlyProjection/ScheduledMonthlySummary";
+import { ScheduledMonthlySummary } from "../../Reports/MonthlyProjection/ScheduledMonthlySummary";
 import { ScheduledCalendarList } from "../CalendarList/ScheduledCalendarList";
 import { EditScheduledTransactionModal } from "../EditScheduledTransactionModal";
 import { ScheduledItemRow } from "../ScheduledItemRow";
 import { AddScheduledTransactionModal } from "./AddScheduledTransactionModal";
 import { DeleteScheduledTransactionModal } from "./DeleteScheduledTransactionModal";
 
-type ViewMode = "list" | "calendar";
+type ViewMode = "list" | "calendar" | "summary";
 type SortField = "nextOccurrence" | "name";
 type SortDirection = "asc" | "desc";
 
@@ -49,139 +43,9 @@ export function ScheduledTransactionsList() {
 			deleteScheduledTransaction,
 			modifyNItemRecurrence,
 			nextPendingOccurrenceUseCase,
-			nextMonthExpensesUseCase,
 		},
 	} = useContext(ScheduledTransactionsContext);
 	const { accountsMap } = useContext(AccountsContext);
-
-	const [nextMonthExpenses, setNextMonthExpenses] = useState<
-		{ info: ItemRecurrenceInfo; monthAmount: PriceValueObject }[]
-	>([]);
-
-	useEffect(() => {
-		nextMonthExpensesUseCase.execute().then((recurrences) => {
-			setNextMonthExpenses(recurrences);
-		});
-	}, [scheduledItems]);
-
-	const scheduledReport = useMemo(() => {
-		const report = new ScheduledMonthlyReport(scheduledItems, accountsMap);
-		return report;
-	}, [scheduledItems, accountsMap]);
-
-	const monthlySummaryData = useMemo<MonthlySummaryData>(() => {
-		return {
-			savingsForNextMonth: {
-				total: nextMonthExpenses.reduce(
-					(acc, curr) => acc + curr.monthAmount.toNumber(),
-					0,
-				),
-				transactions:
-					scheduledItems.length > 0
-						? nextMonthExpenses.map((e) => {
-								const scheduledTransaction =
-									scheduledItems.find(
-										(t) =>
-											t.nanoid.value ===
-											e.info.scheduledTransactionId.value,
-									);
-								if (!scheduledTransaction) {
-									throw new Error(
-										`Scheduled transaction with ID ${e.info.scheduledTransactionId} not found`,
-									);
-								}
-								return scheduledTransaction;
-							})
-						: [],
-			},
-			totalIncomePerMonth: {
-				total: scheduledReport
-					.onlyIncomes()
-					.scheduledTransactionsWithAccounts.reduce(
-						(acc, { scheduledTransaction, account, toAccount }) =>
-							acc +
-							scheduledTransaction
-								.getPricePerMonthWithAccountTypes(
-									account.type.value,
-									toAccount?.type.value,
-								)
-								.toNumber(),
-						0,
-					),
-				transactions:
-					scheduledReport.onlyIncomes().scheduledTransactions,
-			},
-			totalExpensesPerMonth: {
-				total: scheduledReport
-					.onlyExpenses()
-					.scheduledTransactionsWithAccounts.reduce(
-						(acc, { scheduledTransaction, account, toAccount }) =>
-							acc +
-							scheduledTransaction
-								.getPricePerMonthWithAccountTypes(
-									account.type.value,
-									toAccount?.type.value,
-								)
-								.toNumber(),
-						0,
-					),
-				transactions:
-					scheduledReport.onlyExpenses().scheduledTransactions,
-			},
-			longTermExpensesPerMonth: {
-				total: scheduledReport
-					.onlyExpenses()
-					.onlyInfiniteRecurrent()
-					.scheduledTransactionsWithAccounts.reduce(
-						(acc, { scheduledTransaction, account, toAccount }) =>
-							acc +
-							scheduledTransaction
-								.getPricePerMonthWithAccountTypes(
-									account.type.value,
-									toAccount?.type.value,
-								)
-								.toNumber(),
-						0,
-					),
-				transactions: scheduledReport
-					.onlyExpenses()
-					.onlyInfiniteRecurrent().scheduledTransactions,
-			},
-			shortTermExpensesPerMonth: {
-				total: scheduledReport
-					.onlyExpenses()
-					.onlyFiniteRecurrent()
-					.scheduledTransactionsWithAccounts.reduce(
-						(acc, { scheduledTransaction, account, toAccount }) =>
-							acc +
-							scheduledTransaction
-								.getPricePerMonthWithAccountTypes(
-									account.type.value,
-									toAccount?.type.value,
-								)
-								.toNumber(),
-						0,
-					),
-				transactions: scheduledReport
-					.onlyExpenses()
-					.onlyFiniteRecurrent().scheduledTransactions,
-			},
-			totalPerMonth: {
-				total: scheduledReport.scheduledTransactionsWithAccounts.reduce(
-					(acc, { scheduledTransaction, account, toAccount }) =>
-						acc +
-						scheduledTransaction
-							.getPricePerMonthWithAccountTypes(
-								account.type.value,
-								toAccount?.type.value,
-							)
-							.toNumber(),
-					0,
-				),
-				transactions: scheduledReport.scheduledTransactions,
-			},
-		};
-	}, [scheduledReport, nextMonthExpenses]);
 
 	const { categoriesWithSubcategories } = useContext(CategoriesContext);
 	const [isRefreshing, setIsRefreshing] = useState(false);
@@ -414,6 +278,13 @@ export function ScheduledTransactionsList() {
 							<List size={18} />
 							<span>Scheduled List</span>
 						</button>
+						<button
+							onClick={() => setViewMode("summary")}
+							className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-all font-medium text-sm ${viewMode === "summary" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"}`}
+						>
+							<BarChart3 size={18} />
+							<span>Financial Summary</span>
+						</button>
 					</div>
 				</div>
 			</div>
@@ -427,6 +298,8 @@ export function ScheduledTransactionsList() {
 					categories={categoriesWithSubcategories}
 					onSaveAll={handleUpdateTransaction}
 				/>
+			) : viewMode === "summary" ? (
+				<ScheduledMonthlySummary />
 			) : (
 				<>
 					<main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -565,11 +438,6 @@ export function ScheduledTransactionsList() {
 							</div>
 						)}
 					</main>
-
-					{/* Monthly Summary - Only show in list view */}
-					{filteredAndSortedTransactions.length > 0 && (
-						<ScheduledMonthlySummary data={monthlySummaryData} />
-					)}
 				</>
 			)}
 			{/* Add Transaction Modal */}
