@@ -6,6 +6,7 @@ import { Transaction } from "contexts/Transactions/domain";
 import Dexie from "dexie";
 import { App } from "obsidian";
 import { ExchangeRate } from "../../../../Currencies/domain/exchange-rate.vo";
+import { PhysicalAsset } from "../../../../PhysicalAssets/domain/physical-asset.entity";
 import {
 	RecurrenceModification,
 	ScheduledTransaction,
@@ -247,7 +248,7 @@ export class LocalDB extends DB {
 	}
 
 	#initializeTables() {
-		this.db.version(6).stores({
+		this.db.version(8).stores({
 			[Config.accountsTableName]: Object.keys(
 				Account.emptyPrimitives(),
 			).join(", "),
@@ -271,6 +272,9 @@ export class LocalDB extends DB {
 			).join(", "),
 			[Config.exchangeRatesTableName]: Object.keys(
 				ExchangeRate.emptyPrimitives(),
+			).join(", "),
+			[Config.physicalAssetsTableName]: Object.keys(
+				PhysicalAsset.emptyPrimitives(),
 			).join(", "),
 		});
 	}

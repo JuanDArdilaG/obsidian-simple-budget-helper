@@ -1,4 +1,3 @@
-import { Config } from "contexts/Shared/infrastructure/config/config";
 import { App, normalizePath } from "obsidian";
 import { Logger } from "../../logger";
 
@@ -29,7 +28,7 @@ export class LocalFileManager {
 	private async ensureDataFolder(): Promise<void> {
 		try {
 			const folderExists = await this.app.vault.adapter.exists(
-				this.dataFolder
+				this.dataFolder,
 			);
 			if (!folderExists) {
 				await this.app.vault.adapter.mkdir(this.dataFolder);
@@ -55,7 +54,7 @@ export class LocalFileManager {
 	async loadData(): Promise<LocalData> {
 		try {
 			const fileContent = await this.app.vault.adapter.read(
-				this.dataFile
+				this.dataFile,
 			);
 			const data = JSON.parse(fileContent);
 
@@ -157,13 +156,10 @@ export class LocalFileManager {
 			return false;
 		}
 
-		// Check if all expected tables are present
-		const expectedTables = Object.values(Config);
-		for (const tableName of expectedTables) {
-			if (!(tableName in localData.data)) {
-				return false;
-			}
-			if (!Array.isArray(localData.data[tableName])) {
+		// Validate that all present tables contain arrays
+		// Not all Config tables need to be present (new tables may not exist yet)
+		for (const [, value] of Object.entries(localData.data)) {
+			if (!Array.isArray(value)) {
 				return false;
 			}
 		}

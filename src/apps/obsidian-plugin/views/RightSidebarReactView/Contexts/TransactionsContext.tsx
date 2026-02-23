@@ -10,6 +10,7 @@ import { RecordTransactionUseCase } from "contexts/Transactions/application/reco
 import { UpdateTransactionUseCase } from "contexts/Transactions/application/update-transaction.usecase";
 import { Transaction } from "contexts/Transactions/domain";
 import { createContext, useMemo } from "react";
+import { IPhysicalAssetService } from "../../../../../contexts/PhysicalAssets/domain/physical-asset-service.interface";
 import { GetTransactionsByAccountUseCase } from "../../../../../contexts/Transactions/application/get-transactions-by-account.usecase";
 import { GetTransactionsByCategoryUseCase } from "../../../../../contexts/Transactions/application/get-transactions-by-category.usecase";
 import { GetTransactionsBySubcategoryUseCase } from "../../../../../contexts/Transactions/application/get-transactions-by-subcategory.usecase";
@@ -34,6 +35,7 @@ export type TransactionsContextType = {
 	updateTransactions: () => void;
 	stores: StringValueObject[];
 	updateStores: () => void;
+	physicalAssetsService: IPhysicalAssetService;
 };
 
 export const TransactionsContext = createContext<TransactionsContextType>({
@@ -56,6 +58,7 @@ export const TransactionsContext = createContext<TransactionsContextType>({
 	isLoading: false,
 	stores: [],
 	updateStores: () => {},
+	physicalAssetsService: {} as IPhysicalAssetService,
 });
 
 export const getTransactionsContextValues = (
@@ -131,5 +134,8 @@ export const getTransactionsContextValues = (
 		updateTransactions,
 		stores,
 		updateStores,
+		physicalAssetsService: container.resolve<IPhysicalAssetService>(
+			"physicalAssetsService",
+		),
 	};
 };

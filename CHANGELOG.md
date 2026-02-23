@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Accounts dashboard shows the percentage change of assets, liabilities, and net worth compared to the previous month.
+- Now you can create physical assets to better reflect your net worth and have a more complete picture of your finances. It also allows you to track the value of your physical assets over time by calculating the depreciation of the asset based on its useful life and acquisition date.
 
 ### Changed
 

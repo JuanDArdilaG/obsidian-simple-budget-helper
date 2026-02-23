@@ -48,6 +48,8 @@ import { UpdateCategoryUseCase } from "../../../Categories/application/update-ca
 import { GetExchangeRateUseCase } from "../../../Currencies/application/get-exchange-rate.usecase";
 import { ErExchangeRateGetter } from "../../../Currencies/infrastructure/er-exchange-rate-getter";
 import { ExchangeRateLocalRepository } from "../../../Currencies/infrastructure/persistence/exchange-rate-local.repository";
+import { PhysicalAssetService } from "../../../PhysicalAssets/application/physical-asset.service";
+import { PhysicalAssetDexieRepository } from "../../../PhysicalAssets/infrastructure/physical-asset-dexie.repository";
 import { DeleteScheduledTransactionUseCase } from "../../../ScheduledTransactions/application/delete-scheduled-transaction.usecase";
 import { EditScheduledTransactionUseCase } from "../../../ScheduledTransactions/application/edit-scheduled-transaction-amount.usecase";
 import { EditScheduledTransactionRecurrencePatternUseCase } from "../../../ScheduledTransactions/application/edit-scheduled-transaction-frequency.usecase";
@@ -212,6 +214,15 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		adjustAccountUseCase: asClass(AdjustAccountUseCase).singleton(),
 	});
 	//#endregion TRANSACTIONS
+
+	//#region PHYSICAL ASSETS
+	container.register({
+		_physicalAssetsRepository: asClass(PhysicalAssetDexieRepository)
+			.singleton()
+			.inject(() => ({ _db: localDB })),
+		physicalAssetsService: asClass(PhysicalAssetService),
+	});
+	//#endregion PHYSICAL ASSETS
 
 	//#region CATEGORIES
 	container.register({

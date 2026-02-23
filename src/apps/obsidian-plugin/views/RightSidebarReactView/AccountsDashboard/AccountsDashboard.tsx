@@ -3,7 +3,7 @@ import {
 	StringValueObject,
 } from "@juandardilag/value-objects";
 import { AnimatePresence, motion } from "framer-motion";
-import { RefreshCw, X } from "lucide-react";
+import { Package, RefreshCw, X } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 import {
 	Account,
@@ -21,6 +21,7 @@ import {
 	TransactionsReport,
 } from "../../../../../contexts/Reports/domain";
 import { Nanoid } from "../../../../../contexts/Shared/domain";
+import { TransactionAmount } from "../../../../../contexts/Transactions/domain";
 import { ConfirmationModal } from "../../../components/ConfirmationModal";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
@@ -54,7 +55,21 @@ export function AccountsDashboard() {
 	const {
 		useCases: { getExchangeRate },
 	} = useContext(ExchangeRatesContext);
-	const { transactions } = useContext(TransactionsContext);
+	const { transactions, physicalAssetsService } =
+		useContext(TransactionsContext);
+
+	const [physicalAssetsValue, setPhysicalAssetsValue] = useState(0);
+	useEffect(() => {
+		const calculatePhysicalAssetsValue = async () => {
+			const physicalAssets = await physicalAssetsService.getAll();
+			const value = physicalAssets.reduce(
+				(acc, asset) => acc + asset.currentValue.value,
+				0,
+			);
+			setPhysicalAssetsValue(value);
+		};
+		calculatePhysicalAssetsValue();
+	}, [physicalAssetsService, transactions]);
 
 	const [isRefreshing, setIsRefreshing] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
@@ -108,9 +123,10 @@ export function AccountsDashboard() {
 	}, [transactions]);
 
 	const summary = useMemo(() => {
-		const totalAssets = accountsReport.getTotalForAssets();
+		const totalAssets =
+			accountsReport.getTotalForAssets() + physicalAssetsValue;
 		const totalLiabilities = accountsReport.getTotalForLiabilities();
-		const netWorth = accountsReport.getTotal();
+		const netWorth = totalAssets - totalLiabilities;
 
 		const now = new Date();
 		const thirtyDaysAgo = new Date();
@@ -140,16 +156,21 @@ export function AccountsDashboard() {
 			((netWorth - netWorthLastMonth) / netWorthLastMonth) * 100;
 
 		return {
-			assets: accountsReport.getTotalForAssets(),
+			assets: accountsReport.getTotalForAssets() + physicalAssetsValue,
 			liabilities: accountsReport.getTotalForLiabilities(),
-			netWorth: accountsReport.getTotal(),
+			netWorth: totalAssets - totalLiabilities,
 			assetsTrend: Number.isFinite(assetsTrend) ? assetsTrend : 0,
 			liabilitiesTrend: Number.isFinite(liabilitiesTrend)
 				? liabilitiesTrend
 				: 0,
 			netWorthTrend: Number.isFinite(netWorthTrend) ? netWorthTrend : 0,
 		};
-	}, [accountsWithExchangeRates]);
+	}, [
+		accountsWithExchangeRates,
+		physicalAssetsValue,
+		accountsReport,
+		transactionsReport,
+	]);
 
 	const handleUpdateAccount = async (
 		id: Nanoid,
@@ -242,9 +263,7 @@ export function AccountsDashboard() {
 		handleRefresh();
 	}, []);
 
-	if (isLoading) {
-		return <LoadingSpinner />;
-	}
+	if (isLoading) return <LoadingSpinner />;
 
 	return (
 		<div className="min-h-screen! bg-gray-50! text-gray-900! font-sans! pb-20! relative!">
@@ -337,6 +356,30 @@ export function AccountsDashboard() {
 							onDelete={handleDeleteAccount}
 							onAdd={handleAddAccountClick}
 						/>
+						{physicalAssetsValue > 0 && (
+							<div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+								<div className="flex items-center justify-between px-6 py-4">
+									<div className="flex items-center gap-3">
+										<div className="p-1.5 bg-indigo-50 rounded-lg text-indigo-600">
+											<Package size={16} />
+										</div>
+										<div>
+											<p className="text-sm font-semibold text-gray-900">
+												Physical Assets
+											</p>
+											<p className="text-xs text-gray-500">
+												Depreciated current value
+											</p>
+										</div>
+									</div>
+									<span className="text-lg font-bold text-gray-900">
+										{new TransactionAmount(
+											physicalAssetsValue,
+										).toString()}
+									</span>
+								</div>
+							</div>
+						)}
 					</motion.div>
 
 					<motion.div

@@ -5,6 +5,7 @@ import {
 	CalendarClock,
 	LayoutDashboard,
 	LayoutList,
+	Package,
 	Receipt,
 	Settings,
 } from "lucide-react";
@@ -12,6 +13,7 @@ import { useEffect, useState } from "react";
 import { LocalPersistenceSettings } from "../../components/LocalPersistenceSettings";
 import { AccountsDashboard } from "./AccountsDashboard/AccountsDashboard";
 import { CategoriesPage } from "./CategoriesPage/CategoriesPage";
+import { PhysicalAssetsPage } from "./PhysicalAssetsPage/PhysicalAssetsPage";
 import { ReportsPage } from "./Reports/ReportsPage";
 import { ScheduledTransactionsList } from "./ScheduledTransactions/AllList/ScheduledTransactionsList";
 import { TransactionsList } from "./TransactionsList/TransactionsList";
@@ -21,6 +23,7 @@ export type MainSections =
 	| "scheduled"
 	| "accounts"
 	| "categories"
+	| "assets"
 	| "reports"
 	| "settings";
 
@@ -46,6 +49,8 @@ export const AppView = ({ plugin }: { plugin: SimpleBudgetHelperPlugin }) => {
 				return <ScheduledTransactionsList />;
 			case "categories":
 				return <CategoriesPage />;
+			case "assets":
+				return <PhysicalAssetsPage />;
 			case "reports":
 				return <ReportsPage />;
 			case "settings":
@@ -156,6 +161,14 @@ function Navigation({
 							icon={LayoutList}
 						>
 							Categories
+						</NavButton>
+						<NavButton
+							page="assets"
+							currentPage={currentPage}
+							onClick={onPageChange}
+							icon={Package}
+						>
+							Assets
 						</NavButton>
 						<NavButton
 							page="reports"
