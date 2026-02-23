@@ -58,7 +58,7 @@ export function AddEditPhysicalAssetModal({
 		e.preventDefault();
 		if (!name || !category || !purchasePrice || !usefulLife) return;
 		const newAsset = new PhysicalAsset(
-			Nanoid.generate(),
+			editAsset ? editAsset.nanoid : Nanoid.generate(),
 			new StringValueObject(name),
 			new Nanoid(category),
 			new Nanoid(subcategory),

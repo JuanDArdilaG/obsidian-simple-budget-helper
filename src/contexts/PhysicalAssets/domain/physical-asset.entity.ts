@@ -15,6 +15,10 @@ export class PhysicalAsset extends Entity<string, PhysicalAssetPrimitives> {
 		super(id.value, new Date());
 	}
 
+	get nanoid(): Nanoid {
+		return new Nanoid(this._id);
+	}
+
 	get name(): StringValueObject {
 		return this._name;
 	}
