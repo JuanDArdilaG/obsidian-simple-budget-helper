@@ -1,6 +1,5 @@
 import {
 	Category,
-	CategoryID,
 	CategoryName,
 	CategoryPrimitives,
 	ICategoriesRepository,
@@ -10,7 +9,7 @@ import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.
 import { LocalRepository } from "contexts/Shared/infrastructure/persistence/local/local.repository";
 
 export class CategoriesLocalRepository
-	extends LocalRepository<CategoryID, Category, CategoryPrimitives>
+	extends LocalRepository<string, Category, CategoryPrimitives>
 	implements ICategoriesRepository
 {
 	constructor(protected readonly _db: LocalDB) {

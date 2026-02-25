@@ -1,12 +1,10 @@
 import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
-import {
-	Category,
-	CategoryID,
-	CategoryName,
-	CategoryPrimitives,
-} from "../domain";
+import { Category, CategoryName, CategoryPrimitives } from "../domain";
 
-export interface ICategoriesRepository
-	extends IRepository<CategoryID, Category, CategoryPrimitives> {
+export interface ICategoriesRepository extends IRepository<
+	string,
+	Category,
+	CategoryPrimitives
+> {
 	findByName(name: CategoryName): Promise<Category | null>;
 }

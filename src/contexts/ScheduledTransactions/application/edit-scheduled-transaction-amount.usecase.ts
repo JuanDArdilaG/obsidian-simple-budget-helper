@@ -1,41 +1,26 @@
-import { PriceValueObject } from "@juandardilag/value-objects";
+import { CommandUseCase } from "../../Shared/domain";
 import {
-	CommandUseCase,
-	EntityNotFoundError,
-	Nanoid,
-} from "../../Shared/domain";
-import { PaymentSplit } from "../../Transactions/domain";
-import { IScheduledTransactionsRepository } from "../domain";
+	IRecurrenceModificationsService,
+	IScheduledTransactionsService,
+	ScheduledTransaction,
+} from "../domain";
 
-export class EditScheduledTransactionAmountUseCase
-	implements CommandUseCase<{ id: Nanoid; amount: PriceValueObject }>
-{
+export class EditScheduledTransactionUseCase implements CommandUseCase<{
+	scheduledTransaction: ScheduledTransaction;
+}> {
 	constructor(
-		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository
+		private readonly _scheduledTransactionsService: IScheduledTransactionsService,
+		private readonly _recurrenceModificationsService: IRecurrenceModificationsService,
 	) {}
 
 	async execute({
-		id,
-		amount,
+		scheduledTransaction,
 	}: {
-		id: Nanoid;
-		amount: PriceValueObject;
+		scheduledTransaction: ScheduledTransaction;
 	}): Promise<void> {
-		const scheduledTransaction =
-			await this._scheduledTransactionsRepository.findById(id);
-		if (!scheduledTransaction) {
-			throw new EntityNotFoundError("Scheduled transaction", id);
-		}
-
-		scheduledTransaction.updateOriginAccounts([
-			new PaymentSplit(
-				scheduledTransaction.originAccounts[0].accountId,
-				amount
-			),
-		]);
-
-		await this._scheduledTransactionsRepository.persist(
-			scheduledTransaction
+		await this._recurrenceModificationsService.clearAllModifications(
+			scheduledTransaction.nanoid,
 		);
+		await this._scheduledTransactionsService.update(scheduledTransaction);
 	}
 }

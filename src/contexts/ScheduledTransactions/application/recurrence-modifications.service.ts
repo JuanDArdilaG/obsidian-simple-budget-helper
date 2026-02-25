@@ -1,6 +1,5 @@
-import { NumberValueObject } from "@juandardilag/value-objects";
 import { Service } from "contexts/Shared/application/service.abstract";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { Nanoid } from "../../Shared/domain";
 import { Logger } from "../../Shared/infrastructure/logger";
 import {
@@ -9,13 +8,13 @@ import {
 	IScheduledTransactionsRepository,
 	RecurrenceModification,
 	RecurrenceModificationPrimitives,
-	RecurrenceModificationState,
+	RecurrenceState,
 	ScheduledTransactionDate,
 } from "../domain";
 
 export class RecurrenceModificationsService
 	extends Service<
-		Nanoid,
+		string,
 		RecurrenceModification,
 		RecurrenceModificationPrimitives
 	>
@@ -24,48 +23,48 @@ export class RecurrenceModificationsService
 	readonly #logger = new Logger("RecurrenceModificationsService");
 	constructor(
 		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository,
-		private readonly _recurrenceModificationsRepository: IRecurrenceModificationsRepository
+		private readonly _recurrenceModificationsRepository: IRecurrenceModificationsRepository,
 	) {
 		super("RecurrenceModification", _recurrenceModificationsRepository);
 	}
 
 	async getByScheduledItemId(
-		scheduledItemId: Nanoid
+		scheduledItemId: Nanoid,
 	): Promise<RecurrenceModification[]> {
 		return await this._recurrenceModificationsRepository.findByScheduledItemId(
-			scheduledItemId
+			scheduledItemId,
 		);
 	}
 
 	async getByScheduledItemIdAndOccurrenceIndex(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: number
+		occurrenceIndex: number,
 	): Promise<RecurrenceModification | null> {
 		return await this._recurrenceModificationsRepository.findByScheduledItemIdAndOccurrenceIndex(
 			scheduledItemId,
-			occurrenceIndex
+			occurrenceIndex,
 		);
 	}
 
 	async modifyOccurrence(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: NumberValueObject,
+		occurrenceIndex: number,
 		modifications: {
 			date?: ScheduledTransactionDate;
-			fromSplits?: PaymentSplit[];
-			toSplits?: PaymentSplit[];
-		}
+			fromSplits?: AccountSplit[];
+			toSplits?: AccountSplit[];
+		},
 	): Promise<RecurrenceModification> {
 		// Check if modification already exists
 		const existingModification =
 			await this.getByScheduledItemIdAndOccurrenceIndex(
 				scheduledItemId,
-				occurrenceIndex.value
+				occurrenceIndex,
 			);
 
 		this.#logger.debug("modifyOccurrence", {
 			scheduledItemId,
-			occurrenceIndex: occurrenceIndex.value,
+			occurrenceIndex: occurrenceIndex,
 			modifications,
 			existingModification,
 		});
@@ -83,34 +82,34 @@ export class RecurrenceModificationsService
 			}
 
 			await this._recurrenceModificationsRepository.persist(
-				existingModification
+				existingModification,
 			);
 			return existingModification;
 		} else {
 			// Create new modification
 			const scheduledTransaction =
 				await this._scheduledTransactionsRepository.findById(
-					scheduledItemId
+					scheduledItemId.value,
 				);
 			const modificationDate =
 				scheduledTransaction?.getOccurrenceDate(occurrenceIndex);
 			if (!modificationDate) {
 				throw new Error(
-					`Cannot modify occurrence at index ${occurrenceIndex} - error getting original date`
+					`Cannot modify occurrence at index ${occurrenceIndex} - error getting original date`,
 				);
 			}
 			const newModification = RecurrenceModification.create(
 				scheduledItemId,
 				occurrenceIndex,
 				modificationDate,
-				RecurrenceModificationState.PENDING,
+				RecurrenceState.PENDING,
 				modifications.date,
 				modifications.fromSplits,
-				modifications.toSplits
+				modifications.toSplits,
 			);
 
 			await this._recurrenceModificationsRepository.persist(
-				newModification
+				newModification,
 			);
 			return newModification;
 		}
@@ -118,23 +117,23 @@ export class RecurrenceModificationsService
 
 	async markOccurrenceAsCompleted(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: NumberValueObject
+		occurrenceIndex: number,
 	): Promise<RecurrenceModification> {
 		let modification = await this.getByScheduledItemIdAndOccurrenceIndex(
 			scheduledItemId,
-			occurrenceIndex.value
+			occurrenceIndex,
 		);
 
 		if (!modification) {
 			const scheduledTransaction =
 				await this._scheduledTransactionsRepository.findById(
-					scheduledItemId
+					scheduledItemId.value,
 				);
 			const modificationDate =
 				scheduledTransaction?.getOccurrenceDate(occurrenceIndex);
 			if (!modificationDate) {
 				throw new Error(
-					`Cannot mark occurrence at index ${occurrenceIndex} as completed - error getting original date`
+					`Cannot mark occurrence at index ${occurrenceIndex} as completed - error getting original date`,
 				);
 			}
 			// Create new modification with completed state
@@ -142,7 +141,7 @@ export class RecurrenceModificationsService
 				scheduledItemId,
 				occurrenceIndex,
 				modificationDate,
-				RecurrenceModificationState.COMPLETED
+				RecurrenceState.COMPLETED,
 			);
 		} else {
 			modification.markAsCompleted();
@@ -154,31 +153,31 @@ export class RecurrenceModificationsService
 
 	async markOccurrenceAsDeleted(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: NumberValueObject
+		occurrenceIndex: number,
 	): Promise<RecurrenceModification> {
 		let modification = await this.getByScheduledItemIdAndOccurrenceIndex(
 			scheduledItemId,
-			occurrenceIndex.value
+			occurrenceIndex,
 		);
 
 		if (!modification) {
 			// Create new modification with deleted state
 			const scheduledTransaction =
 				await this._scheduledTransactionsRepository.findById(
-					scheduledItemId
+					scheduledItemId.value,
 				);
 			const modificationDate =
 				scheduledTransaction?.getOccurrenceDate(occurrenceIndex);
 			if (!modificationDate) {
 				throw new Error(
-					`Cannot mark occurrence at index ${occurrenceIndex} as deleted - error getting original date`
+					`Cannot mark occurrence at index ${occurrenceIndex} as deleted - error getting original date`,
 				);
 			}
 			modification = RecurrenceModification.create(
 				scheduledItemId,
 				occurrenceIndex,
 				modificationDate,
-				RecurrenceModificationState.DELETED
+				RecurrenceState.DELETED,
 			);
 		} else {
 			modification.markAsDeleted();
@@ -190,11 +189,11 @@ export class RecurrenceModificationsService
 
 	async resetOccurrenceToPending(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: number
+		occurrenceIndex: number,
 	): Promise<void> {
 		const modification = await this.getByScheduledItemIdAndOccurrenceIndex(
 			scheduledItemId,
-			occurrenceIndex
+			occurrenceIndex,
 		);
 
 		if (modification) {
@@ -202,18 +201,18 @@ export class RecurrenceModificationsService
 			// we can delete it entirely (since pending is the default)
 			if (
 				!modification.hasModifications() ||
-				(modification.state !== RecurrenceModificationState.PENDING &&
+				(modification.state !== RecurrenceState.PENDING &&
 					!modification.date &&
 					!modification.fromSplits &&
 					!modification.toSplits)
 			) {
 				await this._recurrenceModificationsRepository.deleteById(
-					modification.id
+					modification.id,
 				);
 			} else {
 				modification.markAsPending();
 				await this._recurrenceModificationsRepository.persist(
-					modification
+					modification,
 				);
 			}
 		}
@@ -227,29 +226,29 @@ export class RecurrenceModificationsService
 			modification.clearModifications();
 			if (modification.hasModifications()) {
 				await this._recurrenceModificationsRepository.persist(
-					modification
+					modification,
 				);
 			} else {
 				await this._recurrenceModificationsRepository.deleteById(
-					modification.id
+					modification.id,
 				);
 			}
 		}
 	}
 
 	async deleteModificationsByScheduledItem(
-		scheduledItemId: Nanoid
+		scheduledItemId: Nanoid,
 	): Promise<void> {
 		await this._recurrenceModificationsRepository.deleteByScheduledItemId(
-			scheduledItemId
+			scheduledItemId,
 		);
 	}
 
 	async countModificationsByScheduledItem(
-		scheduledItemId: Nanoid
+		scheduledItemId: Nanoid,
 	): Promise<number> {
 		return await this._recurrenceModificationsRepository.countByScheduledItemId(
-			scheduledItemId
+			scheduledItemId,
 		);
 	}
 
@@ -272,16 +271,16 @@ export class RecurrenceModificationsService
 
 		for (const modification of modifications) {
 			switch (modification.state) {
-				case RecurrenceModificationState.PENDING:
+				case RecurrenceState.PENDING:
 					stats.pending++;
 					break;
-				case RecurrenceModificationState.COMPLETED:
+				case RecurrenceState.COMPLETED:
 					stats.completed++;
 					break;
-				case RecurrenceModificationState.SKIPPED:
+				case RecurrenceState.SKIPPED:
 					stats.skipped++;
 					break;
-				case RecurrenceModificationState.DELETED:
+				case RecurrenceState.DELETED:
 					stats.deleted++;
 					break;
 			}

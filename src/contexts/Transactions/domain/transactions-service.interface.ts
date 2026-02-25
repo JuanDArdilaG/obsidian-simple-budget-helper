@@ -1,8 +1,6 @@
 import { AccountBalance } from "contexts/Accounts/domain";
-import { CategoryID } from "contexts/Categories/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
+import { Category } from "contexts/Categories/domain";
 import { Nanoid } from "../../Shared/domain";
-import { TransactionID } from "./transaction-id.valueobject";
 import { Transaction } from "./transaction.entity";
 
 export interface ITransactionsService {
@@ -13,30 +11,29 @@ export interface ITransactionsService {
 	): Promise<void>;
 
 	getAll(): Promise<Transaction[]>;
-	getByID(id: TransactionID): Promise<Transaction>;
-	getByCategory(category: CategoryID): Promise<Transaction[]>;
-	getBySubCategory(subCategory: SubCategoryID): Promise<Transaction[]>;
-	hasTransactionsByCategory(category: CategoryID): Promise<boolean>;
-	hasTransactionsBySubCategory(subCategory: SubCategoryID): Promise<boolean>;
+	getByID(id: Nanoid): Promise<Transaction>;
+	getByCategory(category: Nanoid): Promise<Transaction[]>;
+	getBySubCategory(subCategory: Nanoid): Promise<Transaction[]>;
+	getByAccount(accountId: Nanoid): Promise<Transaction[]>;
+	hasTransactionsByCategory(category: Nanoid): Promise<boolean>;
+	hasTransactionsBySubCategory(subCategory: Nanoid): Promise<boolean>;
 	reassignTransactionsCategory(
-		oldCategory: CategoryID,
-		newCategory: CategoryID,
+		oldCategory: Category,
+		newCategory: Category,
 	): Promise<void>;
 	reassignTransactionsSubCategory(
-		oldSubCategory: SubCategoryID,
-		newSubCategory: SubCategoryID,
+		oldSubCategory: Nanoid,
+		newSubCategory: Nanoid,
 	): Promise<void>;
 	reassignTransactionsCategoryAndSubcategory(
-		oldCategory: CategoryID,
-		newCategory: CategoryID,
-		newSubCategory: SubCategoryID,
+		oldCategory: Nanoid,
+		newCategory: Nanoid,
+		newSubCategory: Nanoid,
 	): Promise<void>;
 	update(transaction: Transaction): Promise<void>;
-	delete(id: TransactionID): Promise<void>;
-	getTransactionsByCategory(
-		category: CategoryID,
-	): Promise<Array<Transaction>>;
+	delete(id: Nanoid): Promise<void>;
+	getTransactionsByCategory(category: Nanoid): Promise<Array<Transaction>>;
 	getTransactionsBySubCategory(
-		subCategory: SubCategoryID,
+		subCategory: Nanoid,
 	): Promise<Array<Transaction>>;
 }

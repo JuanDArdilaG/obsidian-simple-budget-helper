@@ -1,6 +1,7 @@
 import { Config } from "contexts/Shared/infrastructure/config/config";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
 import { LocalRepository } from "contexts/Shared/infrastructure/persistence/local/local.repository";
+import { IAccountsRepository } from "../../../Accounts/domain";
 import { Nanoid } from "../../../Shared/domain";
 import { Logger } from "../../../Shared/infrastructure/logger";
 import {
@@ -11,38 +12,43 @@ import {
 
 export class RecurrenceModificationsLocalRepository
 	extends LocalRepository<
-		Nanoid,
+		string,
 		RecurrenceModification,
 		RecurrenceModificationPrimitives
 	>
 	implements IRecurrenceModificationsRepository
 {
-	#logger = new Logger("RecurrenceModificationsLocalRepository");
-	constructor(protected readonly _db: LocalDB) {
+	static readonly #logger = new Logger(
+		"RecurrenceModificationsLocalRepository",
+	);
+	constructor(
+		protected readonly _db: LocalDB,
+		private readonly _accountsRepository: IAccountsRepository,
+	) {
 		super(_db, Config.scheduledTransactionsModificationsTableName);
 	}
 
 	protected mapToDomain(
-		record: RecurrenceModificationPrimitives
+		record: RecurrenceModificationPrimitives,
 	): RecurrenceModification {
 		return RecurrenceModification.fromPrimitives(record);
 	}
 
 	protected mapToPrimitives(
-		entity: RecurrenceModification
+		entity: RecurrenceModification,
 	): RecurrenceModificationPrimitives {
 		return entity.toPrimitives();
 	}
 
 	async findByScheduledItemId(
-		scheduledItemId: Nanoid
+		scheduledItemId: Nanoid,
 	): Promise<RecurrenceModification[]> {
 		return this.where("scheduledItemId", scheduledItemId.value);
 	}
 
 	async findByScheduledItemIdAndOccurrenceIndex(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: number
+		occurrenceIndex: number,
 	): Promise<RecurrenceModification | null> {
 		const modification = await this._db.db
 			.table(this.tableName)
@@ -50,12 +56,15 @@ export class RecurrenceModificationsLocalRepository
 			.equals(scheduledItemId.value)
 			.and(
 				(modification: RecurrenceModificationPrimitives) =>
-					modification.index === occurrenceIndex
+					modification.index === occurrenceIndex,
 			)
 			.first();
-		this.#logger.debug("findByScheduledItemIdAndOccurrenceIndex result", {
-			modification,
-		});
+		RecurrenceModificationsLocalRepository.#logger.debug(
+			"findByScheduledItemIdAndOccurrenceIndex result",
+			{
+				modification,
+			},
+		);
 
 		if (!modification) {
 			return null;

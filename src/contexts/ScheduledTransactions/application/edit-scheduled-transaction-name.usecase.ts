@@ -6,11 +6,12 @@ import {
 } from "../../Shared/domain";
 import { IScheduledTransactionsRepository } from "../domain";
 
-export class EditScheduledTransactionNameUseCase
-	implements CommandUseCase<{ id: Nanoid; name: StringValueObject }>
-{
+export class EditScheduledTransactionNameUseCase implements CommandUseCase<{
+	id: Nanoid;
+	name: StringValueObject;
+}> {
 	constructor(
-		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository
+		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository,
 	) {}
 
 	async execute({
@@ -21,7 +22,7 @@ export class EditScheduledTransactionNameUseCase
 		name: StringValueObject;
 	}): Promise<void> {
 		const scheduledTransaction =
-			await this._scheduledTransactionsRepository.findById(id);
+			await this._scheduledTransactionsRepository.findById(id.value);
 		if (!scheduledTransaction) {
 			throw new EntityNotFoundError("Scheduled transaction", id);
 		}
@@ -29,7 +30,7 @@ export class EditScheduledTransactionNameUseCase
 		scheduledTransaction.updateName(name);
 
 		await this._scheduledTransactionsRepository.persist(
-			scheduledTransaction
+			scheduledTransaction,
 		);
 	}
 }

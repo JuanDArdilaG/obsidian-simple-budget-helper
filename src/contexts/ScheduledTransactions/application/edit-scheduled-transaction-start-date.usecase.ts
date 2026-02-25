@@ -10,12 +10,13 @@ import {
 	ScheduledTransactionDate,
 } from "../domain";
 
-export class EditScheduledTransactionStartDateUseCase
-	implements CommandUseCase<{ id: Nanoid; startDate: DateValueObject }>
-{
+export class EditScheduledTransactionStartDateUseCase implements CommandUseCase<{
+	id: Nanoid;
+	startDate: DateValueObject;
+}> {
 	constructor(
 		private readonly _scheduledTransactionsRepository: IScheduledTransactionsRepository,
-		private readonly _recurrenceModificationsService: IRecurrenceModificationsService
+		private readonly _recurrenceModificationsService: IRecurrenceModificationsService,
 	) {}
 
 	async execute({
@@ -26,7 +27,7 @@ export class EditScheduledTransactionStartDateUseCase
 		startDate: DateValueObject;
 	}): Promise<void> {
 		const scheduledTransaction =
-			await this._scheduledTransactionsRepository.findById(id);
+			await this._scheduledTransactionsRepository.findById(id.value);
 		if (!scheduledTransaction) {
 			throw new EntityNotFoundError("Scheduled transaction", id);
 		}
@@ -35,11 +36,11 @@ export class EditScheduledTransactionStartDateUseCase
 		await this._recurrenceModificationsService.clearAllModifications(id);
 
 		scheduledTransaction.recurrencePattern.updateStartDate(
-			new ScheduledTransactionDate(startDate)
+			new ScheduledTransactionDate(startDate),
 		);
 
 		await this._scheduledTransactionsRepository.persist(
-			scheduledTransaction
+			scheduledTransaction,
 		);
 	}
 }

@@ -28,18 +28,18 @@ export class RecurrencePatternValidator {
 			throw new InvalidArgumentError(
 				"RecurrencePattern",
 				"endDate",
-				"End date must be after start date"
+				"End date must be after start date",
 			);
 		}
 
 		if (
 			this._recurrencePattern.maxOccurrences &&
-			this._recurrencePattern.maxOccurrences.value <= 0
+			this._recurrencePattern.maxOccurrences <= 0
 		) {
 			throw new InvalidArgumentError(
 				"RecurrencePattern",
 				"maxOccurrences",
-				"Max occurrences must be greater than 0"
+				"Max occurrences must be greater than 0",
 			);
 		}
 	}
@@ -53,7 +53,7 @@ export class RecurrencePatternValidator {
 			throw new InvalidArgumentError(
 				"RecurrencePattern",
 				"type",
-				"One-time recurrence cannot have frequency, end date, or max occurrences"
+				"One-time recurrence cannot have frequency, end date, or max occurrences",
 			);
 		}
 	}
@@ -63,7 +63,7 @@ export class RecurrencePatternValidator {
 			throw new InvalidArgumentError(
 				"RecurrencePattern",
 				"frequency",
-				"Infinite recurrence requires frequency"
+				"Infinite recurrence requires frequency",
 			);
 		}
 		if (
@@ -73,7 +73,7 @@ export class RecurrencePatternValidator {
 			throw new InvalidArgumentError(
 				"RecurrencePattern",
 				"type",
-				"Infinite recurrence cannot have end date or max occurrences"
+				"Infinite recurrence cannot have end date or max occurrences",
 			);
 		}
 	}
@@ -86,14 +86,14 @@ export class RecurrencePatternValidator {
 			throw new InvalidArgumentError(
 				"RecurrencePattern",
 				"frequency/endDate",
-				"Until date recurrence requires both frequency and end date"
+				"Until date recurrence requires both frequency and end date",
 			);
 		}
 		if (this._recurrencePattern.maxOccurrences) {
 			throw new InvalidArgumentError(
 				"RecurrencePattern",
 				"type",
-				"Until date recurrence cannot have max occurrences"
+				"Until date recurrence cannot have max occurrences",
 			);
 		}
 	}
@@ -106,14 +106,14 @@ export class RecurrencePatternValidator {
 			throw new InvalidArgumentError(
 				"RecurrencePattern",
 				"frequency/maxOccurrences",
-				"N occurrences recurrence requires both frequency and max occurrences"
+				"N occurrences recurrence requires both frequency and max occurrences",
 			);
 		}
 		if (this._recurrencePattern.endDate) {
 			throw new InvalidArgumentError(
 				"RecurrencePattern",
 				"type",
-				"N occurrences recurrence cannot have end date"
+				"N occurrences recurrence cannot have end date",
 			);
 		}
 	}

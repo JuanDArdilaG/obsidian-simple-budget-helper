@@ -26,7 +26,7 @@ export class EditScheduledTransactionRecurrencePatternUseCase implements Command
 		recurrencePattern: RecurrencePattern;
 	}): Promise<void> {
 		const scheduledTransaction =
-			await this._scheduledTransactionsRepository.findById(id);
+			await this._scheduledTransactionsRepository.findById(id.value);
 		if (!scheduledTransaction) {
 			throw new EntityNotFoundError("Scheduled transaction", id);
 		}

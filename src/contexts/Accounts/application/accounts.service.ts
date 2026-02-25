@@ -13,7 +13,7 @@ import { ITransactionsRepository } from "contexts/Transactions/domain/transactio
 import { Nanoid } from "../../Shared/domain";
 
 export class AccountsService
-	extends Service<Nanoid, Account, AccountPrimitives>
+	extends Service<string, Account, AccountPrimitives>
 	implements IAccountsService
 {
 	private readonly _logger = new Logger("AccountsService");
@@ -37,13 +37,15 @@ export class AccountsService
 		await this._accountsRepository.persist(account);
 	}
 
-	async delete(id: Nanoid): Promise<void> {
+	async delete(id: string): Promise<void> {
 		// Check if the account has any transactions
 		const hasTransactions =
-			await this._transactionsRepository.hasTransactionsForAccount(id);
+			await this._transactionsRepository.hasTransactionsForAccount(
+				new Nanoid(id),
+			);
 		if (hasTransactions) {
 			throw new Error(
-				`Cannot delete account with ID ${id.value} because it has associated transactions. Please delete or update the accounts in all transactions first.`,
+				`Cannot delete account with ID ${id} because it has associated transactions. Please delete or update the accounts in all transactions first.`,
 			);
 		}
 
@@ -57,21 +59,38 @@ export class AccountsService
 	}
 
 	async adjustOnTransaction(transaction: Transaction): Promise<void> {
-		for (const account of transaction.originAccounts) {
-			const originAccount = await this.getByID(account.accountId);
+		for (const split of transaction.originAccounts) {
+			const originAccount = await this._accountsRepository.findById(
+				split.accountId.value,
+			);
+			if (!originAccount) {
+				this._logger.debug(
+					"adjustOnTransaction: Origin account not found",
+				);
+				continue; // Or throw an error if preferred
+			}
 			this._logger.debug("adjusting account (fromSplit)", {
-				account: originAccount.toPrimitives(),
+				account: originAccount,
 				transaction: transaction.toPrimitives(),
 			});
 			originAccount.adjustFromTransaction(transaction);
 			this._logger.debug("adjusting account adjusted (fromSplit)", {
-				...originAccount.toPrimitives(),
+				...originAccount,
 			});
 			await this.update(originAccount);
 		}
+
 		// Adjust all toSplits
-		for (const account of transaction.destinationAccounts) {
-			const destinationAccount = await this.getByID(account.accountId);
+		for (const split of transaction.destinationAccounts) {
+			const destinationAccount = await this._accountsRepository.findById(
+				split.accountId.value,
+			);
+			if (!destinationAccount) {
+				this._logger.debug(
+					"adjustOnTransaction: Destination account not found",
+				);
+				continue; // Or throw an error if preferred
+			}
 			this._logger.debug("adjusting account (toSplit)", {
 				account: destinationAccount.toPrimitives(),
 				transaction: transaction.toPrimitives(),

@@ -1,8 +1,11 @@
 import { CalculateAllAccountsIntegrityUseCase } from "contexts/Accounts/application/calculate-all-accounts-integrity.usecase";
 import { ResolveAccountDiscrepancyUseCase } from "contexts/Accounts/application/resolve-account-discrepancy.usecase";
 import { App, Modal, Notice, PluginSettingTab, Setting } from "obsidian";
-import { GetAllAccountsUseCase } from "../../contexts/Accounts/application/get-all-accounts.usecase";
-import { Account, IntegrityCheckReport } from "../../contexts/Accounts/domain";
+import {
+	AccountsMap,
+	GetAllAccountsUseCase,
+} from "../../contexts/Accounts/application/get-all-accounts.usecase";
+import { IntegrityCheckReport } from "../../contexts/Accounts/domain";
 import { currencies } from "../../contexts/Currencies/domain/currency.vo";
 import { TransactionAmount } from "../../contexts/Transactions/domain";
 import SimpleBudgetHelperPlugin from "./main";
@@ -10,13 +13,13 @@ import SimpleBudgetHelperPlugin from "./main";
 class IntegrityReportModal extends Modal {
 	report: IntegrityCheckReport;
 	plugin: SimpleBudgetHelperPlugin;
-	allAccounts: Account[];
+	allAccounts: AccountsMap;
 
 	constructor(
 		app: App,
 		plugin: SimpleBudgetHelperPlugin,
 		report: IntegrityCheckReport,
-		allAccounts: Account[],
+		allAccounts: AccountsMap,
 	) {
 		super(app);
 		this.report = report;
@@ -63,10 +66,8 @@ class IntegrityReportModal extends Modal {
 					});
 					accountEl.createEl("p", {
 						text: `Account: ${
-							this.allAccounts.find(
-								(account) =>
-									account.id.value === result.accountId,
-							)?.name || result.accountId
+							this.allAccounts.get(result.accountId)?.name ||
+							result.accountId
 						}`,
 					});
 					accountEl.createEl("p", {

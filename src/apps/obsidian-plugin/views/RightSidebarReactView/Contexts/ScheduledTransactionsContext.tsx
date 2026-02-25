@@ -6,7 +6,7 @@ import { ModifyNItemRecurrenceUseCase } from "contexts/ScheduledTransactions/app
 import { RecordItemUseCase } from "contexts/Transactions/application/record-item.usecase";
 import { createContext } from "react";
 import { DeleteScheduledTransactionUseCase } from "../../../../../contexts/ScheduledTransactions/application/delete-scheduled-transaction.usecase";
-import { EditScheduledTransactionAmountUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-amount.usecase";
+import { EditScheduledTransactionUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-amount.usecase";
 import { EditScheduledTransactionRecurrencePatternUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-frequency.usecase";
 import { EditScheduledTransactionNameUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-name.usecase";
 import { EditScheduledTransactionStartDateUseCase } from "../../../../../contexts/ScheduledTransactions/application/edit-scheduled-transaction-start-date.usecase";
@@ -26,7 +26,7 @@ export type ScheduledTransactionsContextType = {
 		deleteScheduledTransaction: DeleteScheduledTransactionUseCase;
 		deleteItemRecurrence: DeleteItemRecurrenceUseCase;
 		editScheduledTransactionName: EditScheduledTransactionNameUseCase;
-		editScheduledTransactionAmount: EditScheduledTransactionAmountUseCase;
+		editScheduledTransaction: EditScheduledTransactionUseCase;
 		editScheduledTransactionRecurrencePattern: EditScheduledTransactionRecurrencePatternUseCase;
 		editScheduledTransactionStartDate: EditScheduledTransactionStartDateUseCase;
 		recordItem: RecordItemUseCase;
@@ -56,8 +56,7 @@ export const ScheduledTransactionsContext =
 			deleteItemRecurrence: {} as DeleteItemRecurrenceUseCase,
 			editScheduledTransactionName:
 				{} as EditScheduledTransactionNameUseCase,
-			editScheduledTransactionAmount:
-				{} as EditScheduledTransactionAmountUseCase,
+			editScheduledTransaction: {} as EditScheduledTransactionUseCase,
 			editScheduledTransactionRecurrencePattern:
 				{} as EditScheduledTransactionRecurrencePatternUseCase,
 			editScheduledTransactionStartDate:
@@ -111,8 +110,8 @@ export const useItemsContextDefault = (
 			editScheduledTransactionName: container.resolve(
 				"editScheduledTransactionNameUseCase",
 			),
-			editScheduledTransactionAmount: container.resolve(
-				"editScheduledTransactionAmountUseCase",
+			editScheduledTransaction: container.resolve(
+				"editScheduledTransactionUseCase",
 			),
 			editScheduledTransactionRecurrencePattern: container.resolve(
 				"editScheduledTransactionRecurrencePatternUseCase",

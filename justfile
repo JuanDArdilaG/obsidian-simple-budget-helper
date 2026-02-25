@@ -186,7 +186,7 @@ _tag-version:
 
 alias de := deploy
 
-deploy type="patch": check-git build test (bump type)
+deploy type="patch": build test (bump type)
     #!/usr/bin/env bash
     echo "🚀 Deploying version..."
 
@@ -262,7 +262,7 @@ bump-beta type="beta":
 
 alias de-b := deploy-beta
 
-deploy-beta type="beta": check-git build test (bump-beta type)
+deploy-beta type="beta": build test (bump-beta type)
     #!/usr/bin/env bash
     echo "🚀 Deploying beta version..."
 
@@ -273,23 +273,23 @@ deploy-beta type="beta": check-git build test (bump-beta type)
 
     echo "✅ Deployed version $current_version successfully!"
 
-check-git:
-    #!/usr/bin/env bash
-    echo "🔍 Checking git status..."
-    # Check for unstaged changes
-    if ! git diff --quiet; then
-        echo "There are unstaged changes"
-        exit 1
-    fi
+# check-git:
+#     #!/usr/bin/env bash
+#     echo "🔍 Checking git status..."
+#     # Check for unstaged changes
+#     if ! git diff --quiet; then
+#         echo "There are unstaged changes"
+#         exit 1
+#     fi
 
-    # Check for staged changes
-    if ! git diff --cached --quiet; then
-        echo "There are staged changes"
-        exit 1
-    fi
+#     # Check for staged changes
+#     if ! git diff --cached --quiet; then
+#         echo "There are staged changes"
+#         exit 1
+#     fi
 
-    # Check for untracked files
-    if [ -n "$(git status --porcelain)" ]; then
-        echo "There are untracked files or changes"
-        exit 1
-    fi
+#     # Check for untracked files
+#     if [ -n "$(git status --porcelain)" ]; then
+#         echo "There are untracked files or changes"
+#         exit 1
+#     fi

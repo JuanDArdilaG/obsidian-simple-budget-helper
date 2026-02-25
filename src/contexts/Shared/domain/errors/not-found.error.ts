@@ -2,7 +2,7 @@ import { StringValueObject } from "@juandardilag/value-objects";
 import { DomainError } from "../errors";
 
 export class EntityNotFoundError extends DomainError {
-	constructor(entityName: string, id: StringValueObject) {
+	constructor(entityName: string, id: string | number | StringValueObject) {
 		super(`${entityName} with id ${id} not found`);
 	}
 

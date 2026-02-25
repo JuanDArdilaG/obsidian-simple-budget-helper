@@ -1,14 +1,16 @@
-import { CategoryID } from "contexts/Categories/domain";
 import { IRepository } from "contexts/Shared/domain/persistence/repository.interface";
 import {
-	SubCategory,
-	SubCategoryID,
-	SubCategoryName,
+	Subcategory,
+	SubcategoryName,
 	SubcategoryPrimitives,
 } from "contexts/Subcategories/domain";
+import { Nanoid } from "../../Shared/domain";
 
-export interface ISubCategoriesRepository
-	extends IRepository<SubCategoryID, SubCategory, SubcategoryPrimitives> {
-	findAllByCategory(categoryID: CategoryID): Promise<SubCategory[]>;
-	findByName(name: SubCategoryName): Promise<SubCategory | null>;
+export interface ISubcategoriesRepository extends IRepository<
+	string,
+	Subcategory,
+	SubcategoryPrimitives
+> {
+	findAllByCategory(categoryID: Nanoid): Promise<Subcategory[]>;
+	findByName(name: SubcategoryName): Promise<Subcategory | null>;
 }

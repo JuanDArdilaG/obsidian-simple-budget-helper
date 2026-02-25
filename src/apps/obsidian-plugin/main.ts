@@ -1,8 +1,5 @@
 import { UUIDValueObject } from "@juandardilag/value-objects";
-import {
-	JsonViewerViewRoot,
-	RightSidebarReactViewRoot,
-} from "apps/obsidian-plugin/views";
+import { JsonViewerViewRoot } from "apps/obsidian-plugin/views";
 import { AwilixContainer } from "awilix";
 import { buildContainer } from "contexts/Shared/infrastructure/di/container";
 import { LocalDB } from "contexts/Shared/infrastructure/persistence/local/local.db";
@@ -14,6 +11,7 @@ import { views } from "./config";
 import { DEFAULT_SETTINGS, SimpleBudgetHelperSettings } from "./PluginSettings";
 import { LeftMenuItems } from "./ribbonIcon";
 import { SettingTab } from "./SettingTab";
+import { AppRoot } from "./views/RightSidebarReactView/AppRoot";
 
 export default class SimpleBudgetHelperPlugin extends Plugin {
 	settings: SimpleBudgetHelperSettings;
@@ -87,9 +85,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		this.registerView(
 			views.LIST_BUDGET_ITEMS_REACT.type,
 			(leaf) =>
-				new RightSidebarReactViewRoot(leaf, this, (text) =>
-					statusBarItem.setText(text)
-				)
+				new AppRoot(leaf, this, (text) => statusBarItem.setText(text)),
 		);
 
 		this.addSettingTab(new SettingTab(this.app, this));
@@ -102,7 +98,7 @@ export default class SimpleBudgetHelperPlugin extends Plugin {
 		// Register JSON viewer view
 		this.registerView(
 			views.JSON_VIEWER.type,
-			(leaf) => new JsonViewerViewRoot(leaf, this)
+			(leaf) => new JsonViewerViewRoot(leaf, this),
 		);
 
 		// Register JSON file extension handler
@@ -155,8 +151,8 @@ async function showEstimatedQuota(): Promise<
 					? (
 							((estimation.usage ?? 0) / estimation.quota) *
 							100
-					  ).toFixed(2)
-					: 0
+						).toFixed(2)
+					: 0,
 			) + "%",
 	};
 }

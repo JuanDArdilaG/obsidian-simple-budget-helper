@@ -1,43 +1,37 @@
-import { SubCategoryID, SubCategoryName } from "contexts/Subcategories/domain";
-import { CategoryID } from "contexts/Categories/domain";
 import { Entity } from "contexts/Shared/domain/entity.abstract";
-import { DateValueObject } from "@juandardilag/value-objects";
+import { Nanoid } from "../../Shared/domain/value-objects/id/nanoid.valueobject";
+import { SubcategoryName } from "./subcategory-name.valueobject";
 
-export class SubCategory extends Entity<SubCategoryID, SubcategoryPrimitives> {
+export class Subcategory extends Entity<string, SubcategoryPrimitives> {
 	constructor(
-		id: SubCategoryID,
-		private readonly _category: CategoryID,
-		private readonly _name: SubCategoryName,
-		updatedAt: DateValueObject
+		id: Nanoid,
+		private readonly _categoryId: Nanoid,
+		private readonly _name: SubcategoryName,
+		updatedAt: Date,
 	) {
-		super(id, updatedAt);
+		super(id.value, updatedAt);
 	}
 
-	static create(category: CategoryID, name: SubCategoryName): SubCategory {
-		return new SubCategory(
-			SubCategoryID.generate(),
-			category,
-			name,
-			DateValueObject.createNowDate()
-		);
+	static create(categoryId: Nanoid, name: SubcategoryName): Subcategory {
+		return new Subcategory(Nanoid.generate(), categoryId, name, new Date());
 	}
 
-	get id(): SubCategoryID {
-		return this._id;
+	get nanoid(): Nanoid {
+		return new Nanoid(this._id);
 	}
 
-	get category(): CategoryID {
-		return this._category;
+	get categoryId(): Nanoid {
+		return this._categoryId;
 	}
 
-	get name(): SubCategoryName {
+	get name(): SubcategoryName {
 		return this._name;
 	}
 
 	toPrimitives(): SubcategoryPrimitives {
 		return {
-			id: this._id.value,
-			category: this._category.value,
+			id: this._id,
+			category: this._categoryId.value,
 			name: this._name.value,
 			updatedAt: this._updatedAt.toISOString(),
 		};
@@ -48,14 +42,12 @@ export class SubCategory extends Entity<SubCategoryID, SubcategoryPrimitives> {
 		category,
 		name,
 		updatedAt,
-	}: SubcategoryPrimitives): SubCategory {
-		const subcategory = new SubCategory(
-			new SubCategoryID(id),
-			new CategoryID(category),
-			new SubCategoryName(name),
-			updatedAt
-				? new DateValueObject(new Date(updatedAt))
-				: DateValueObject.createNowDate()
+	}: SubcategoryPrimitives): Subcategory {
+		const subcategory = new Subcategory(
+			new Nanoid(id),
+			new Nanoid(category),
+			new SubcategoryName(name),
+			updatedAt ? new Date(updatedAt) : new Date(),
 		);
 		return subcategory;
 	}

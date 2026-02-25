@@ -33,7 +33,9 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 		});
 
 		// Get the account
-		const account = await this._accountsRepository.findById(accountId);
+		const account = await this._accountsRepository.findById(
+			accountId.value,
+		);
 		if (!account) {
 			throw new Error(`Account with ID ${accountId.value} not found`);
 		}
@@ -69,7 +71,9 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 		const results: AccountIntegrityResult[] = [];
 		for (const account of accounts) {
 			try {
-				const result = await this.calculateAccountIntegrity(account.id);
+				const result = await this.calculateAccountIntegrity(
+					account.nanoid,
+				);
 				results.push(result);
 			} catch (error) {
 				this._logger.error(
@@ -78,7 +82,7 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 						? error
 						: new Error(
 								`Failed to calculate integrity for account ${
-									account.id.value
+									account.id
 								}: ${String(error)}`,
 							),
 				);
@@ -107,7 +111,9 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 			}
 
 			// Get the account and update its balance
-			const account = await this._accountsRepository.findById(accountId);
+			const account = await this._accountsRepository.findById(
+				accountId.value,
+			);
 			if (!account) {
 				throw new Error(`Account with ID ${accountId.value} not found`);
 			}
@@ -154,7 +160,7 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 		});
 
 		this._logger.debug("Calculating expected balance", {
-			accountId: account.id.value,
+			accountId: account.id,
 			transactionCount: transactions.length,
 			initialBalance: expectedBalance.value,
 		});
@@ -162,7 +168,7 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 		// Apply all transactions to calculate the expected balance
 		for (const transaction of transactions) {
 			const transactionAmount = transaction.getRealAmountForAccount(
-				account.id,
+				account.nanoid,
 			);
 
 			// For liability accounts, we need to invert the sign (same logic as in Account.adjustFromTransaction)
@@ -173,7 +179,7 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 			expectedBalance = expectedBalance.plus(adjustedAmount);
 
 			this._logger.debug("Applied transaction to expected balance", {
-				transactionId: transaction.id.value,
+				transactionId: transaction.id,
 				transactionAmount: transactionAmount.value,
 				adjustedAmount: adjustedAmount.value,
 				runningBalance: expectedBalance.value,
@@ -181,7 +187,7 @@ export class AccountsIntegrityService implements IAccountsIntegrityService {
 		}
 
 		this._logger.debug("Final expected balance calculated", {
-			accountId: account.id.value,
+			accountId: account.id,
 			expectedBalance: expectedBalance.value,
 		});
 

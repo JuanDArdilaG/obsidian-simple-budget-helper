@@ -1,5 +1,3 @@
-import { CategoryID } from "contexts/Categories/domain";
-import { SubCategoryID } from "contexts/Subcategories/domain";
 import {
 	IScheduledTransactionsRepository,
 	ScheduledTransaction,
@@ -11,7 +9,7 @@ import { RepositoryMock } from "../../Shared/domain/repository.mock";
 
 export class ItemsRepositoryMock
 	extends RepositoryMock<
-		Nanoid,
+		string,
 		ScheduledTransaction,
 		ScheduledTransactionPrimitives
 	>
@@ -20,12 +18,10 @@ export class ItemsRepositoryMock
 	findAllUniqueItemStores(): Promise<Store[]> {
 		throw new Error("Method not implemented.");
 	}
-	findByCategory(category: CategoryID): Promise<ScheduledTransaction[]> {
+	findByCategory(category: Nanoid): Promise<ScheduledTransaction[]> {
 		throw new Error("Method not implemented.");
 	}
-	findBySubCategory(
-		subCategory: SubCategoryID
-	): Promise<ScheduledTransaction[]> {
+	findBySubCategory(subCategory: Nanoid): Promise<ScheduledTransaction[]> {
 		throw new Error("Method not implemented.");
 	}
 }

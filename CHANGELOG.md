@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0] - 2026-02-24
+
+### Added
+
+- Accounts dashboard shows the percentage change of assets, liabilities, and net worth compared to the previous month.
+- Now you can create physical assets to better reflect your net worth and have a more complete picture of your finances. It also allows you to track the value of your physical assets over time by calculating the depreciation of the asset based on its useful life and acquisition date.
+
+### Changed
+
+- Improved UI/UX for the overall plugin.
+
 ## [0.20.0] - 2026-01-21
 
 ### Added

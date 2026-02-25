@@ -1,117 +1,153 @@
 import {
+	CategoriesWithSubcategoriesMap,
 	GetAllCategoriesWithSubCategoriesUseCase,
-	GetAllCategoriesWithSubCategoriesUseCaseOutput,
 } from "contexts/Categories/application/get-all-categories-with-subcategories.usecase";
-import { Category, CategoryID, CategoryName } from "contexts/Categories/domain";
-import {
-	SubCategory,
-	SubCategoryID,
-	SubCategoryName,
-} from "contexts/Subcategories/domain";
 import { useCallback, useEffect, useState } from "react";
+import {
+	CategoriesMap,
+	GetAllCategoriesUseCase,
+} from "../../../contexts/Categories/application/get-all-categories.usecase";
+import { Nanoid } from "../../../contexts/Shared/domain";
+import {
+	GetAllSubcategoriesUseCase,
+	SubcategoriesMap,
+} from "../../../contexts/Subcategories/application/get-all-subcategories.usecase";
 import { useLogger } from "./useLogger";
 
 export const useCategories = ({
+	getAllCategories,
+	getAllSubCategories,
 	getAllCategoriesWithSubCategories,
 }: {
+	getAllCategories: GetAllCategoriesUseCase;
+	getAllSubCategories: GetAllSubcategoriesUseCase;
 	getAllCategoriesWithSubCategories: GetAllCategoriesWithSubCategoriesUseCase;
 }) => {
 	const { logger } = useLogger("useCategories");
 
-	const [categoriesWithSubcategories, setCategoriesWithSubcategories] =
-		useState<GetAllCategoriesWithSubCategoriesUseCaseOutput>([]);
+	const [isLoading, setIsLoading] = useState(true);
+
+	const [categoriesWithSubcategoriesMap, setCategoriesWithSubcategoriesMap] =
+		useState<CategoriesWithSubcategoriesMap>(new Map());
 	const [updateCatWithSubs, setUpdateCatWithSubs] = useState(true);
+
 	useEffect(() => {
+		if (updateCatWithSubs) setIsLoading(true);
+	}, [updateCatWithSubs]);
+
+	useEffect(() => {
+		console.log("[useCategories] CatWithSubs effect triggered", {
+			updateCatWithSubs,
+			count: categoriesWithSubcategoriesMap.size,
+		});
 		if (updateCatWithSubs) {
+			console.log(
+				"[useCategories] Fetching categories with subcategories",
+			);
 			setUpdateCatWithSubs(false);
 			logger.debug("updating categories with subcategories", {
-				categoriesWithSubcategories,
+				categoriesWithSubcategoriesMap,
 			});
 			getAllCategoriesWithSubCategories
 				.execute()
-				.then((catWithSubs) =>
-					setCategoriesWithSubcategories(catWithSubs)
-				);
+				.then((catWithSubs) => {
+					console.log("[useCategories] CatWithSubs fetched", {
+						count: catWithSubs.size,
+					});
+					setCategoriesWithSubcategoriesMap(catWithSubs);
+				})
+				.catch((error) => {
+					console.error(
+						"[useCategories] Error fetching catWithSubs:",
+						error,
+					);
+				})
+				.finally(() => {
+					setIsLoading(false);
+				});
 		}
 	}, [updateCatWithSubs]);
 
-	const [categories, setCategories] = useState<Category[]>([]);
+	const [categoriesMap, setCategoriesMap] = useState<CategoriesMap>(
+		new Map(),
+	);
 	const [updateCategories, setUpdateCategories] = useState(true);
 	useEffect(() => {
+		console.log("[useCategories] Categories effect triggered", {
+			updateCategories,
+			count: categoriesMap.size,
+		});
 		if (updateCategories) {
+			console.log("[useCategories] Fetching categories");
 			setUpdateCategories(false);
 			logger.debug("updating categories", {
-				categories,
+				categories: categoriesMap,
 			});
-			getAllCategoriesWithSubCategories.execute().then((catWithSubs) => {
-				const allCategories = catWithSubs.map(
-					(catWithSubs) => catWithSubs.category
-				);
-				// Remove duplicates by ID using Map
-				const categoryMap = new Map<string, Category>();
-				allCategories.forEach((cat) => {
-					categoryMap.set(cat.id.value, cat);
+			getAllCategories
+				.execute()
+				.then((cats) => {
+					console.log("[useCategories] Categories fetched", {
+						count: cats.size,
+					});
+					setCategoriesMap(cats);
+				})
+				.catch((error) => {
+					console.error(
+						"[useCategories] Error fetching categories:",
+						error,
+					);
 				});
-				const uniqueCategories = Array.from(categoryMap.values());
-				setCategories(uniqueCategories);
-			});
 		}
 	}, [updateCategories]);
 
-	const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
+	const [subCategoriesMap, setSubCategoriesMap] = useState<SubcategoriesMap>(
+		new Map(),
+	);
 	const [updateSubCategories, setUpdateSubCategories] = useState(true);
 	useEffect(() => {
+		console.log("[useCategories] SubCategories effect triggered", {
+			updateSubCategories,
+			count: subCategoriesMap.size,
+		});
 		if (updateSubCategories) {
+			console.log("[useCategories] Fetching subcategories");
 			setUpdateSubCategories(false);
-			getAllCategoriesWithSubCategories.execute().then((catsWithSubs) => {
-				const allSubCategories = catsWithSubs
-					.map((catWithSubs) => catWithSubs.subCategories)
-					.flat();
-				// Remove duplicates by ID using Map
-				const subCategoryMap = new Map<string, SubCategory>();
-				allSubCategories.forEach((subCat) => {
-					subCategoryMap.set(subCat.id.value, subCat);
+			getAllSubCategories
+				.execute()
+				.then((subs) => {
+					console.log("[useCategories] SubCategories fetched", {
+						count: subs.size,
+					});
+					setSubCategoriesMap(subs);
+				})
+				.catch((error) => {
+					console.error(
+						"[useCategories] Error fetching subcategories:",
+						error,
+					);
 				});
-				const uniqueSubCategories = Array.from(subCategoryMap.values());
-				setSubCategories(uniqueSubCategories);
-			});
 		}
 	}, [updateSubCategories]);
 
 	const getCategoryByID = useCallback(
-		(id: CategoryID) => categories.find((cat) => cat.id.equalTo(id)),
-		[categories]
-	);
-
-	const getCategoryByName = useCallback(
-		(name: CategoryName) => {
-			const cat = categories.find((cat) => cat.name.equalTo(name));
-			return cat;
-		},
-		[categories]
+		(id: Nanoid) => categoriesMap.get(id.value),
+		[categoriesMap],
 	);
 
 	const getSubCategoryByID = useCallback(
-		(id: SubCategoryID) => subCategories.find((sub) => sub.id.equalTo(id)),
-		[subCategories]
-	);
-
-	const getSubCategoryByName = useCallback(
-		(name: SubCategoryName) =>
-			subCategories.find((sub) => sub.name.equalTo(name)),
-		[subCategories]
+		(id: Nanoid) => subCategoriesMap.get(id.value),
+		[subCategoriesMap],
 	);
 
 	return {
-		categoriesWithSubcategories,
+		categoriesWithSubcategories: categoriesWithSubcategoriesMap,
 		updateCategoriesWithSubcategories: () => setUpdateCatWithSubs(true),
-		categories,
-		subCategories,
+		categoriesMap,
+		subCategoriesMap,
 		updateCategories: () => setUpdateCategories(true),
 		updateSubCategories: () => setUpdateSubCategories(true),
 		getCategoryByID,
-		getCategoryByName,
 		getSubCategoryByID,
-		getSubCategoryByName,
+		isLoading,
 	};
 };

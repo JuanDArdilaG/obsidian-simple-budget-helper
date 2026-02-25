@@ -1,7 +1,3 @@
-import { DateTimePicker, DatePicker } from "@mui/x-date-pickers";
-import { FormHelperText, Box } from "@mui/material";
-import dayjs from "dayjs";
-
 export const DateInput = ({
 	label,
 	value,
@@ -17,84 +13,75 @@ export const DateInput = ({
 	withTime?: boolean;
 	error?: string;
 }) => {
+	const formatDateForInput = (date?: Date): string => {
+		if (!date) return "";
+		const d = new Date(date);
+		if (withTime) {
+			// Format: YYYY-MM-DDTHH:mm
+			const year = d.getFullYear();
+			const month = String(d.getMonth() + 1).padStart(2, "0");
+			const day = String(d.getDate()).padStart(2, "0");
+			const hours = String(d.getHours()).padStart(2, "0");
+			const minutes = String(d.getMinutes()).padStart(2, "0");
+			return `${year}-${month}-${day}T${hours}:${minutes}`;
+		}
+		// Format: YYYY-MM-DD
+		return d.toISOString().split("T")[0];
+	};
+
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const value = e.target.value;
+		if (value) {
+			onChange(new Date(value));
+		}
+	};
+
 	return (
-		<Box>
-			{withTime === false ? (
-				<DatePicker
-					className="date-time-picker"
-					views={["year", "month", "day"]}
-					slotProps={{
-						actionBar: {
-							actions: ["today", "accept"],
-						},
-						desktopPaper: {
-							style: {
-								color: "var(--text-normal)",
-								background: "var(--background-primary-alt)",
-							},
-						},
-						field: {
-							style: {
-								backgroundColor:
-									"var(--background-modifier-form-field)",
-							},
-						},
-						textField: {
-							error: !!error,
-							helperText: error,
-						},
+		<div className="date-input-wrapper">
+			{label && (
+				<label
+					className="date-input-label"
+					style={{
+						display: "block",
+						marginBottom: "4px",
+						fontSize: "0.875rem",
+						fontWeight: 500,
+						color: "var(--text-normal)",
 					}}
-					label={label}
-					value={dayjs(value)}
-					disabled={disabled}
-					onChange={(newValue) => {
-						if (newValue) {
-							onChange(newValue.toDate());
-						}
-					}}
-				/>
-			) : (
-				<DateTimePicker
-					className="date-time-picker"
-					views={["year", "month", "day", "hours", "minutes"]}
-					slotProps={{
-						actionBar: {
-							actions: ["today", "accept"],
-						},
-						desktopPaper: {
-							style: {
-								color: "var(--text-normal)",
-								background: "var(--background-primary-alt)",
-							},
-						},
-						field: {
-							style: {
-								backgroundColor:
-									"var(--background-modifier-form-field)",
-							},
-						},
-						textField: {
-							error: !!error,
-							helperText: error,
-						},
-					}}
-					label={label}
-					value={dayjs(value)}
-					disabled={disabled}
-					onChange={(newValue) => {
-						if (newValue) {
-							onChange(newValue.toDate());
-						}
-					}}
-				/>
+				>
+					{label}
+				</label>
 			)}
+			<input
+				type={withTime ? "datetime-local" : "date"}
+				className="date-time-picker"
+				value={formatDateForInput(value)}
+				onChange={handleChange}
+				disabled={disabled}
+				style={{
+					width: "100%",
+					padding: "8px 12px",
+					backgroundColor: "var(--background-modifier-form-field)",
+					color: "var(--text-normal)",
+					border: error
+						? "1px solid var(--background-modifier-error)"
+						: "1px solid var(--background-modifier-border)",
+					borderRadius: "4px",
+					fontSize: "0.875rem",
+				}}
+			/>
 			{error && (
-				<FormHelperText
-					style={{ color: "var(--text-error)", marginLeft: 0 }}
+				<div
+					className="date-input-error"
+					style={{
+						marginTop: "4px",
+						fontSize: "0.75rem",
+						color: "var(--text-error)",
+					}}
 				>
 					{error}
-				</FormHelperText>
+				</div>
 			)}
-		</Box>
+		</div>
 	);
 };

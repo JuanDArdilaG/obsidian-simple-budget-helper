@@ -1,10 +1,11 @@
 import { Nanoid } from "contexts/Shared/domain";
 import { EntityNotFoundError } from "contexts/Shared/domain/errors/not-found.error";
+import { Account } from "../../Accounts/domain";
 import { IScheduledTransactionsService } from "../../ScheduledTransactions/domain";
 import { CommandUseCase } from "../../Shared/domain/command-use-case.interface";
 import { Logger } from "../../Shared/infrastructure/logger";
 import { ITransactionsService } from "../domain";
-import { PaymentSplit } from "../domain/payment-split.valueobject";
+import { AccountSplit } from "../domain/account-split.valueobject";
 import { TransactionAmount } from "../domain/transaction-amount.valueobject";
 import { TransactionDate } from "../domain/transaction-date.valueobject";
 import { Transaction } from "../domain/transaction.entity";
@@ -13,8 +14,8 @@ export type RecordScheduledItemUseCaseInput = {
 	id: Nanoid;
 	date?: TransactionDate;
 	amount?: TransactionAmount;
-	account?: Nanoid;
-	toAccount?: Nanoid;
+	account?: Account;
+	toAccount?: Account;
 	permanentChanges?: boolean;
 };
 
@@ -39,8 +40,9 @@ export class RecordItemUseCase implements CommandUseCase<RecordScheduledItemUseC
 			account,
 			toAccount,
 		});
-		const item = await this._scheduledTransactionsService.getByID(id);
-		if (!item) throw new EntityNotFoundError("ScheduledTransaction", id);
+		const item = await this._scheduledTransactionsService.getByID(id.value);
+		if (!item)
+			throw new EntityNotFoundError("ScheduledTransaction", id.value);
 
 		const transaction = Transaction.fromScheduledTransaction(
 			item,
@@ -57,10 +59,10 @@ export class RecordItemUseCase implements CommandUseCase<RecordScheduledItemUseC
 			let fromSplits = transaction.originAccounts;
 			let toSplits = transaction.destinationAccounts;
 			if (account && amount) {
-				fromSplits = [new PaymentSplit(account, amount)];
+				fromSplits = [new AccountSplit(account.nanoid, amount)];
 			}
 			if (toAccount && amount) {
-				toSplits = [new PaymentSplit(toAccount, amount)];
+				toSplits = [new AccountSplit(toAccount.nanoid, amount)];
 			}
 			transaction.setOriginAccounts(fromSplits);
 			transaction.setDestinationAccounts(toSplits);

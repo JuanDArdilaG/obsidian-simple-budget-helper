@@ -1,11 +1,8 @@
-import {
-	ISubCategoriesService,
-	SubCategoryID,
-} from "contexts/Subcategories/domain";
+import { ISubCategoriesService } from "contexts/Subcategories/domain";
 import { TransactionsService } from "contexts/Transactions/application/transactions.service";
 import { ScheduledTransactionsService } from "../../ScheduledTransactions/application/scheduled-transactions.service";
+import { Nanoid } from "../../Shared/domain";
 import { Logger } from "../../Shared/infrastructure/logger";
-import { CategoryID } from "../domain";
 import { CategoriesService } from "./categories.service";
 
 export interface CategoryDeletionError {
@@ -29,21 +26,21 @@ export class DeleteCategoryUseCase {
 		private readonly categoriesService: CategoriesService,
 		private readonly transactionsService: TransactionsService,
 		private readonly _scheduledTransactionsService: ScheduledTransactionsService,
-		private readonly subCategoriesService: ISubCategoriesService
+		private readonly subCategoriesService: ISubCategoriesService,
 	) {}
 
 	async checkCategoryDeletion(
-		categoryId: CategoryID
+		categoryId: Nanoid,
 	): Promise<CategoryDeletionError | null> {
 		this.#logger.debug("checking category deletion", { categoryId });
 		const hasRelatedTransactions =
 			await this.transactionsService.hasTransactionsByCategory(
-				categoryId
+				categoryId,
 			);
 		this.#logger.debug("related transactions", { hasRelatedTransactions });
 		const hasRelatedScheduledTransactions =
 			await this._scheduledTransactionsService.hasItemsByCategory(
-				categoryId
+				categoryId,
 			);
 		this.#logger.debug("related scheduled items", {
 			hasRelatedScheduledTransactions,
@@ -53,7 +50,7 @@ export class DeleteCategoryUseCase {
 		const subcategories = await this.subCategoriesService.getAll();
 		this.#logger.debug("fetched subcategories", { subcategories });
 		const categorySubcategories = subcategories.filter((sub) =>
-			sub.category.equalTo(categoryId)
+			sub.categoryId.equalTo(categoryId),
 		);
 		this.#logger.debug("category subcategories", { categorySubcategories });
 
@@ -72,7 +69,7 @@ export class DeleteCategoryUseCase {
 		for (const subcategory of categorySubcategories) {
 			const subHasTransactions =
 				await this.transactionsService.hasTransactionsBySubCategory(
-					subcategory.id
+					new Nanoid(subcategory.id),
 				);
 			this.#logger.debug("subcategory transactions check", {
 				subcategoryId: subcategory.id,
@@ -80,7 +77,7 @@ export class DeleteCategoryUseCase {
 			});
 			const subHasScheduledTransactions =
 				await this._scheduledTransactionsService.hasItemsBySubCategory(
-					subcategory.id
+					new Nanoid(subcategory.id),
 				);
 			this.#logger.debug("subcategory items check", {
 				subcategoryId: subcategory.id,
@@ -89,10 +86,10 @@ export class DeleteCategoryUseCase {
 			if (subHasTransactions) {
 				const transactions =
 					await this.transactionsService.getBySubCategory(
-						subcategory.id
+						new Nanoid(subcategory.id),
 					);
 				subcategoriesWithTransactions.push({
-					id: subcategory.id.value,
+					id: subcategory.id,
 					name: subcategory.name.toString(),
 					transactionCount: transactions.length,
 				});
@@ -101,10 +98,10 @@ export class DeleteCategoryUseCase {
 			if (subHasScheduledTransactions) {
 				const items =
 					await this._scheduledTransactionsService.getBySubCategory(
-						subcategory.id
+						new Nanoid(subcategory.id),
 					);
 				subcategoriesWithItems.push({
-					id: subcategory.id.value,
+					id: subcategory.id,
 					name: subcategory.name.toString(),
 					itemCount: items.length,
 				});
@@ -135,9 +132,9 @@ export class DeleteCategoryUseCase {
 	}
 
 	async execute(
-		categoryId: CategoryID,
-		reassignToCategoryId?: CategoryID,
-		reassignToSubcategoryId?: SubCategoryID
+		categoryId: Nanoid,
+		reassignToCategoryId?: Nanoid,
+		reassignToSubcategoryId?: Nanoid,
 	): Promise<void> {
 		// If no reassignment category is provided, we need to check if there are related transactions/items
 		if (!reassignToCategoryId) {
@@ -148,13 +145,13 @@ export class DeleteCategoryUseCase {
 
 				if (deletionError.hasRelatedTransactions) {
 					errorMessages.push(
-						"This category has related transactions"
+						"This category has related transactions",
 					);
 				}
 
 				if (deletionError.hasRelatedItems) {
 					errorMessages.push(
-						"This category has related scheduled items"
+						"This category has related scheduled items",
 					);
 				}
 
@@ -163,11 +160,11 @@ export class DeleteCategoryUseCase {
 						deletionError.subcategoriesWithTransactions
 							.map(
 								(sub) =>
-									`"${sub.name}" (${sub.transactionCount} transactions)`
+									`"${sub.name}" (${sub.transactionCount} transactions)`,
 							)
 							.join(", ");
 					errorMessages.push(
-						`Subcategories with transactions: ${subcatNames}`
+						`Subcategories with transactions: ${subcatNames}`,
 					);
 				}
 
@@ -176,57 +173,63 @@ export class DeleteCategoryUseCase {
 						deletionError.subcategoriesWithItems
 							.map(
 								(sub) =>
-									`"${sub.name}" (${sub.itemCount} items)`
+									`"${sub.name}" (${sub.itemCount} items)`,
 							)
 							.join(", ");
 					errorMessages.push(
-						`Subcategories with scheduled items: ${subCategoryNames}`
+						`Subcategories with scheduled items: ${subCategoryNames}`,
 					);
 				}
 
 				throw new Error(
 					`Cannot delete category with related data. Please provide a category and subcategory to reassign them to.\n\nIssues found:\n${errorMessages.join(
-						"\n"
-					)}`
+						"\n",
+					)}`,
 				);
 			}
 		}
 
 		// Reassign related transactions and items if a target category is provided
 		if (reassignToCategoryId) {
-			const category = await this.categoriesService.getByID(categoryId);
+			const category = await this.categoriesService.getByID(
+				categoryId.value,
+			);
 			const categoryTo = await this.categoriesService.getByID(
-				reassignToCategoryId
+				reassignToCategoryId.value,
 			);
 			if (reassignToSubcategoryId) {
 				// Reassign to both category and subcategory
 				await this.transactionsService.reassignTransactionsCategoryAndSubcategory(
 					categoryId,
 					reassignToCategoryId,
-					reassignToSubcategoryId
+					reassignToSubcategoryId,
 				);
+
 				const subcategoryTo = await this.subCategoriesService.getByID(
-					reassignToSubcategoryId
+					reassignToSubcategoryId.value,
 				);
+
 				await this._scheduledTransactionsService.reassignItemsCategoryAndSubcategory(
-					category,
+					categoryId,
+					undefined,
 					categoryTo,
-					subcategoryTo
+					subcategoryTo,
 				);
 			} else {
 				// Reassign only to category
 				await this.transactionsService.reassignTransactionsCategory(
-					categoryId,
-					reassignToCategoryId
+					category,
+					categoryTo,
 				);
+
 				await this._scheduledTransactionsService.reassignItemsCategory(
 					category,
-					categoryTo
+					categoryTo,
 				);
 			}
 		}
 
 		// Delete the category
-		await this.categoriesService.delete(categoryId);
+		await this.categoriesService.delete(categoryId.value);
 	}
 }

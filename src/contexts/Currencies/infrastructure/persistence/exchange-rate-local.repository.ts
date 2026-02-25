@@ -1,5 +1,4 @@
 import { DateValueObject } from "@juandardilag/value-objects";
-import { Nanoid } from "../../../Shared/domain";
 import { Config } from "../../../Shared/infrastructure/config/config";
 import { LocalDB } from "../../../Shared/infrastructure/persistence/local/local.db";
 import { LocalRepository } from "../../../Shared/infrastructure/persistence/local/local.repository";
@@ -11,7 +10,7 @@ import {
 } from "../../domain/exchange-rate.vo";
 
 export class ExchangeRateLocalRepository
-	extends LocalRepository<Nanoid, ExchangeRate, ExchangeRatePrimitives>
+	extends LocalRepository<string, ExchangeRate, ExchangeRatePrimitives>
 	implements ICurrenciesExchangeRateRepository
 {
 	constructor(protected readonly _db: LocalDB) {
@@ -21,7 +20,7 @@ export class ExchangeRateLocalRepository
 	async getByFromToAndDate(
 		fromCurrency: Currency,
 		toCurrency: Currency,
-		date: DateValueObject
+		date: DateValueObject,
 	): Promise<ExchangeRate | null> {
 		const allRecords = await this.findAll();
 

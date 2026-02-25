@@ -3,14 +3,13 @@ import {
 	NumberValueObject,
 	StringValueObject,
 } from "@juandardilag/value-objects";
-import { IDValueObject } from "../domain";
 import { Entity, EntityComposedValue } from "../domain/entity.abstract";
 
 type LoggerBodyValues =
 	| StringValueObject
 	| NumberValueObject
 	| DateValueObject
-	| Entity<IDValueObject, EntityComposedValue>
+	| Entity<string | number, EntityComposedValue>
 	| string
 	| number
 	| Date
@@ -44,7 +43,7 @@ export class Logger {
 	constructor(
 		private _name: string = "Logger",
 		private _title: string = "",
-		private _body: LoggerBody = {}
+		private _body: LoggerBody = {},
 	) {}
 
 	static setDebugMode(debugMode: boolean) {
@@ -104,7 +103,7 @@ export class Logger {
 				(key) =>
 					(res[key] = Array.isArray(body[key])
 						? body[key].map((x) => this.#mapValue(x))
-						: this.#mapValue(body[key]))
+						: this.#mapValue(body[key])),
 			);
 
 		return res;

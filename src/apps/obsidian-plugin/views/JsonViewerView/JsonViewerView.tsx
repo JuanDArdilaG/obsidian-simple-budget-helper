@@ -1,27 +1,27 @@
-import React, { useState, useEffect } from "react";
 import {
-	Box,
-	Typography,
-	TextField,
-	Button,
-	Paper,
 	Alert,
-	CircularProgress,
-	IconButton,
-	Tooltip,
+	Box,
+	Button,
 	Chip,
+	CircularProgress,
 	Divider,
+	IconButton,
+	Paper,
+	TextField,
+	Tooltip,
+	Typography,
 } from "@mui/material";
-import {
-	Refresh as RefreshIcon,
-	Download as DownloadIcon,
-	ContentCopy as CopyIcon,
-	ExpandMore as ExpandMoreIcon,
-	ExpandLess as ExpandLessIcon,
-	Folder as FolderIcon,
-} from "@mui/icons-material";
 import SimpleBudgetHelperPlugin from "apps/obsidian-plugin/main";
+import {
+	Copy as CopyIcon,
+	Download as DownloadIcon,
+	Minus as ExpandLessIcon,
+	Plus as ExpandMoreIcon,
+	Folder as FolderIcon,
+	RefreshCw as RefreshIcon,
+} from "lucide-react";
 import { TFile } from "obsidian";
+import React, { useEffect, useState } from "react";
 
 interface JsonViewerViewProps {
 	plugin: SimpleBudgetHelperPlugin;
@@ -135,7 +135,7 @@ const JsonNode: React.FC<JsonNodeProps> = ({ data, label, level = 0 }) => {
 					)}
 					<FolderIcon
 						fontSize="small"
-						sx={{ mr: 0.5, color: "#ffc107" }}
+						// sx={{ mr: 0.5, color: "#ffc107" }}
 					/>
 					<Typography variant="body2" color="text.secondary">
 						{label}{" "}
@@ -185,7 +185,7 @@ const JsonNode: React.FC<JsonNodeProps> = ({ data, label, level = 0 }) => {
 					)}
 					<FolderIcon
 						fontSize="small"
-						sx={{ mr: 0.5, color: "#17a2b8" }}
+						// sx={{ mr: 0.5, color: "#17a2b8" }}
 					/>
 					<Typography variant="body2" color="text.secondary">
 						{label}{" "}

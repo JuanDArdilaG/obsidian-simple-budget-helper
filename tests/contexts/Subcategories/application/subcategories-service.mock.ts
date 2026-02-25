@@ -1,46 +1,44 @@
-import { CategoryID } from "contexts/Categories/domain";
-import { Criteria } from "contexts/Shared/domain";
+import { Criteria, Nanoid } from "contexts/Shared/domain";
 import {
 	ISubCategoriesService,
-	SubCategory,
-	SubCategoryID,
-	SubCategoryName,
+	Subcategory,
+	SubcategoryName,
 	SubcategoryPrimitives,
 } from "contexts/Subcategories/domain";
 
 export class SubcategoriesServiceMock implements ISubCategoriesService {
-	constructor(public subcategories: SubCategory[]) {}
-	create(subCategory: SubCategory): Promise<void> {
+	constructor(public subcategories: Subcategory[]) {}
+	create(subCategory: Subcategory): Promise<void> {
 		throw new Error("Method not implemented.");
 	}
 	getByNameWithCreation(
-		categoryID: CategoryID,
-		name: SubCategoryName
-	): Promise<SubCategory> {
+		categoryID: Nanoid,
+		name: SubcategoryName,
+	): Promise<Subcategory> {
 		throw new Error("Method not implemented.");
 	}
-	exists(id: SubCategoryID): Promise<boolean> {
+	exists(id: string): Promise<boolean> {
 		throw new Error("Method not implemented.");
 	}
-	getByID(id: SubCategoryID): Promise<SubCategory> {
+	getByID(id: string): Promise<Subcategory> {
 		const subCategory = this.subcategories.find(
-			(subCategory) => subCategory.id.value === id.value
+			(subCategory) => subCategory.id === id,
 		);
 		if (!subCategory) throw new Error("subCategory not found on get");
 		return Promise.resolve(subCategory);
 	}
 	getByCriteria(
-		criteria: Criteria<SubcategoryPrimitives>
-	): Promise<SubCategory[]> {
+		criteria: Criteria<SubcategoryPrimitives>,
+	): Promise<Subcategory[]> {
 		throw new Error("Method not implemented.");
 	}
-	getAll(): Promise<SubCategory[]> {
+	getAll(): Promise<Subcategory[]> {
 		throw new Error("Method not implemented.");
 	}
-	update(item: SubCategory): Promise<void> {
+	update(item: Subcategory): Promise<void> {
 		throw new Error("Method not implemented.");
 	}
-	delete(id: SubCategoryID): Promise<void> {
+	delete(id: string): Promise<void> {
 		throw new Error("Method not implemented.");
 	}
 }

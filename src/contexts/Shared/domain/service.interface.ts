@@ -1,11 +1,10 @@
 import { Criteria } from "./criteria";
 import { Entity, EntityComposedValue } from "./entity.abstract";
-import { IDValueObject } from "./value-objects";
 
 export interface IService<
-	ID extends IDValueObject,
+	ID extends string | number,
 	T extends Entity<ID, P>,
-	P extends EntityComposedValue
+	P extends EntityComposedValue,
 > {
 	exists(id: ID): Promise<boolean>;
 	create(item: T): Promise<void>;

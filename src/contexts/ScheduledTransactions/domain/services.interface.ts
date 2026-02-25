@@ -2,10 +2,10 @@ import {
 	DateValueObject,
 	NumberValueObject,
 } from "@juandardilag/value-objects";
-import { Category, CategoryID } from "contexts/Categories/domain";
+import { Category } from "contexts/Categories/domain";
 import { IService, Nanoid } from "contexts/Shared/domain";
-import { SubCategory, SubCategoryID } from "contexts/Subcategories/domain";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { Subcategory } from "contexts/Subcategories/domain";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { ItemRecurrenceInfo } from "./item-recurrence-info.valueobject";
 import {
 	RecurrenceModification,
@@ -16,81 +16,78 @@ import {
 	ScheduledTransactionPrimitives,
 } from "./scheduled-transaction.entity";
 
-export interface IScheduledTransactionsService
-	extends IService<
-		Nanoid,
-		ScheduledTransaction,
-		ScheduledTransactionPrimitives
-	> {
+export interface IScheduledTransactionsService extends IService<
+	string,
+	ScheduledTransaction,
+	ScheduledTransactionPrimitives
+> {
 	// Item management
-	getByCategory(category: CategoryID): Promise<ScheduledTransaction[]>;
-	getBySubCategory(
-		subCategory: SubCategoryID
-	): Promise<ScheduledTransaction[]>;
-	hasItemsByCategory(category: CategoryID): Promise<boolean>;
-	hasItemsBySubCategory(subCategory: SubCategoryID): Promise<boolean>;
+	getByCategory(category: Nanoid): Promise<ScheduledTransaction[]>;
+	getBySubCategory(subCategory: Nanoid): Promise<ScheduledTransaction[]>;
+	hasItemsByCategory(category: Nanoid): Promise<boolean>;
+	hasItemsBySubCategory(subCategory: Nanoid): Promise<boolean>;
 	reassignItemsCategory(
 		oldCategory: Category,
-		newCategory: Category
+		newCategory: Category,
 	): Promise<void>;
 	reassignItemsSubCategory(
-		oldSubCategory: SubCategory,
-		newSubCategory: SubCategory
+		oldSubCategory: Subcategory,
+		newSubCategory: Subcategory,
 	): Promise<void>;
 	reassignItemsCategoryAndSubcategory(
-		oldCategory: Category,
+		oldCategoryId: Nanoid,
+		oldSubcategoryId: Nanoid | undefined,
 		newCategory: Category,
-		newSubCategory: SubCategory
+		newSubCategory: Subcategory,
 	): Promise<void>;
 
 	getOccurrence(
 		id: Nanoid,
-		occurrenceIndex: NumberValueObject
+		occurrenceIndex: number,
 	): Promise<ItemRecurrenceInfo | null>;
 
 	getMonthlyPriceEstimate(id: Nanoid): Promise<NumberValueObject>;
 }
 
-export interface IRecurrenceModificationsService
-	extends IService<
-		Nanoid,
-		RecurrenceModification,
-		RecurrenceModificationPrimitives
-	> {
+export interface IRecurrenceModificationsService extends IService<
+	string,
+	RecurrenceModification,
+	RecurrenceModificationPrimitives
+> {
 	// Find modifications
 	getByScheduledItemId(
-		scheduledItemId: Nanoid
+		scheduledItemId: Nanoid,
 	): Promise<RecurrenceModification[]>;
 	getByScheduledItemIdAndOccurrenceIndex(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: number
+		occurrenceIndex: number,
 	): Promise<RecurrenceModification | null>;
 
 	// Modify occurrences
 	modifyOccurrence(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: NumberValueObject,
+		occurrenceIndex: number,
 		modifications: {
 			date?: DateValueObject;
-			fromSplits?: PaymentSplit[];
-			toSplits?: PaymentSplit[];
-		}
+			fromSplits?: AccountSplit[];
+			toSplits?: AccountSplit[];
+		},
 	): Promise<RecurrenceModification>;
 
 	// State management
 	markOccurrenceAsCompleted(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: NumberValueObject
+		occurrenceIndex: number,
 	): Promise<RecurrenceModification>;
 
 	markOccurrenceAsDeleted(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: NumberValueObject
+		occurrenceIndex: number,
 	): Promise<RecurrenceModification>;
 
 	resetOccurrenceToPending(
 		scheduledItemId: Nanoid,
-		occurrenceIndex: number
+		occurrenceIndex: number,
 	): Promise<void>;
 
 	// Bulk operations

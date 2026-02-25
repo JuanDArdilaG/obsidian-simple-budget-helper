@@ -1,15 +1,23 @@
 import { QueryUseCase } from "contexts/Shared/domain/query-use-case.interface";
-import { ISubCategoriesRepository } from "../domain/subcategories-repository.interface";
-import { SubCategory } from "contexts/Subcategories/domain";
+import { Subcategory } from "contexts/Subcategories/domain";
+import { ISubcategoriesRepository } from "../domain/subcategories-repository.interface";
 
-export type GetAllSubcategoriesUseCaseOutput = SubCategory[];
+export type SubcategoriesMap = Map<string, Subcategory>;
 
-export class GetAllSubcategoriesUseCase
-	implements QueryUseCase<void, GetAllSubcategoriesUseCaseOutput>
-{
-	constructor(private _subCategoriesRepository: ISubCategoriesRepository) {}
+export class GetAllSubcategoriesUseCase implements QueryUseCase<
+	void,
+	SubcategoriesMap
+> {
+	constructor(
+		private readonly _subCategoriesRepository: ISubcategoriesRepository,
+	) {}
 
-	async execute(): Promise<GetAllSubcategoriesUseCaseOutput> {
-		return await this._subCategoriesRepository.findAll();
+	async execute(): Promise<SubcategoriesMap> {
+		const subcategories = (
+			await this._subCategoriesRepository.findAll()
+		).toSorted((a, b) => a.name.value.localeCompare(b.name.value));
+		return new Map(
+			subcategories.map((subcategory) => [subcategory.id, subcategory]),
+		);
 	}
 }

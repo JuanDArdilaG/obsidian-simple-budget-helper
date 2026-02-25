@@ -1,24 +1,19 @@
-import {
-	DateValueObject,
-	NumberValueObject,
-} from "@juandardilag/value-objects";
+import { DateValueObject } from "@juandardilag/value-objects";
 import { CommandUseCase, Nanoid } from "contexts/Shared/domain";
-import { PaymentSplit } from "contexts/Transactions/domain/payment-split.valueobject";
+import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { IRecurrenceModificationsService } from "../domain";
 
 export type ModifyNItemRecurrenceUseCaseInput = {
 	scheduledItemId: Nanoid;
-	occurrenceIndex: NumberValueObject;
-	date?: DateValueObject;
-	fromSplits?: PaymentSplit[];
-	toSplits?: PaymentSplit[];
+	occurrenceIndex: number;
+	date?: Date;
+	fromSplits?: AccountSplit[];
+	toSplits?: AccountSplit[];
 };
 
-export class ModifyNItemRecurrenceUseCase
-	implements CommandUseCase<ModifyNItemRecurrenceUseCaseInput>
-{
+export class ModifyNItemRecurrenceUseCase implements CommandUseCase<ModifyNItemRecurrenceUseCaseInput> {
 	constructor(
-		private readonly _recurrenceModificationsService: IRecurrenceModificationsService
+		private readonly _recurrenceModificationsService: IRecurrenceModificationsService,
 	) {}
 
 	async execute({
@@ -32,10 +27,10 @@ export class ModifyNItemRecurrenceUseCase
 			scheduledItemId,
 			occurrenceIndex,
 			{
-				date,
+				date: date ? new DateValueObject(date) : undefined,
 				fromSplits,
 				toSplits,
-			}
+			},
 		);
 	}
 }

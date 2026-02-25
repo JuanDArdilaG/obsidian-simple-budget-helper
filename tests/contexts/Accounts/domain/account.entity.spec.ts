@@ -15,9 +15,7 @@ import { buildTestTransactions } from "../../Reports/domain/buildTestTransaction
 describe("adjustOnTransactionDeletion", () => {
 	it("account balance should be adjust on expense transaction", () => {
 		const account = buildTestAccount();
-		const transactions = buildTestTransactions([
-			{ account: account.id.value, amount: 100 },
-		]);
+		const transactions = buildTestTransactions([{ account, amount: 100 }]);
 
 		account.adjustOnTransactionDeletion(transactions[0]);
 
@@ -27,7 +25,7 @@ describe("adjustOnTransactionDeletion", () => {
 	it("account balance should be adjust on income transaction", () => {
 		const account = buildTestAccount();
 		const transactions = buildTestTransactions([
-			{ account: account.id.value, amount: 100, operation: "income" },
+			{ account, amount: 100, operation: "income" },
 		]);
 
 		account.adjustOnTransactionDeletion(transactions[0]);
@@ -40,10 +38,10 @@ describe("adjustOnTransactionDeletion", () => {
 		const toAccount = buildTestAccount();
 		const transactions = buildTestTransactions([
 			{
-				account: account.id.value,
+				account,
 				amount: 100,
 				operation: "transfer",
-				toAccount: toAccount.id.value,
+				toAccount,
 			},
 		]);
 
@@ -57,10 +55,10 @@ describe("adjustOnTransactionDeletion", () => {
 		const toAccount = buildTestAccount();
 		const transactions = buildTestTransactions([
 			{
-				account: account.id.value,
+				account,
 				amount: 100,
 				operation: "transfer",
-				toAccount: toAccount.id.value,
+				toAccount,
 			},
 		]);
 
@@ -75,7 +73,7 @@ describe("adjustFromTransaction with liability accounts", () => {
 		const liabilityAccount = buildTestLiabilityAccount();
 		const transactions = buildTestTransactions([
 			{
-				account: liabilityAccount.id.value,
+				account: liabilityAccount,
 				amount: 100,
 				operation: "income",
 			},
@@ -91,7 +89,7 @@ describe("adjustFromTransaction with liability accounts", () => {
 		const liabilityAccount = buildTestLiabilityAccount();
 		const transactions = buildTestTransactions([
 			{
-				account: liabilityAccount.id.value,
+				account: liabilityAccount,
 				amount: 100,
 				operation: "expense",
 			},
@@ -107,7 +105,7 @@ describe("adjustFromTransaction with liability accounts", () => {
 		const assetAccount = buildTestAccount();
 		const transactions = buildTestTransactions([
 			{
-				account: assetAccount.id.value,
+				account: assetAccount,
 				amount: 100,
 				operation: "income",
 			},
@@ -123,7 +121,7 @@ describe("adjustFromTransaction with liability accounts", () => {
 		const assetAccount = buildTestAccount();
 		const transactions = buildTestTransactions([
 			{
-				account: assetAccount.id.value,
+				account: assetAccount,
 				amount: 100,
 				operation: "expense",
 			},
