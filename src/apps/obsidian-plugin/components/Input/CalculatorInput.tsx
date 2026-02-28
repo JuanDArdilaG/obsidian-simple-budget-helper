@@ -73,7 +73,6 @@ export function CalculatorInput({
 				return;
 			}
 			const result = evaluate(cleanedValue);
-			console.log("Evaluated result:", result);
 			if (
 				typeof result === "number" &&
 				!Number.isNaN(result) &&

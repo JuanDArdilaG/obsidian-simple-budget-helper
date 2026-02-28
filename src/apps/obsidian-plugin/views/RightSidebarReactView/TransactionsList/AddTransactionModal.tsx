@@ -578,7 +578,7 @@ export function AddTransactionModal({
 				}}
 				className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-6 border border-gray-100 my-8 overflow-hidden flex flex-col max-h-[90vh]!"
 			>
-				<div className="flex justify-between items-center mb-6 flex-shrink-0!">
+				<div className="flex justify-between items-center mb-6 shrink-0!">
 					<h2 className="text-xl font-bold text-gray-900!">
 						{isEditMode ? "Edit Transaction" : "Add Transaction"}
 					</h2>
@@ -637,10 +637,14 @@ export function AddTransactionModal({
 					{/* Date, Time & Store */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6!">
 						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1!">
+							<label
+								htmlFor="date-input"
+								className="block text-sm font-medium text-gray-700 mb-1!"
+							>
 								Date
 							</label>
 							<input
+								id="date-input"
 								type="date"
 								value={date}
 								onChange={(e) => setDate(e.target.value)}
@@ -648,10 +652,14 @@ export function AddTransactionModal({
 							/>
 						</div>
 						<div>
-							<label className="block text-sm font-medium text-gray-700 mb-1!">
+							<label
+								htmlFor="time-input"
+								className="block text-sm font-medium text-gray-700 mb-1!"
+							>
 								Time
 							</label>
 							<input
+								id="time-input"
 								type="time"
 								value={time}
 								onChange={(e) => setTime(e.target.value)}
@@ -659,10 +667,14 @@ export function AddTransactionModal({
 							/>
 						</div>
 						<div className="sm:col-span-2 lg:col-span-1!">
-							<label className="block text-sm font-medium text-gray-700 mb-1!">
+							<label
+								htmlFor="store-input"
+								className="block text-sm font-medium text-gray-700 mb-1!"
+							>
 								Store / Payee (Optional)
 							</label>
 							<input
+								id="store-input"
 								type="text"
 								value={store}
 								onChange={(e) => setStore(e.target.value)}
@@ -675,7 +687,10 @@ export function AddTransactionModal({
 					{/* Items Section */}
 					<div className="mb-8">
 						<div className="flex justify-between items-center mb-3">
-							<label className="block text-sm font-medium text-gray-700!">
+							<label
+								htmlFor="items-input"
+								className="block text-sm font-medium text-gray-700!"
+							>
 								Items{" "}
 								{!isEditMode && (
 									<span className="text-xs text-gray-500!">
@@ -797,12 +812,17 @@ export function AddTransactionModal({
 																					}
 																				}}
 																				onClick={() => {
-																					const transaction = existingTransactions.find(
-																						(t) =>
-																							t.id ===
-																							suggestion.transactionId,
-																					);
-																					if (transaction) {
+																					const transaction =
+																						existingTransactions.find(
+																							(
+																								t,
+																							) =>
+																								t.id ===
+																								suggestion.transactionId,
+																						);
+																					if (
+																						transaction
+																					) {
 																						handleSelectSuggestion(
 																							item.id,
 																							transaction,
@@ -1123,7 +1143,7 @@ export function AddTransactionModal({
 											onClick={() =>
 												handleRemoveItem(item.id)
 											}
-											className="p-1 text-gray-400 hover:text-rose-500 transition-colors flex-shrink-0!"
+											className="p-1 text-gray-400 hover:text-rose-500 transition-colors shrink-0!"
 										>
 											<Trash2 size={16} />
 										</button>
