@@ -228,7 +228,8 @@ export class LocalDB extends DB {
 	}
 
 	async restoreFromBackup(backupName: string) {
-		return await this.backupManager.restoreBackup(this.db, backupName);
+		await this.backupManager.restoreBackup(this.db, backupName);
+		await this.sync();
 	}
 
 	async getBackupList() {
