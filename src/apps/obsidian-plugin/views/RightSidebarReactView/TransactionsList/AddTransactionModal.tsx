@@ -30,11 +30,12 @@ import {
 	Transaction,
 	TransactionAmount,
 } from "../../../../../contexts/Transactions/domain";
+import { TransactionItem } from "../../../../../contexts/Transactions/domain/transaction-item.entity";
 import { AccountSplitter } from "../../../components/AccountSplitter";
 import { CalculatorInput } from "../../../components/Input/CalculatorInput";
 import { AppContext, CategoriesContext } from "../Contexts";
 
-export interface TransactionItem {
+export interface TransactionItemForm {
 	id: number;
 	name: string;
 	price: number;
@@ -75,7 +76,7 @@ export function AddTransactionModal({
 	);
 	const [time, setTime] = useState(new Date().toTimeString().slice(0, 5));
 	const [store, setStore] = useState("");
-	const [items, setItems] = useState<TransactionItem[]>([
+	const [items, setItems] = useState<TransactionItemForm[]>([
 		{
 			id: 0,
 			name: "",
@@ -105,7 +106,7 @@ export function AddTransactionModal({
 	// Autocomplete state
 	const [showSuggestions, setShowSuggestions] = useState<number | null>(null);
 	const [filteredSuggestions, setFilteredSuggestions] = useState<
-		Transaction[]
+		{ transactionId: string; item: TransactionItem }[]
 	>([]);
 	const suggestionsRef = useRef<HTMLDivElement>(null); // Keyboard navigation state for suggestions
 
@@ -271,7 +272,13 @@ export function AddTransactionModal({
 						item.name.toLowerCase().includes(value.toLowerCase()),
 					),
 				)
-				.slice(0, 5); // Limit to 5 suggestions
+				.map((t) => ({
+					transactionId: t.id,
+					item: t.items.find((item) =>
+						item.name.toLowerCase().includes(value.toLowerCase()),
+					)!,
+				}))
+				.slice(0, 10); // Limit to 10 suggestions
 			setFilteredSuggestions(filtered);
 			setShowSuggestions(id);
 		} else {
@@ -305,10 +312,14 @@ export function AddTransactionModal({
 					highlightedIndex >= 0 &&
 					highlightedIndex < filteredSuggestions.length
 				) {
-					handleSelectSuggestion(
-						itemIndex,
-						filteredSuggestions[highlightedIndex],
+					const { transactionId, item } =
+						filteredSuggestions[highlightedIndex];
+					const transaction = existingTransactions.find(
+						(t) => t.id === transactionId,
 					);
+					if (transaction) {
+						handleSelectSuggestion(itemIndex, transaction, item);
+					}
 				}
 				break;
 			case "Escape":
@@ -320,19 +331,20 @@ export function AddTransactionModal({
 		}
 	};
 
-	const handleSelectSuggestion = (id: number, transaction: Transaction) => {
-		// Calculate amount from transaction
-		// const amount = transaction.originAmount.value;
-
+	const handleSelectSuggestion = (
+		id: number,
+		transaction: Transaction,
+		item: TransactionItem,
+	) => {
 		// Update item with transaction data
 		const newItems = [...items];
-		// newItems[id] = {
-		// 	...newItems[id],
-		// 	name: transaction.name.value,
-		// 	price: items[id].price || amount,
-		// 	category: transaction.category.value,
-		// 	subcategory: transaction.subcategory.value,
-		// };
+		newItems[id] = {
+			...newItems[id],
+			name: item.name.value,
+			price: items[id].price || item.price.value, // Keep existing price if already entered
+			category: item.categoryId.value,
+			subcategory: item.subcategoryId.value,
+		};
 		setItems(newItems);
 		// Update operation type
 		setOperation(transaction.operation.value);
@@ -340,9 +352,11 @@ export function AddTransactionModal({
 		if (!store && transaction.store) {
 			setStore(transaction.store.value);
 		}
-		// Update splits
-		setFromSplits(transaction.originAccounts);
-		if (transaction.destinationAccounts) {
+		// Update splits if they are empty (don't overwrite user-entered splits)
+		if (fromSplits.length === 0) {
+			setFromSplits(transaction.originAccounts);
+		}
+		if (toSplits.length === 0 && transaction.destinationAccounts) {
 			setToSplits(transaction.destinationAccounts);
 		}
 		// Close suggestions
@@ -397,7 +411,7 @@ export function AddTransactionModal({
 
 	const handleItemChange = (
 		id: number,
-		field: keyof Omit<TransactionItem, "id">,
+		field: keyof Omit<TransactionItemForm, "id">,
 		value: string | number,
 	) => {
 		const newItems = [...items];
@@ -702,8 +716,8 @@ export function AddTransactionModal({
 															item.name.trim()
 																.length > 0
 														) {
-															const filtered =
-																existingTransactions;
+															// const filtered =
+															// 	existingTransactions;
 															// .filter(
 															// 	(t) =>
 															// 		t.name
@@ -716,9 +730,9 @@ export function AddTransactionModal({
 															// 	0,
 															// 	5,
 															// );
-															setFilteredSuggestions(
-																filtered,
-															);
+															// setFilteredSuggestions(
+															// 	filtered,
+															// );
 															setShowSuggestions(
 																item.id,
 															);
@@ -756,15 +770,17 @@ export function AddTransactionModal({
 																		suggestion,
 																		idx,
 																	) => {
-																		const suggestionAmount =
-																			suggestion.originAmount;
 																		const isHighlighted =
 																			idx ===
 																			highlightedIndex;
 																		return (
 																			<button
 																				key={
-																					suggestion.id
+																					suggestion
+																						.item
+																						.name
+																						.value +
+																					suggestion.transactionId
 																				}
 																				ref={(
 																					el,
@@ -780,12 +796,20 @@ export function AddTransactionModal({
 																						);
 																					}
 																				}}
-																				onClick={() =>
-																					handleSelectSuggestion(
-																						item.id,
-																						suggestion,
-																					)
-																				}
+																				onClick={() => {
+																					const transaction = existingTransactions.find(
+																						(t) =>
+																							t.id ===
+																							suggestion.transactionId,
+																					);
+																					if (transaction) {
+																						handleSelectSuggestion(
+																							item.id,
+																							transaction,
+																							suggestion.item,
+																						);
+																					}
+																				}}
 																				onMouseEnter={() =>
 																					setHighlightedIndex(
 																						idx,
@@ -797,7 +821,7 @@ export function AddTransactionModal({
 																					<div className="font-medium text-sm text-gray-900 truncate!">
 																						{
 																							suggestion
-																								.items[0]
+																								.item
 																								.name
 																						}
 																					</div>
@@ -805,7 +829,7 @@ export function AddTransactionModal({
 																						{
 																							getCategoryByID(
 																								suggestion
-																									.items[0]
+																									.item
 																									.categoryId,
 																							)
 																								?.name
@@ -813,16 +837,16 @@ export function AddTransactionModal({
 																						{` • ${
 																							getSubCategoryByID(
 																								suggestion
-																									.items[0]
+																									.item
 																									.subcategoryId,
 																							)
 																								?.name
 																						}`}
 																					</div>
 																				</div>
-																				<div className="flex items-center gap-2 flex-shrink-0!">
+																				<div className="flex items-center gap-2 shrink-0!">
 																					<span className="text-sm font-semibold text-gray-700!">
-																						{suggestionAmount.toString()}
+																						{suggestion.item.price.toString()}
 																					</span>
 																					<Clock
 																						size={
