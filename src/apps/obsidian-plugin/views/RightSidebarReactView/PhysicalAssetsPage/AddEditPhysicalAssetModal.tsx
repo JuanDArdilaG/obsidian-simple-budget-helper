@@ -5,6 +5,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { PhysicalAsset } from "../../../../../contexts/PhysicalAssets/domain/physical-asset.entity";
 import { Nanoid } from "../../../../../contexts/Shared/domain";
 import { TransactionAmount } from "../../../../../contexts/Transactions/domain";
+import { CalculatorInput } from "../../../components/Input/CalculatorInput";
 import { CategoriesContext } from "../Contexts";
 
 interface AddEditPhysicalAssetModalProps {
@@ -27,9 +28,7 @@ export function AddEditPhysicalAssetModal({
 	const [purchaseDate, setPurchaseDate] = useState(
 		new Date().toISOString().split("T")[0],
 	);
-	const [purchasePrice, setPurchasePrice] = useState<TransactionAmount>(
-		TransactionAmount.zero(),
-	);
+	const [purchasePrice, setPurchasePrice] = useState<number>(0);
 	const [usefulLife, setUsefulLife] = useState("5");
 
 	useEffect(() => {
@@ -38,7 +37,7 @@ export function AddEditPhysicalAssetModal({
 			setCategory(editAsset.category.value);
 			setSubcategory(editAsset.subcategory.value);
 			setPurchaseDate(editAsset.purchaseDate.toISOString().split("T")[0]);
-			setPurchasePrice(editAsset.purchasePrice);
+			setPurchasePrice(editAsset.purchasePrice.value);
 			setUsefulLife(editAsset.usefulLifeInYears.toString());
 		} else {
 			resetForm();
@@ -50,7 +49,7 @@ export function AddEditPhysicalAssetModal({
 		setCategory("");
 		setSubcategory("");
 		setPurchaseDate(new Date().toISOString().split("T")[0]);
-		setPurchasePrice(TransactionAmount.zero());
+		setPurchasePrice(0);
 		setUsefulLife("5");
 	};
 
@@ -64,7 +63,7 @@ export function AddEditPhysicalAssetModal({
 			new Nanoid(subcategory),
 			Number.parseFloat(usefulLife),
 			new Date(purchaseDate),
-			purchasePrice,
+			new TransactionAmount(purchasePrice),
 		);
 
 		onSave(newAsset);
@@ -203,22 +202,12 @@ export function AddEditPhysicalAssetModal({
 							<div className="relative">
 								<DollarSign
 									size={16}
-									className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+									className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10"
 								/>
-								<input
-									type="text"
-									value={purchasePrice.toString()}
-									onChange={(e) =>
-										setPurchasePrice(
-											TransactionAmount.fromString(
-												e.target.value,
-												{ withSign: false },
-											),
-										)
-									}
-									placeholder="0.00"
+								<CalculatorInput
+									value={purchasePrice}
+									onChange={setPurchasePrice}
 									className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-									required
 								/>
 							</div>
 						</div>

@@ -6,6 +6,7 @@ import {
 	TransactionAmount,
 } from "../../../contexts/Transactions/domain";
 import { AccountsContext } from "../views/RightSidebarReactView/Contexts";
+import { CalculatorInput } from "./Input/CalculatorInput";
 
 export function AccountSplitter({
 	label,
@@ -122,19 +123,12 @@ export function AccountSplitter({
 							<span className="absolute! left-3! top-1/2! -translate-y-1/2! text-gray-500! text-sm!">
 								$
 							</span>
-							<input
-								type="string"
-								value={split.amount.toString()}
-								onChange={(e) =>
-									updateSplit(
-										index,
-										"amount",
-										TransactionAmount.fromString(
-											e.target.value,
-										).toNumber(),
-									)
+							<CalculatorInput
+								value={split.amount.value}
+								onChange={(val) =>
+									updateSplit(index, "amount", val)
 								}
-								className="w-full! pl-6! pr-3! py-2! text-sm! border! border-gray-300! rounded-lg! focus:ring-1! focus:ring-indigo-500!"
+								className="w-full pl-6 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-indigo-500"
 							/>
 						</div>
 						{splits.length > 1 && (

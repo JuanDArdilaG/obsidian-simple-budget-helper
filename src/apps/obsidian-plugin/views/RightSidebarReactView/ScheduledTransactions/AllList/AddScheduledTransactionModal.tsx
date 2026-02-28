@@ -5,7 +5,6 @@ import {
 	ArrowUpRight,
 	RefreshCw,
 	Repeat,
-	Wallet,
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -25,6 +24,10 @@ import {
 	AccountSplit,
 	TransactionAmount,
 } from "../../../../../../contexts/Transactions/domain";
+import { AccountSplitter } from "../../../../components/AccountSplitter";
+import { CalculatorInput } from "../../../../components/Input/CalculatorInput";
+
+type FrequencyUnit = "d" | "w" | "mo" | "y";
 
 interface AddScheduledTransactionModalProps {
 	isOpen: boolean;
@@ -57,7 +60,7 @@ export function AddScheduledTransactionModal({
 		`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`,
 	);
 	const [frequencyNum, setFrequencyNum] = useState(1);
-	const [frequencyUnit, setFrequencyUnit] = useState<"d" | "w" | "mo" | "y">(
+	const [frequencyUnit, setFrequencyUnit] = useState<FrequencyUnit>(
 		"mo",
 	);
 	const [endDate, setEndDate] = useState("");
@@ -240,7 +243,7 @@ export function AddScheduledTransactionModal({
 				}}
 				className="bg-white! rounded-xl! shadow-xl! max-w-3xl! w-full! p-6! border! border-gray-100! my-8! overflow-hidden! flex! flex-col! max-h-[90vh]!"
 			>
-				<div className="flex! justify-between! items-center! mb-6! flex-shrink-0!">
+				<div className="flex! justify-between! items-center! mb-6! shrink-0!">
 					<h2 className="text-xl! font-bold! text-gray-900!">
 						{isEditMode
 							? "Edit Scheduled Transaction"
@@ -301,10 +304,11 @@ export function AddScheduledTransactionModal({
 					{/* Basic Info */}
 					<div className="space-y-4! mb-6!">
 						<div>
-							<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+							<label htmlFor='transaction-name-input' className="block! text-sm! font-medium! text-gray-700! mb-1!">
 								Transaction Name *
 							</label>
 							<input
+								id='transaction-name-input'
 								type="text"
 								value={name}
 								onChange={(e) => setName(e.target.value)}
@@ -315,10 +319,11 @@ export function AddScheduledTransactionModal({
 
 						<div className="grid! grid-cols-1! sm:grid-cols-2! gap-4!">
 							<div>
-								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+								<label htmlFor='category-input' className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Category *
 								</label>
 								<select
+									id='category-input'
 									value={category}
 									onChange={(e) => {
 										setCategory(e.target.value);
@@ -342,10 +347,11 @@ export function AddScheduledTransactionModal({
 							</div>
 
 							<div>
-								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+								<label htmlFor='subcategory-input' className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Subcategory
 								</label>
 								<select
+									id='subcategory-input'
 									value={subcategory}
 									onChange={(e) =>
 										setSubcategory(e.target.value)
@@ -376,33 +382,29 @@ export function AddScheduledTransactionModal({
 
 						<div className="grid! grid-cols-1! sm:grid-cols-2! gap-4!">
 							<div>
-								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+								<label htmlFor='amount-input' className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Amount *
 								</label>
 								<div className="relative!">
 									<span className="absolute! left-3! top-1/2! -translate-y-1/2! text-gray-500!">
 										$
 									</span>
-									<input
-										type="number"
-										value={amount || ""}
-										onChange={(e) =>
-											setAmount(
-												parseFloat(e.target.value) || 0,
-											)
-										}
-										placeholder="0.00"
+									<CalculatorInput
+										id='amount-input'
+										value={amount}
+										onChange={setAmount}
 										className="w-full! pl-7! pr-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 									/>
 								</div>
 							</div>
 
 							<div>
-								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+								<label htmlFor='store-input' className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Store / Payee (Optional)
 								</label>
 								<input
 									type="text"
+									id='store-input'
 									value={store}
 									onChange={(e) => setStore(e.target.value)}
 									placeholder="e.g. Netflix, Landlord"
@@ -423,11 +425,12 @@ export function AddScheduledTransactionModal({
 
 						<div className="space-y-4!">
 							<div>
-								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+								<label htmlFor='start-date-input' className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Start Date *
 								</label>
 								<input
 									type="date"
+									id='start-date-input'
 									value={startDate}
 									onChange={(e) =>
 										setStartDate(e.target.value)
@@ -437,10 +440,11 @@ export function AddScheduledTransactionModal({
 							</div>
 
 							<div>
-								<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+								<label htmlFor='recurrence-type-input' className="block! text-sm! font-medium! text-gray-700! mb-1!">
 									Recurrence Type *
 								</label>
 								<select
+									id='recurrence-type-input'
 									value={recurrenceType}
 									onChange={(e) =>
 										setRecurrenceType(
@@ -468,17 +472,18 @@ export function AddScheduledTransactionModal({
 
 							{recurrenceType !== RecurrenceType.ONE_TIME && (
 								<div>
-									<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+									<label htmlFor='frequency-input' className="block! text-sm! font-medium! text-gray-700! mb-1!">
 										Frequency *
 									</label>
 									<div className="flex! gap-2!">
 										<input
 											type="number"
+											id='frequency-input'
 											min="1"
 											value={frequencyNum}
 											onChange={(e) =>
 												setFrequencyNum(
-													parseInt(e.target.value) ||
+													Number.parseInt(e.target.value) ||
 														1,
 												)
 											}
@@ -488,11 +493,7 @@ export function AddScheduledTransactionModal({
 											value={frequencyUnit}
 											onChange={(e) =>
 												setFrequencyUnit(
-													e.target.value as
-														| "d"
-														| "w"
-														| "mo"
-														| "y",
+													e.target.value as FrequencyUnit
 												)
 											}
 											className="flex-1! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
@@ -508,11 +509,12 @@ export function AddScheduledTransactionModal({
 
 							{recurrenceType === RecurrenceType.UNTIL_DATE && (
 								<div>
-									<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+									<label htmlFor='end-date-input' className="block! text-sm! font-medium! text-gray-700! mb-1!">
 										End Date *
 									</label>
 									<input
 										type="date"
+										id='end-date-input'
 										value={endDate}
 										onChange={(e) =>
 											setEndDate(e.target.value)
@@ -526,11 +528,12 @@ export function AddScheduledTransactionModal({
 							{recurrenceType ===
 								RecurrenceType.N_OCCURRENCES && (
 								<div>
-									<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+									<label htmlFor='n-occurrences-input' className="block! text-sm! font-medium! text-gray-700! mb-1!">
 										Number of Occurrences *
 									</label>
 									<input
 										type="number"
+										id='n-occurrences-input'
 										min="1"
 										value={maxOccurrences}
 										onChange={(e) =>
@@ -557,7 +560,6 @@ export function AddScheduledTransactionModal({
 							}
 							splits={fromSplits}
 							onChange={setFromSplits}
-							accountsMap={accountsMap}
 							totalAmount={amount}
 						/>
 
@@ -566,7 +568,6 @@ export function AddScheduledTransactionModal({
 								label="Transfer To"
 								splits={toSplits}
 								onChange={setToSplits}
-								accountsMap={accountsMap}
 								totalAmount={amount}
 							/>
 						)}
@@ -589,111 +590,6 @@ export function AddScheduledTransactionModal({
 					</button>
 				</div>
 			</motion.div>
-		</div>
-	);
-}
-function AccountSplitter({
-	label,
-	splits,
-	onChange,
-	accountsMap,
-	totalAmount,
-}: Readonly<{
-	label: string;
-	splits: AccountSplit[];
-	onChange: (splits: AccountSplit[]) => void;
-	accountsMap: AccountsMap;
-	totalAmount: number;
-}>) {
-	const currentTotal = splits.reduce((sum, s) => sum + s.amount.value, 0);
-	const remaining = totalAmount - currentTotal;
-	const isBalanced = Math.abs(remaining) < 0.01;
-	const updateSplit = (
-		index: number,
-		field: keyof AccountSplit,
-		value: string | number,
-	) => {
-		const newSplits = [...splits];
-		newSplits[index] = new AccountSplit(
-			field === "accountId"
-				? new Nanoid(value as string)
-				: newSplits[index].accountId,
-			field === "amount"
-				? new TransactionAmount(value as number)
-				: newSplits[index].amount,
-		);
-		onChange(newSplits);
-	};
-	return (
-		<div className="bg-gray-50! rounded-lg! p-4! border! border-gray-200!">
-			<div className="flex! justify-between! items-center! mb-3!">
-				<div className="flex! items-center! gap-2!">
-					<Wallet size={16} className="text-gray-500!" />
-					<span className="font-medium! text-gray-700!">{label}</span>
-				</div>
-				<div
-					className={`text-sm! font-medium! ${isBalanced ? "text-green-600!" : "text-amber-600!"}`}
-				>
-					{isBalanced ? (
-						<span className="flex! items-center! gap-1!">
-							Match{" "}
-							<div className="w-2! h-2! rounded-full! bg-green-500!" />
-						</span>
-					) : (
-						<span>
-							{remaining > 0 ? "Remaining: " : "Over: "}
-							{new Intl.NumberFormat("en-US", {
-								style: "currency",
-								currency: "USD",
-							}).format(Math.abs(remaining))}
-						</span>
-					)}
-				</div>
-			</div>
-
-			<div className="space-y-2!">
-				{splits.map((split, index) => (
-					<div
-						key={split.accountId.value}
-						className="flex! gap-2! items-center!"
-					>
-						<select
-							value={split.accountId.value}
-							onChange={(e) =>
-								updateSplit(index, "accountId", e.target.value)
-							}
-							className="flex-1! px-3! py-2! text-sm! border! border-gray-300! rounded-lg! focus:ring-1! focus:ring-indigo-500! bg-white!"
-						>
-							{Array.from(accountsMap)
-								.toSorted(([_, accA], [__, accB]) =>
-									accA.name.localeCompare(accB.name.value),
-								)
-								.map(([id, acc]) => (
-									<option key={id} value={id}>
-										{acc.name} ({acc.currency})
-									</option>
-								))}
-						</select>
-						<div className="relative! w-32!">
-							<span className="absolute! left-3! top-1/2! -translate-y-1/2! text-gray-500! text-sm!">
-								$
-							</span>
-							<input
-								type="number"
-								value={split.amount.value}
-								onChange={(e) =>
-									updateSplit(
-										index,
-										"amount",
-										Number.parseFloat(e.target.value),
-									)
-								}
-								className="w-full! pl-6! pr-3! py-2! text-sm! border! border-gray-300! rounded-lg! focus:ring-1! focus:ring-indigo-500!"
-							/>
-						</div>
-					</div>
-				))}
-			</div>
 		</div>
 	);
 }
