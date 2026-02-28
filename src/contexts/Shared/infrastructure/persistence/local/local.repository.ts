@@ -35,7 +35,8 @@ export abstract class LocalRepository<
 		LocalRepository.#logger.debug(
 			`Fetched ${records.length} records from table: ${this.tableName}`,
 		);
-		return records.map(this.mapToDomain);
+		const entities = records.map(this.mapToDomain);
+		return entities;
 	}
 
 	async findByCriteria(criteria: Criteria<Primitives>): Promise<T[]> {

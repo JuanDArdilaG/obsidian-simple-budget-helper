@@ -70,10 +70,8 @@ export function TransactionsList() {
 		setIsRefreshing(true);
 	};
 
-	const handleAddTransaction = async (newTransactions: Transaction[]) => {
-		for (const t of newTransactions) {
-			await recordTransaction.execute(t);
-		}
+	const handleAddTransaction = async (newTransaction: Transaction) => {
+		await recordTransaction.execute(newTransaction);
 		setIsRefreshing(true);
 		updateTransactions();
 		updateAccounts();
@@ -438,11 +436,8 @@ export function TransactionsList() {
 			<AddTransactionModal
 				isOpen={!!editingTransaction}
 				onClose={() => setEditingTransaction(null)}
-				onSave={async (transactions) => {
-					// For edit, we only expect one transaction
-					if (transactions.length > 0) {
-						await handleUpdateTransaction(transactions[0]);
-					}
+				onSave={async (transaction) => {
+					await handleUpdateTransaction(transaction);
 				}}
 				accountsMap={accountsMap}
 				editTransaction={editingTransaction}

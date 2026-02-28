@@ -98,8 +98,9 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 		const lowerCaseQuery = searchQuery.toLowerCase();
 		return transactions.filter(({ transaction }) => {
 			return (
-				transaction.name.toLowerCase().includes(lowerCaseQuery) ||
-				transaction.store?.toLowerCase().includes(lowerCaseQuery)
+				transaction.items.some((item) =>
+					item.name.toLowerCase().includes(lowerCaseQuery),
+				) || transaction.store?.toLowerCase().includes(lowerCaseQuery)
 			);
 		});
 	}
@@ -127,9 +128,10 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 		selectedCategory?: string,
 	): TransactionWithAccumulatedBalance[] {
 		if (!selectedCategory) return transactions;
-		return transactions.filter(
-			({ transaction }) =>
-				transaction.category.value === selectedCategory,
+		return transactions.filter(({ transaction }) =>
+			transaction.items.some(
+				(item) => item.categoryId.value === selectedCategory,
+			),
 		);
 	}
 
@@ -138,9 +140,10 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 		selectedSubcategory?: string,
 	): TransactionWithAccumulatedBalance[] {
 		if (!selectedSubcategory) return transactions;
-		return transactions.filter(
-			({ transaction }) =>
-				transaction.subcategory.value === selectedSubcategory,
+		return transactions.filter(({ transaction }) =>
+			transaction.items.some(
+				(item) => item.subcategoryId.value === selectedSubcategory,
+			),
 		);
 	}
 

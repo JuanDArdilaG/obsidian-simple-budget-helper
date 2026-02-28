@@ -45,7 +45,7 @@ export interface TransactionItem {
 interface AddTransactionModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSave: (transactions: Transaction[]) => Promise<void>;
+	onSave: (transactions: Transaction) => Promise<void>;
 	accountsMap: AccountsMap;
 	editTransaction?: Transaction | null;
 	existingTransactions?: Transaction[];
@@ -218,19 +218,16 @@ export function AddTransactionModal({
 			setStore(editTransaction.store?.value || "");
 
 			// For edit mode, show as single item
-			setItems([
-				{
-					id: 0,
-					name: editTransaction.name.value,
-					price: editTransaction.originAccounts.reduce(
-						(sum, s) => sum + s.amount.value,
-						0,
-					),
-					quantity: 1,
-					category: editTransaction.category.value,
-					subcategory: editTransaction.subcategory.value,
-				},
-			]);
+			setItems(
+				editTransaction.items.map((item, index) => ({
+					id: index,
+					name: item.name.value,
+					price: item.price.value,
+					quantity: item.quantity,
+					category: item.categoryId.value,
+					subcategory: item.subcategoryId.value,
+				})),
+			);
 			setFromSplits(editTransaction.originAccounts);
 			setToSplits(editTransaction.destinationAccounts || []);
 		} else {
@@ -269,7 +266,9 @@ export function AddTransactionModal({
 		if (value.trim().length > 0) {
 			const filtered = existingTransactions
 				.filter((t) =>
-					t.name.toLowerCase().includes(value.toLowerCase()),
+					t.items.some((item) =>
+						item.name.toLowerCase().includes(value.toLowerCase()),
+					),
 				)
 				.slice(0, 5); // Limit to 5 suggestions
 			setFilteredSuggestions(filtered);
@@ -322,17 +321,17 @@ export function AddTransactionModal({
 
 	const handleSelectSuggestion = (id: number, transaction: Transaction) => {
 		// Calculate amount from transaction
-		const amount = transaction.originAmount.value;
+		// const amount = transaction.originAmount.value;
 
 		// Update item with transaction data
 		const newItems = [...items];
-		newItems[id] = {
-			...newItems[id],
-			name: transaction.name.value,
-			price: items[id].price || amount,
-			category: transaction.category.value,
-			subcategory: transaction.subcategory.value,
-		};
+		// newItems[id] = {
+		// 	...newItems[id],
+		// 	name: transaction.name.value,
+		// 	price: items[id].price || amount,
+		// 	category: transaction.category.value,
+		// 	subcategory: transaction.subcategory.value,
+		// };
 		setItems(newItems);
 		// Update operation type
 		setOperation(transaction.operation.value);
@@ -506,48 +505,42 @@ export function AddTransactionModal({
 		const dateTimeString = `${date}T${time}:00`;
 		const transactionDate = new Date(dateTimeString);
 
-		// Create individual transactions for each item
-		const transactions: Transaction[] = items.flatMap((item) => {
-			const itemTotal = item.price;
-			const itemRatio = itemTotal / totalAmount;
-			return Array.from({ length: item.quantity }, () => {
-				return Transaction.fromPrimitives({
-					id: editTransaction?.id ?? Nanoid.generate().value,
-					date: transactionDate,
-					fromSplits: fromSplits.map((split) =>
-						new AccountSplit(
-							split.accountId,
-							new TransactionAmount(
-								split.amount.value * itemRatio,
+		const transaction: Transaction = Transaction.fromPrimitives({
+			id: editTransaction?.id ?? Nanoid.generate().value,
+			date: transactionDate,
+			fromSplits: fromSplits.map((split) =>
+				new AccountSplit(
+					split.accountId,
+					new TransactionAmount(split.amount.value),
+				).toPrimitives(),
+			),
+			toSplits: toSplits.map((split) =>
+				new AccountSplit(
+					split.accountId,
+					new TransactionAmount(
+						Number.parseFloat(
+							(split.amount.value / exchangeRate.value).toFixed(
+								2,
 							),
-						).toPrimitives(),
+						),
 					),
-					toSplits: toSplits.map((split) =>
-						new AccountSplit(
-							split.accountId,
-							new TransactionAmount(
-								Number.parseFloat(
-									(
-										(split.amount.value * itemRatio) /
-										exchangeRate.value
-									).toFixed(2),
-								),
-							),
-						).toPrimitives(),
-					),
-					name: item.name,
-					operation: operation,
-					category: item.category,
-					subcategory: item.subcategory,
-					store: store || undefined,
-					exchangeRate: isCrossCurrencyTransfer
-						? exchangeRate.value
-						: undefined,
-					updatedAt: new Date().toISOString(),
-				});
-			});
+				).toPrimitives(),
+			),
+			operation: operation,
+			items: items.map((item) => ({
+				name: item.name,
+				price: item.price,
+				quantity: item.quantity,
+				categoryId: item.category,
+				subcategoryId: item.subcategory,
+			})),
+			store: store || undefined,
+			exchangeRate: isCrossCurrencyTransfer
+				? exchangeRate.value
+				: undefined,
+			updatedAt: new Date().toISOString(),
 		});
-		await onSave(transactions);
+		await onSave(transaction);
 		onClose();
 	};
 
@@ -709,19 +702,19 @@ export function AddTransactionModal({
 																.length > 0
 														) {
 															const filtered =
-																existingTransactions
-																	.filter(
-																		(t) =>
-																			t.name
-																				.toLowerCase()
-																				.includes(
-																					item.name.toLowerCase(),
-																				),
-																	)
-																	.slice(
-																		0,
-																		5,
-																	);
+																existingTransactions;
+															// .filter(
+															// 	(t) =>
+															// 		t.name
+															// 			.toLowerCase()
+															// 			.includes(
+															// 				item.name.toLowerCase(),
+															// 			),
+															// )
+															// .slice(
+															// 	0,
+															// 	5,
+															// );
 															setFilteredSuggestions(
 																filtered,
 															);
@@ -802,19 +795,25 @@ export function AddTransactionModal({
 																				<div className="flex-1! min-w-0">
 																					<div className="font-medium! text-sm! text-gray-900! truncate!">
 																						{
-																							suggestion.name
+																							suggestion
+																								.items[0]
+																								.name
 																						}
 																					</div>
 																					<div className="text-xs! text-gray-500! truncate!">
 																						{
 																							getCategoryByID(
-																								suggestion.category,
+																								suggestion
+																									.items[0]
+																									.categoryId,
 																							)
 																								?.name
 																						}
 																						{` • ${
 																							getSubCategoryByID(
-																								suggestion.subcategory,
+																								suggestion
+																									.items[0]
+																									.subcategoryId,
 																							)
 																								?.name
 																						}`}

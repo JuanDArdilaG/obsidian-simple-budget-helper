@@ -248,7 +248,7 @@ export class LocalDB extends DB {
 	}
 
 	#initializeTables() {
-		this.db.version(8).stores({
+		this.db.version(9).stores({
 			[Config.accountsTableName]: Object.keys(
 				Account.emptyPrimitives(),
 			).join(", "),

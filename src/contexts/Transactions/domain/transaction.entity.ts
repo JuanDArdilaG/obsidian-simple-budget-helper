@@ -9,9 +9,12 @@ import { InvalidArgumentError } from "contexts/Shared/domain/errors/invalid-argu
 import { ScheduledTransaction } from "../../ScheduledTransactions/domain";
 import { Nanoid } from "../../Shared/domain/value-objects/id/nanoid.valueobject";
 import { AccountSplit } from "./account-split.valueobject";
-import { TransactionName } from "./item-name.valueobject";
 import { TransactionAmount } from "./transaction-amount.valueobject";
 import { TransactionDate } from "./transaction-date.valueobject";
+import {
+	TransactionItem,
+	TransactionItemPrimitives,
+} from "./transaction-item.entity";
 import { TransactionOperation } from "./transaction-operation.valueobject";
 
 export class Transaction extends Entity<string, TransactionPrimitives> {
@@ -19,11 +22,9 @@ export class Transaction extends Entity<string, TransactionPrimitives> {
 		id: Nanoid,
 		private _originAccounts: AccountSplit[],
 		private _destinationAccounts: AccountSplit[],
-		private _name: TransactionName,
 		private _operation: TransactionOperation,
-		private _category: Nanoid,
-		private _subcategory: Nanoid,
 		private _date: TransactionDate,
+		private readonly _items: TransactionItem[],
 		updatedAt: DateValueObject,
 		private readonly _store?: StringValueObject,
 		private _exchangeRate?: NumberValueObject,
@@ -69,11 +70,17 @@ export class Transaction extends Entity<string, TransactionPrimitives> {
 			Nanoid.generate(),
 			scheduledItem.originAccounts,
 			scheduledItem.destinationAccounts,
-			scheduledItem.name,
 			scheduledItem.operation.type,
-			scheduledItem.category,
-			scheduledItem.subcategory,
 			date,
+			[
+				new TransactionItem(
+					scheduledItem.name,
+					scheduledItem.originAmount,
+					1,
+					scheduledItem.category,
+					scheduledItem.subcategory,
+				),
+			],
 			DateValueObject.createNowDate(),
 			scheduledItem.store,
 		);
@@ -83,20 +90,16 @@ export class Transaction extends Entity<string, TransactionPrimitives> {
 		date: TransactionDate,
 		originAccountSplits: AccountSplit[],
 		destinationAccountSplits: AccountSplit[],
-		name: TransactionName,
 		operation: TransactionOperation,
-		category: Nanoid,
-		subcategory: Nanoid,
+		items: TransactionItem[],
 	): Transaction {
 		return new Transaction(
 			Nanoid.generate(),
 			originAccountSplits,
 			destinationAccountSplits,
-			name,
 			operation,
-			category,
-			subcategory,
 			date,
+			items,
 			DateValueObject.createNowDate(),
 		);
 	}
@@ -135,15 +138,6 @@ export class Transaction extends Entity<string, TransactionPrimitives> {
 		this.updateTimestamp();
 	}
 
-	get name(): TransactionName {
-		return this._name;
-	}
-
-	updateName(name: TransactionName): void {
-		this._name = name;
-		this.updateTimestamp();
-	}
-
 	get date(): TransactionDate {
 		return this._date;
 	}
@@ -163,22 +157,8 @@ export class Transaction extends Entity<string, TransactionPrimitives> {
 		this.updateTimestamp();
 	}
 
-	get category(): Nanoid {
-		return this._category;
-	}
-
-	updateCategory(category: Nanoid) {
-		this._category = category;
-		this.updateTimestamp();
-	}
-
-	get subcategory(): Nanoid {
-		return this._subcategory;
-	}
-
-	updateSubCategory(subcategory: Nanoid) {
-		this._subcategory = subcategory;
-		this.updateTimestamp();
+	get items(): TransactionItem[] {
+		return this._items;
 	}
 
 	get store(): StringValueObject | undefined {
@@ -219,13 +199,11 @@ export class Transaction extends Entity<string, TransactionPrimitives> {
 	toPrimitives(): TransactionPrimitives {
 		return {
 			id: this._id,
-			name: this._name.value,
-			category: this._category.value,
-			subcategory: this._subcategory.value,
 			fromSplits: this._originAccounts.map((s) => s.toPrimitives()),
 			toSplits: this._destinationAccounts.map((s) => s.toPrimitives()),
 			operation: this._operation.value,
 			date: this._date,
+			items: this._items.map((item) => item.toPrimitives()),
 			updatedAt: this._updatedAt.toISOString(),
 			store: this._store?.value,
 			exchangeRate: this._exchangeRate?.value,
@@ -234,14 +212,11 @@ export class Transaction extends Entity<string, TransactionPrimitives> {
 
 	static fromPrimitives({
 		id,
-		name,
 		fromSplits,
 		toSplits,
 		operation,
-		category,
-		subcategory,
-		subCategory,
 		date,
+		items,
 		store,
 		exchangeRate,
 		updatedAt,
@@ -250,11 +225,9 @@ export class Transaction extends Entity<string, TransactionPrimitives> {
 			new Nanoid(id),
 			fromSplits.map(AccountSplit.fromPrimitives),
 			toSplits?.map(AccountSplit.fromPrimitives) || [],
-			new TransactionName(name),
 			new TransactionOperation(operation),
-			new Nanoid(category),
-			new Nanoid(subCategory ?? subcategory),
 			new TransactionDate(new Date(date)),
+			items.map(TransactionItem.fromPrimitives),
 			updatedAt
 				? new DateValueObject(new Date(updatedAt))
 				: DateValueObject.createNowDate(),
@@ -266,13 +239,11 @@ export class Transaction extends Entity<string, TransactionPrimitives> {
 	static emptyPrimitives(): TransactionPrimitives {
 		return {
 			id: "",
-			name: "",
-			category: "",
-			subcategory: "",
 			fromSplits: [],
 			toSplits: [],
 			operation: "expense",
 			date: new Date(),
+			items: [],
 			store: "",
 			exchangeRate: 0,
 			updatedAt: new Date().toISOString(),
@@ -282,10 +253,6 @@ export class Transaction extends Entity<string, TransactionPrimitives> {
 
 export type TransactionPrimitives = {
 	id: string;
-	name: string;
-	category: string;
-	subcategory: string;
-	subCategory?: string; // Deprecated - kept to maintain backward compatibility
 	fromSplits: {
 		accountId: string;
 		amount: number;
@@ -296,6 +263,7 @@ export type TransactionPrimitives = {
 	}[];
 	operation: OperationType;
 	date: Date;
+	items: TransactionItemPrimitives[];
 	store?: string;
 	exchangeRate?: number;
 	updatedAt: string;

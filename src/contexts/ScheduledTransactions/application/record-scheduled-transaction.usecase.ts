@@ -8,6 +8,7 @@ import { TransactionName } from "contexts/Transactions/domain/item-name.valueobj
 import { TransactionDate } from "contexts/Transactions/domain/transaction-date.valueobject";
 import { Transaction } from "contexts/Transactions/domain/transaction.entity";
 import { Nanoid } from "../../Shared/domain";
+import { TransactionItem } from "../../Transactions/domain/transaction-item.entity";
 import {
 	IRecurrenceModificationsService,
 	IScheduledTransactionsService,
@@ -77,11 +78,17 @@ export class RecordScheduledTransactionUseCase implements CommandUseCase<RecordS
 			Nanoid.generate(),
 			effectiveFromSplits,
 			effectiveToSplits,
-			new TransactionName(scheduledTransaction.name.value),
 			scheduledTransaction.operation.type,
-			scheduledTransaction.category,
-			scheduledTransaction.subcategory,
 			effectiveDate,
+			[
+				new TransactionItem(
+					new TransactionName(scheduledTransaction.name.value),
+					scheduledTransaction.originAmount,
+					1,
+					scheduledTransaction.category,
+					scheduledTransaction.subcategory,
+				),
+			],
 			DateValueObject.createNowDate(),
 			recurrenceInfo.store,
 		);

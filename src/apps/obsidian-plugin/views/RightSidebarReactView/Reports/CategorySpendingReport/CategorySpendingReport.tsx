@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { useContext, useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { Nanoid } from "../../../../../../contexts/Shared/domain";
 import { CategoriesContext, TransactionsContext } from "../../Contexts";
 
 type TimeframeMode = "month" | "year" | "custom";
@@ -69,30 +68,41 @@ export function CategorySpendingReport() {
 		const dataMap = new Map<string, number>();
 		let total = 0;
 		filteredTransactions.forEach((t) => {
-			// If a category is selected, group by subcategory. Otherwise group by category.
-			let id: string = "";
-			if (selectedCategory) {
-				const category = getCategoryByID(t.category);
-				if (category?.name.value === selectedCategory) {
-					id = t.subcategory.value;
-				}
-			} else {
-				id = t.category.value;
-			}
-
-			if (id) {
-				const name = selectedCategory
-					? getSubCategoryByID(new Nanoid(id))?.name.value ||
-						"Uncategorized"
-					: getCategoryByID(new Nanoid(id))?.name.value ||
-						"Uncategorized";
-				// Calculate amount (sum of splits for expense)
-				const amount = t.originAccounts.reduce(
-					(sum, s) => sum + s.amount.value,
+			// Iterate over items to get category data
+			const amount = t.originAccounts.reduce(
+				(sum, s) => sum + s.amount.value,
+				0,
+			);
+			if (t.items && t.items.length > 0) {
+				const totalItemValue = t.items.reduce(
+					(sum, item) => sum + item.price.value * item.quantity,
 					0,
 				);
-				dataMap.set(name, (dataMap.get(name) || 0) + amount);
-				total += amount;
+				t.items.forEach((item) => {
+					const itemCategory = getCategoryByID(item.categoryId)?.name;
+					const itemSubcategory = getSubCategoryByID(
+						item.subcategoryId,
+					)?.name;
+					// Proportional amount based on item value relative to total
+					const itemProportion =
+						totalItemValue > 0
+							? (item.price.value * item.quantity) /
+								totalItemValue
+							: 1 / t.items.length;
+					const itemAmount = amount * itemProportion;
+					const key = selectedCategory
+						? itemCategory?.value === selectedCategory
+							? itemSubcategory
+							: null
+						: itemCategory;
+					if (key) {
+						dataMap.set(
+							key.value,
+							(dataMap.get(key.value) || 0) + itemAmount,
+						);
+						total += itemAmount;
+					}
+				});
 			}
 		});
 		const data = Array.from(dataMap.entries())

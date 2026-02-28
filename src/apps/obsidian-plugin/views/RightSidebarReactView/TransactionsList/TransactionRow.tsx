@@ -1,17 +1,22 @@
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
 	ArrowDownLeft,
 	ArrowUpRight,
 	Check,
+	ChevronDown,
+	ChevronUp,
 	DollarSign,
 	Pencil,
 	RefreshCw,
+	ShoppingBag,
 	Trash2,
 	TrendingDown,
 	TrendingUp,
 } from "lucide-react";
 import { useContext, useMemo, useState } from "react";
 import { TransactionWithAccumulatedBalance } from "../../../../../contexts/Reports/domain";
+import { Nanoid } from "../../../../../contexts/Shared/domain";
+import { PriceVO } from "../../../../../contexts/Shared/domain/value-objects/price.vo";
 import {
 	AccountSplit,
 	Transaction,
@@ -41,15 +46,10 @@ export function TransactionRow({
 	const { getAccountByID } = useContext(AccountsContext);
 	const { getCategoryByID, getSubCategoryByID } =
 		useContext(CategoriesContext);
-	const transactionCategory = useMemo(
-		() => getCategoryByID(transaction.category),
-		[getCategoryByID, transaction.category],
-	);
-	const transactionSubcategory = useMemo(
-		() => getSubCategoryByID(transaction.subcategory),
-		[getSubCategoryByID, transaction.subcategory],
-	);
 	const [isHovered, setIsHovered] = useState(false);
+	const [isItemsExpanded, setIsItemsExpanded] = useState(false);
+	const hasMultipleItems = transaction.items && transaction.items.length > 1;
+	const displayName = getTransactionDisplayName(transaction);
 
 	const handleClick = () => {
 		if (onToggleSelect) {
@@ -130,7 +130,7 @@ export function TransactionRow({
 					</span>
 					{/* Transaction amount - only show if multiple splits */}
 					{hasMultipleSplits && (
-						<div className="flex items-center gap-1 flex-shrink-0">
+						<div className="flex items-center gap-1 shrink-0">
 							{isFrom ? (
 								<TrendingDown className="w-3 h-3 text-rose-500" />
 							) : (
@@ -235,20 +235,44 @@ export function TransactionRow({
 					className={`flex items-start gap-3 flex-1 md:pr-24 min-w-0 ${onToggleSelect ? "pl-7" : ""}`}
 				>
 					<div
-						className={`p-2 rounded-full bg-white ${styles.text} shadow-sm mt-1 flex-shrink-0`}
+						className={`p-2 rounded-full bg-white ${styles.text} shadow-sm mt-1 shrink-0`}
 					>
 						{styles.icon}
 					</div>
 					<div className="flex-1 min-w-0">
 						<div className="flex items-center gap-2">
 							<h3 className="font-semibold! text-gray-900! truncate!">
-								{transaction.name}
+								{displayName}
 							</h3>
+							{hasMultipleItems && (
+								<button
+									onClick={(e) => {
+										e.stopPropagation();
+										setIsItemsExpanded(!isItemsExpanded);
+									}}
+									className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors text-xs font-medium shrink-0"
+								>
+									<ShoppingBag size={12} />
+									{transaction.items.length} items
+									{isItemsExpanded ? (
+										<ChevronUp size={12} />
+									) : (
+										<ChevronDown size={12} />
+									)}
+								</button>
+							)}
 						</div>
 						<div className="flex items-center gap-2 mt-0.5">
 							<span className="text-sm text-gray-600 truncate">
-								{transactionCategory?.name}
-								{` • ${transactionSubcategory?.name}`}
+								{
+									getCategoryByID(
+										getTransactionCategory(transaction)
+											.category ?? Nanoid.generate(),
+									)?.name
+								}
+								{getTransactionCategory(transaction)
+									.subcategory &&
+									` • ${getSubCategoryByID(getTransactionCategory(transaction).subcategory ?? Nanoid.generate())?.name}`}
 							</span>
 						</div>
 						{transaction.store && (
@@ -258,7 +282,7 @@ export function TransactionRow({
 						)}
 					</div>
 				</div>
-				<div className="text-right flex-shrink-0 min-w-fit">
+				<div className="text-right shrink-0 min-w-fit">
 					<div
 						className={`font-bold text-lg ${styles.text} whitespace-nowrap`}
 					>
@@ -274,6 +298,68 @@ export function TransactionRow({
 					</div>
 				</div>
 			</div>
+
+			{/* Multi-Item Breakdown (expandable) */}
+			<AnimatePresence>
+				{hasMultipleItems && isItemsExpanded && (
+					<motion.div
+						initial={{
+							height: 0,
+							opacity: 0,
+						}}
+						animate={{
+							height: "auto",
+							opacity: 1,
+						}}
+						exit={{
+							height: 0,
+							opacity: 0,
+						}}
+						transition={{
+							duration: 0.2,
+						}}
+						className="overflow-hidden"
+					>
+						<div className="border-t border-gray-200/50 pt-2 mt-1 mb-2 ml-8 space-y-1.5">
+							{transaction.items.map((item) => (
+								<div
+									key={item.name.value}
+									className="flex items-center justify-between text-sm py-1 px-2 rounded-md bg-white/60"
+								>
+									<div className="flex-1 min-w-0">
+										<span className="font-medium text-gray-800 truncate block">
+											{item.name}
+										</span>
+										{
+											<span className="text-xs text-gray-500">
+												{
+													getCategoryByID(
+														item.categoryId,
+													)?.name
+												}
+												{` • ${getSubCategoryByID(item.subcategoryId)?.name}`}
+											</span>
+										}
+									</div>
+									<div className="flex items-center gap-2 shrink-0 ml-3">
+										{item.quantity > 1 && (
+											<span className="text-xs text-gray-500">
+												×{item.quantity}
+											</span>
+										)}
+										<span className="font-semibold text-gray-700 text-sm">
+											{new PriceVO(
+												item.price.value *
+													item.quantity,
+											).toString()}
+										</span>
+									</div>
+								</div>
+							))}
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 
 			{/* Mobile Action Buttons - below main content */}
 			<div className="flex md:hidden items-center justify-end gap-2 pb-2 border-b border-gray-200/50">
@@ -345,4 +431,32 @@ export function TransactionRow({
 			</div>
 		</div>
 	);
+}
+
+// Helper to get display name from a transaction's items
+export function getTransactionDisplayName(transaction: Transaction): string {
+	if (!transaction.items || transaction.items.length === 0) {
+		return "Unnamed Transaction";
+	}
+	if (transaction.items.length === 1) {
+		return transaction.items[0].name.value || "Unnamed Item";
+	}
+	return `${transaction.items[0].name.value} +${transaction.items.length - 1} more`;
+}
+
+// Helper to get primary category from a transaction's items
+export function getTransactionCategory(transaction: Transaction): {
+	category?: Nanoid;
+	subcategory?: Nanoid;
+} {
+	if (!transaction.items || transaction.items.length === 0) {
+		return {
+			category: undefined,
+			subcategory: undefined,
+		};
+	}
+	return {
+		category: transaction.items[0].categoryId || undefined,
+		subcategory: transaction.items[0].subcategoryId || undefined,
+	};
 }

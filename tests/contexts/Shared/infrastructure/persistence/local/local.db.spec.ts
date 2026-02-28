@@ -11,15 +11,12 @@ describe("LocalDB Migration Integration", () => {
 	describe("Migration Logic", () => {
 		it("should not migrate data when version is current", async () => {
 			const currentData = {
-				version: "1.3.0", // Current version
+				version: "1.4.0", // Current version
 				timestamp: "2024-01-01T00:00:00.000Z",
 				data: {
 					transactions: [
 						{
 							id: "transaction-1",
-							name: "Test Transaction",
-							category: "category-1",
-							subCategory: "subcategory-1",
 							fromSplits: [
 								{
 									accountId: "account-1",
@@ -29,6 +26,15 @@ describe("LocalDB Migration Integration", () => {
 							toSplits: [],
 							operation: "expense",
 							date: new Date("2024-01-01"),
+							items: [
+								{
+									name: "Test Transaction",
+									price: 100,
+									quantity: 1,
+									categoryId: "category-1",
+									subcategoryId: "subcategory-1",
+								},
+							],
 							updatedAt: "2024-01-01T00:00:00.000Z",
 						},
 					],
@@ -53,7 +59,7 @@ describe("LocalDB Migration Integration", () => {
 			const currentVersion = dataVersioning.getCurrentVersion();
 
 			// Test that different versions trigger migration
-			expect(currentVersion).toBe("1.3.0");
+			expect(currentVersion).toBe("1.4.0");
 		});
 	});
 });
