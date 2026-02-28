@@ -165,6 +165,7 @@ export class LocalDB extends DB {
 				data = (await this.dataVersioning.migrateData(
 					data,
 				)) as typeof data;
+				await this.sync(); // Ensure local files are updated after migration
 			}
 
 			// Clear existing data and import new data

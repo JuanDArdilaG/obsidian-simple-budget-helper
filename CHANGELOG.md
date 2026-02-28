@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Now you can create transactions with multiple items, before they were created as separate transactions.
 - Amount fields in the different forms now support calculator input, allowing you to type mathematical expressions directly into the amount field when creating or editing. The expression is evaluated in real time, and the result is displayed as a formatted price.
 
+### Fixed
+
+- When restoring a backup or migrating data between versions, the local files were not being updated with the restored data, just the indexedDB, causing inconsistencies.
+
 ## [0.22.0] - 2026-02-24
 
 ### Added
