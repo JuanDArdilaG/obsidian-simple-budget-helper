@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - When restoring a backup or migrating data between versions, the local files were not being updated with the restored data, just the indexedDB, causing inconsistencies.
 
+### Security
+
+- Update dependencies:
+    - awilix 12.1.1 -> 13.0.1
+    - framer-motion 12.34.0 -> 12.34.3
+    - lucide-react 0.564.0 -> 0.575.0
+    - tailwindcss 4.1.18 -> 4.2.1
+
 ## [0.22.0] - 2026-02-24
 
 ### Added
