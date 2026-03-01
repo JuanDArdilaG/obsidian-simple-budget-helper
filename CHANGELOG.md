@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Now you can create transactions with multiple items, before they were created as separate transactions.
-- Amount fields in the different forms now support calculator input, allowing you to type mathematical expressions directly into the amount field when creating or editing. The expression is evaluated in real time, and the result is displayed as a formatted price.
+- **Transactions:** Now you can create transactions with multiple items, before they were created as separate transactions.
+- **Calculator Input:** Amount fields in the different forms now support calculator input, allowing you to type mathematical expressions directly into the amount field when creating or editing. The expression is evaluated in real time, and the result is displayed as a formatted price.
+- **Scheduled Calendar**: In the current cash and checking info, now you can see a breakdown of the accounts that are contributing to the total balance, sorted by balance amount.
 
 ### Fixed
 

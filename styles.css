@@ -533,6 +533,9 @@
   .ml-1\.5\! {
     margin-left: calc(var(--spacing) * 1.5) !important;
   }
+  .ml-2 {
+    margin-left: calc(var(--spacing) * 2) !important;
+  }
   .ml-3 {
     margin-left: calc(var(--spacing) * 3) !important;
   }
@@ -664,6 +667,9 @@
   }
   .min-h-screen\! {
     min-height: 100vh !important;
+  }
+  .w-1\.5 {
+    width: calc(var(--spacing) * 1.5) !important;
   }
   .w-2 {
     width: calc(var(--spacing) * 2) !important;
@@ -1134,6 +1140,10 @@
     border-bottom-style: var(--tw-border-style) !important;
     border-bottom-width: 2px !important;
   }
+  .border-l-2 {
+    border-left-style: var(--tw-border-style) !important;
+    border-left-width: 2px !important;
+  }
   .border-dashed {
     --tw-border-style: dashed !important;
     border-style: dashed !important;
@@ -1336,6 +1346,9 @@
   .bg-indigo-100\! {
     background-color: var(--color-indigo-100) !important;
   }
+  .bg-indigo-400 {
+    background-color: var(--color-indigo-400) !important;
+  }
   .bg-indigo-500 {
     background-color: var(--color-indigo-500) !important;
   }
@@ -1422,6 +1435,9 @@
   }
   .p-8\! {
     padding: calc(var(--spacing) * 8) !important;
+  }
+  .px-1 {
+    padding-inline: calc(var(--spacing) * 1) !important;
   }
   .px-1\.5 {
     padding-inline: calc(var(--spacing) * 1.5) !important;
@@ -1566,6 +1582,9 @@
   }
   .pb-24\! {
     padding-bottom: calc(var(--spacing) * 24) !important;
+  }
+  .pl-3 {
+    padding-left: calc(var(--spacing) * 3) !important;
   }
   .pl-3\! {
     padding-left: calc(var(--spacing) * 3) !important;
@@ -2048,6 +2067,13 @@
     &:is(:where(.group):hover *) {
       @media (hover: hover) {
         border-color: var(--color-indigo-400) !important;
+      }
+    }
+  }
+  .group-hover\:text-indigo-500 {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        color: var(--color-indigo-500) !important;
       }
     }
   }
