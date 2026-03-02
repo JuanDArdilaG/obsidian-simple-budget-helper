@@ -256,7 +256,7 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		_reportsService: asClass(ReportsService).singleton(),
 	});
 
-	// Exchange Rates
+	//#region EXCHANGE RATES
 	container.register({
 		_exchangeRateRepository: asClass(ExchangeRateLocalRepository)
 			.singleton()
@@ -264,6 +264,7 @@ export function buildContainer(localDB?: LocalDB): AwilixContainer {
 		_exchangeRateGetter: asClass(ErExchangeRateGetter).singleton(),
 		getExchangeRateUseCase: asClass(GetExchangeRateUseCase).singleton(),
 	});
+	//#endregion EXCHANGE RATES
 
 	return container;
 }
