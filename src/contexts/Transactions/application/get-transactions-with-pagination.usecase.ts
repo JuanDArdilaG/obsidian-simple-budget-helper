@@ -8,6 +8,7 @@ import {
 import { GetAllTransactionsUseCase } from "./get-all-transactions.usecase";
 
 export type TransactionsPagination = {
+	defaultCurrency: string;
 	page: number;
 	pageSize: number;
 	searchQuery?: string;
@@ -35,6 +36,7 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 	) {}
 
 	async execute({
+		defaultCurrency,
 		page,
 		pageSize,
 		searchQuery,
@@ -49,7 +51,8 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 		);
 		const allTransactions = await this.getAllTransactionsUseCase.execute();
 		const transactionsReport = new TransactionsReport(allTransactions);
-		const accounts = await this.getAllAccountsUseCase.execute();
+		const accounts =
+			await this.getAllAccountsUseCase.execute(defaultCurrency);
 		const transactionsWithBalances =
 			transactionsReport.withAccumulatedBalance(accounts);
 		let filteredTransactions = this.#filterBySearchQuery(

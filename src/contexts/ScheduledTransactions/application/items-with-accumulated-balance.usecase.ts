@@ -24,7 +24,7 @@ export type ItemWithAccumulatedBalance = {
 };
 
 export class ScheduledTransactionsWithAccumulatedBalanceUseCase implements QueryUseCase<
-	DateValueObject,
+	{ defaultCurrency: string; untilDate: DateValueObject },
 	ItemWithAccumulatedBalance[]
 > {
 	readonly #logger = new Logger(
@@ -144,9 +144,13 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase implements Query
 		};
 	}
 
-	async execute(
-		untilDate: DateValueObject,
-	): Promise<ItemWithAccumulatedBalance[]> {
+	async execute({
+		defaultCurrency,
+		untilDate,
+	}: {
+		defaultCurrency: string;
+		untilDate: DateValueObject;
+	}): Promise<ItemWithAccumulatedBalance[]> {
 		this.#logger.debug("execute", { untilDate });
 
 		const recurrenceItems = await this.getItems(untilDate);
@@ -161,7 +165,8 @@ export class ScheduledTransactionsWithAccumulatedBalanceUseCase implements Query
 
 		if (!this.preValidate(recurrenceItems)) return [];
 
-		const accountsMap = await this.getAllAccountsUseCase.execute();
+		const accountsMap =
+			await this.getAllAccountsUseCase.execute(defaultCurrency);
 		this.#logger.debug("accounts", {
 			count: accountsMap.size,
 			accounts: accountsMap,

@@ -11,7 +11,7 @@ import { TransactionWithAccumulatedBalance } from "../../../../../contexts/Repor
 import { Nanoid } from "../../../../../contexts/Shared/domain";
 import { Transaction } from "../../../../../contexts/Transactions/domain";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
-import { AccountsContext, TransactionsContext } from "../Contexts";
+import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
 import { AddTransactionModal } from "./AddTransactionModal";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 import { SelectedTransactionsBar } from "./SelectedTransactionsBar";
@@ -22,6 +22,11 @@ import { TransactionRow } from "./TransactionRow";
 const ITEMS_PER_PAGE = 50;
 
 export function TransactionsList() {
+	const {
+		plugin: {
+			settings: { defaultCurrency },
+		},
+	} = useContext(AppContext);
 	const { accountsMap, updateAccounts } = useContext(AccountsContext);
 	const {
 		transactions,
@@ -116,6 +121,7 @@ export function TransactionsList() {
 	useEffect(() => {
 		getTransactionsWithPagination
 			.execute({
+				defaultCurrency,
 				page: currentPage,
 				pageSize: ITEMS_PER_PAGE,
 				searchQuery,

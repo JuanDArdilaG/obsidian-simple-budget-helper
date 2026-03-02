@@ -50,9 +50,10 @@ describe("execute", () => {
 			),
 		);
 
-		const itemsWithBalance = await useCase.execute(
-			DateValueObject.createNowDate(),
-		);
+		const itemsWithBalance = await useCase.execute({
+			defaultCurrency: "USD",
+			untilDate: DateValueObject.createNowDate(),
+		});
 
 		expect(itemsWithBalance.length).toBe(2);
 		expect(itemsWithBalance[0].accountPrevBalance.value.value).toBe(0);

@@ -1,18 +1,20 @@
 import { Account, IAccountsService } from "contexts/Accounts/domain";
 import { QueryUseCase } from "contexts/Shared/domain";
-import { defaultCurrency } from "../../../../data.json";
 import { GetExchangeRateUseCase } from "../../Currencies/application/get-exchange-rate.usecase";
 import { Currency, ExchangeRate } from "../../Currencies/domain";
 
 export type AccountsMap = Map<string, Account>;
 
-export class GetAllAccountsUseCase implements QueryUseCase<void, AccountsMap> {
+export class GetAllAccountsUseCase implements QueryUseCase<
+	string,
+	AccountsMap
+> {
 	constructor(
 		private readonly _accountsService: IAccountsService,
 		private readonly getExchangeRateUseCase: GetExchangeRateUseCase,
 	) {}
 
-	async execute(): Promise<AccountsMap> {
+	async execute(defaultCurrency: string): Promise<AccountsMap> {
 		let accountsArray = (await this._accountsService.getAll()).toSorted(
 			(a, b) => a.name.localeCompare(b.name.value),
 		);
