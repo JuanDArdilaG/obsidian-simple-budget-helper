@@ -64,10 +64,13 @@ export const TransactionsContext = createContext<TransactionsContextType>({
 export const getTransactionsContextValues = (
 	container: AwilixContainer,
 ): TransactionsContextType => {
-	const getAllTransactions = container.resolve("getAllTransactionsUseCase");
-	const getAllUniqueTransactionsByNameUseCase = container.resolve(
-		"getAllUniqueTransactionsByNameUseCase",
+	const getAllTransactions = container.resolve<GetAllTransactionsUseCase>(
+		"getAllTransactionsUseCase",
 	);
+	const getAllUniqueTransactionsByNameUseCase =
+		container.resolve<GetAllUniqueTransactionsByNameUseCase>(
+			"getAllUniqueTransactionsByNameUseCase",
+		);
 	const recordTransaction = container.resolve<RecordTransactionUseCase>(
 		"recordTransactionUseCase",
 	);
@@ -78,9 +81,10 @@ export const getTransactionsContextValues = (
 		"updateTransactionUseCase",
 	);
 
-	const getAllUniqueItemStores = container.resolve(
-		"getAllUniqueItemStoresUseCase",
-	);
+	const getAllUniqueItemStores =
+		container.resolve<GetAllUniqueItemStoresUseCase>(
+			"getAllUniqueItemStoresUseCase",
+		);
 
 	const {
 		isLoading,
