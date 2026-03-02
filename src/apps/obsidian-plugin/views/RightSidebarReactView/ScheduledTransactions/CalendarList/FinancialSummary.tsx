@@ -237,56 +237,75 @@ export function FinancialSummary({
 													{accountsReport.accounts
 														.toSorted(
 															(a, b) =>
-																b.balance.value
-																	.value -
-																a.balance.value
-																	.value,
+																b.convertedBalance -
+																a.convertedBalance,
 														)
-														.map((account) => (
-															<div
-																key={account.id}
-																className="flex items-center justify-between text-sm"
-															>
-																<div className="flex items-center gap-2 min-w-0">
-																	<div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-																	<span className="text-gray-600 truncate">
-																		{
-																			account.name
-																		}
-																	</span>
-																	{account
-																		.currency
-																		.value !==
-																		settings.defaultCurrency && (
-																		<span className="text-[10px] font-semibold tracking-wider uppercase px-1 py-0.5 rounded bg-gray-100 text-gray-500 shrink-0">
+														.map((account) => {
+															const isNonDefault =
+																account.currency
+																	.value !==
+																settings.defaultCurrency;
+															return (
+																<div
+																	key={
+																		account.id
+																	}
+																	className="flex items-center justify-between text-sm"
+																>
+																	<div className="flex items-center gap-2 min-w-0">
+																		<div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+																		<span className="text-gray-600 truncate">
 																			{
-																				account
-																					.currency
-																					.value
+																				account.name
 																			}
 																		</span>
-																	)}
-																</div>
-																<span className="font-medium text-gray-800 tabular-nums shrink-0 ml-3">
-																	{new Intl.NumberFormat(
-																		"en-US",
-																		{
-																			style: "currency",
-																			currency:
+																		{isNonDefault && (
+																			<span className="text-[10px] font-semibold tracking-wider uppercase px-1 py-0.5 rounded bg-gray-100 text-gray-500 shrink-0">
+																				{
+																					account.currency
+																				}
+																			</span>
+																		)}
+																	</div>
+																	<div className="flex flex-col items-end shrink-0 ml-3">
+																		<span className="font-medium text-gray-800 tabular-nums">
+																			{new Intl.NumberFormat(
+																				"en-US",
+																				{
+																					style: "currency",
+																					currency:
+																						account
+																							.currency
+																							.value,
+																					minimumFractionDigits: 0,
+																				},
+																			).format(
 																				account
-																					.currency
+																					.balance
+																					.value
 																					.value,
-																			minimumFractionDigits: 0,
-																		},
-																	).format(
-																		account
-																			.balance
-																			.value
-																			.value,
-																	)}
-																</span>
-															</div>
-														))}
+																			)}
+																		</span>
+																		{isNonDefault && (
+																			<span className="text-xs text-gray-400 tabular-nums">
+																				≈{" "}
+																				{new Intl.NumberFormat(
+																					"en-US",
+																					{
+																						style: "currency",
+																						currency:
+																							settings.defaultCurrency,
+																						minimumFractionDigits: 0,
+																					},
+																				).format(
+																					account.convertedBalance,
+																				)}
+																			</span>
+																		)}
+																	</div>
+																</div>
+															);
+														})}
 												</div>
 											</motion.div>
 										)}
