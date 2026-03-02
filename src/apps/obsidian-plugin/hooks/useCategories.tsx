@@ -57,7 +57,7 @@ export const useCategories = ({
 					setCategoriesWithSubcategoriesMap(catWithSubs);
 				})
 				.catch((error) => {
-					console.error(
+					logger.error(
 						"[useCategories] Error fetching catWithSubs:",
 						error,
 					);
@@ -73,12 +73,12 @@ export const useCategories = ({
 	);
 	const [updateCategories, setUpdateCategories] = useState(true);
 	useEffect(() => {
-		console.log("[useCategories] Categories effect triggered", {
+		logger.debug("[useCategories] Categories effect triggered", {
 			updateCategories,
 			count: categoriesMap.size,
 		});
 		if (updateCategories) {
-			console.log("[useCategories] Fetching categories");
+			logger.debug("[useCategories] Fetching categories");
 			setUpdateCategories(false);
 			logger.debug("updating categories", {
 				categories: categoriesMap,
@@ -86,7 +86,7 @@ export const useCategories = ({
 			getAllCategories
 				.execute()
 				.then((cats) => {
-					console.log("[useCategories] Categories fetched", {
+					logger.debug("[useCategories] Categories fetched", {
 						count: cats.size,
 					});
 					setCategoriesMap(cats);
@@ -105,23 +105,23 @@ export const useCategories = ({
 	);
 	const [updateSubCategories, setUpdateSubCategories] = useState(true);
 	useEffect(() => {
-		console.log("[useCategories] SubCategories effect triggered", {
+		logger.debug("[useCategories] SubCategories effect triggered", {
 			updateSubCategories,
 			count: subCategoriesMap.size,
 		});
 		if (updateSubCategories) {
-			console.log("[useCategories] Fetching subcategories");
+			logger.debug("[useCategories] Fetching subcategories");
 			setUpdateSubCategories(false);
 			getAllSubCategories
 				.execute()
 				.then((subs) => {
-					console.log("[useCategories] SubCategories fetched", {
+					logger.debug("[useCategories] SubCategories fetched", {
 						count: subs.size,
 					});
 					setSubCategoriesMap(subs);
 				})
 				.catch((error) => {
-					console.error(
+					logger.error(
 						"[useCategories] Error fetching subcategories:",
 						error,
 					);
