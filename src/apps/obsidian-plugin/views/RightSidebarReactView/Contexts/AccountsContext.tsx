@@ -43,6 +43,7 @@ export const AccountsContext = createContext<AccountsContextType>({
 
 export const getAccountsContextValues = (
 	container: AwilixContainer,
+	defaultCurrency: string,
 ): AccountsContextType => {
 	const createAccount = container.resolve<CreateAccountUseCase>(
 		"createAccountUseCase",
@@ -55,6 +56,7 @@ export const getAccountsContextValues = (
 	);
 
 	const { accountsMap, updateAccounts, getAccountByID } = useAccounts({
+		defaultCurrency,
 		getAllAccounts,
 	});
 

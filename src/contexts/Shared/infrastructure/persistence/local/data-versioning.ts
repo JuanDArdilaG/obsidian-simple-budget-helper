@@ -13,13 +13,73 @@ interface MigrationData {
 }
 
 export class DataVersioning {
-	private logger: Logger = new Logger("DataVersioning");
-	private currentVersion = "1.3.0";
+	private readonly logger: Logger = new Logger("DataVersioning");
+	private readonly currentVersion = "1.4.0";
 	private versions: DataVersion[] = [
 		{
 			version: "1.3.0",
 			compatibleVersions: ["1.3.0"],
 			migrationScript: undefined,
+		},
+		{
+			version: "1.4.0",
+			compatibleVersions: ["1.3.0", "1.4.0"],
+			migrationScript: async (data: unknown): Promise<unknown> => {
+				const migrationData = data as MigrationData;
+				const transactions = migrationData.data[
+					"transactions"
+				] as Record<string, unknown>[];
+
+				if (!transactions || !Array.isArray(transactions)) {
+					return data;
+				}
+
+				migrationData.data["transactions"] = transactions.map(
+					(tx: Record<string, unknown>) => {
+						// Already migrated (has items array)
+						if (Array.isArray(tx.items)) {
+							return tx;
+						}
+
+						// Calculate total amount from fromSplits
+						const fromSplits =
+							(tx.fromSplits as {
+								accountId: string;
+								amount: number;
+							}[]) || [];
+						const totalAmount = fromSplits.reduce(
+							(sum, split) => sum + (split.amount || 0),
+							0,
+						);
+
+						// Convert old format to new items-based format
+						const item = {
+							name: tx.name || "",
+							price: totalAmount,
+							quantity: 1,
+							categoryId: tx.category || "",
+							subcategoryId:
+								tx.subCategory || tx.subcategory || "",
+						};
+
+						// Build new transaction, removing old fields
+						const {
+							name,
+							category,
+							subcategory,
+							subCategory,
+							...rest
+						} = tx;
+
+						return {
+							...rest,
+							items: [item],
+						};
+					},
+				);
+
+				return migrationData;
+			},
 		},
 		// Add future versions here with migration scripts
 	];
@@ -30,7 +90,7 @@ export class DataVersioning {
 
 	isCompatible(version: string): boolean {
 		const currentVersionData = this.versions.find(
-			(v) => v.version === this.currentVersion
+			(v) => v.version === this.currentVersion,
 		);
 		if (!currentVersionData) {
 			return false;
@@ -55,7 +115,7 @@ export class DataVersioning {
 					{
 						sourceVersion,
 						currentVersion: this.currentVersion,
-					}
+					},
 				);
 				return data;
 			}
@@ -68,18 +128,17 @@ export class DataVersioning {
 			let migratedData: unknown = data;
 			const migrationPath = this.findMigrationPath(
 				sourceVersion,
-				this.currentVersion
+				this.currentVersion,
 			);
 
 			for (const version of migrationPath) {
 				const versionData = this.versions.find(
-					(v) => v.version === version
+					(v) => v.version === version,
 				);
 				if (versionData?.migrationScript) {
 					this.logger.debug(`Applying migration to ${version}`);
-					migratedData = await versionData.migrationScript(
-						migratedData
-					);
+					migratedData =
+						await versionData.migrationScript(migratedData);
 				}
 			}
 
@@ -98,17 +157,17 @@ export class DataVersioning {
 
 	private findMigrationPath(
 		fromVersion: string,
-		toVersion: string
+		toVersion: string,
 	): string[] {
 		const path: string[] = [];
 		const fromIndex = this.versions.findIndex(
-			(v) => v.version === fromVersion
+			(v) => v.version === fromVersion,
 		);
 		const toIndex = this.versions.findIndex((v) => v.version === toVersion);
 
 		if (fromIndex === -1 || toIndex === -1) {
 			throw new Error(
-				`Version not found: from ${fromVersion} to ${toVersion}`
+				`Version not found: from ${fromVersion} to ${toVersion}`,
 			);
 		}
 
@@ -120,7 +179,7 @@ export class DataVersioning {
 		} else if (fromIndex > toIndex) {
 			// Downgrade not supported in this simple implementation
 			throw new Error(
-				`Downgrade not supported: from ${fromVersion} to ${toVersion}`
+				`Downgrade not supported: from ${fromVersion} to ${toVersion}`,
 			);
 		}
 
@@ -173,12 +232,12 @@ export class DataVersioning {
 	// Helper method to add new versions (for future use)
 	addVersion(version: DataVersion): void {
 		const existingIndex = this.versions.findIndex(
-			(v) => v.version === version.version
+			(v) => v.version === version.version,
 		);
-		if (existingIndex !== -1) {
-			this.versions[existingIndex] = version;
-		} else {
+		if (existingIndex === -1) {
 			this.versions.push(version);
+		} else {
+			this.versions[existingIndex] = version;
 		}
 
 		// Sort versions (assuming semantic versioning)

@@ -8,6 +8,7 @@ import {
 	AccountSubtype,
 } from "../../../../../contexts/Accounts/domain";
 import { Nanoid } from "../../../../../contexts/Shared/domain";
+import { CalculatorInput } from "../../../components/Input/CalculatorInput";
 
 interface AccountRowProps {
 	defaultCurrency: string;
@@ -28,9 +29,7 @@ export function AccountRow({
 	const [isEditing, setIsEditing] = useState(false);
 	const [editName, setEditName] = useState(account.name.value);
 	const [editSubtype, setEditSubtype] = useState(account.subtype);
-	const [editAmount, setEditAmount] = useState(
-		account.balance.value.value.toString(),
-	);
+	const [editAmount, setEditAmount] = useState(account.balance.value.value);
 	const nameInputRef = useRef<HTMLInputElement>(null);
 
 	const isNonDefaultCurrency = useMemo(
@@ -44,12 +43,11 @@ export function AccountRow({
 		}
 	}, [isEditing]);
 	const handleSave = () => {
-		const amount = Number.parseFloat(editAmount.replaceAll(",", ""));
-		if (!Number.isNaN(amount) && editName.trim()) {
+		if (!Number.isNaN(editAmount) && editName.trim()) {
 			onUpdate(account.nanoid, {
 				name: editName,
 				subtype: editSubtype,
-				amount,
+				amount: editAmount,
 			});
 			setIsEditing(false);
 		}
@@ -58,7 +56,7 @@ export function AccountRow({
 	const handleCancel = () => {
 		setEditName(account.name.value);
 		setEditSubtype(account.subtype);
-		setEditAmount(account.balance.value.value.toString());
+		setEditAmount(account.balance.value.value);
 		setIsEditing(false);
 	};
 
@@ -146,13 +144,10 @@ export function AccountRow({
 						<span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
 							{account.currency.symbol}
 						</span>
-						<input
-							type="number"
+						<CalculatorInput
 							value={editAmount}
-							onChange={(e) => setEditAmount(e.target.value)}
-							onKeyDown={handleKeyDown}
+							onChange={setEditAmount}
 							className="w-full pl-8 pr-3 py-2 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-sm text-right"
-							placeholder="0.00"
 						/>
 					</div>
 

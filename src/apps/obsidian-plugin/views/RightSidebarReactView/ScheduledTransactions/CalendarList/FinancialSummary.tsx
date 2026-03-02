@@ -1,14 +1,20 @@
-import { motion } from "framer-motion";
-import { DollarSign, TrendingDown, TrendingUp } from "lucide-react";
-import { useContext, useMemo } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+	ChevronDown,
+	DollarSign,
+	TrendingDown,
+	TrendingUp,
+} from "lucide-react";
+import { useContext, useMemo, useState } from "react";
 import { AccountAssetSubtype } from "../../../../../../contexts/Accounts/domain";
 import {
 	AccountsReport,
 	ScheduledTransactionsReport,
 } from "../../../../../../contexts/Reports/domain";
 import { ItemRecurrenceInfo } from "../../../../../../contexts/ScheduledTransactions/domain";
+import { PriceVO } from "../../../../../../contexts/Shared/domain/value-objects/price.vo";
 import { TransactionAmount } from "../../../../../../contexts/Transactions/domain";
-import { AccountsContext } from "../../Contexts";
+import { AccountsContext, AppContext } from "../../Contexts";
 
 interface FinancialSummaryProps {
 	untilDate: Date;
@@ -19,6 +25,9 @@ export function FinancialSummary({
 	untilDate,
 	recurrences,
 }: Readonly<FinancialSummaryProps>) {
+	const {
+		plugin: { settings },
+	} = useContext(AppContext);
 	const { accountsMap } = useContext(AccountsContext);
 
 	const scheduledTransactionsReport = useMemo(
@@ -28,11 +37,13 @@ export function FinancialSummary({
 	const accountsReport = useMemo(
 		() =>
 			new AccountsReport(
-				Array.from(accountsMap.values()).filter(
-					(account) =>
-						account.subtype === AccountAssetSubtype.CASH ||
-						account.subtype === AccountAssetSubtype.CHECKING,
-				),
+				Array.from(accountsMap.values())
+					.filter(
+						(account) =>
+							account.subtype === AccountAssetSubtype.CASH ||
+							account.subtype === AccountAssetSubtype.CHECKING,
+					)
+					.filter((account) => account.balance.value.value !== 0),
 			),
 		[accountsMap],
 	);
@@ -56,9 +67,13 @@ export function FinancialSummary({
 		return date.toLocaleDateString("en-US", {
 			month: "numeric",
 			day: "numeric",
+
 			year: "numeric",
 		});
 	};
+
+	const [showAccountBreakdown, setShowAccountBreakdown] = useState(false);
+
 	return (
 		<div className="bg-white border-b border-gray-200 py-6 px-4 sm:px-6 lg:px-8">
 			<div className="max-w-7xl mx-auto">
@@ -159,16 +174,142 @@ export function FinancialSummary({
 						</div>
 
 						<div className="space-y-3">
-							{/* Current Cash */}
-							<div className="flex items-center justify-between py-2">
-								<span className="text-sm text-gray-600">
-									Current Cash & Checking:
-								</span>
-								<span className="text-base font-semibold text-gray-900">
-									{new TransactionAmount(
-										totalSpendableAssets,
-									).toString()}
-								</span>
+							{/* Current Cash — clickable to expand */}
+							<div>
+								<button
+									onClick={() =>
+										accountsReport.accounts.length > 0 &&
+										setShowAccountBreakdown(
+											!showAccountBreakdown,
+										)
+									}
+									className={`w-full flex items-center justify-between py-2 ${accountsReport.accounts.length > 0 ? "cursor-pointer group" : ""}`}
+								>
+									<span className="text-sm text-gray-600 flex items-center gap-1.5">
+										Current Cash & Checking:
+										{accountsReport.accounts.length > 0 && (
+											<motion.span
+												animate={{
+													rotate: showAccountBreakdown
+														? 180
+														: 0,
+												}}
+												transition={{
+													duration: 0.2,
+												}}
+											>
+												<ChevronDown
+													size={14}
+													className="text-gray-400 group-hover:text-indigo-500 transition-colors"
+												/>
+											</motion.span>
+										)}
+									</span>
+									<span className="text-base font-semibold text-gray-900">
+										{new PriceVO(
+											totalSpendableAssets,
+										).toString()}
+									</span>
+								</button>
+								{/* Account breakdown */}
+								<AnimatePresence>
+									{showAccountBreakdown &&
+										accountsReport.accounts.length > 0 && (
+											<motion.div
+												initial={{
+													opacity: 0,
+													height: 0,
+												}}
+												animate={{
+													opacity: 1,
+													height: "auto",
+												}}
+												exit={{
+													opacity: 0,
+													height: 0,
+												}}
+												transition={{
+													duration: 0.2,
+												}}
+												className="overflow-hidden"
+											>
+												<div className="ml-2 pl-3 border-l-2 border-indigo-200 space-y-1.5 py-2">
+													{accountsReport.accounts
+														.toSorted(
+															(a, b) =>
+																b.convertedBalance -
+																a.convertedBalance,
+														)
+														.map((account) => {
+															const isNonDefault =
+																account.currency
+																	.value !==
+																settings.defaultCurrency;
+															return (
+																<div
+																	key={
+																		account.id
+																	}
+																	className="flex items-center justify-between text-sm"
+																>
+																	<div className="flex items-center gap-2 min-w-0">
+																		<div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+																		<span className="text-gray-600 truncate">
+																			{
+																				account.name
+																			}
+																		</span>
+																		{isNonDefault && (
+																			<span className="text-[10px] font-semibold tracking-wider uppercase px-1 py-0.5 rounded bg-gray-100 text-gray-500 shrink-0">
+																				{
+																					account.currency
+																				}
+																			</span>
+																		)}
+																	</div>
+																	<div className="flex flex-col items-end shrink-0 ml-3">
+																		<span className="font-medium text-gray-800 tabular-nums">
+																			{new Intl.NumberFormat(
+																				"en-US",
+																				{
+																					style: "currency",
+																					currency:
+																						account
+																							.currency
+																							.value,
+																					minimumFractionDigits: 0,
+																				},
+																			).format(
+																				account
+																					.balance
+																					.value
+																					.value,
+																			)}
+																		</span>
+																		{isNonDefault && (
+																			<span className="text-xs text-gray-400 tabular-nums">
+																				≈{" "}
+																				{new Intl.NumberFormat(
+																					"en-US",
+																					{
+																						style: "currency",
+																						currency:
+																							settings.defaultCurrency,
+																						minimumFractionDigits: 0,
+																					},
+																				).format(
+																					account.convertedBalance,
+																				)}
+																			</span>
+																		)}
+																	</div>
+																</div>
+															);
+														})}
+												</div>
+											</motion.div>
+										)}
+								</AnimatePresence>
 							</div>
 
 							{/* Projected Balance */}

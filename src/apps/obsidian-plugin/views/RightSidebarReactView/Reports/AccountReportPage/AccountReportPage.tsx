@@ -22,6 +22,7 @@ import {
 	CategoriesContext,
 	TransactionsContext,
 } from "../../Contexts";
+import { getTransactionDisplayName } from "../../TransactionsList/TransactionRow";
 
 interface AccountReportPageProps {
 	onBack: () => void;
@@ -621,13 +622,19 @@ export function AccountReportPage({
 														<div className="flex-1! min-w-0!">
 															<div className="font-medium! text-gray-900! truncate!">
 																{
-																	transaction.name
+																	<span className="truncate">
+																		{getTransactionDisplayName(
+																			transaction,
+																		)}
+																	</span>
 																}
 															</div>
 															<div className="text-xs! text-gray-500! truncate!">
 																{
 																	getCategoryByID(
-																		transaction.category,
+																		transaction
+																			.items[0]
+																			.categoryId,
 																	)?.name
 																}
 																{transaction.store &&

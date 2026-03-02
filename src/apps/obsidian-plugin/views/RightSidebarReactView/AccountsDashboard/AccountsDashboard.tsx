@@ -25,7 +25,6 @@ import { TransactionAmount } from "../../../../../contexts/Transactions/domain";
 import { ConfirmationModal } from "../../../components/ConfirmationModal";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
 import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
-import { ExchangeRatesContext } from "../Contexts/ExchangeRatesContext";
 import { AccountSection } from "./AccountSection";
 import { DonutChart } from "./DonutChart";
 import { SummaryCard } from "./SummaryCard";
@@ -52,9 +51,6 @@ export function AccountsDashboard() {
 			adjustAccount,
 		},
 	} = useContext(AccountsContext);
-	const {
-		useCases: { getExchangeRate },
-	} = useContext(ExchangeRatesContext);
 	const { transactions, physicalAssetsService } =
 		useContext(TransactionsContext);
 
@@ -82,41 +78,9 @@ export function AccountsDashboard() {
 		plugin.settings.defaultCurrency,
 	);
 
-	const [accountsWithExchangeRates, setAccountsWithExchangeRates] = useState<
-		Account[]
-	>([]);
-
-	useEffect(() => {
-		const fetchExchangeRates = async () => {
-			const updatedAccounts = await Promise.all(
-				Array.from(accountsMap).map(async ([_, account]) => {
-					if (
-						account.currency.value ===
-						plugin.settings.defaultCurrency
-					) {
-						return account;
-					}
-					const exchangeRate = await getExchangeRate.execute({
-						fromCurrency: account.currency,
-						toCurrency: new Currency(
-							plugin.settings.defaultCurrency,
-						),
-						date: account.updatedAt,
-					});
-					if (exchangeRate) {
-						account.exchangeRate = exchangeRate;
-					}
-					return account;
-				}),
-			);
-			setAccountsWithExchangeRates(updatedAccounts);
-		};
-		fetchExchangeRates();
-	}, [accountsMap, getExchangeRate, plugin.settings.defaultCurrency]);
-
 	const accountsReport = useMemo(() => {
-		return new AccountsReport(accountsWithExchangeRates);
-	}, [accountsWithExchangeRates]);
+		return new AccountsReport([...accountsMap.values()]);
+	}, [accountsMap]);
 
 	const transactionsReport = useMemo(() => {
 		return new TransactionsReport(transactions);
@@ -165,12 +129,7 @@ export function AccountsDashboard() {
 				: 0,
 			netWorthTrend: Number.isFinite(netWorthTrend) ? netWorthTrend : 0,
 		};
-	}, [
-		accountsWithExchangeRates,
-		physicalAssetsValue,
-		accountsReport,
-		transactionsReport,
-	]);
+	}, [accountsMap, physicalAssetsValue, accountsReport, transactionsReport]);
 
 	const handleUpdateAccount = async (
 		id: Nanoid,

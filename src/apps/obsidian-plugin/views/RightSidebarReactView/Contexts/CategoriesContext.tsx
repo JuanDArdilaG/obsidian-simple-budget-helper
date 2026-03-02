@@ -71,17 +71,22 @@ export const CategoriesContext = createContext<CategoriesContextType>({
 export const getCategoriesContextDefault = (
 	container: AwilixContainer,
 ): CategoriesContextType => {
-	const createCategory = container.resolve("createCategoryUseCase");
-	const createSubCategory = container.resolve("createSubCategoryUseCase");
+	const createCategory = container.resolve<CreateCategoryUseCase>(
+		"createCategoryUseCase",
+	);
+	const createSubCategory = container.resolve<CreateSubCategoryUseCase>(
+		"createSubCategoryUseCase",
+	);
 	const getAllCategories = container.resolve<GetAllCategoriesUseCase>(
 		"getAllCategoriesUseCase",
 	);
 	const getAllSubCategories = container.resolve<GetAllSubcategoriesUseCase>(
 		"getAllSubCategoriesUseCase",
 	);
-	const getAllCategoriesWithSubCategories = container.resolve(
-		"getAllCategoriesWithSubCategoriesUseCase",
-	);
+	const getAllCategoriesWithSubCategories =
+		container.resolve<GetAllCategoriesWithSubCategoriesUseCase>(
+			"getAllCategoriesWithSubCategoriesUseCase",
+		);
 
 	const {
 		categoriesWithSubcategories,

@@ -8,6 +8,7 @@ import {
 import { GetAllTransactionsUseCase } from "./get-all-transactions.usecase";
 
 export type TransactionsPagination = {
+	defaultCurrency: string;
 	page: number;
 	pageSize: number;
 	searchQuery?: string;
@@ -35,6 +36,7 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 	) {}
 
 	async execute({
+		defaultCurrency,
 		page,
 		pageSize,
 		searchQuery,
@@ -49,7 +51,8 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 		);
 		const allTransactions = await this.getAllTransactionsUseCase.execute();
 		const transactionsReport = new TransactionsReport(allTransactions);
-		const accounts = await this.getAllAccountsUseCase.execute();
+		const accounts =
+			await this.getAllAccountsUseCase.execute(defaultCurrency);
 		const transactionsWithBalances =
 			transactionsReport.withAccumulatedBalance(accounts);
 		let filteredTransactions = this.#filterBySearchQuery(
@@ -98,8 +101,9 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 		const lowerCaseQuery = searchQuery.toLowerCase();
 		return transactions.filter(({ transaction }) => {
 			return (
-				transaction.name.toLowerCase().includes(lowerCaseQuery) ||
-				transaction.store?.toLowerCase().includes(lowerCaseQuery)
+				transaction.items.some((item) =>
+					item.name.toLowerCase().includes(lowerCaseQuery),
+				) || transaction.store?.toLowerCase().includes(lowerCaseQuery)
 			);
 		});
 	}
@@ -127,9 +131,10 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 		selectedCategory?: string,
 	): TransactionWithAccumulatedBalance[] {
 		if (!selectedCategory) return transactions;
-		return transactions.filter(
-			({ transaction }) =>
-				transaction.category.value === selectedCategory,
+		return transactions.filter(({ transaction }) =>
+			transaction.items.some(
+				(item) => item.categoryId.value === selectedCategory,
+			),
 		);
 	}
 
@@ -138,9 +143,10 @@ export class GetTransactionsWithPagination implements QueryUseCase<
 		selectedSubcategory?: string,
 	): TransactionWithAccumulatedBalance[] {
 		if (!selectedSubcategory) return transactions;
-		return transactions.filter(
-			({ transaction }) =>
-				transaction.subcategory.value === selectedSubcategory,
+		return transactions.filter(({ transaction }) =>
+			transaction.items.some(
+				(item) => item.subcategoryId.value === selectedSubcategory,
+			),
 		);
 	}
 

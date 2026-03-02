@@ -5,6 +5,7 @@ import { CategoriesWithSubcategoriesMap } from "../../../../../contexts/Categori
 import { Category } from "../../../../../contexts/Categories/domain";
 import { Subcategory } from "../../../../../contexts/Subcategories/domain";
 import { Transaction } from "../../../../../contexts/Transactions/domain";
+import { getTransactionDisplayName } from "../TransactionsList/TransactionRow";
 
 // Add/Edit Category Modal
 interface CategoryModalProps {
@@ -346,7 +347,11 @@ export function DeleteCategoryModal({
 												className="text-sm text-gray-600 flex justify-between"
 											>
 												<span className="truncate">
-													{transaction.name}
+													<span className="truncate">
+														{getTransactionDisplayName(
+															transaction,
+														)}
+													</span>
 												</span>
 												<span className="font-medium">
 													$
@@ -576,7 +581,11 @@ export function DeleteSubcategoryModal({
 												className="text-sm text-gray-600 flex justify-between"
 											>
 												<span className="truncate">
-													{transaction.name}
+													<span className="truncate">
+														{getTransactionDisplayName(
+															transaction,
+														)}
+													</span>
 												</span>
 												<span className="font-medium">
 													$

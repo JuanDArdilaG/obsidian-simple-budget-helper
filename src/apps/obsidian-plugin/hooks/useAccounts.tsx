@@ -7,8 +7,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useLogger } from "./useLogger";
 
 export const useAccounts = ({
+	defaultCurrency,
 	getAllAccounts,
 }: {
+	defaultCurrency: string;
 	getAllAccounts: GetAllAccountsUseCase;
 }) => {
 	const { logger } = useLogger("useAccounts");
@@ -28,7 +30,7 @@ export const useAccounts = ({
 				accounts: accountsMap,
 			});
 			getAllAccounts
-				.execute()
+				.execute(defaultCurrency)
 				.then((newAccounts) => {
 					console.log("[useAccounts] Accounts fetched", {
 						count: newAccounts.size,

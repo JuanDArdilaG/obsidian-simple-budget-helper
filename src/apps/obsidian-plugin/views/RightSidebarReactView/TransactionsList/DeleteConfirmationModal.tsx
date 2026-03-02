@@ -1,5 +1,7 @@
 import { AlertTriangle, X } from "lucide-react";
+import { PriceVO } from "../../../../../contexts/Shared/domain/value-objects/price.vo";
 import { Transaction } from "../../../../../contexts/Transactions/domain";
+import { getTransactionDisplayName } from "./TransactionRow";
 
 interface DeleteConfirmationModalProps {
 	isOpen: boolean;
@@ -56,7 +58,7 @@ export function DeleteConfirmationModal({
 								Store/Description:
 							</span>
 							<span className="text-sm font-medium text-gray-900">
-								{transaction.name.value}
+								{getTransactionDisplayName(transaction)}
 							</span>
 						</div>
 						<div className="flex justify-between items-center">
@@ -79,6 +81,30 @@ export function DeleteConfirmationModal({
 								{transaction.operation.value}
 							</span>
 						</div>
+						{transaction.items && transaction.items.length > 1 && (
+							<div className="flex justify-between items-start">
+								<span className="text-sm text-gray-600">
+									Items:
+								</span>
+								<div className="text-right">
+									{transaction.items.map((item) => (
+										<div
+											key={item.name.value}
+											className="text-sm text-gray-700"
+										>
+											{item.name}{" "}
+											{item.quantity > 1 &&
+												`×${item.quantity}`}{" "}
+											—{" "}
+											{new PriceVO(
+												item.price.value *
+													item.quantity,
+											).toString()}
+										</div>
+									))}
+								</div>
+							</div>
+						)}
 					</div>
 				</div>
 

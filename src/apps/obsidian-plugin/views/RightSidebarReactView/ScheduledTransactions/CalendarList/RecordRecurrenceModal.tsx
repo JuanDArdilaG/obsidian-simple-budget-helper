@@ -2,11 +2,9 @@ import { motion } from "framer-motion";
 import { CheckCircle, X } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { ItemRecurrenceInfo } from "../../../../../../contexts/ScheduledTransactions/domain";
-import {
-	AccountSplit,
-	TransactionAmount,
-} from "../../../../../../contexts/Transactions/domain";
+import { AccountSplit } from "../../../../../../contexts/Transactions/domain";
 import { AccountSplitter } from "../../../../components/AccountSplitter";
+import { CalculatorInput } from "../../../../components/Input/CalculatorInput";
 import { AccountsContext } from "../../Contexts";
 
 interface RecordRecurrenceModalProps {
@@ -28,7 +26,7 @@ export function RecordRecurrenceModal({
 	recurrence,
 }: Readonly<RecordRecurrenceModalProps>) {
 	const [date, setDate] = useState("");
-	const [amount, setAmount] = useState(TransactionAmount.zero());
+	const [amount, setAmount] = useState(0);
 	const [fromSplits, setFromSplits] = useState<AccountSplit[]>([]);
 	const [toSplits, setToSplits] = useState<AccountSplit[]>([]);
 	const { accountsMap } = useContext(AccountsContext);
@@ -43,7 +41,7 @@ export function RecordRecurrenceModal({
 			);
 			const day = String(recurrence.date.getDate()).padStart(2, "0");
 			setDate(`${year}-${month}-${day}`);
-			const originAmount = recurrence.originAmount;
+			const originAmount = recurrence.originAmount.value;
 			setAmount(originAmount);
 			// Ensure we have at least one split, even if the recurrence has none
 			const originAccounts = recurrence.originAccounts;
@@ -54,7 +52,7 @@ export function RecordRecurrenceModal({
 	}, [isOpen, recurrence, accountsMap]);
 
 	const handleSubmit = async () => {
-		if (!recurrence || !date || amount.value <= 0) {
+		if (!recurrence || !date || amount <= 0) {
 			alert("Please fill in all required fields");
 			return;
 		}
@@ -62,7 +60,7 @@ export function RecordRecurrenceModal({
 			(sum, s) => sum + s.amount.value,
 			0,
 		);
-		if (Math.abs(fromTotal - amount.value) > 0.01) {
+		if (Math.abs(fromTotal - amount) > 0.01) {
 			alert("Account splits must match transaction amount");
 			return;
 		}
@@ -71,7 +69,7 @@ export function RecordRecurrenceModal({
 				(sum, s) => sum + s.amount.value,
 				0,
 			);
-			if (Math.abs(toTotal - amount.value) > 0.01) {
+			if (Math.abs(toTotal - amount) > 0.01) {
 				alert(
 					"Transfer destination splits must match transaction amount",
 				);
@@ -81,7 +79,7 @@ export function RecordRecurrenceModal({
 		await onRecord(
 			recurrence,
 			new Date(`${date}T00:00:00`),
-			amount.value,
+			amount,
 			fromSplits,
 			toSplits,
 		);
@@ -192,17 +190,9 @@ export function RecordRecurrenceModal({
 								Amount *
 							</label>
 							<div className="relative">
-								<input
-									type="string"
-									value={amount.toString() || ""}
-									onChange={(e) =>
-										setAmount(
-											TransactionAmount.fromString(
-												e.target.value || "0",
-											),
-										)
-									}
-									placeholder="0.00"
+								<CalculatorInput
+									value={amount}
+									onChange={setAmount}
 									className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
 								/>
 							</div>
@@ -220,7 +210,7 @@ export function RecordRecurrenceModal({
 								}
 								splits={fromSplits}
 								onChange={setFromSplits}
-								totalAmount={amount.value}
+								totalAmount={amount}
 							/>
 						)}
 
@@ -230,7 +220,7 @@ export function RecordRecurrenceModal({
 									label="Transfer To"
 									splits={toSplits}
 									onChange={setToSplits}
-									totalAmount={amount.value}
+									totalAmount={amount}
 								/>
 							)}
 					</div>

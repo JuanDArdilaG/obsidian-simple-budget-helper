@@ -2,14 +2,14 @@ import { Account } from "contexts/Accounts/domain";
 import { TransactionsReport } from "./transactions-report.entity";
 
 export class AccountsReport {
-	constructor(private readonly _accounts: Account[]) {}
+	constructor(public readonly accounts: Account[]) {}
 
 	getAssets(): Account[] {
-		return this._accounts.filter((acc) => acc.type.isAsset());
+		return this.accounts.filter((acc) => acc.type.isAsset());
 	}
 
 	getLiabilities(): Account[] {
-		return this._accounts.filter((acc) => acc.type.isLiability());
+		return this.accounts.filter((acc) => acc.type.isLiability());
 	}
 
 	getTotalForAssets(): number {
