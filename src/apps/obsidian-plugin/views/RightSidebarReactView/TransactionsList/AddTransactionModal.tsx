@@ -1138,7 +1138,7 @@ export function AddTransactionModal({
 											</div>
 										</div>
 									</div>
-									{items.length > 1 && !isEditMode && (
+									{items.length > 1 && (
 										<button
 											onClick={() =>
 												handleRemoveItem(item.id)
@@ -1151,14 +1151,12 @@ export function AddTransactionModal({
 								</div>
 							))}
 						</div>
-						{!isEditMode && (
-							<button
-								onClick={handleAddItem}
-								className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-indigo-600 hover:text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50/50 font-medium flex items-center justify-center gap-1.5 transition-colors"
-							>
-								<Plus size={16} /> Add Item
-							</button>
-						)}
+						<button
+							onClick={handleAddItem}
+							className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-indigo-600 hover:text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50/50 font-medium flex items-center justify-center gap-1.5 transition-colors"
+						>
+							<Plus size={16} /> Add Item
+						</button>
 					</div>
 
 					{/* Account Splitting Section */}
@@ -1295,7 +1293,7 @@ export function AddTransactionModal({
 						>
 							{isEditMode
 								? "Update Transaction"
-								: `Save ${items.length} Transaction${items.length > 1 ? "s" : ""}`}
+								: "Save Transaction"}
 						</button>
 					</div>
 				</div>

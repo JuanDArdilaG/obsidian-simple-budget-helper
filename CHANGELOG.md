@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Backup Restoration:** When restoring a backup or migrating data between versions, the local files were not being updated with the restored data, just the indexedDB, causing inconsistencies.
+- **Transaction Edition:** When editing a transaction now you can add or remove items from it.
 
 ### Security
 
