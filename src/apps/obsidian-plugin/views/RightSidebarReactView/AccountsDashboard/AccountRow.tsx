@@ -8,6 +8,7 @@ import {
 	AccountSubtype,
 } from "../../../../../contexts/Accounts/domain";
 import { Nanoid } from "../../../../../contexts/Shared/domain";
+import { PriceVO } from "../../../../../contexts/Shared/domain/value-objects/price.vo";
 import { CalculatorInput } from "../../../components/Input/CalculatorInput";
 
 interface AccountRowProps {
@@ -42,6 +43,7 @@ export function AccountRow({
 			nameInputRef.current.focus();
 		}
 	}, [isEditing]);
+
 	const handleSave = () => {
 		if (!Number.isNaN(editAmount) && editName.trim()) {
 			onUpdate(account.nanoid, {
@@ -198,23 +200,22 @@ export function AccountRow({
 							onClick={() => setIsEditing(true)}
 						>
 							<span
-								className={`font-semibold tabular-nums ${account.type.isAsset() ? "text-gray-900" : "text-rose-600"}`}
+								className={`font-semibold tabular-nums ${account.type.isAsset() || account.balance.value.isNegative() ? "text-gray-900" : "text-rose-600"}`}
 							>
-								{account.type.isLiability() && "-"}
-								{new Intl.NumberFormat("en-US", {
-									style: "currency",
-									currency: account.currency.value,
-									minimumFractionDigits: 0,
-								}).format(account.balance.value.value)}
+								{new PriceVO(
+									account.balance.value.value *
+										(account.type.isLiability() ? -1 : 1),
+								).toString()}
 							</span>
 							{isNonDefaultCurrency && (
 								<span className="text-xs text-gray-400 tabular-nums mt-0.5">
-									≈ {account.type.isLiability() && "-"}
-									{new Intl.NumberFormat("en-US", {
-										style: "currency",
-										currency: defaultCurrency,
-										minimumFractionDigits: 0,
-									}).format(account.convertedBalance)}
+									≈
+									{new PriceVO(
+										account.convertedBalance *
+											(account.type.isLiability()
+												? -1
+												: 1),
+									).toString()}
 								</span>
 							)}
 						</div>
