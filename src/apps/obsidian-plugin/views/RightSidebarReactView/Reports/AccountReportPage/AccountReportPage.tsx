@@ -12,7 +12,12 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+	TransactionsReport,
+	TransactionWithAccumulatedBalance,
+} from "../../../../../../contexts/Reports/domain";
 import { Nanoid } from "../../../../../../contexts/Shared/domain";
+import { PriceVO } from "../../../../../../contexts/Shared/domain/value-objects/price.vo";
 import {
 	Transaction,
 	TransactionAmount,
@@ -83,6 +88,16 @@ export function AccountReportPage({
 				: undefined,
 		[selectedAccountId, accountsMap],
 	);
+
+	const transactionsWithAccumulatedBalanceMap = useMemo(() => {
+		const transactionsWithAccumulatedBalance = new TransactionsReport(
+			transactions,
+		).withAccumulatedBalance(accountsMap);
+		return transactionsWithAccumulatedBalance.reduce((map, item) => {
+			map.set(item.transaction.id, item);
+			return map;
+		}, new Map<string, TransactionWithAccumulatedBalance>());
+	}, [transactions, accountsMap]);
 
 	// Filter transactions by timeline
 	const filteredTransactions = useMemo(() => {
@@ -650,6 +665,55 @@ export function AccountReportPage({
 																? "+"
 																: "-"}
 															{amount.toString()}
+														</div>
+														{/* Per-account balance breakdown */}
+														<div className="my-2 ml-7 space-y-1">
+															{transactionsWithAccumulatedBalanceMap
+																.get(
+																	transaction.id,
+																)
+																?.originAccounts.map(
+																	({
+																		account,
+																		balance,
+																		prevBalance,
+																	}) => {
+																		const isSelected =
+																			account.id ===
+																			selectedAccountId.value;
+																		return (
+																			<div
+																				key={`${account.id}-${balance}-${prevBalance}`}
+																				className="flex items-center justify-between text-[11px] tabular-nums"
+																			>
+																				<div className="flex items-center gap-1.5 shrink-0">
+																					{isSelected && (
+																						<span className="text-gray-600 ml-1">
+																							{new PriceVO(
+																								prevBalance,
+																							).toString()}
+																							<span className="mx-0.5">
+																								→
+																							</span>
+																							<span
+																								className={
+																									balance >=
+																									prevBalance
+																										? "text-emerald-500"
+																										: "text-rose-500"
+																								}
+																							>
+																								{new PriceVO(
+																									balance,
+																								).toString()}
+																							</span>
+																						</span>
+																					)}
+																				</div>
+																			</div>
+																		);
+																	},
+																)}
 														</div>
 														<div className="text-xs! text-gray-500!">
 															{new Date(
