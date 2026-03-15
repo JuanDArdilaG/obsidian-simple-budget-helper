@@ -4,14 +4,17 @@ import { useCallback, useMemo } from "react";
 
 interface SummaryCardProps {
 	title: string;
+	subtitle?: string;
 	amount: number;
 	trend: number;
 	delay?: number;
 	isCurrency?: boolean;
 	reductionIsPositive?: boolean;
 }
+
 export function SummaryCard({
 	title,
+	subtitle,
 	amount,
 	trend,
 	delay = 0,
@@ -101,7 +104,11 @@ export function SummaryCard({
 				<div className="text-3xl font-bold text-gray-900 tracking-tight">
 					{isCurrency ? formatCurrency(amount) : amount}
 				</div>
-				<p className="text-xs text-gray-400 mt-1">vs last month</p>
+				{subtitle ? (
+					<p className="text-xs text-gray-400 mt-1">{subtitle}</p>
+				) : (
+					<p className="text-xs text-gray-400 mt-1">vs last month</p>
+				)}
 			</div>
 		</motion.div>
 	);
