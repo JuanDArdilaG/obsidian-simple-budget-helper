@@ -44,7 +44,11 @@ export const AppView = ({ plugin }: { plugin: SimpleBudgetHelperPlugin }) => {
 			case "transactions":
 				return <TransactionsList />;
 			case "accounts":
-				return <AccountsDashboard />;
+				return (
+					<AccountsDashboard
+						onNavigateToAssets={() => setCurrentPage("assets")}
+					/>
+				);
 			case "scheduled":
 				return <ScheduledTransactionsList />;
 			case "categories":

@@ -2159,6 +2159,13 @@
       }
     }
   }
+  .hover\:border-indigo-200 {
+    &:hover {
+      @media (hover: hover) {
+        border-color: var(--color-indigo-200) !important;
+      }
+    }
+  }
   .hover\:border-indigo-300 {
     &:hover {
       @media (hover: hover) {
@@ -2268,6 +2275,16 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-indigo-50) !important;
+      }
+    }
+  }
+  .hover\:bg-indigo-50\/30 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: color-mix(in srgb, oklch(96.2% 0.018 272.314) 30%, transparent) !important;
+        @supports (color: color-mix(in lab, red, red)) {
+          background-color: color-mix(in oklab, var(--color-indigo-50) 30%, transparent) !important;
+        }
       }
     }
   }

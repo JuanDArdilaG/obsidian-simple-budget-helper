@@ -38,7 +38,9 @@ export interface Summary {
 	netWorthTrend: number;
 }
 
-export function AccountsDashboard() {
+export function AccountsDashboard({
+	onNavigateToAssets,
+}: Readonly<{ onNavigateToAssets?: () => void }>) {
 	const { plugin } = useContext(AppContext);
 	const {
 		accountsMap,
@@ -91,6 +93,8 @@ export function AccountsDashboard() {
 			accountsReport.getTotalForAssets() + physicalAssetsValue;
 		const totalLiabilities = accountsReport.getTotalForLiabilities();
 		const netWorth = totalAssets - totalLiabilities;
+		const financialNetWorth =
+			accountsReport.getTotalForAssets() - totalLiabilities;
 
 		const now = new Date();
 		const thirtyDaysAgo = new Date();
@@ -121,6 +125,8 @@ export function AccountsDashboard() {
 
 		return {
 			assets: accountsReport.getTotalForAssets() + physicalAssetsValue,
+			financialAssets: accountsReport.getTotalForAssets(),
+			financialNetWorth,
 			liabilities: accountsReport.getTotalForLiabilities(),
 			netWorth: totalAssets - totalLiabilities,
 			assetsTrend: Number.isFinite(assetsTrend) ? assetsTrend : 0,
@@ -263,6 +269,11 @@ export function AccountsDashboard() {
 					<div className="lg:col-span-2! grid! grid-cols-1! sm:grid-cols-3! gap-4!">
 						<SummaryCard
 							title="Total Assets"
+							subtitle={
+								physicalAssetsValue > 0
+									? `Financial only: ${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(summary.financialAssets)}`
+									: "vs last month"
+							}
 							amount={summary.assets}
 							trend={summary.assetsTrend}
 							delay={0}
@@ -276,6 +287,11 @@ export function AccountsDashboard() {
 						/>
 						<SummaryCard
 							title="Net Worth"
+							subtitle={
+								physicalAssetsValue > 0
+									? `Financial only: ${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(summary.financialNetWorth)}`
+									: "vs last month"
+							}
 							amount={summary.netWorth}
 							trend={summary.netWorthTrend}
 							delay={0.2}
@@ -316,7 +332,10 @@ export function AccountsDashboard() {
 							onAdd={handleAddAccountClick}
 						/>
 						{physicalAssetsValue > 0 && (
-							<div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+							<button
+								onClick={onNavigateToAssets}
+								className="w-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 text-left hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group cursor-pointer"
+							>
 								<div className="flex items-center justify-between px-6 py-4">
 									<div className="flex items-center gap-3">
 										<div className="p-1.5 bg-indigo-50 rounded-lg text-indigo-600">
@@ -326,8 +345,9 @@ export function AccountsDashboard() {
 											<p className="text-sm font-semibold text-gray-900">
 												Physical Assets
 											</p>
-											<p className="text-xs text-gray-500">
-												Depreciated current value
+											<p className="text-xs text-gray-500 group-hover:text-indigo-500 transition-colors">
+												Depreciated current value · View
+												details →
 											</p>
 										</div>
 									</div>
@@ -337,7 +357,7 @@ export function AccountsDashboard() {
 										).toString()}
 									</span>
 								</div>
-							</div>
+							</button>
 						)}
 					</motion.div>
 
