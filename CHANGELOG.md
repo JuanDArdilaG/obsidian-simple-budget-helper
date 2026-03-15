@@ -21,9 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - **Dependency Updates:**
-    - awilix 12.1.1 -> 13.0.1
-    - framer-motion 12.34.0 -> 12.34.3
-    - lucide-react 0.564.0 -> 0.575.0
+    - awilix 12.1.1 -> 13.0.3
+    - framer-motion 12.34.0 -> 12.36.0
+    - lucide-react 0.564.0 -> 0.577.0
     - tailwindcss 4.1.18 -> 4.2.1
 
 ## [0.22.0] - 2026-02-24
