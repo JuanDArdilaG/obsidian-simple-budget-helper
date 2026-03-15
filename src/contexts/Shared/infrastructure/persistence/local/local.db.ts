@@ -165,6 +165,7 @@ export class LocalDB extends DB {
 				data = (await this.dataVersioning.migrateData(
 					data,
 				)) as typeof data;
+				await this.sync(); // Ensure local files are updated after migration
 			}
 
 			// Clear existing data and import new data
@@ -228,7 +229,8 @@ export class LocalDB extends DB {
 	}
 
 	async restoreFromBackup(backupName: string) {
-		return await this.backupManager.restoreBackup(this.db, backupName);
+		await this.backupManager.restoreBackup(this.db, backupName);
+		await this.sync();
 	}
 
 	async getBackupList() {
@@ -248,7 +250,7 @@ export class LocalDB extends DB {
 	}
 
 	#initializeTables() {
-		this.db.version(8).stores({
+		this.db.version(9).stores({
 			[Config.accountsTableName]: Object.keys(
 				Account.emptyPrimitives(),
 			).join(", "),

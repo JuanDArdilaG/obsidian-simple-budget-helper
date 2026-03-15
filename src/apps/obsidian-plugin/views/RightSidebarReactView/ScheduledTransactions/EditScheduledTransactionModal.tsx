@@ -19,6 +19,7 @@ import {
 import { OperationType } from "../../../../../contexts/Shared/domain";
 import { AccountSplit } from "../../../../../contexts/Transactions/domain";
 import { AccountSplitter } from "../../../components/AccountSplitter";
+import { CalculatorInput } from "../../../components/Input/CalculatorInput";
 
 type EditMode = "single" | "all";
 
@@ -373,19 +374,10 @@ export function EditScheduledTransactionModal({
 									<span className="absolute! left-3! top-1/2! -translate-y-1/2! text-gray-500!">
 										$
 									</span>
-									<input
+									<CalculatorInput
 										id="single-amount"
-										type="number"
-										value={singleAmount || ""}
-										onChange={(e) =>
-											setSingleAmount(
-												Number.parseFloat(
-													e.target.value,
-												) || 0,
-											)
-										}
-										placeholder="0.00"
-										step="0.01"
+										value={singleAmount}
+										onChange={setSingleAmount}
 										className="w-full! pl-7! pr-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 									/>
 								</div>
@@ -579,19 +571,10 @@ export function EditScheduledTransactionModal({
 											<span className="absolute! left-3! top-1/2! -translate-y-1/2! text-gray-500!">
 												$
 											</span>
-											<input
+											<CalculatorInput
 												id="single-amount"
-												type="number"
-												value={amount || ""}
-												onChange={(e) =>
-													setAmount(
-														Number.parseFloat(
-															e.target.value,
-														) || 0,
-													)
-												}
-												placeholder="0.00"
-												step="0.01"
+												value={amount}
+												onChange={setAmount}
 												className="w-full! pl-7! pr-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
 											/>
 										</div>

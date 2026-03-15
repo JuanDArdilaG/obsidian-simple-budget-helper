@@ -15,12 +15,13 @@ import {
 	ITransactionsRepository,
 	ITransactionsService,
 	Transaction,
-	TransactionCriteria,
 	TransactionDate,
 	TransactionName,
 	TransactionOperation,
 } from "contexts/Transactions/domain";
+import { PriceVO } from "../../Shared/domain/value-objects/price.vo";
 import { AccountSplit } from "../domain/account-split.valueobject";
+import { TransactionItem } from "../domain/transaction-item.entity";
 
 export class TransactionsService implements ITransactionsService {
 	readonly #logger = new Logger("TransactionsService");
@@ -48,15 +49,17 @@ export class TransactionsService implements ITransactionsService {
 	}
 
 	async getByCategory(category: Nanoid): Promise<Transaction[]> {
-		return this._transactionsRepository.findByCriteria(
-			new TransactionCriteria().where("category", category.value),
-		);
+		return [] as Transaction[]; //TODO: Temporary return to avoid errors while refactoring
+		// return this._transactionsRepository.findByCriteria(
+		// 	new TransactionCriteria().where("category", category.value),
+		// );
 	}
 
 	async getBySubCategory(subCategory: Nanoid): Promise<Transaction[]> {
-		return this._transactionsRepository.findByCriteria(
-			new TransactionCriteria().where("subcategory", subCategory.value),
-		);
+		return [] as Transaction[]; //TODO: Temporary return to avoid errors while refactoring
+		// return this._transactionsRepository.findByCriteria(
+		// 	new TransactionCriteria().where("subcategory", subCategory.value),
+		// );
 	}
 
 	async hasTransactionsByCategory(category: Nanoid): Promise<boolean> {
@@ -73,34 +76,31 @@ export class TransactionsService implements ITransactionsService {
 		oldCategory: Category,
 		newCategory: Category,
 	): Promise<void> {
-		const transactions = await this.getByCategory(oldCategory.nanoid);
-
-		for (const transaction of transactions) {
-			transaction.updateCategory(newCategory.nanoid);
-			await this._transactionsRepository.persist(transaction);
-		}
+		// const transactions = await this.getByCategory(oldCategory.nanoid);
+		// for (const transaction of transactions) {
+		// 	transaction.updateCategory(newCategory.nanoid);
+		// 	await this._transactionsRepository.persist(transaction);
+		// }
 	}
 
 	async reassignTransactionsSubCategory(
 		oldSubCategory: Nanoid,
 		newSubCategory: Nanoid,
 	): Promise<void> {
-		const transactions = await this.getBySubCategory(oldSubCategory);
-
-		// Get the new subcategory to find its parent category
-		const newSubCategoryEntity = await this.subCategoriesService.getByID(
-			newSubCategory.value,
-		);
-		const newCategory = newSubCategoryEntity.categoryId;
-		const newCategoryEntity = await this.categoriesService.getByID(
-			newCategory.value,
-		);
-
-		for (const transaction of transactions) {
-			transaction.updateSubCategory(newSubCategoryEntity.nanoid);
-			transaction.updateCategory(newCategoryEntity.nanoid);
-			await this._transactionsRepository.persist(transaction);
-		}
+		// const transactions = await this.getBySubCategory(oldSubCategory);
+		// // Get the new subcategory to find its parent category
+		// const newSubCategoryEntity = await this.subCategoriesService.getByID(
+		// 	newSubCategory.value,
+		// );
+		// const newCategory = newSubCategoryEntity.categoryId;
+		// const newCategoryEntity = await this.categoriesService.getByID(
+		// 	newCategory.value,
+		// );
+		// for (const transaction of transactions) {
+		// 	transaction.updateSubCategory(newSubCategoryEntity.nanoid);
+		// 	transaction.updateCategory(newCategoryEntity.nanoid);
+		// 	await this._transactionsRepository.persist(transaction);
+		// }
 	}
 
 	async reassignTransactionsCategoryAndSubcategory(
@@ -108,20 +108,18 @@ export class TransactionsService implements ITransactionsService {
 		newCategory: Nanoid,
 		newSubcategory: Nanoid,
 	): Promise<void> {
-		const transactions = await this.getBySubCategory(oldSubcategory);
-
-		const newCategoryEntity = await this.categoriesService.getByID(
-			newCategory.value,
-		);
-		const newSubCategoryEntity = await this.subCategoriesService.getByID(
-			newSubcategory.value,
-		);
-
-		for (const transaction of transactions) {
-			transaction.updateCategory(newCategoryEntity.nanoid);
-			transaction.updateSubCategory(newSubCategoryEntity.nanoid);
-			await this._transactionsRepository.persist(transaction);
-		}
+		// const transactions = await this.getBySubCategory(oldSubcategory);
+		// const newCategoryEntity = await this.categoriesService.getByID(
+		// 	newCategory.value,
+		// );
+		// const newSubCategoryEntity = await this.subCategoriesService.getByID(
+		// 	newSubcategory.value,
+		// );
+		// for (const transaction of transactions) {
+		// 	transaction.updateCategory(newCategoryEntity.nanoid);
+		// 	transaction.updateSubCategory(newSubCategoryEntity.nanoid);
+		// 	await this._transactionsRepository.persist(transaction);
+		// }
 	}
 
 	async record(transaction: Transaction): Promise<void> {
@@ -173,12 +171,18 @@ export class TransactionsService implements ITransactionsService {
 			TransactionDate.createNowDate(),
 			fromSplits,
 			[],
-			new TransactionName(`Adjustment for ${account.name}`),
 			new TransactionOperation(
 				amountDifference.isPositive() ? "income" : "expense",
 			),
-			category.nanoid,
-			subCategory.nanoid,
+			[
+				new TransactionItem(
+					new TransactionName(`Adjustment for ${account.name}`),
+					new PriceVO(amountDifference.abs().value),
+					1,
+					category.nanoid,
+					subCategory.nanoid,
+				),
+			],
 		);
 
 		await this.record(transaction);

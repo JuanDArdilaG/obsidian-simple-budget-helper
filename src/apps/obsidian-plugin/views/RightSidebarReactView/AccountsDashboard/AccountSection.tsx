@@ -6,6 +6,7 @@ import {
 	AccountSubtype,
 } from "../../../../../contexts/Accounts/domain";
 import { Nanoid } from "../../../../../contexts/Shared/domain";
+import { PriceVO } from "../../../../../contexts/Shared/domain/value-objects/price.vo";
 import { AppContext } from "../Contexts";
 import { AccountRow } from "./AccountRow";
 
@@ -20,6 +21,7 @@ interface AccountSectionProps {
 	onDelete: (id: Nanoid) => Promise<void>;
 	onAdd: (type: "asset" | "liability") => void;
 }
+
 export function AccountSection({
 	title,
 	type,
@@ -60,12 +62,9 @@ export function AccountSection({
 					</span>
 				</div>
 				<div className="text-lg font-bold text-gray-900">
-					{type === "liability" && "-"}
-					{new Intl.NumberFormat("en-US", {
-						style: "currency",
-						currency: "USD",
-						minimumFractionDigits: 0,
-					}).format(total)}
+					{new PriceVO(
+						total * (type === "liability" ? -1 : 1),
+					).toString()}
 				</div>
 			</button>
 

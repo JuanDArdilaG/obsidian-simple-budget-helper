@@ -11,7 +11,7 @@ import { TransactionWithAccumulatedBalance } from "../../../../../contexts/Repor
 import { Nanoid } from "../../../../../contexts/Shared/domain";
 import { Transaction } from "../../../../../contexts/Transactions/domain";
 import { LoadingSpinner } from "../../../components/LoadingSpinner";
-import { AccountsContext, TransactionsContext } from "../Contexts";
+import { AccountsContext, AppContext, TransactionsContext } from "../Contexts";
 import { AddTransactionModal } from "./AddTransactionModal";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 import { SelectedTransactionsBar } from "./SelectedTransactionsBar";
@@ -22,6 +22,11 @@ import { TransactionRow } from "./TransactionRow";
 const ITEMS_PER_PAGE = 50;
 
 export function TransactionsList() {
+	const {
+		plugin: {
+			settings: { defaultCurrency },
+		},
+	} = useContext(AppContext);
 	const { accountsMap, updateAccounts } = useContext(AccountsContext);
 	const {
 		transactions,
@@ -70,10 +75,8 @@ export function TransactionsList() {
 		setIsRefreshing(true);
 	};
 
-	const handleAddTransaction = async (newTransactions: Transaction[]) => {
-		for (const t of newTransactions) {
-			await recordTransaction.execute(t);
-		}
+	const handleAddTransaction = async (newTransaction: Transaction) => {
+		await recordTransaction.execute(newTransaction);
 		setIsRefreshing(true);
 		updateTransactions();
 		updateAccounts();
@@ -118,6 +121,7 @@ export function TransactionsList() {
 	useEffect(() => {
 		getTransactionsWithPagination
 			.execute({
+				defaultCurrency,
 				page: currentPage,
 				pageSize: ITEMS_PER_PAGE,
 				searchQuery,
@@ -438,11 +442,8 @@ export function TransactionsList() {
 			<AddTransactionModal
 				isOpen={!!editingTransaction}
 				onClose={() => setEditingTransaction(null)}
-				onSave={async (transactions) => {
-					// For edit, we only expect one transaction
-					if (transactions.length > 0) {
-						await handleUpdateTransaction(transactions[0]);
-					}
+				onSave={async (transaction) => {
+					await handleUpdateTransaction(transaction);
 				}}
 				accountsMap={accountsMap}
 				editTransaction={editingTransaction}

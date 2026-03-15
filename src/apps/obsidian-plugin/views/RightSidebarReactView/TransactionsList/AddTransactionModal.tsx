@@ -30,10 +30,12 @@ import {
 	Transaction,
 	TransactionAmount,
 } from "../../../../../contexts/Transactions/domain";
+import { TransactionItem } from "../../../../../contexts/Transactions/domain/transaction-item.entity";
 import { AccountSplitter } from "../../../components/AccountSplitter";
+import { CalculatorInput } from "../../../components/Input/CalculatorInput";
 import { AppContext, CategoriesContext } from "../Contexts";
 
-export interface TransactionItem {
+export interface TransactionItemForm {
 	id: number;
 	name: string;
 	price: number;
@@ -45,7 +47,7 @@ export interface TransactionItem {
 interface AddTransactionModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	onSave: (transactions: Transaction[]) => Promise<void>;
+	onSave: (transactions: Transaction) => Promise<void>;
 	accountsMap: AccountsMap;
 	editTransaction?: Transaction | null;
 	existingTransactions?: Transaction[];
@@ -74,7 +76,7 @@ export function AddTransactionModal({
 	);
 	const [time, setTime] = useState(new Date().toTimeString().slice(0, 5));
 	const [store, setStore] = useState("");
-	const [items, setItems] = useState<TransactionItem[]>([
+	const [items, setItems] = useState<TransactionItemForm[]>([
 		{
 			id: 0,
 			name: "",
@@ -104,7 +106,7 @@ export function AddTransactionModal({
 	// Autocomplete state
 	const [showSuggestions, setShowSuggestions] = useState<number | null>(null);
 	const [filteredSuggestions, setFilteredSuggestions] = useState<
-		Transaction[]
+		{ transactionId: string; item: TransactionItem }[]
 	>([]);
 	const suggestionsRef = useRef<HTMLDivElement>(null); // Keyboard navigation state for suggestions
 
@@ -218,19 +220,16 @@ export function AddTransactionModal({
 			setStore(editTransaction.store?.value || "");
 
 			// For edit mode, show as single item
-			setItems([
-				{
-					id: 0,
-					name: editTransaction.name.value,
-					price: editTransaction.originAccounts.reduce(
-						(sum, s) => sum + s.amount.value,
-						0,
-					),
-					quantity: 1,
-					category: editTransaction.category.value,
-					subcategory: editTransaction.subcategory.value,
-				},
-			]);
+			setItems(
+				editTransaction.items.map((item, index) => ({
+					id: index,
+					name: item.name.value,
+					price: item.price.value,
+					quantity: item.quantity,
+					category: item.categoryId.value,
+					subcategory: item.subcategoryId.value,
+				})),
+			);
 			setFromSplits(editTransaction.originAccounts);
 			setToSplits(editTransaction.destinationAccounts || []);
 		} else {
@@ -269,9 +268,17 @@ export function AddTransactionModal({
 		if (value.trim().length > 0) {
 			const filtered = existingTransactions
 				.filter((t) =>
-					t.name.toLowerCase().includes(value.toLowerCase()),
+					t.items.some((item) =>
+						item.name.toLowerCase().includes(value.toLowerCase()),
+					),
 				)
-				.slice(0, 5); // Limit to 5 suggestions
+				.map((t) => ({
+					transactionId: t.id,
+					item: t.items.find((item) =>
+						item.name.toLowerCase().includes(value.toLowerCase()),
+					)!,
+				}))
+				.slice(0, 10); // Limit to 10 suggestions
 			setFilteredSuggestions(filtered);
 			setShowSuggestions(id);
 		} else {
@@ -305,10 +312,14 @@ export function AddTransactionModal({
 					highlightedIndex >= 0 &&
 					highlightedIndex < filteredSuggestions.length
 				) {
-					handleSelectSuggestion(
-						itemIndex,
-						filteredSuggestions[highlightedIndex],
+					const { transactionId, item } =
+						filteredSuggestions[highlightedIndex];
+					const transaction = existingTransactions.find(
+						(t) => t.id === transactionId,
 					);
+					if (transaction) {
+						handleSelectSuggestion(itemIndex, transaction, item);
+					}
 				}
 				break;
 			case "Escape":
@@ -320,18 +331,19 @@ export function AddTransactionModal({
 		}
 	};
 
-	const handleSelectSuggestion = (id: number, transaction: Transaction) => {
-		// Calculate amount from transaction
-		const amount = transaction.originAmount.value;
-
+	const handleSelectSuggestion = (
+		id: number,
+		transaction: Transaction,
+		item: TransactionItem,
+	) => {
 		// Update item with transaction data
 		const newItems = [...items];
 		newItems[id] = {
 			...newItems[id],
-			name: transaction.name.value,
-			price: items[id].price || amount,
-			category: transaction.category.value,
-			subcategory: transaction.subcategory.value,
+			name: item.name.value,
+			price: items[id].price || item.price.value, // Keep existing price if already entered
+			category: item.categoryId.value,
+			subcategory: item.subcategoryId.value,
 		};
 		setItems(newItems);
 		// Update operation type
@@ -340,9 +352,11 @@ export function AddTransactionModal({
 		if (!store && transaction.store) {
 			setStore(transaction.store.value);
 		}
-		// Update splits
-		setFromSplits(transaction.originAccounts);
-		if (transaction.destinationAccounts) {
+		// Update splits if they are empty (don't overwrite user-entered splits)
+		if (fromSplits.length === 0) {
+			setFromSplits(transaction.originAccounts);
+		}
+		if (toSplits.length === 0 && transaction.destinationAccounts) {
 			setToSplits(transaction.destinationAccounts);
 		}
 		// Close suggestions
@@ -397,7 +411,7 @@ export function AddTransactionModal({
 
 	const handleItemChange = (
 		id: number,
-		field: keyof Omit<TransactionItem, "id">,
+		field: keyof Omit<TransactionItemForm, "id">,
 		value: string | number,
 	) => {
 		const newItems = [...items];
@@ -506,55 +520,49 @@ export function AddTransactionModal({
 		const dateTimeString = `${date}T${time}:00`;
 		const transactionDate = new Date(dateTimeString);
 
-		// Create individual transactions for each item
-		const transactions: Transaction[] = items.flatMap((item) => {
-			const itemTotal = item.price;
-			const itemRatio = itemTotal / totalAmount;
-			return Array.from({ length: item.quantity }, () => {
-				return Transaction.fromPrimitives({
-					id: editTransaction?.id ?? Nanoid.generate().value,
-					date: transactionDate,
-					fromSplits: fromSplits.map((split) =>
-						new AccountSplit(
-							split.accountId,
-							new TransactionAmount(
-								split.amount.value * itemRatio,
+		const transaction: Transaction = Transaction.fromPrimitives({
+			id: editTransaction?.id ?? Nanoid.generate().value,
+			date: transactionDate,
+			fromSplits: fromSplits.map((split) =>
+				new AccountSplit(
+					split.accountId,
+					new TransactionAmount(split.amount.value),
+				).toPrimitives(),
+			),
+			toSplits: toSplits.map((split) =>
+				new AccountSplit(
+					split.accountId,
+					new TransactionAmount(
+						Number.parseFloat(
+							(split.amount.value / exchangeRate.value).toFixed(
+								2,
 							),
-						).toPrimitives(),
+						),
 					),
-					toSplits: toSplits.map((split) =>
-						new AccountSplit(
-							split.accountId,
-							new TransactionAmount(
-								Number.parseFloat(
-									(
-										(split.amount.value * itemRatio) /
-										exchangeRate.value
-									).toFixed(2),
-								),
-							),
-						).toPrimitives(),
-					),
-					name: item.name,
-					operation: operation,
-					category: item.category,
-					subcategory: item.subcategory,
-					store: store || undefined,
-					exchangeRate: isCrossCurrencyTransfer
-						? exchangeRate.value
-						: undefined,
-					updatedAt: new Date().toISOString(),
-				});
-			});
+				).toPrimitives(),
+			),
+			operation: operation,
+			items: items.map((item) => ({
+				name: item.name,
+				price: item.price,
+				quantity: item.quantity,
+				categoryId: item.category,
+				subcategoryId: item.subcategory,
+			})),
+			store: store || undefined,
+			exchangeRate: isCrossCurrencyTransfer
+				? exchangeRate.value
+				: undefined,
+			updatedAt: new Date().toISOString(),
 		});
-		await onSave(transactions);
+		await onSave(transaction);
 		onClose();
 	};
 
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed! inset-0! z-50! flex! items-center! justify-center! p-4! bg-black/20! backdrop-blur-sm! overflow-y-auto!">
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm overflow-y-auto!">
 			<motion.div
 				initial={{
 					opacity: 0,
@@ -568,26 +576,26 @@ export function AddTransactionModal({
 					opacity: 0,
 					scale: 0.95,
 				}}
-				className="bg-white! rounded-xl! shadow-xl! max-w-3xl! w-full! p-6! border! border-gray-100! my-8! overflow-hidden! flex! flex-col! max-h-[90vh]!"
+				className="bg-white rounded-xl shadow-xl max-w-3xl w-full p-6 border border-gray-100 my-8 overflow-hidden flex flex-col max-h-[90vh]!"
 			>
-				<div className="flex! justify-between! items-center! mb-6! flex-shrink-0!">
-					<h2 className="text-xl! font-bold! text-gray-900!">
+				<div className="flex justify-between items-center mb-6 shrink-0!">
+					<h2 className="text-xl font-bold text-gray-900!">
 						{isEditMode ? "Edit Transaction" : "Add Transaction"}
 					</h2>
 					<button
 						onClick={onClose}
-						className="text-gray-400! hover:text-gray-600!"
+						className="text-gray-400 hover:text-gray-600!"
 					>
 						<X size={24} />
 					</button>
 				</div>
 
-				<div className="overflow-y-auto! flex-1! pr-2! -mr-2!">
+				<div className="overflow-y-auto flex-1 pr-2 -mr-2!">
 					{/* Operation Selection */}
-					<div className="grid! grid-cols-3! gap-4! mb-6! p-2!">
+					<div className="grid grid-cols-3 gap-4 mb-6 p-2!">
 						<button
 							onClick={() => setOperation("expense")}
-							className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${operation === "expense" ? "bg-rose-50! border-rose-200! text-rose-700! ring-2! ring-rose-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
+							className={`p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${operation === "expense" ? "bg-rose-50 border-rose-200 text-rose-700 ring-2 ring-rose-500 ring-offset-2!" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50!"}`}
 						>
 							<ArrowUpRight
 								className={
@@ -600,7 +608,7 @@ export function AddTransactionModal({
 						</button>
 						<button
 							onClick={() => setOperation("income")}
-							className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${operation === "income" ? "bg-emerald-50! border-emerald-200! text-emerald-700! ring-2! ring-emerald-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
+							className={`p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${operation === "income" ? "bg-emerald-50 border-emerald-200 text-emerald-700 ring-2 ring-emerald-500 ring-offset-2!" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50!"}`}
 						>
 							<ArrowDownLeft
 								className={
@@ -613,7 +621,7 @@ export function AddTransactionModal({
 						</button>
 						<button
 							onClick={() => setOperation("transfer")}
-							className={`p-4! rounded-lg! border! flex! flex-col! items-center! gap-2! transition-all! ${operation === "transfer" ? "bg-blue-50! border-blue-200! text-blue-700! ring-2! ring-blue-500! ring-offset-2!" : "bg-white! border-gray-200! text-gray-600! hover:bg-gray-50!"}`}
+							className={`p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${operation === "transfer" ? "bg-blue-50 border-blue-200 text-blue-700 ring-2 ring-blue-500 ring-offset-2!" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50!"}`}
 						>
 							<RefreshCw
 								className={
@@ -627,50 +635,65 @@ export function AddTransactionModal({
 					</div>
 
 					{/* Date, Time & Store */}
-					<div className="grid! grid-cols-1! sm:grid-cols-2! lg:grid-cols-3! gap-4! mb-6!">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6!">
 						<div>
-							<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+							<label
+								htmlFor="date-input"
+								className="block text-sm font-medium text-gray-700 mb-1!"
+							>
 								Date
 							</label>
 							<input
+								id="date-input"
 								type="date"
 								value={date}
 								onChange={(e) => setDate(e.target.value)}
-								className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
+								className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500!"
 							/>
 						</div>
 						<div>
-							<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+							<label
+								htmlFor="time-input"
+								className="block text-sm font-medium text-gray-700 mb-1!"
+							>
 								Time
 							</label>
 							<input
+								id="time-input"
 								type="time"
 								value={time}
 								onChange={(e) => setTime(e.target.value)}
-								className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
+								className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500!"
 							/>
 						</div>
-						<div className="sm:col-span-2! lg:col-span-1!">
-							<label className="block! text-sm! font-medium! text-gray-700! mb-1!">
+						<div className="sm:col-span-2 lg:col-span-1!">
+							<label
+								htmlFor="store-input"
+								className="block text-sm font-medium text-gray-700 mb-1!"
+							>
 								Store / Payee (Optional)
 							</label>
 							<input
+								id="store-input"
 								type="text"
 								value={store}
 								onChange={(e) => setStore(e.target.value)}
 								placeholder="e.g. Walmart, Starbucks"
-								className="w-full! px-3! py-2! border! border-gray-300! rounded-lg! focus:ring-2! focus:ring-indigo-500! focus:border-indigo-500!"
+								className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500!"
 							/>
 						</div>
 					</div>
 
 					{/* Items Section */}
 					<div className="mb-8">
-						<div className="flex! justify-between items-center mb-3">
-							<label className="block! text-sm! font-medium! text-gray-700!">
+						<div className="flex justify-between items-center mb-3">
+							<label
+								htmlFor="items-input"
+								className="block text-sm font-medium text-gray-700!"
+							>
 								Items{" "}
 								{!isEditMode && (
-									<span className="text-xs! text-gray-500!">
+									<span className="text-xs text-gray-500!">
 										(each item will be saved as a separate
 										transaction)
 									</span>
@@ -681,12 +704,12 @@ export function AddTransactionModal({
 							{items.map((item, index) => (
 								<div
 									key={item.id}
-									className="flex! gap-2! items-start! p-3! bg-gray-50! rounded-lg! border! border-gray-200!"
+									className="flex gap-2 items-start p-3 bg-gray-50 rounded-lg border border-gray-200!"
 								>
-									<div className="flex-1! space-y-2!">
-										<div className="flex! flex-col! sm:flex-row! gap-2!">
+									<div className="flex-1 space-y-2!">
+										<div className="flex flex-col sm:flex-row gap-2!">
 											{/* Item name with autocomplete */}
-											<div className="flex-1! relative!">
+											<div className="flex-1 relative!">
 												<input
 													type="text"
 													placeholder="Item name"
@@ -708,29 +731,29 @@ export function AddTransactionModal({
 															item.name.trim()
 																.length > 0
 														) {
-															const filtered =
-																existingTransactions
-																	.filter(
-																		(t) =>
-																			t.name
-																				.toLowerCase()
-																				.includes(
-																					item.name.toLowerCase(),
-																				),
-																	)
-																	.slice(
-																		0,
-																		5,
-																	);
-															setFilteredSuggestions(
-																filtered,
-															);
+															// const filtered =
+															// 	existingTransactions;
+															// .filter(
+															// 	(t) =>
+															// 		t.name
+															// 			.toLowerCase()
+															// 			.includes(
+															// 				item.name.toLowerCase(),
+															// 			),
+															// )
+															// .slice(
+															// 	0,
+															// 	5,
+															// );
+															// setFilteredSuggestions(
+															// 	filtered,
+															// );
 															setShowSuggestions(
 																item.id,
 															);
 														}
 													}}
-													className="w-full! px-2! py-1.5! text-sm! border! border-gray-300! rounded! focus:ring-1! focus:ring-indigo-500! min-w-0!"
+													className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 min-w-0!"
 												/>
 
 												{/* Autocomplete suggestions */}
@@ -755,22 +778,24 @@ export function AddTransactionModal({
 																	opacity: 0,
 																	y: -10,
 																}}
-																className="absolute! top-full! left-0! right-0! mt-1! bg-white! border! border-gray-200! rounded-lg! shadow-lg! z-50! max-h-60! overflow-y-auto"
+																className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"
 															>
 																{filteredSuggestions.map(
 																	(
 																		suggestion,
 																		idx,
 																	) => {
-																		const suggestionAmount =
-																			suggestion.originAmount;
 																		const isHighlighted =
 																			idx ===
 																			highlightedIndex;
 																		return (
 																			<button
 																				key={
-																					suggestion.id
+																					suggestion
+																						.item
+																						.name
+																						.value +
+																					suggestion.transactionId
 																				}
 																				ref={(
 																					el,
@@ -786,12 +811,25 @@ export function AddTransactionModal({
 																						);
 																					}
 																				}}
-																				onClick={() =>
-																					handleSelectSuggestion(
-																						item.id,
-																						suggestion,
-																					)
-																				}
+																				onClick={() => {
+																					const transaction =
+																						existingTransactions.find(
+																							(
+																								t,
+																							) =>
+																								t.id ===
+																								suggestion.transactionId,
+																						);
+																					if (
+																						transaction
+																					) {
+																						handleSelectSuggestion(
+																							item.id,
+																							transaction,
+																							suggestion.item,
+																						);
+																					}
+																				}}
 																				onMouseEnter={() =>
 																					setHighlightedIndex(
 																						idx,
@@ -799,30 +837,36 @@ export function AddTransactionModal({
 																				}
 																				className={`w-full px-3 py-2 text-left transition-colors border-b border-gray-100 last:border-b-0 flex items-center justify-between gap-2 ${isHighlighted ? "bg-indigo-50" : "hover:bg-indigo-50"}`}
 																			>
-																				<div className="flex-1! min-w-0">
-																					<div className="font-medium! text-sm! text-gray-900! truncate!">
+																				<div className="flex-1 min-w-0">
+																					<div className="font-medium text-sm text-gray-900 truncate!">
 																						{
-																							suggestion.name
+																							suggestion
+																								.item
+																								.name
 																						}
 																					</div>
-																					<div className="text-xs! text-gray-500! truncate!">
+																					<div className="text-xs text-gray-500 truncate!">
 																						{
 																							getCategoryByID(
-																								suggestion.category,
+																								suggestion
+																									.item
+																									.categoryId,
 																							)
 																								?.name
 																						}
 																						{` • ${
 																							getSubCategoryByID(
-																								suggestion.subcategory,
+																								suggestion
+																									.item
+																									.subcategoryId,
 																							)
 																								?.name
 																						}`}
 																					</div>
 																				</div>
-																				<div className="flex! items-center! gap-2! flex-shrink-0!">
-																					<span className="text-sm! font-semibold! text-gray-700!">
-																						{suggestionAmount.toString()}
+																				<div className="flex items-center gap-2 shrink-0!">
+																					<span className="text-sm font-semibold text-gray-700!">
+																						{suggestion.item.price.toString()}
 																					</span>
 																					<Clock
 																						size={
@@ -839,23 +883,17 @@ export function AddTransactionModal({
 														)}
 												</AnimatePresence>
 											</div>
-											<div className="flex! gap-2!">
-												<input
-													type="string"
-													placeholder="Price"
-													value={new TransactionAmount(
-														item.price,
-													).toString()}
-													onChange={(e) =>
+											<div className="flex gap-2">
+												<CalculatorInput
+													value={item.price}
+													onChange={(val) =>
 														handleItemChange(
 															item.id,
 															"price",
-															TransactionAmount.fromString(
-																e.target.value,
-															).toNumber(),
+															val,
 														)
 													}
-													className="flex-1! sm:w-24! px-2! py-1.5! text-sm! border! border-gray-300! rounded! focus:ring-1! focus:ring-indigo-500! min-w-0!"
+													className="flex-1 sm:w-36 px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 min-w-0!"
 												/>
 												<input
 													type="number"
@@ -870,16 +908,16 @@ export function AddTransactionModal({
 															),
 														)
 													}
-													className="w-16! sm:w-16! px-2! py-1.5! text-sm! border! border-gray-300! rounded! focus:ring-1! focus:ring-indigo-500! min-w-0!"
+													className="w-16 sm:w-16 px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 min-w-0!"
 												/>
 											</div>
 										</div>
 										{/* Category Selection */}
-										<div className="flex! flex-col! sm:flex-row! gap-2! relative! z-10!">
-											<div className="flex-1! relative!">
+										<div className="flex flex-col sm:flex-row gap-2 relative z-10!">
+											<div className="flex-1 relative!">
 												{creatingCategory ===
 												item.id ? (
-													<div className="flex! gap-1!">
+													<div className="flex gap-1!">
 														<input
 															type="text"
 															placeholder="New category name"
@@ -914,7 +952,7 @@ export function AddTransactionModal({
 																}
 															}}
 															autoFocus
-															className="flex-1! px-2! py-1.5! text-sm! border! border-indigo-300! rounded! focus:ring-1! focus:ring-indigo-500!"
+															className="flex-1 px-2 py-1.5 text-sm border border-indigo-300 rounded focus:ring-1 focus:ring-indigo-500!"
 														/>
 														<button
 															type="button"
@@ -923,7 +961,7 @@ export function AddTransactionModal({
 																	item.id,
 																)
 															}
-															className="p-1.5! bg-indigo-600! text-white! rounded! hover:bg-indigo-700!"
+															className="p-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700!"
 														>
 															<Check size={14} />
 														</button>
@@ -937,7 +975,7 @@ export function AddTransactionModal({
 																	"",
 																);
 															}}
-															className="p-1.5! bg-gray-200! text-gray-600! rounded! hover:bg-gray-300!"
+															className="p-1.5 bg-gray-200 text-gray-600 rounded hover:bg-gray-300!"
 														>
 															<X size={14} />
 														</button>
@@ -951,14 +989,14 @@ export function AddTransactionModal({
 																e.target.value,
 															)
 														}
-														className="w-full! px-2! py-1.5! text-sm! border! border-gray-300! rounded! focus:ring-1! focus:ring-indigo-500! bg-white! relative! z-10"
+														className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 bg-white relative z-10"
 													>
 														<option value="">
 															Select Category
 														</option>
 														<option
 															value="__new__"
-															className="text-indigo-600! font-medium!"
+															className="text-indigo-600 font-medium!"
 														>
 															+ New Category
 														</option>
@@ -985,10 +1023,10 @@ export function AddTransactionModal({
 											</div>
 
 											{/* Subcategory Selection */}
-											<div className="flex-1! relative!">
+											<div className="flex-1 relative!">
 												{creatingSubcategory ===
 												item.id ? (
-													<div className="flex! gap-1!">
+													<div className="flex gap-1!">
 														<input
 															type="text"
 															placeholder="New subcategory name"
@@ -1023,7 +1061,7 @@ export function AddTransactionModal({
 																}
 															}}
 															autoFocus
-															className="flex-1! px-2! py-1.5! text-sm! border! border-indigo-300! rounded! focus:ring-1! focus:ring-indigo-500!"
+															className="flex-1 px-2 py-1.5 text-sm border border-indigo-300 rounded focus:ring-1 focus:ring-indigo-500!"
 														/>
 														<button
 															type="button"
@@ -1032,7 +1070,7 @@ export function AddTransactionModal({
 																	item.id,
 																)
 															}
-															className="p-1.5! bg-indigo-600! text-white! rounded! hover:bg-indigo-700!"
+															className="p-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700!"
 														>
 															<Check size={14} />
 														</button>
@@ -1046,7 +1084,7 @@ export function AddTransactionModal({
 																	"",
 																);
 															}}
-															className="p-1.5! bg-gray-200! text-gray-600! rounded! hover:bg-gray-300!"
+															className="p-1.5 bg-gray-200 text-gray-600 rounded hover:bg-gray-300!"
 														>
 															<X size={14} />
 														</button>
@@ -1060,7 +1098,7 @@ export function AddTransactionModal({
 																e.target.value,
 															)
 														}
-														className="w-full! px-2! py-1.5! text-sm! border! border-gray-300! rounded! focus:ring-1! focus:ring-indigo-500! bg-white! relative! z-10"
+														className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 bg-white relative z-10"
 														disabled={
 															!item.category
 														}
@@ -1071,7 +1109,7 @@ export function AddTransactionModal({
 														{item.category && (
 															<option
 																value="__new__"
-																className="text-indigo-600! font-medium!"
+																className="text-indigo-600 font-medium!"
 															>
 																+ New
 																Subcategory
@@ -1100,12 +1138,12 @@ export function AddTransactionModal({
 											</div>
 										</div>
 									</div>
-									{items.length > 1 && !isEditMode && (
+									{items.length > 1 && (
 										<button
 											onClick={() =>
 												handleRemoveItem(item.id)
 											}
-											className="p-1! text-gray-400! hover:text-rose-500! transition-colors! flex-shrink-0!"
+											className="p-1 text-gray-400 hover:text-rose-500 transition-colors shrink-0!"
 										>
 											<Trash2 size={16} />
 										</button>
@@ -1113,18 +1151,16 @@ export function AddTransactionModal({
 								</div>
 							))}
 						</div>
-						{!isEditMode && (
-							<button
-								onClick={handleAddItem}
-								className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-indigo-600 hover:text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50/50 font-medium flex items-center justify-center gap-1.5 transition-colors"
-							>
-								<Plus size={16} /> Add Item
-							</button>
-						)}
+						<button
+							onClick={handleAddItem}
+							className="mt-3 w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-indigo-600 hover:text-indigo-700 hover:border-indigo-300 hover:bg-indigo-50/50 font-medium flex items-center justify-center gap-1.5 transition-colors"
+						>
+							<Plus size={16} /> Add Item
+						</button>
 					</div>
 
 					{/* Account Splitting Section */}
-					<div className="space-y-6! mb-6!">
+					<div className="space-y-6 mb-6!">
 						<AccountSplitter
 							label={
 								operation === "income"
@@ -1232,12 +1268,12 @@ export function AddTransactionModal({
 				</div>
 
 				{/* Footer */}
-				<div className="flex! flex-col! gap-4! pt-4! border-t! border-gray-100! mt-auto!">
-					<div className="flex! justify-between! items-center! px-2!">
-						<span className="text-sm! text-gray-500!">
+				<div className="flex flex-col gap-4 pt-4 border-t border-gray-100 mt-auto!">
+					<div className="flex justify-between items-center px-2!">
+						<span className="text-sm text-gray-500!">
 							Total Transaction Value
 						</span>
-						<span className="text-2xl! font-bold! text-gray-900!">
+						<span className="text-2xl font-bold text-gray-900!">
 							{new Intl.NumberFormat("en-US", {
 								style: "currency",
 								currency: "USD",
@@ -1247,17 +1283,17 @@ export function AddTransactionModal({
 					<div className="flex gap-3">
 						<button
 							onClick={onClose}
-							className="flex-1! px-4! py-2.5! border! border-gray-300! rounded-lg! text-gray-700! font-medium! hover:bg-gray-50! transition-colors!"
+							className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors!"
 						>
 							Cancel
 						</button>
 						<button
 							onClick={handleSubmit}
-							className="flex-1! px-4! py-2.5! bg-indigo-600! text-white! rounded-lg! font-medium! hover:bg-indigo-700! transition-colors! shadow-sm!"
+							className="flex-1 px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm!"
 						>
 							{isEditMode
 								? "Update Transaction"
-								: `Save ${items.length} Transaction${items.length > 1 ? "s" : ""}`}
+								: "Save Transaction"}
 						</button>
 					</div>
 				</div>

@@ -1,17 +1,21 @@
 import { motion } from "framer-motion";
 import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { useCallback, useMemo } from "react";
+import { PriceVO } from "../../../../../contexts/Shared/domain/value-objects/price.vo";
 
 interface SummaryCardProps {
 	title: string;
+	subtitle?: string;
 	amount: number;
 	trend: number;
 	delay?: number;
 	isCurrency?: boolean;
 	reductionIsPositive?: boolean;
 }
+
 export function SummaryCard({
 	title,
+	subtitle,
 	amount,
 	trend,
 	delay = 0,
@@ -20,15 +24,6 @@ export function SummaryCard({
 }: Readonly<SummaryCardProps>) {
 	const isPositive = useMemo(() => trend > 0, [trend]);
 	const isNeutral = useMemo(() => trend === 0, [trend]);
-
-	const formatCurrency = (value: number) => {
-		return new Intl.NumberFormat("en-US", {
-			style: "currency",
-			currency: "USD",
-			minimumFractionDigits: 0,
-			maximumFractionDigits: 0,
-		}).format(value);
-	};
 
 	const getTrendStyles = useCallback(() => {
 		const positiveStyle = "bg-emerald-50 text-emerald-700";
@@ -99,9 +94,13 @@ export function SummaryCard({
 
 			<div>
 				<div className="text-3xl font-bold text-gray-900 tracking-tight">
-					{isCurrency ? formatCurrency(amount) : amount}
+					{isCurrency ? new PriceVO(amount).toString() : amount}
 				</div>
-				<p className="text-xs text-gray-400 mt-1">vs last month</p>
+				{subtitle ? (
+					<p className="text-xs text-gray-400 mt-1">{subtitle}</p>
+				) : (
+					<p className="text-xs text-gray-400 mt-1">vs last month</p>
+				)}
 			</div>
 		</motion.div>
 	);

@@ -239,8 +239,9 @@ export class SettingTab extends PluginSettingTab {
 								"getAllAccountsUseCase",
 							);
 						const report = await integrityUseCase.execute();
-						const allAccounts =
-							await getAllAccountsUseCase.execute();
+						const allAccounts = await getAllAccountsUseCase.execute(
+							this.plugin.settings.defaultCurrency,
+						);
 
 						// Show results in a modal
 						const modal = new IntegrityReportModal(

@@ -31,7 +31,10 @@ export const AppProviders = ({
 				value={useItemsContextDefault(container)}
 			>
 				<AccountsContext.Provider
-					value={getAccountsContextValues(container)}
+					value={getAccountsContextValues(
+						container,
+						plugin.settings.defaultCurrency,
+					)}
 				>
 					<CategoriesContext.Provider
 						value={getCategoriesContextDefault(container)}

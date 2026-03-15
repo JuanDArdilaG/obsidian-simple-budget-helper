@@ -1,6 +1,8 @@
 import { DateValueObject } from "@juandardilag/value-objects";
 import { describe, expect, it, vi } from "vitest";
 import { GetAllAccountsUseCase } from "../../../../src/contexts/Accounts/application/get-all-accounts.usecase";
+import { GetExchangeRateUseCase } from "../../../../src/contexts/Currencies/application/get-exchange-rate.usecase";
+import { IExchangeRateGetter } from "../../../../src/contexts/Currencies/domain/exchange-rate-getter.interface";
 import { GetScheduledTransactionsUntilDateUseCase } from "../../../../src/contexts/ScheduledTransactions/application/get-items-until-date.usecase";
 import { ScheduledTransactionsWithAccumulatedBalanceUseCase } from "../../../../src/contexts/ScheduledTransactions/application/items-with-accumulated-balance.usecase";
 import { IRecurrenceModificationsService } from "../../../../src/contexts/ScheduledTransactions/domain";
@@ -24,32 +26,20 @@ describe("execute", () => {
 			new ScheduledTransactionsServiceMock(items);
 		const accountsService = new AccountsServiceMock(accounts);
 
-		// Mock the recurrence modifications service using Jest
-		const recurrenceModificationsService: IRecurrenceModificationsService =
-			{
-				getByScheduledItemId: vi.fn().mockResolvedValue([]),
-				getByScheduledItemIdAndOccurrenceIndex: vi
-					.fn()
-					.mockResolvedValue(null),
-				modifyOccurrence: vi.fn(),
-				markOccurrenceAsCompleted: vi.fn(),
-				markOccurrenceAsDeleted: vi.fn(),
-				resetOccurrenceToPending: vi.fn(),
-				clearAllModifications: vi.fn(),
-				deleteModificationsByScheduledItem: vi.fn(),
-				countModificationsByScheduledItem: vi.fn().mockResolvedValue(0),
-				getStatsByScheduledItem: vi.fn(),
-				getAll: vi.fn().mockResolvedValue([]),
-				getByID: vi.fn().mockResolvedValue(null),
-				delete: vi.fn(),
-				create: vi.fn(),
-				exists: vi.fn().mockResolvedValue(false),
-				getByCriteria: vi.fn().mockResolvedValue([]),
-				update: vi.fn(),
-			};
+		const recurrenceModificationsService = {
+			getByScheduledItemId: vi.fn().mockResolvedValue([]),
+		} as unknown as IRecurrenceModificationsService;
+
+		const exchangeRateGetter = {
+			getExchangeRate: vi.fn().mockResolvedValue(null),
+		} as unknown as IExchangeRateGetter;
+		const getExchangeRateUseCase = new GetExchangeRateUseCase(
+			exchangeRateGetter,
+		);
 
 		const getAllAccountsUseCase = new GetAllAccountsUseCase(
 			accountsService,
+			getExchangeRateUseCase,
 		);
 
 		const useCase = new ScheduledTransactionsWithAccumulatedBalanceUseCase(
@@ -60,9 +50,10 @@ describe("execute", () => {
 			),
 		);
 
-		const itemsWithBalance = await useCase.execute(
-			DateValueObject.createNowDate(),
-		);
+		const itemsWithBalance = await useCase.execute({
+			defaultCurrency: "USD",
+			untilDate: DateValueObject.createNowDate(),
+		});
 
 		expect(itemsWithBalance.length).toBe(2);
 		expect(itemsWithBalance[0].accountPrevBalance.value.value).toBe(0);

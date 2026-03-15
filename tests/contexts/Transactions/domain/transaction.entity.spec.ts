@@ -1,4 +1,5 @@
 import { Category, CategoryName } from "contexts/Categories/domain";
+import { PriceVO } from "contexts/Shared/domain/value-objects/price.vo";
 import {
 	Transaction,
 	TransactionDate,
@@ -6,10 +7,26 @@ import {
 } from "contexts/Transactions/domain";
 import { AccountSplit } from "contexts/Transactions/domain/account-split.valueobject";
 import { TransactionAmount } from "contexts/Transactions/domain/transaction-amount.valueobject";
+import { TransactionItem } from "contexts/Transactions/domain/transaction-item.entity";
 import { TransactionOperation } from "contexts/Transactions/domain/transaction-operation.valueobject";
 import { describe, expect, it } from "vitest";
 import { Nanoid } from "../../../../src/contexts/Shared/domain";
 import { buildTestAccounts } from "../../Accounts/domain/buildTestAccounts";
+
+const buildTransactionItems = (
+	name: string,
+	amount: number,
+	categoryId: Nanoid,
+	subcategoryId: Nanoid,
+): TransactionItem[] => [
+	new TransactionItem(
+		new TransactionName(name),
+		new PriceVO(amount),
+		1,
+		categoryId,
+		subcategoryId,
+	),
+];
 
 describe("transfer operation validation", () => {
 	it("should throw error when creating transfer operation without toSplits", () => {
@@ -19,16 +36,20 @@ describe("transfer operation validation", () => {
 		];
 		const toSplits: AccountSplit[] = []; // Empty toSplits for transfer
 		const category = Category.create(new CategoryName("Test"));
+		const subcategoryId = Nanoid.generate();
 
 		expect(() => {
 			Transaction.create(
 				TransactionDate.createNowDate(),
 				fromSplits,
 				toSplits,
-				new TransactionName("Transfer Test"),
 				TransactionOperation.transfer(),
-				category.nanoid,
-				Nanoid.generate(),
+				buildTransactionItems(
+					"Transfer Test",
+					100,
+					category.nanoid,
+					subcategoryId,
+				),
 			);
 		}).toThrow("Transfer operations must have a toSplits array");
 	});
@@ -44,16 +65,20 @@ describe("transfer operation validation", () => {
 			new AccountSplit(toAccount.nanoid, new TransactionAmount(100)),
 		];
 		const category = Category.create(new CategoryName("Test"));
+		const subcategoryId = Nanoid.generate();
 
 		expect(() => {
 			Transaction.create(
 				TransactionDate.createNowDate(),
 				fromSplits,
 				toSplits,
-				new TransactionName("Transfer Test"),
 				TransactionOperation.transfer(),
-				category.nanoid,
-				Nanoid.generate(),
+				buildTransactionItems(
+					"Transfer Test",
+					100,
+					category.nanoid,
+					subcategoryId,
+				),
 			);
 		}).not.toThrow();
 	});
@@ -69,15 +94,19 @@ describe("transfer operation validation", () => {
 			new AccountSplit(toAccount.nanoid, new TransactionAmount(100)),
 		];
 		const category = Category.create(new CategoryName("Test"));
+		const subcategoryId = Nanoid.generate();
 
 		const transaction = Transaction.create(
 			TransactionDate.createNowDate(),
 			fromSplits,
 			toSplits,
-			new TransactionName("Transfer Test"),
 			TransactionOperation.transfer(),
-			category.nanoid,
-			Nanoid.generate(),
+			buildTransactionItems(
+				"Transfer Test",
+				100,
+				category.nanoid,
+				subcategoryId,
+			),
 		);
 
 		expect(() => {
@@ -92,15 +121,19 @@ describe("transfer operation validation", () => {
 		];
 		const toSplits: AccountSplit[] = []; // Empty toSplits
 		const category = Category.create(new CategoryName("Test"));
+		const subcategoryId = Nanoid.generate();
 
 		const transaction = Transaction.create(
 			TransactionDate.createNowDate(),
 			fromSplits,
 			toSplits,
-			new TransactionName("Test Transaction"),
 			TransactionOperation.expense(),
-			category.nanoid,
-			Nanoid.generate(),
+			buildTransactionItems(
+				"Test Transaction",
+				100,
+				category.nanoid,
+				subcategoryId,
+			),
 		);
 
 		expect(() => {
@@ -119,15 +152,19 @@ describe("transfer operation validation", () => {
 			new AccountSplit(toAccount.nanoid, new TransactionAmount(100)),
 		];
 		const category = Category.create(new CategoryName("Test"));
+		const subcategoryId = Nanoid.generate();
 
 		const transaction = Transaction.create(
 			TransactionDate.createNowDate(),
 			fromSplits,
 			toSplits,
-			new TransactionName("Test Transaction"),
 			TransactionOperation.expense(),
-			category.nanoid,
-			Nanoid.generate(),
+			buildTransactionItems(
+				"Test Transaction",
+				100,
+				category.nanoid,
+				subcategoryId,
+			),
 		);
 
 		expect(() => {
@@ -144,15 +181,19 @@ describe("getRealAmountForAccount", () => {
 		];
 		const toSplits: AccountSplit[] = [];
 		const category = Category.create(new CategoryName("Test"));
+		const subcategoryId = Nanoid.generate();
 
 		const transaction = Transaction.create(
 			TransactionDate.createNowDate(),
 			fromSplits,
 			toSplits,
-			new TransactionName("Income Transaction"),
 			TransactionOperation.income(),
-			category.nanoid,
-			Nanoid.generate(),
+			buildTransactionItems(
+				"Income Transaction",
+				100,
+				category.nanoid,
+				subcategoryId,
+			),
 		);
 
 		// getRealAmountForAccount returns the base amount without considering account type
@@ -167,14 +208,18 @@ describe("getRealAmountForAccount", () => {
 		];
 		const toSplits: AccountSplit[] = [];
 		const category = Category.create(new CategoryName("Test"));
+		const subcategoryId = Nanoid.generate();
 		const transaction = Transaction.create(
 			TransactionDate.createNowDate(),
 			fromSplits,
 			toSplits,
-			new TransactionName("Expense Transaction"),
 			TransactionOperation.expense(),
-			category.nanoid,
-			Nanoid.generate(),
+			buildTransactionItems(
+				"Expense Transaction",
+				100,
+				category.nanoid,
+				subcategoryId,
+			),
 		);
 
 		// getRealAmountForAccount returns the base amount without considering account type
@@ -193,15 +238,19 @@ describe("getRealAmountForAccount", () => {
 			new AccountSplit(toAccount.nanoid, new TransactionAmount(100)),
 		];
 		const category = Category.create(new CategoryName("Test"));
+		const subcategoryId = Nanoid.generate();
 
 		const transaction = Transaction.create(
 			TransactionDate.createNowDate(),
 			fromSplits,
 			toSplits,
-			new TransactionName("Transfer Transaction"),
 			TransactionOperation.transfer(),
-			category.nanoid,
-			Nanoid.generate(),
+			buildTransactionItems(
+				"Transfer Transaction",
+				100,
+				category.nanoid,
+				subcategoryId,
+			),
 		);
 
 		// For fromAccount: toAmount - fromAmount = 0 - 100 = -100

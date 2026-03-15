@@ -12,7 +12,9 @@ import {
 	TrendingUp,
 } from "lucide-react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { TransactionsReport } from "../../../../../../contexts/Reports/domain";
 import { Nanoid } from "../../../../../../contexts/Shared/domain";
+import { PriceVO } from "../../../../../../contexts/Shared/domain/value-objects/price.vo";
 import {
 	Transaction,
 	TransactionAmount,
@@ -22,6 +24,7 @@ import {
 	CategoriesContext,
 	TransactionsContext,
 } from "../../Contexts";
+import { getTransactionDisplayName } from "../../TransactionsList/TransactionRow";
 
 interface AccountReportPageProps {
 	onBack: () => void;
@@ -83,6 +86,13 @@ export function AccountReportPage({
 		[selectedAccountId, accountsMap],
 	);
 
+	const transactionsWithAccumulatedBalance = useMemo(() => {
+		const transactionsWithAccumulatedBalance = new TransactionsReport(
+			transactions,
+		).withAccumulatedBalance(accountsMap);
+		return transactionsWithAccumulatedBalance;
+	}, [transactions, accountsMap]);
+
 	// Filter transactions by timeline
 	const filteredTransactions = useMemo(() => {
 		if (!selectedAccountId) return [];
@@ -103,23 +113,27 @@ export function AccountReportPage({
 				startDate.setFullYear(now.getFullYear() - 1);
 				break;
 			case "all":
-				return transactions;
+				return transactionsWithAccumulatedBalance;
 			case "custom":
 				if (customStartDate && customEndDate) {
 					startDate = new Date(customStartDate);
 					endDate = new Date(customEndDate);
 					endDate.setHours(23, 59, 59, 999); // Include the entire end date
-					return transactions.filter((t) => {
-						const transactionDate = new Date(t.date);
-						return (
-							transactionDate >= startDate &&
-							transactionDate <= endDate
-						);
-					});
+					return transactionsWithAccumulatedBalance.filter(
+						({ transaction }) => {
+							const transactionDate = new Date(transaction.date);
+							return (
+								transactionDate >= startDate &&
+								transactionDate <= endDate
+							);
+						},
+					);
 				}
 				return [];
 		}
-		return transactions.filter((t) => new Date(t.date) >= startDate);
+		return transactionsWithAccumulatedBalance.filter(
+			({ transaction }) => new Date(transaction.date) >= startDate,
+		);
 	}, [
 		transactions,
 		timeline,
@@ -177,39 +191,47 @@ export function AccountReportPage({
 	// Calculate summary statistics
 	const summary = useMemo(() => {
 		const income = filteredTransactions
-			.filter((t) => t.operation.isIncome())
-			.reduce((sum, t) => sum + (t.originAmount.value || 0), 0);
+			.filter(({ transaction }) => transaction.operation.isIncome())
+			.reduce(
+				(sum, { transaction }) =>
+					sum + (transaction.originAmount.value || 0),
+				0,
+			);
 		const expenses = filteredTransactions
-			.filter((t) => t.operation.isExpense())
-			.reduce((sum, t) => sum + (t.originAmount.value || 0), 0);
+			.filter(({ transaction }) => transaction.operation.isExpense())
+			.reduce(
+				(sum, { transaction }) =>
+					sum + (transaction.originAmount.value || 0),
+				0,
+			);
 		const transfersIn = filteredTransactions
 			.filter(
-				(t) =>
-					t.operation.isTransfer() &&
-					t.destinationAccounts.some(
+				({ transaction }) =>
+					transaction.operation.isTransfer() &&
+					transaction.destinationAccounts.some(
 						(s) => s.accountId.value === selectedAccountId?.value,
 					),
 			)
 			.reduce(
-				(sum, t) =>
+				(sum, { transaction }) =>
 					sum +
-					(t.destinationAccounts.find(
+					(transaction.destinationAccounts.find(
 						(s) => s.accountId.value === selectedAccountId?.value,
 					)?.amount.value || 0),
 				0,
 			);
 		const transfersOut = filteredTransactions
 			.filter(
-				(t) =>
-					t.operation.isTransfer() &&
-					t.originAccounts.some(
+				({ transaction }) =>
+					transaction.operation.isTransfer() &&
+					transaction.originAccounts.some(
 						(s) => s.accountId.value === selectedAccountId?.value,
 					),
 			)
 			.reduce(
-				(sum, t) =>
+				(sum, { transaction }) =>
 					sum +
-					(t.originAccounts.find(
+					(transaction.originAccounts.find(
 						(s) => s.accountId.value === selectedAccountId?.value,
 					)?.amount.value || 0),
 				0,
@@ -579,7 +601,10 @@ export function AccountReportPage({
 
 							<div className="divide-y! divide-gray-100!">
 								{visibleTransactions.map(
-									(transaction, index) => {
+									(
+										{ transaction, originAccounts },
+										index,
+									) => {
 										const amount = transaction.originAmount;
 										const isIncoming =
 											transaction.operation.isIncome() ||
@@ -611,7 +636,7 @@ export function AccountReportPage({
 											>
 												<div className="flex! items-center! justify-between! gap-4!">
 													<div className="flex! items-center! gap-3! flex-1! min-w-0!">
-														<div className="flex-shrink-0!">
+														<div className="shrink-0!">
 															{getOperationIcon(
 																transaction
 																	.operation
@@ -621,13 +646,19 @@ export function AccountReportPage({
 														<div className="flex-1! min-w-0!">
 															<div className="font-medium! text-gray-900! truncate!">
 																{
-																	transaction.name
+																	<span className="truncate">
+																		{getTransactionDisplayName(
+																			transaction,
+																		)}
+																	</span>
 																}
 															</div>
 															<div className="text-xs! text-gray-500! truncate!">
 																{
 																	getCategoryByID(
-																		transaction.category,
+																		transaction
+																			.items[0]
+																			.categoryId,
 																	)?.name
 																}
 																{transaction.store &&
@@ -643,6 +674,51 @@ export function AccountReportPage({
 																? "+"
 																: "-"}
 															{amount.toString()}
+														</div>
+														{/* Per-account balance breakdown */}
+														<div className="my-2 ml-7 space-y-1">
+															{originAccounts.map(
+																({
+																	account,
+																	balance,
+																	prevBalance,
+																}) => {
+																	const isSelected =
+																		account.id ===
+																		selectedAccountId.value;
+																	return (
+																		<div
+																			key={`${account.id}-${balance}-${prevBalance}`}
+																			className="flex items-center justify-between text-[11px] tabular-nums"
+																		>
+																			<div className="flex items-center gap-1.5 shrink-0">
+																				{isSelected && (
+																					<span className="text-gray-600 ml-1">
+																						{new PriceVO(
+																							prevBalance,
+																						).toString()}
+																						<span className="mx-0.5">
+																							→
+																						</span>
+																						<span
+																							className={
+																								balance >=
+																								prevBalance
+																									? "text-emerald-500"
+																									: "text-rose-500"
+																							}
+																						>
+																							{new PriceVO(
+																								balance,
+																							).toString()}
+																						</span>
+																					</span>
+																				)}
+																			</div>
+																		</div>
+																	);
+																},
+															)}
 														</div>
 														<div className="text-xs! text-gray-500!">
 															{new Date(
